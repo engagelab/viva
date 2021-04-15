@@ -1,0 +1,10 @@
+{
+  "uid": "viva",
+  "append": true,
+  "watch": false,
+  "script": "server/viva.js",
+  "sourceDir": "/engagelab/viva",
+  "logFile": "viva-dev.log",
+  "outFile": "viva-dev-stdout.log",
+  "errFile": "viva-dev-stderr.log"
+}

@@ -1,0 +1,32 @@
+{
+  "name": "cordova-plugin-oauth-engagelab",
+  "version": "1.0.2",
+  "author": "Ayogo Health Inc. <info@ayogo.com>",
+  "contributors": [
+    "Darryl Pogue <darryl@dpogue.ca>",
+    "Richard Nesnass <nesnass@gmail.com>"
+  ],
+  "description": "Cordova plugin for performing OAuth login flows.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nesnass/cordova-plugin-oauth.git"
+  },
+  "keywords": [
+    "cordova",
+    "ecosystem:cordova",
+    "cordova-android",
+    "cordova-ios"
+  ],
+  "cordova": {
+    "platforms": [
+      "ios",
+      "android"
+    ]
+  },
+  "engines": {
+    "cordova-android": ">= 8.0.0",
+    "cordova-ios": ">= 5.0.0"
+  },
+  "dependencies": {}
+}

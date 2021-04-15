@@ -1,0 +1,10 @@
+{
+  "uid": "viva",
+  "append": true,
+  "watch": false,
+  "script": "server/viva.js",
+  "sourceDir": "/viva",
+  "logFile": "viva.log",
+  "outFile": "viva-stdout.log",
+  "errFile": "viva-stderr.log"
+}

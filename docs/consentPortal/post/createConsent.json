@@ -1,0 +1,8 @@
+{
+  "formId?  (samtykkeSetId?)": "id1",
+  "datasetId?": "id2",
+  "consents (questions)": [
+    2,
+    3
+  ]
+}

@@ -1,0 +1,144 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="no.uio.mobileapps.viva" version="1.4.8" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name short="VIVA">VIVA</name>
+    <description>
+        Securely record and process classroom videos
+    </description>
+    <author email="engagelab@uv.uio.no" href="https://www.uv.uio.no/iped/om/engagelab/">
+        Engagelab Team
+    </author>
+    <hook src="../node_modules/vue-cli-plugin-cordova/serve-config-hook.js" type="after_prepare" />
+    <content src="index.html" />
+    <access allows-arbitrary-loads-for-media="true" allows-arbitrary-loads-in-web-content="true" allows-local-networking="true" origin="*" />
+    <access origin="cdvfile://*" />
+    <access origin="file:///*" />
+    <access origin="mailto:*" />
+    <access origin="android-webview-video-poster:*" />
+    <allow-intent href="https://*.engagelab.uio.no/*"/>
+    <allow-intent href="https://*.viva.uio.no/*"/>
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="tel:*" />
+    <allow-intent href="sms:*" />
+    <allow-intent href="oauth:*" />
+    <allow-intent href="mailto:*" />
+    <allow-intent href="geo:*" />
+    <allow-intent href="blob:*" />
+    <allow-intent href="polyblob:*" />
+    <allow-intent href="android-webview-video-poster:*" />
+    <hook src="scripts/patchVersionNumber.js" type="before_prepare" />
+    <platform name="ios">
+        <edit-config file="*-Info.plist" mode="merge" target="NSBluetoothAlwaysUsageDescription">
+            <string>VIVA does not make use of bluetooth, but included libraries provide bluetooth functionality</string>
+        </edit-config>
+        <edit-config file="*-Info.plist" mode="merge" target="NSCameraUsageDescription">
+            <string>VIVA requests your permission to record video</string>
+        </edit-config>
+        <edit-config file="*-Info.plist" mode="merge" target="NSMicrophoneUsageDescription">
+            <string>VIVA requests your permission to record audio</string>
+        </edit-config>
+        <edit-config file="*-Info.plist" mode="merge" target="NSAllowsArbitraryLoads">
+            <true />
+        </edit-config>
+        <allow-intent href="itms:*" />
+        <allow-intent href="itms-apps:*" />
+        <feature name="CDVWKWebViewEngine">
+            <param name="ios-package" value="CDVWKWebViewEngine" />
+        </feature>
+        <allow-navigation href="mailto:*" launch-external="yes" />
+
+        <preference name="AllowInlineMediaPlayback" value="true" />
+        <preference name="OverrideUserAgent" value="Mozilla/5.0 Google" />
+        <preference name="CordovaWebViewEngine" value="CDVWKWebViewEngine" />
+        <preference name="BackupWebStorage" value="local" />
+        <preference name="DisallowOverscroll" value="true" />
+        <preference name="StatusBarBackgroundColor" value="transparent" />
+        <preference name="iosPersistentFileLocation" value="Library" />
+        <preference name="UseSwiftLanguageVersion" value="5.1.1" />
+        <preference name="WKWebViewOnly" value="true" />
+
+        <icon height="20" src="../src/assets/icons/ios/config/icon-20.png" width="20" />
+        <icon height="40" src="../src/assets/icons/ios/config/icon-20@2x.png" width="40" />
+        <icon height="60" src="../src/assets/icons/ios/config/icon-20@3x.png" width="60" />
+
+        <icon height="29" src="../src/assets/icons/ios/config/icon-29.png" width="29" />
+        <icon height="58" src="../src/assets/icons/ios/config/icon-29@2x.png" width="58" />
+        <icon height="87" src="../src/assets/icons/ios/config/icon-29@3x.png" width="87" />
+
+        <icon height="40" src="../src/assets/icons/ios/config/icon-40.png" width="40" />
+        <icon height="80" src="../src/assets/icons/ios/config/icon-40@2x.png" width="80" />
+        <icon height="120" src="../src/assets/icons/ios/config/icon-40@3x.png" width="120" />
+
+        <icon height="120" src="../src/assets/icons/ios/config/icon-60@2x.png" width="120" />
+        <icon height="180" src="../src/assets/icons/ios/config/icon-60@3x.png" width="180" />
+
+        <icon height="76" src="../src/assets/icons/ios/config/icon-76.png" width="76" />
+        <icon height="152" src="../src/assets/icons/ios/config/icon-76@2x.png" width="152" />
+
+        <icon height="167" src="../src/assets/icons/ios/config/icon-83.5@2x.png" width="167" />
+
+        <icon height="1024" src="../src/assets/icons/ios/config/icon-1024.png" width="1024" />
+
+        <splash src="../src/assets/launchimage/ios/config/Default@2x~universal~anyany.png" />
+        <splash src="../src/assets/launchimage/ios/config/Default@2x~universal~comany.png" />
+        <splash src="../src/assets/launchimage/ios/config/Default@2x~universal~comcom.png" />
+        <splash src="../src/assets/launchimage/ios/config/Default@3x~universal~anyany.png" />
+        <splash src="../src/assets/launchimage/ios/config/Default@3x~universal~anycom.png" />
+        <splash src="../src/assets/launchimage/ios/config/Default@3x~universal~comany.png" />
+    </platform>
+    <platform name="android">
+        <preference name="AndroidLaunchMode" value="singleTask" />
+        <preference name="AndroidExtraFilesystems" value="files,files-external,documents,sdcard,cache,cache-external,assets,root" />
+
+        <config-file parent="/manifest" target="AndroidManifest.xml">
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.INTERNET" />
+        </config-file>
+        <!--edit-config file="AndroidManifest.xml" mode="merge" target="/manifest/uses-permission">
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.INTERNET" />
+        </edit-config-->
+        <edit-config xmlns:android="http://schemas.android.com/apk/res/android" file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application">
+            <application android:networkSecurityConfig="@xml/network_security_config" />
+            <application android:requestLegacyExternalStorage="true" />
+        </edit-config>
+        <resource-file src="network_security_config.xml" target="app/src/main/res/xml/network_security_config.xml" />
+
+        <icon density="ldpi" src="../src/assets/icons/android/ldpi.png" />
+        <icon density="mdpi" src="../src/assets/icons/android/mdpi.png" />
+        <icon density="hdpi" src="../src/assets/icons/android/hdpi.png" />
+        <icon density="xhdpi" src="../src/assets/icons/android/xhdpi.png" />
+        <icon density="xxhdpi" src="../src/assets/icons/android/xxhdpi.png" />
+        <icon density="xxxhdpi" src="../src/assets/icons/android/xxxhdpi.png" />
+
+        <splash src="../src/assets/launchimage/android/splash-land-ldpi.png" density="land-ldpi"/>
+        <splash src="../src/assets/launchimage/android/splash-land-mdpi.png" density="land-mdpi"/>
+        <splash src="../src/assets/launchimage/android/splash-land-hdpi.png" density="land-hdpi"/>
+        <splash src="../src/assets/launchimage/android/splash-land-xhdpi.png" density="land-xhdpi"/>
+        <splash src="../src/assets/launchimage/android/splash-land-xxhdpi.png" density="land-xxhdpi"/>
+        <splash src="../src/assets/launchimage/android/splash-land-xxxhdpi.png" density="land-xxxhdpi"/>
+
+        <splash src="../src/assets/launchimage/android/splash-port-ldpi.png" density="port-ldpi"/>
+        <splash src="../src/assets/launchimage/android/splash-port-mdpi.png" density="port-mdpi"/>
+        <splash src="../src/assets/launchimage/android/splash-port-hdpi.png" density="port-hdpi"/>
+        <splash src="../src/assets/launchimage/android/splash-port-xhdpi.png" density="port-xhdpi"/>
+        <splash src="../src/assets/launchimage/android/splash-port-xxhdpi.png" density="port-xxhdpi"/>
+        <splash src="../src/assets/launchimage/android/splash-port-xxxhdpi.png" density="port-xxxhdpi"/>
+    </platform>
+    <plugin name="cordova-plugin-whitelist" spec="1" />
+    <plugin name="cordova-plugin-wkwebview-engine" spec="~1.2.1" />
+    <plugin name="cordova-plugin-device" spec="^2.0.3" />
+    <plugin name="cordova-plugin-statusbar" spec="^2.4.3" />
+    <plugin name="cordova-plugin-file" spec="^6.0.2" />
+    <plugin name="cordova-plugin-media-capture" spec="^3.0.3" />
+    <plugin name="cordova.plugins.diagnostic" spec="^5.0.0">
+        <variable name="ANDROID_SUPPORT_VERSION" value="28.+" />
+    </plugin>
+    <plugin name="cordova-plugin-add-swift-support" spec="^2.0.2" />
+    <plugin name="eeschiavo-cordova-plugin-clipboard" spec="^1.0.2" />
+    <plugin name="cordova-plugin-android-permissions" spec="^1.0.2" />
+</widget>

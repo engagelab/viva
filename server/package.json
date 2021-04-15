@@ -1,0 +1,30 @@
+{
+  "name": "viva-server",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Engagelab Team",
+  "dependencies": {
+    "babel-eslint": "^10.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^7.0.0",
+    "express": "^4.17.1",
+    "express-session": "^1.16.2",
+    "googleapis": "^42.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "jwks-rsa": "^2.0.1",
+    "memorystore": "^1.6.2",
+    "moment": "^2.24.0",
+    "mongoose": "^5.12.3",
+    "node-cleanup": "^2.1.2",
+    "openid-client": "^3.12.2",
+    "qrcode": "^1.4.2",
+    "tus-metadata": "^1.0.2",
+    "tus-node-server": "git+https://bitbucket.usit.uio.no/scm/engagelab/tus-node-server.git"
+  },
+  "engines": {
+    "node": ">=10.0.0",
+    "npm": ">=6.0.0"
+  },
+  "displayName": "viva",
+  "license": "Apache-2.0"
+}

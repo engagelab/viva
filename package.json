@@ -1,0 +1,32 @@
+{
+  "name": "viva",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Engagelab",
+  "scripts": {
+    "postinstall": "(cd clients/app && yarn install); (cd clients/lti && yarn install); (cd server && yarn install);",
+    "serve:lti": "env-cmd yarn --cwd clients/lti run serve",
+    "build:lti": "env-cmd yarn --cwd clients/lti run build",
+    "serve:app": "env-cmd yarn --cwd clients/app run serve",
+    "build:app": "env-cmd yarn --cwd clients/app run build",
+    "build:ios": "env-cmd yarn --cwd clients/app run cordova-build-ios",
+    "build:ios:production": "env-cmd yarn --cwd clients/app run cordova-build-ios-production",
+    "build:android": "env-cmd yarn --cwd clients/app run cordova-build-android",
+    "build:android:production": "env-cmd yarn --cwd clients/app run cordova-build-android-production",
+    "server": "node server/viva.js",
+    "test": "yarn run jest"
+  },
+  "displayName": "slplus",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@vue/cli-plugin-unit-jest": "~4.5.8",
+    "env-cmd": "^10.1.0",
+    "eslint": "^7.1.0",
+    "eslint-config-prettier": "^6.11.0",
+    "supertest": "^5.0.0-0"
+  },
+  "dependencies": {
+    "@types/node": "^14.0.11",
+    "dotenv": "^8.2.0"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "formId  (samtykkeSetId?)": "id1",
+  "title": "title HTML",
+  "description": "description HTML",
+  "questions": {
+    "1": "question 1",
+    "2": "question 2",
+    "3": ".."
+  }
+}
