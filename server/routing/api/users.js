@@ -59,9 +59,9 @@ router.put('/user', utilities.authoriseUser, (request, response) => {
       if (update.datasett) {
         u.datasett = update.datasett
       }
-      u.save((error, savedUser) => {
-        if (error) {
-          return utilities.errorResponse(error, response, 400);
+      u.save((error2, savedUser) => {
+        if (error2) {
+          return utilities.errorResponse(error2, response, 400);
         } else {
           utilities.successResponse(savedUser.redacted(), response)
         }

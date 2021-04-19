@@ -10,4 +10,4 @@ const transfer = require('./googleTransfer');
 const groups = require('./dataportengroups');
 const lock = require('./lock');
 
-module.exports = [users, videos, settings, consents, transfer, groups,lock];
+module.exports = [users, videos, settings, consents, transfer, groups, lock];

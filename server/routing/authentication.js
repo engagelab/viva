@@ -335,6 +335,130 @@ router.post('/canvas/login', function (request, response) {
   response.redirect(redirectUrl)
 })
 
+// STEP 2
+// POST Callback from Canvas contains the id_token for an OpenID LTI authentication
+router.post('/canvas/callback', function(request, response) {
+  const { device, remember } = request.session
+  const idToken = request.body.id_token
+  const decodedToken = jwt.decode(idToken, { complete: true })
+
+  if (request.session.state != response.req.body.state) {
+    console.error('/canvas/callback: Session state does not match')
+    return response.status(401).end()
+  }
+  if (decodedToken.payload.iss !== CanvasLTIIssuer.metadata.issuer) {
+    console.error('/canvas/callback: Issuer does not match')
+    return response.status(401).end()
+  }
+
+  // STEP 4: Using the LTI access_token, get user details using "Names & roles" LTI service
+  // Save the details to the User's profile including id_token
+  const requestUserInformation = (LTItokenSet, verified_decoded_id_token) => {
+    const user_id = verified_decoded_id_token.sub
+    const parsedUrl =
+      require('url')
+        .parse(verified_decoded_id_token['https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice']
+          .context_memberships_url)
+    const options = {
+      hostname: parsedUrl.host,
+      path: parsedUrl.path,
+      method: 'GET',
+      headers: {
+          Authorization: `Bearer ${LTItokenSet.access_token}`
+      }
+    }
+    utilities.httpRequest(options)
+      .then(namesAndRoles => {
+        if (namesAndRoles) {
+          const myUser = namesAndRoles.members.find((n) => n.user_id === user_id)
+          createOrUpdateUser(
+            { id_token: idToken },
+            { sub: verified_decoded_id_token.sub },
+            myUser || {}
+          ).then((user) => completeCallback(request, response, user, device, remember))
+        }
+      })
+      .catch(e => {
+        console.error(e)
+      });
+  }
+
+  // STEP 3: Authenticate using 'client_credentials' for a 'non-specific-user' LTI access_token
+  // Applies to certain LTI Advantage services
+  // Calls the 'names and roles' LTI service to obtain user info
+  // https://canvas.instructure.com/doc/api/file.oauth.html#accessing-lti-advantage-services
+  const requestLTIServicesAccessToken = (verified_decoded_id_token) => {
+    const kid = process.env.JWK_CURRENT_KID
+    const privateKey = fs.readFileSync(process.env.JWK_PRIVATE_KEY_FILE)
+    const CANVAS_TOKEN_VALIDITY_PERIOD = 1000 * 60 // 1 minute
+    const issuedAtDate = Math.floor(Date.now().valueOf() / 1000)
+    const expiryDate = new Date(Date.now() + CANVAS_TOKEN_VALIDITY_PERIOD)
+    const expiryInSeconds = Math.floor(expiryDate.valueOf() / 1000)
+
+    const jwtContent = {
+      sub: process.env.CANVAS_LTI_CLIENT_ID,
+      iss: 'https://canvas.instructure.com',
+      jti: '1234567890987654321', // Do we really need this?
+      exp: expiryInSeconds,
+      iat: issuedAtDate,
+      aud: 'canvasdev.engagelab.uiocloud.no:3000',
+    }
+    const signedTokenPayload = jwt.sign(jwtContent, privateKey, {
+      algorithm: 'RS256',
+      header: { kid },
+    })
+
+    const CCbody = {
+      grant_type: 'client_credentials',
+      client_assertion_type:
+        'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+      client_assertion: signedTokenPayload,
+      scope: 'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly',
+    }
+
+    // Request a Token Grant, then request the User's information
+    CanvasLTIClient.grant(CCbody).then((LTItokenSet) => {
+      requestUserInformation(LTItokenSet, verified_decoded_id_token)
+    }).catch((error) => console.log(`Error granting access_token: ${error}`))
+  }
+
+  // Verify the token using a JWK specified by 'kid' in the decoded token's header
+  const verifyTokenByRemoteJWK = async () => {
+    // Retrieve Canvas public JWKs
+    const theJwksClient = jwksClient({
+      jwksUri: CanvasLTIIssuer.metadata.jwks_uri,
+    })
+    const remoteKeyObject = await theJwksClient.getSigningKey(
+      decodedToken.header.kid
+    )
+    const signingKey = remoteKeyObject.getPublicKey()
+
+    // Vertify the ID_Token against Canvas' public JWK
+    return new Promise((resolve, reject) => {
+      jwt.verify(
+        idToken,
+        signingKey,
+        { algorithms: ['RS256'] },
+        (error, verified_decoded_id_token) => {
+          if (error) {
+            console.error('Invalid ID Token received')
+            return reject(error)
+          }
+          resolve(verified_decoded_id_token)
+        }
+      )
+    })
+  }
+
+  verifyTokenByRemoteJWK().then((verified_decoded_id_token) => {
+    requestLTIServicesAccessToken(verified_decoded_id_token)
+  }).catch((error) => {
+    console.log(`Token not valid with remote jwks.json: ${error}`)
+    response.status(401).end()
+  })
+})
+
+
 // OPTIONAL
 // Authenticate a specific user by "authentication_flow" and retrieve a JWT API access_token
 // Use this procedure in addition to /login/initiate for specific user access to the Canvas API
@@ -439,129 +563,6 @@ router.get('/canvas/callback', function (request, response) {
       //   })
     })
   }
-})
-
-// STEP 2
-// POST Callback from Canvas contains the id_token for an OpenID LTI authentication
-router.post('/canvas/callback', function (request, response) {
-  const { device, remember } = request.session
-  const idToken = request.body.id_token
-  const decodedToken = jwt.decode(idToken, { complete: true })
-
-  if (request.session.state != response.req.body.state) {
-    console.error('/canvas/callback: Session state does not match')
-    return response.status(401).end()
-  }
-  if (decodedToken.payload.iss !== CanvasLTIIssuer.metadata.issuer) {
-    console.error('/canvas/callback: Issuer does not match')
-    return response.status(401).end()
-  }
-
-  // STEP 4: Using the LTI access_token, get user details using "Names & roles" LTI service
-  // Save the details to the User's profile including id_token
-  const requestUserInformation = (LTItokenSet, verified_decoded_id_token) => {
-    const user_id = verified_decoded_id_token.sub
-    const parsedUrl =
-      require('url')
-        .parse(verified_decoded_id_token['https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice']
-          .context_memberships_url)
-    const options = {
-      hostname: parsedUrl.host,
-      path: parsedUrl.path,
-      method: 'GET',
-      headers: {
-          Authorization: `Bearer ${LTItokenSet.access_token}`
-      }
-    }
-    utilities.httpRequest(options)
-      .then(namesAndRoles => {
-        if (namesAndRoles) {
-          const myUser = namesAndRoles.members.find((n) => n.user_id === user_id)
-          createOrUpdateUser(
-            { id_token: idToken },
-            { sub: verified_decoded_id_token.sub },
-            myUser || {}
-          ).then((user) => completeCallback(request, response, user, device, remember))
-        }
-      })
-      .catch(e => {
-        console.error(e)
-      });
-  }
-
-  // STEP 3: Authenticate using 'client_credentials' for a 'non-specific-user' LTI access_token
-  // Applies to certain LTI Advantage services
-  // Calls the 'names and roles' LTI service to obtain user info
-  // https://canvas.instructure.com/doc/api/file.oauth.html#accessing-lti-advantage-services
-  const requestLTIServicesAccessToken = (verified_decoded_id_token) => {
-    const kid = process.env.JWK_CURRENT_KID
-    const privateKey = fs.readFileSync(process.env.JWK_PRIVATE_KEY_FILE)
-    const CANVAS_TOKEN_VALIDITY_PERIOD = 1000 * 60 // 1 minute
-    const issuedAtDate = Math.floor(Date.now().valueOf() / 1000)
-    const expiryDate = new Date(Date.now() + CANVAS_TOKEN_VALIDITY_PERIOD)
-    const expiryInSeconds = Math.floor(expiryDate.valueOf() / 1000)
-
-    const jwtContent = {
-      sub: process.env.CANVAS_LTI_CLIENT_ID,
-      iss: 'https://canvas.instructure.com',
-      jti: '1234567890987654321', // Do we really need this?
-      exp: expiryInSeconds,
-      iat: issuedAtDate,
-      aud: 'https://uio.instructure.com/login/oauth2/token',
-    }
-    const signedTokenPayload = jwt.sign(jwtContent, privateKey, {
-      algorithm: 'RS256',
-      header: { kid },
-    })
-
-    const CCbody = {
-      grant_type: 'client_credentials',
-      client_assertion_type:
-        'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-      client_assertion: signedTokenPayload,
-      scope: 'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly',
-    }
-
-    // Request a Token Grant, then request the User's information
-    CanvasLTIClient.grant(CCbody).then((LTItokenSet) => {
-      requestUserInformation(LTItokenSet, verified_decoded_id_token)
-    }).catch((error) => console.log(`Error granting access_token: ${error}`))
-  }
-
-  // Verify the token using a JWK specified by 'kid' in the decoded token's header
-  const verifyTokenByRemoteJWK = async () => {
-    // Retrieve Canvas public JWKs
-    const theJwksClient = jwksClient({
-      jwksUri: CanvasLTIIssuer.metadata.jwks_uri,
-    })
-    const remoteKeyObject = await theJwksClient.getSigningKey(
-      decodedToken.header.kid
-    )
-    const signingKey = remoteKeyObject.getPublicKey()
-
-    // Vertify the ID_Token against Canvas' public JWK
-    return new Promise((resolve, reject) => {
-      jwt.verify(
-        idToken,
-        signingKey,
-        { algorithms: ['RS256'] },
-        (error, verified_decoded_id_token) => {
-          if (error) {
-            console.error('Invalid ID Token received')
-            return reject(error)
-          }
-          resolve(verified_decoded_id_token)
-        }
-      )
-    })
-  }
-
-  verifyTokenByRemoteJWK().then((verified_decoded_id_token) => {
-    requestLTIServicesAccessToken(verified_decoded_id_token)
-  }).catch((error) => {
-    console.log(`Token not valid with remote jwks.json: ${error}`)
-    response.status(401).end()
-  })
 })
 
 
