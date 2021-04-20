@@ -401,7 +401,7 @@ router.post('/canvas/callback', function(request, response) {
       jti: '1234567890987654321', // Do we really need this?
       exp: expiryInSeconds,
       iat: issuedAtDate,
-      aud: 'canvasdev.engagelab.uiocloud.no:3000',
+      aud: 'https://uio.instructure.com/login/oauth2/token',
     }
     const signedTokenPayload = jwt.sign(jwtContent, privateKey, {
       algorithm: 'RS256',

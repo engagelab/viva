@@ -22,9 +22,9 @@ async function createClient(mode) {
   } else if (mode == 'canvasLTI') {
     const canvasIssuer = new Issuer({
       issuer: 'https://canvas.instructure.com',
-      authorization_endpoint: `${process.env.CANVAS_HOST}/api/lti/authorize_redirect`,
-      token_endpoint: `${process.env.CANVAS_HOST}/login/oauth2/token`,
-      jwks_uri: `${process.env.CANVAS_HOST}/api/lti/security/jwks`,
+      authorization_endpoint: 'https://uio.instructure.com/api/lti/authorize_redirect',
+      token_endpoint: 'https://uio.instructure.com/login/oauth2/token',
+      jwks_uri: 'https://uio.instructure.com/api/lti/security/jwks',
     })
     let authCallback = `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}/auth/canvas/callback`
     if (process.env.NODE_ENV !== 'development') {
@@ -40,9 +40,9 @@ async function createClient(mode) {
   } else if (mode == 'canvasAPI') {
     const canvasIssuer = new Issuer({
       issuer: 'https://canvas.instructure.com',
-      authorization_endpoint: `${process.env.CANVAS_HOST}/login/oauth2/auth`,
-      token_endpoint: `${process.env.CANVAS_HOST}/login/oauth2/token`,
-      userinfo_endpoint: `${process.env.CANVAS_HOST}/api/v1/users/`
+      authorization_endpoint: 'https://uio.instructure.com/login/oauth2/auth',
+      token_endpoint: 'https://uio.instructure.com/login/oauth2/token',
+      userinfo_endpoint: 'https://uio.instructure.com/api/v1/users/'
     })
     let authCallback = `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}/auth/canvas/callback`
     if (process.env.NODE_ENV !== 'development') {
