@@ -5,12 +5,16 @@
 const mongoose = require('mongoose')
 const videoStatusTypes = require('../constants').videoStatusTypes
 
-/*const storageSchema = {
-  storageName: { type: String },
-  path: { type: String },
-  fileName: { type: String }
-};
-*/
+// Sharing schema (a sub schema of video schema)
+const sharingSchema = {
+  users: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
+  access: { type: Boolean, default: false },
+  edl: {
+    start: { type: String },
+    end: { type: String },
+  },
+  description: { type: String },
+}
 const videoSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.ObjectId, ref: 'User' }, // Back end only.
   settingId: { type: mongoose.Schema.ObjectId, ref: 'Datasett' },
@@ -21,7 +25,7 @@ const videoSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: Object.values(videoStatusTypes),
-    default: videoStatusTypes.uploaded // Current status of this video
+    default: videoStatusTypes.uploaded, // Current status of this video
   },
   errorInfo: { type: String }, // Error report. Back end only.
   errorDebug: { type: String },
@@ -35,7 +39,7 @@ const videoSchema = new mongoose.Schema({
   mimeType: { type: String }, // mime type e.g. video/mp4  Assigned by recorder at front end.
   datasetInfo: {
     name: { type: String },
-    utvalg: { type: Array }
+    utvalg: { type: Array },
   },
   description: { type: String },
   consents: { type: Array }, // These are the consents confirmed by the teacher in this recording
@@ -44,7 +48,11 @@ const videoSchema = new mongoose.Schema({
   created: { type: Date },
   storages: { type: Array, default: [] },
   storagePath: { type: Array, default: [] },
-  samtykkeId: { type: String }
+  samtykkeId: { type: String },
+  sharing: {
+    type: Array,
+    of: sharingSchema,
+  },
 })
 
 // Choose what attributes will be returned with the video object
@@ -66,25 +74,25 @@ videoSchema.methods.redacted = function () {
     datasetInfo: this.datasetInfo,
     duration: this.duration,
     errorInfo: this.errorInfo,
-    consents: this.consents,// Array of consenters
+    consents: this.consents, // Array of consenters
   }
 }
 
 // Duplicate the ID field.
 // eslint-disable-next-line
-videoSchema.virtual("id").get(function () {
+videoSchema.virtual('id').get(function () {
   // eslint-disable-next-line
-  return this._id.toString();
+  return this._id.toString()
 })
 
 // Ensure virtual fields are serialised.
 videoSchema.set('toJSON', {
   getters: true,
-  virtuals: true
+  virtuals: true,
 })
 videoSchema.set('toObject', {
   getters: true,
-  virtuals: true
+  virtuals: true,
 })
 
 module.exports = mongoose.model('Video', videoSchema)
