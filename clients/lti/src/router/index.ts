@@ -6,7 +6,7 @@ import {
   RouteRecordRaw,
 } from 'vue-router'
 
-import Landing from '@/views/landing/Landing.vue'
+import Landing from '../views/landing/Landing.vue'
 import AfterLogin from '@/views/landing/AfterLogin.vue'
 import Dashboard from '@/views/Dashboard.vue'
 

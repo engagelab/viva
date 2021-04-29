@@ -44,8 +44,7 @@ const videoSchema = new mongoose.Schema({
   description: { type: String },
   consents: { type: Array }, // These are the consents confirmed by the teacher in this recording
   category: { type: String },
-  duration: { type: Number }, // Seconds
-  created: { type: Date },
+  duration: { type: Number }, // Seconds  created: { type: Date },
   storages: { type: Array, default: [] },
   storagePath: { type: Array, default: [] },
   samtykkeId: { type: String },
@@ -75,6 +74,7 @@ videoSchema.methods.redacted = function () {
     duration: this.duration,
     errorInfo: this.errorInfo,
     consents: this.consents, // Array of consenters
+    sharing :this.sharing ,
   }
 }
 

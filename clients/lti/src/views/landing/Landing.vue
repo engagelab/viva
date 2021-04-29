@@ -2,17 +2,25 @@
   <div
     class="relative flex md:flex-row flex-col h-full justify-center bg-blue-button"
   >
+    Fetch videos from s3 bucket
     <p class="absolute bottom-0 right-0 text-xs m-2">Welcome</p>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, Ref, onBeforeUnmount } from 'vue'
+import {
+  defineComponent,
+  computed,
+  onMounted,
+  ref,
+  Ref,
+  onBeforeUnmount,
+} from 'vue'
 // import router from '../../router'
 import moment from 'moment'
 import { useAppStore } from '../../store/useAppStore'
 import { LocalUser } from '../../types/main'
-
+import { useVideoStore } from '../../store/useVideoStore'
 const jwtExpiryConstant = process.env.VUE_APP_JWT_EXPIRY || '0'
 const jwtExpiry = Number.parseInt(jwtExpiryConstant)
 
@@ -25,6 +33,7 @@ export default defineComponent({
   name: 'Login',
   setup() {
     const { getters: appGetters } = useAppStore()
+    const { actions: videoActions } = useVideoStore()
     const mode = ref('login')
     const pinCode = ref('')
     const showTestLogin = ref(false)
@@ -37,6 +46,12 @@ export default defineComponent({
         valid: ref(false),
       })
     )
+    onMounted(() => {
+      // Fetch video and video Metadata
+      videoActions.getVideoMetadata().catch((err) => {
+        console.log(err)
+      })
+    })
 
     function momentFormat(date: Date) {
       return moment(date).format('ddd, hA')

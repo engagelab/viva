@@ -66,6 +66,7 @@ enum PROJECT_NAME {
   testand = 'testand',
   slpilot = 'slpilot',
   v4v = 'v4v',
+  viva = 'viva',
   none = 'none',
 }
 // Ensure enums match those defined in env file
@@ -83,6 +84,7 @@ enum PROJECT_TYPE {
   slplus = 'slplus',
   kapteinmorf = 'kapteinmorf',
   v4v = 'v4v',
+  viva = 'viva',
   none = 'none',
 }
 // Ensure enums match those defined in env file

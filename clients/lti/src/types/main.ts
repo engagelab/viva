@@ -160,6 +160,70 @@ export class Project implements ProjectData {
   }
 }
 
+///-------------------------Viva vide and dataset model -----------------/
+
+// We need only file Id ,metadata  and sharing info for viva in canvas
+export interface DatasetInfoData {
+  name: string
+  utvalg: []
+}
+
+export interface SharingData {
+  users: []
+  access: boolean
+  // edl: {
+  //   start: string
+  //   end: string
+  // }
+  description: string
+}
+export interface VideoData {
+  fileId: string
+  description: string
+  category: string
+  name: string
+  datasetInfo: DatasetInfoData
+  duration: number
+  consents: string[] // Array of consenters
+  sharing: SharingData
+}
+
+export class Video {
+  fileId: string
+  description: string
+  category: string
+  name: string
+  datasetInfo: DatasetInfoData
+  duration: number
+  consents: string[] // Array of consenters
+  sharing: SharingData
+
+  constructor(data?: VideoData) {
+    this.fileId = data?.fileId ? data.fileId : ''
+    this.description = data?.description ? data.description : ''
+    this.category = data?.category ? data.category : ''
+    this.name = data?.name ? data.name : ''
+    this.duration = data?.duration ? data.duration : 0
+    this.datasetInfo = data?.datasetInfo
+      ? data.datasetInfo
+      : {
+          name: '',
+          utvalg: [],
+        }
+    this.consents = data?.consents ? data.consents : []
+    this.sharing = data?.sharing
+      ? data.sharing
+      : {
+          users: [],
+          access: false,
+          // edl.start: data.sharing.edl.start || ''
+          // edl.end: data.sharing.edl.end || ''
+          //edl: data.sharing.edl
+          description: '',
+        }
+  }
+}
+
 // ---------------  Base CMS model classes ------------------
 // --- Extend these to represent real Squidex model types ---
 
