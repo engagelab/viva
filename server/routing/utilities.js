@@ -14,7 +14,7 @@ const hotPortAPP = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_APP;
 const hotPortLTI = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_LTI;
 
 const tempUserStore = {};
-
+//TODO: Base url needs to be updated based on affliatiaon 
 let baseUrl = `${host}`
 if (process.env.NODE_ENV === 'development') {
   switch(process.env.VUE_APP_DEV_SERVER) {

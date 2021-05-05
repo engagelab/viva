@@ -54,7 +54,8 @@ const apiRequest = function <T>({
   baseURL,
 }: APIRequestPayload): Promise<T> {
   // Set token if available
-  const token = localStorage.getItem('jwt') || ''
+  // const token = localStorage.getItem('jwt') || ''
+  const token = ''
 
   const ct = contentType || XHR_CONTENT_TYPE.JSON
   const _baseUrl = baseURL ? baseURL : baseUrl
