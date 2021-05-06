@@ -6,52 +6,46 @@ import {
   RouteRecordRaw,
 } from 'vue-router'
 
-import Landing from '../views/landing/Landing.vue'
-import AfterLogin from '@/views/landing/AfterLogin.vue'
-import Dashboard from '@/views/Dashboard.vue'
+import Dashboard from '../views/Dashboard.vue'
 
 import Monitor from '../views/admin/Monitor.vue'
-import MonitorProfile from '../views/admin/MonitorProfile.vue'
-import MonitorProjects from '../views/admin/MonitorProjects.vue'
+import Dataset from '../views/admin/Dataset.vue'
+import VideoLogs from '../views/admin/Videologs.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    name: 'Landing',
-    component: Landing,
+    name: 'Dashboard',
+    component: Dashboard,
+  },
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: Dashboard,
   },
   { path: '/index.html', redirect: '/' },
-  {
-    path: '/login',
-    name: 'Login',
-    component: AfterLogin,
-  },
+
   {
     path: '/monitor',
-    redirect: '/monitor/profile',
+    redirect: '/monitor/dataset',
     name: 'Monitor',
     component: Monitor,
     children: [
       {
         // UserProfile will be rendered inside User's <router-view>
         // when /user/profile is matched
-        path: 'profile',
-        name: 'MonitorProfile',
-        component: MonitorProfile,
+        path: 'dataset',
+        name: 'Dataset',
+        component: Dataset,
       },
       {
         // UserPosts will be rendered inside User's <router-view>
         // when /user/projects is matched
-        path: 'projects',
-        name: 'MonitorProjects',
-        component: MonitorProjects,
+        path: 'videologs',
+        name: 'VideoLogs',
+        component: VideoLogs,
       },
     ],
-  },
-  {
-    path: '/dashboard/:reloaded?',
-    name: 'Dashboard',
-    component: Dashboard,
   },
 ]
 
@@ -62,14 +56,14 @@ const router = createRouter({
       : createWebHistory(process.env.BASE_URL),
   routes,
 })
-router.beforeEach((to, from, next) => {
-  if (
-    !(from.name || to.redirectedFrom?.name) &&
-    to.name !== 'Login' &&
-    to.name !== 'Landing'
-  ) {
-    next('login')
-  } else next()
-})
+// router.beforeEach((to, from, next) => {
+//   if (
+//     !(from.name || to.redirectedFrom?.name) &&
+//     to.name !== 'Login' &&
+//     to.name !== 'Landing'
+//   ) {
+//     next('login')
+//   } else next()
+// })
 
 export default router

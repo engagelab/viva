@@ -154,8 +154,8 @@ function completeCallback(request, response, user, device, remember) {
     // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
     redirectUrl =
       process.env.NODE_ENV === 'testing'
-        ? `${utilities.baseUrl}/#/landing`
-        : `${utilities.baseUrl}/landing`
+        ? `${utilities.baseUrl}/#/dashboard`
+        : `${utilities.baseUrl}/dashboard`
   }
   console.log(s)
   return response.redirect(redirectUrl)

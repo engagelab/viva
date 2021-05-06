@@ -26,9 +26,9 @@ async function createClient(mode) {
       token_endpoint: 'https://uio.instructure.com/login/oauth2/token',
       jwks_uri: 'https://uio.instructure.com/api/lti/security/jwks',
     })
-    let authCallback = `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}/auth/canvas/callback`
+    let authCallback = `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}/viva/auth/canvas/callback`
     if (process.env.NODE_ENV !== 'development') {
-      authCallback = `${process.env.VUE_APP_SERVER_HOST}/auth/canvas/callback`
+      authCallback = `${process.env.VUE_APP_SERVER_HOST}/viva/auth/canvas/callback`
     }
     const theClient = new canvasIssuer.Client({
       client_id: process.env.CANVAS_LTI_CLIENT_ID,
@@ -44,9 +44,9 @@ async function createClient(mode) {
       token_endpoint: 'https://uio.instructure.com/login/oauth2/token',
       userinfo_endpoint: 'https://uio.instructure.com/api/v1/users/'
     })
-    let authCallback = `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}/auth/canvas/callback`
+    let authCallback = `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}/viva/auth/canvas/callback`
     if (process.env.NODE_ENV !== 'development') {
-      authCallback = `${process.env.VUE_APP_SERVER_HOST}/auth/canvas/callback`
+      authCallback = `${process.env.VUE_APP_SERVER_HOST}/viva/auth/canvas/callback`
     }
     const theClient = new canvasIssuer.Client({
       client_id: process.env.CANVAS_API_CLIENT_ID,
