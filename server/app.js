@@ -5,21 +5,26 @@
 require('dotenv').config({ silent: process.env.NODE_ENV !== 'development' })
 
 const express = require('express')
+
+
+//const MemoryStore = require('memorystore')(session)
+
+
 const session = require('express-session')
-// MongoStore replaced in favour of MemoryStore
 const MemoryStore = require('memorystore')(session)
+
 const cors = require('cors')
 const path = require('path')
-const utilities = require('./utilities')
-// Local includes
-const db = require('./database')
 
+// Local includes
+const utilities = require('./utilities')
+const db = require('./database')
+const apiRoutes = require('./routing/api')
+const authenticationRoutes = require('./routing/authentication')
 const setup = require('./setup')
 // Create directories if necessary
 setup.createVideoDirectories()
 
-const apiRoutes = require('./routing/api')
-const authenticationRoutes = require('./routing/authentication')
 const uploadRoutes = require('./routing/tusUpload')
 
 db.connect('VIVA Sever')
@@ -101,7 +106,7 @@ app.use((req, res, next) => {
 })
 
 app.use('/upload', uploadRoutes)
-app.use('/auth', authenticationRoutes)
+app.use('/viva/auth', authenticationRoutes)
 app.use('/api', apiRoutes)
 
 module.exports = app

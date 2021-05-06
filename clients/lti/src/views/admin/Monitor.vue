@@ -2,44 +2,22 @@
   <div class="flex flex-col cursor-default relative h-screen">
     <div class="flex flex-col p-4">
       <ul class="flex border-b">
-        <router-link to="/monitor/profile">
+        <router-link to="/monitor/dataset">
           <li
             class="-mb-px mr-1 bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold"
-            v-if="hasMonitorRole"
-            :class="{ tabSelected: selectedTab === 'users' }"
             @click="selectTab('users', 'profile')"
           >
-            Users
+            <!-- :class="{ tabSelected: selectedTab === 'users' }" -->
+            Dataset
           </li>
         </router-link>
-        <router-link to="/monitor/projects">
+        <router-link to="/monitor/videologs">
           <li
             class="-mb-px mr-1 bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold"
-            v-if="hasAdminRole"
-            :class="{ tabSelected: selectedTab === 'projects' }"
             @click="selectTab('projects', 'projects')"
           >
-            Projects
-          </li>
-        </router-link>
-        <router-link :to="{ name: 'MonitorParticipants' }">
-          <li
-            class="-mb-px mr-1 bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold"
-            v-if="hasMonitorRole"
-            :class="{ tabSelected: selectedTab === 'participants' }"
-            @click="selectTab('participants', 'participants')"
-          >
-            Participants
-          </li>
-        </router-link>
-        <router-link to="/monitor/mastery">
-          <li
-            class="-mb-px mr-1 bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold"
-            v-if="hasMonitorRole"
-            :class="{ tabSelected: selectedTab === 'mastery' }"
-            @click="selectTab('mastery', 'mastery')"
-          >
-            Mastery
+            <!-- :class="{ tabSelected: selectedTab === 'projects' }" -->
+            VideoLogs
           </li>
         </router-link>
       </ul>
@@ -60,48 +38,47 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue'
-import router from '../../router'
-import { USER_ROLE } from '../../constants'
-import { useUserStore } from '../../store/useUserStore'
+import { defineComponent /*, ref, computed*/ } from 'vue'
+// import router from '../../router'
+// import { USER_ROLE } from '../../constants'
+// import { useUserStore } from '../../store/useUserStore'
 
 export default defineComponent({
   name: 'Monitor',
   setup() {
-    const { actions: userActions, getters: userGetters } = useUserStore()
+    // const { actions: userActions, getters: userGetters } = useUserStore()
 
-    const selectedTab = ref('users')
-    const selectedSubTab = ref('profile')
+    // const selectedTab = ref('users')
+    // const selectedSubTab = ref('profile')
 
-    const selectTab = (main: string, secondary: string) => {
-      selectedTab.value = main
-      selectedSubTab.value = secondary
-    }
+    // const selectTab = (main: string, secondary: string) => {
+    //   selectedTab.value = main
+    //   selectedSubTab.value = secondary
+    // }
 
-    const restart = () => {
-      const project = userGetters.selectedUserProject
-      if (project) router.push(`/login`)
-    }
+    // const restart = () => {
+    //   const project = userGetters.selectedUserProject
+    //   if (project) router.push(`/login`)
+    // }
 
     /*Computed functions */
-    const hasAdminRole = computed(() =>
-      userActions.hasMinimumRole(userGetters.myUser.value, USER_ROLE.admin)
-    )
-    const hasMonitorRole = computed(() =>
-      userActions.hasMinimumRole(userGetters.myUser.value, USER_ROLE.monitor)
-    )
+    // const hasAdminRole = computed(() =>
+    //   userActions.hasMinimumRole(userGetters.myUser.value, USER_ROLE.admin)
+    // )
+    // const hasMonitorRole = computed(() =>
+    //   userActions.hasMinimumRole(userGetters.myUser.value, USER_ROLE.monitor)
+    // )
 
     return {
       // Computed
-      selectedUser: userGetters.selectedUser,
-      hasAdminRole,
-      hasMonitorRole,
-      selectedTab,
-      selectedSubTab,
-
+      // selectedUser: userGetters.selectedUser,
+      // hasAdminRole,
+      // hasMonitorRole,
+      // selectedTab,
+      // selectedSubTab,
       // Methods
-      restart,
-      selectTab,
+      // restart,
+      // selectTab,
     }
   },
 })

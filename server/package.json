@@ -12,7 +12,7 @@
     "googleapis": "^42.0.0",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^2.0.1",
-    "memorystore": "^1.6.2",
+    "memorystore": "1.6.2",
     "moment": "^2.24.0",
     "mongoose": "^5.12.3",
     "node-cleanup": "^2.1.2",

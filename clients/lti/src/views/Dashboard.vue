@@ -1,41 +1,37 @@
 <template>
-  <div class="relative w-screen h-screen overflow-hidden"></div>
+  <div class="relative w-screen h-screen overflow-hidden">
+    <div
+      class="relative flex md:flex-row flex-col h-full justify-center bg-blue-button"
+    >
+      Fetch videos from s3 bucket hi
+      <SlButton class="m-4" @click="monitor()">Monitor</SlButton>
+    </div>
+  </div>
 </template>
 
 <style lang="stylus" scoped></style>
 
 <script lang="ts">
 // @ is an alias to /src
-import { defineComponent, computed, ref } from 'vue'
+import { defineComponent /* onMounted */ } from 'vue'
 import router from '@/router'
-import { useAppStore } from '@/store/useAppStore'
-import { useUserStore } from '@/store/useUserStore'
-import { USER_ROLE } from '@/constants'
-
+// import { useVideoStore } from '@/store/useVideoStore'
+import SlButton from '@/components/base/SlButton.vue'
 export default defineComponent({
   name: 'Dashboard',
+  components: {
+    SlButton,
+  },
   setup() {
-    const { actions: appActions, getters: appGetters } = useAppStore()
-    const { getters: userGetters, actions: userActions } = useUserStore()
-    const hasMonitorRole = computed(() =>
-      userActions.hasMinimumRole(userGetters.myUser.value, USER_ROLE.monitor)
-    )
-    const rememberMe = ref(false)
-    const rightMenuTransitionName = ref('slideprev')
-    const rightMenuActive = ref(true)
-    const rightMenuLevel = ref('main')
-    appActions.setFade(false)
-
+    // const { actions: videoActions } = useVideoStore()
+    /* onMounted(() => {
+      // Fetch video and video Metadata
+      videoActions.getVideoMetadata().catch((err) => {
+        console.log(err)
+      })
+    })*/
     return {
       monitor: () => router.push('/monitor'),
-
-      rememberMe,
-      localUser: appGetters.currentLocalUser,
-      hasMonitorRole,
-
-      rightMenuActive,
-      rightMenuLevel,
-      rightMenuTransitionName,
     }
   },
 })
