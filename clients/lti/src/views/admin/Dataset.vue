@@ -1,11 +1,17 @@
 <template>
   <div>
-    Display all dataset
-    <dataset-item></dataset-item>
+    Display all datasets
+
+    <SlButton class="m-4" @click="showDatasetItem = !showDatasetItem"
+      >Add dataset</SlButton
+    >
+    <div v-if="showDatasetItem">
+      <dataset-item></dataset-item>
+    </div>
   </div>
 </template>
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
 import DatasetItem from '@/components/admin/DatasetItem.vue'
 export default defineComponent({
   name: 'Dataset',
@@ -13,7 +19,10 @@ export default defineComponent({
     DatasetItem,
   },
   setup() {
-    return {}
+    let showDatasetItem = ref('false')
+    return {
+      showDatasetItem,
+    }
   },
 })
 </script>

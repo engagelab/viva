@@ -224,6 +224,99 @@ export class Video {
   }
 }
 
+export interface DataManagerData {
+  oAuthId: string
+  name: string
+}
+export interface PathData {
+  path: []
+  filename: []
+}
+// When TypeScript can extend enums, this can be made generic..
+export enum VIDEOSTORAGE_TYPES {
+  none = 'none',
+  lagringshotel = 'lagringshotel',
+  cloudian = 'cloudian',
+  gdrive = 'gdrive',
+}
+export enum CONSENT_SELECTION {
+  samtykke = 'samtykke',
+  manuel = 'manuel',
+  article6 = 'article6',
+}
+export interface StorageData {
+  name: VIDEOSTORAGE_TYPES
+  groupId: string
+  storagePath: PathData
+  category: []
+}
+export interface DatasetData {
+  datasetId: string
+  name: string
+  description: string
+  created: string
+  lastUpdated: string
+  elements: string
+  dataManager: DataManagerData
+  active: boolean // active datasetts who will be fetch in app
+  accessGroupId: string // super admin group who  has access to all the datasets and videos
+  lock: Record<string, unknown> // lock the datasett if someone else is editing
+  selectionPriority: string[]
+  selection: Record<string, unknown>
+  dataportenGroups: string[]
+  canvasCourses: string[] // Admin LMS uses canvas courses
+  storages: StorageData[]
+  consentHandling: Record<string, unknown>
+  consent: CONSENT_SELECTION
+  formId: string
+}
+export class Dataset {
+  datasetId: string
+  name: string
+  description: string
+  created: string
+  lastUpdated: string
+  elements: string
+  dataManager: DataManagerData | undefined
+  active: boolean // active datasetts who will be fetch in app
+  accessGroupId: string // super admin group who  has access to all the datasets and videos
+  lock: Record<string, unknown> | undefined // lock the datasett if someone else is editing
+  selectionPriority: string[]
+  selection: Record<string, unknown> | undefined
+  dataportenGroups: string[]
+  canvasCourses: string[] // Admin LMS uses canvas courses
+  storages: StorageData[]
+  consentHandling: Record<string, unknown> | undefined
+  consent: CONSENT_SELECTION
+  formId: string
+
+  constructor(data?: DatasetData) {
+    this.datasetId = data?.datasetId ? data.datasetId : ''
+    this.name = data?.name ? data.name : ''
+    this.description = data?.description ? data.description : ''
+    this.created = data?.created ? data.created : ''
+    this.lastUpdated = data?.lastUpdated ? data.lastUpdated : ''
+    this.elements = data?.elements ? data.elements : ''
+    this.dataManager = data?.dataManager ? data?.dataManager : undefined
+    this.active = data?.active ? data.active : false // active datasetts who will be fetch in app
+    this.accessGroupId = data?.accessGroupId ? data.accessGroupId : ''
+    this.lock = data?.lock ? data?.lock : undefined
+    this.selectionPriority = data?.selectionPriority
+      ? data?.selectionPriority
+      : []
+    this.selection = data?.selection ? data.selection : undefined
+    this.dataportenGroups = data?.dataportenGroups ? data.dataportenGroups : []
+    this.canvasCourses = data?.canvasCourses ? data.canvasCourses : [] // Admin LMS uses canvas courses
+    this.storages = data?.storages ? data?.storages : []
+    this.consentHandling = data?.consentHandling
+      ? data.consentHandling
+      : undefined
+    this.consent = data?.consent
+      ? (data.consent as CONSENT_SELECTION)
+      : CONSENT_SELECTION.manuel
+    this.formId = data?.formId ? data.formId : ''
+  }
+}
 // ---------------  Base CMS model classes ------------------
 // --- Extend these to represent real Squidex model types ---
 
