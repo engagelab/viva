@@ -50,7 +50,7 @@ return new Promise((resolve , reject)=>{
   })
 }
 const TSDImportData = (instanceToken) => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const readable = fs.createReadStream('/Users/sharanya/Projects/slplus/server/services/image.jpg');
 
         const options = {

@@ -20,7 +20,7 @@ const path = require('path')
 const utilities = require('./utilities')
 const db = require('./database')
 const apiRoutes = require('./routing/api')
-const authenticationRoutes = require('./routing/authentication')
+const authenticationRoutes = require('./routing/auth')
 const setup = require('./setup')
 // Create directories if necessary
 setup.createVideoDirectories()
@@ -108,5 +108,18 @@ app.use((req, res, next) => {
 app.use('/upload', uploadRoutes)
 app.use('/viva/auth', authenticationRoutes)
 app.use('/api', apiRoutes)
+
+function clientErrorHandler(err, req, res, next) {
+  if (req.xhr) {
+    res.status(500).send({ err })
+  } else {
+    next(err)
+  }
+}
+function errorHandler(req, res) {
+  res.status(400).end()
+}
+app.use(clientErrorHandler)
+app.use(errorHandler)
 
 module.exports = app

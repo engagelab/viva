@@ -4,24 +4,11 @@
 
 const router = require('express').Router()
 const utilities = require('../utilities')
+const { authoriseUser } = require('../utilities')
 const User = require('../../models/User')
 
 /* ---------------- User activities ---------------- */
 
-// Delete a user
-/* router.delete('/user', utilities.authoriseUser, (request, response) => {
-  User.findOneAndDelete({ _id: request.query._id }, (error, userId) => {
-    if (error) {
-      utilities.errorResponse(
-        { status: 400, message: 'User not deleted ' },
-        response
-      )
-    } else {
-      console.log('User ID deleted')
-      return response.send(userId).status(200)
-    }
-  })
-}) */
 
 /** Update the current user  */
 router.put('/user', utilities.authoriseUser, (request, response) => {
@@ -84,18 +71,8 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Get the current User model
-router.get('/user', utilities.authoriseUser, (request, response) => {
-  if (!request.session.ref) {
-    console.log(`No session ref found! Calling GET /user`)
-    return utilities.errorResponse('Not found', response)
-  }
-  User.findById(request.session.ref, (error, user) => {
-    if (!error && user) {
-      utilities.successResponse({ user: user.redacted() }, response)
-    } else {
-      utilities.errorResponse('Not found', response)
-    }
-  })
+router.get('/user', authoriseUser, async (request, response) => {
+  response.send(response.locals.user)
 })
 
 router.get('/appversion', (request, response) => {

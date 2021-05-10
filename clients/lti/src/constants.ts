@@ -59,43 +59,6 @@ if (
   console.error('USER_ROLE enum mismatch', { t, userRoles })
 }
 
-// Actual names of projects created in Squidex
-// FIXME: Edit this enum to match the content of the env file
-enum PROJECT_NAME {
-  dslplus = 'dslplus',
-  testand = 'testand',
-  slpilot = 'slpilot',
-  v4v = 'v4v',
-  viva = 'viva',
-  none = 'none',
-}
-// Ensure enums match those defined in env file
-const pn = Object.keys(PROJECT_NAME)
-if (
-  !projectNames.every((e: string) => pn.indexOf(e as PROJECT_NAME) > -1) ||
-  projectNames.length !== pn.length
-) {
-  console.error('PROJECT_NAME enum mismatch', { enums: pn, env: projectNames })
-}
-
-// Determines the templates used to display this project
-// FIXME: Edit this enum to match the content of the env file
-enum PROJECT_TYPE {
-  slplus = 'slplus',
-  kapteinmorf = 'kapteinmorf',
-  v4v = 'v4v',
-  viva = 'viva',
-  none = 'none',
-}
-// Ensure enums match those defined in env file
-const p = Object.keys(PROJECT_TYPE)
-if (
-  !projectTypes.every((e: string) => p.indexOf(e as PROJECT_TYPE) > -1) ||
-  projectTypes.length !== p.length
-) {
-  console.error('PROJECT_TYPE enum mismatch', { enums: p, env: projectTypes })
-}
-
 export {
   deviceType,
   baseUrl,
@@ -103,8 +66,6 @@ export {
   assetRoot,
   userRoles,
   USER_ROLE,
-  PROJECT_NAME,
-  PROJECT_TYPE,
   consentStates,
   cmsTokenUrl,
   cmsClientId,

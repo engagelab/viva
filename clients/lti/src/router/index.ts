@@ -15,8 +15,11 @@ import VideoLogs from '../views/admin/Videologs.vue'
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    name: 'Dashboard',
-    component: Dashboard,
+    redirect: '/dashboard',
+  },
+  {
+    path: '/login',
+    redirect: '/dashboard',
   },
   {
     path: '/dashboard',

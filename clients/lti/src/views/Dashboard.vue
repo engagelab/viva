@@ -3,7 +3,7 @@
     <div
       class="relative flex md:flex-row flex-col h-full justify-center bg-blue-button"
     >
-      Fetch videos from s3 bucket hi
+      Welcome to the Dashboard. Your username is: {{ user.username }}
       <SlButton class="m-4" @click="monitor()">Monitor</SlButton>
     </div>
   </div>
@@ -13,9 +13,10 @@
 
 <script lang="ts">
 // @ is an alias to /src
-import { defineComponent /* onMounted */ } from 'vue'
+import { defineComponent, ref, Ref } from 'vue'
 import router from '@/router'
-// import { useVideoStore } from '@/store/useVideoStore'
+import { useUserStore } from '../store/useUserStore'
+import { User } from '../types/main'
 import SlButton from '@/components/base/SlButton.vue'
 export default defineComponent({
   name: 'Dashboard',
@@ -23,15 +24,15 @@ export default defineComponent({
     SlButton,
   },
   setup() {
-    // const { actions: videoActions } = useVideoStore()
-    /* onMounted(() => {
-      // Fetch video and video Metadata
-      videoActions.getVideoMetadata().catch((err) => {
-        console.log(err)
-      })
-    })*/
+    const { getters: userGetters, actions: userActions } = useUserStore()
+    let user: Ref<User> = ref(new User())
+    userActions.getMyUser().then(() => {
+      user.value = userGetters.myUser.value
+    })
+
     return {
       monitor: () => router.push('/monitor'),
+      user,
     }
   },
 })

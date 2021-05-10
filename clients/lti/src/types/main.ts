@@ -1,6 +1,6 @@
 import moment from 'moment'
 import { uuid } from '@/utilities'
-import { PROJECT_NAME, PROJECT_TYPE, USER_ROLE, taskColours } from '@/constants'
+import { USER_ROLE, taskColours } from '@/constants'
 
 // ---------------  Utility -----------------
 declare global {
@@ -111,8 +111,6 @@ export interface PersistedAppState extends Record<string, unknown> {
 
 interface ProjectData {
   _id?: string
-  projectName: PROJECT_NAME
-  projectType: PROJECT_TYPE
   interventionName?: string
   tsdGroupName: string
   tsdGroupID: string
@@ -121,8 +119,6 @@ interface ProjectData {
 }
 export class Project implements ProjectData {
   _id: string
-  projectName: PROJECT_NAME
-  projectType: PROJECT_TYPE
   interventionName: string
   tsdGroupName: string
   tsdGroupID: string
@@ -132,8 +128,6 @@ export class Project implements ProjectData {
 
   constructor(data?: ProjectData) {
     this._id = data && data._id ? data._id : ''
-    this.projectName = data ? data.projectName : PROJECT_NAME.none
-    this.projectType = data ? data.projectType : PROJECT_TYPE.none
     this.interventionName =
       data && data.interventionName ? data.interventionName : ''
     this.tsdGroupName = data && data.tsdGroupName ? data.tsdGroupName : ''
@@ -144,8 +138,6 @@ export class Project implements ProjectData {
 
   update(project: Project): void {
     this._id = project._id
-    this.projectName = project.projectName
-    this.projectType = project.projectType
     this.interventionName = project.interventionName
 
     // Front end variables
@@ -958,22 +950,6 @@ export class User {
     this.email = user.email
     this.lastLogin = user.lastLogin ? new Date(user.lastLogin) : undefined
     this.role = user.role
-    this.projects = []
-    user.projects.forEach((pr) => {
-      const newProject = new Project(pr)
-      this.projects.push(newProject)
-    })
-    this.location.name = user.location.name
-    this.currentProjectId = user.currentProjectId
-    this.participants = []
-    user.participants.forEach((p: Participant | ParticipantData | string) => {
-      let newParticipant
-      if (p instanceof Participant) newParticipant = p
-      else if (typeof p === 'string')
-        newParticipant = new Participant({ _id: p })
-      else newParticipant = new Participant(p)
-      this.participants.push(newParticipant)
-    })
   }
 
   // Convert this to a Plain Old Javascript Object
@@ -1038,7 +1014,7 @@ interface APIRequestPayload {
     | TrackingData
     | FormData
   headers?: Record<string, string>
-  params?: Record<string, string>
+  query?: Record<string, string>
   contentType?: string
   baseURL?: string
 }

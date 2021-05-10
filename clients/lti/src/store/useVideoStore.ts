@@ -35,7 +35,6 @@ async function fetchVideoMetadata(): Promise<VideoData> {
     method: XHR_REQUEST_TYPE.GET,
     credentials: true,
     route: '/api/videos',
-    // params: { id },
   }
   return apiRequest<VideoData>(payload)
 }

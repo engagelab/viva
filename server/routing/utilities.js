@@ -4,6 +4,7 @@
 
 const https = require('https');
 const jwt = require('jsonwebtoken');
+const ObjectId = require('mongoose').Types.ObjectId
 const User = require('../models/User');
 
 let TEST_MODE = false;
@@ -14,7 +15,7 @@ const hotPortAPP = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_APP;
 const hotPortLTI = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_LTI;
 
 const tempUserStore = {};
-//TODO: Base url needs to be updated based on affliatiaon 
+//TODO: Base url needs to be updated based on affliatiaon
 let baseUrl = `${host}`
 if (process.env.NODE_ENV === 'development') {
   switch(process.env.VUE_APP_DEV_SERVER) {
@@ -64,7 +65,15 @@ const authoriseUser = (req, res, next) => {
   if (req.method == 'OPTIONS') {
     next();
   } else if (req.session && req.session.id && req.session.ref) {
-    next();
+    User.findById(req.session.ref, (usererr, user) => {
+      if (!usererr && user) {
+        res.locals.user = user
+        req.session.user = user
+        return next()
+      } else {
+        return next(usererr)
+      }
+    })
   } else if (req.headers.authorization || googleMobileAppTransfer) {
     // This is needed to compensate for an Android issue where session cookie is not being set in the webview.
     // So we attempt to use the token for verification instead..
@@ -158,6 +167,8 @@ function httpRequest(params, postData) {
   });
 }
 
+const isValidObjectId = id => ObjectId.isValid(id) ? String(new ObjectId(id) === id) ? true : false : false;
+
 module.exports = {
   successResponse,
   errorResponse,
@@ -168,4 +179,5 @@ module.exports = {
   baseUrl,
   dataportenGroupListForUser,
   httpRequest,
+  isValidObjectId,
 };

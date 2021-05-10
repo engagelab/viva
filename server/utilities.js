@@ -3,6 +3,8 @@
 */
 const Datasett = require('./models/Datasett')
 const moment = require('moment');
+const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 const addZero = i => {
   return i < 10 ? '0' + i : i
@@ -20,6 +22,28 @@ const asFormattedDateString = date => {
     addZero(date.getMinutes())
   )
 }
+
+const shuffleArray = array => {
+  const a = array.slice();
+  for (let i = a.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+function createReference(data) {
+  return crypto
+    .createHash('sha256')
+    .update(data)
+    .digest('base64');
+}
+
+// Returns a Promise(hashed version of the password)
+const hash = (password) => bcrypt.hash(password, 10)
+// Returns a Promise(true) if password matches the hashed password
+const hashCompare = (password, hashedPassword) => bcrypt.compare(password, hashedPassword)
+
 
 const formPath = (path, datasett, video) => {
   return new Promise((resolve, reject) => {
@@ -76,7 +100,7 @@ const fetchStorage = async video => {
   }
 }
 const fetchStore = (video) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const store = {};
     const slashes = /[/]/g;
     let path = formPath(
@@ -112,11 +136,15 @@ const fetchStore = (video) => {
       }
       resolve(store)
     })
-   }).catch(error => reject(error));
+   })
 }
 
 module.exports = {
   asFormattedDateString,
+  shuffleArray,
+  createReference,
+  hash,
+  hashCompare,
   fetchStorage,
   formPath
 }

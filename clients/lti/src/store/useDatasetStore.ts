@@ -30,7 +30,6 @@ async function fetchDatasets(): Promise<DatasetData> {
     method: XHR_REQUEST_TYPE.GET,
     credentials: true,
     route: '/api/dataset',
-    // params: { id },
   }
   return apiRequest<DatasetData>(payload)
 }
@@ -40,7 +39,7 @@ async function saveDataset(dataset: Dataset): Promise<DatasetData> {
     method: XHR_REQUEST_TYPE.POST,
     credentials: true,
     route: '/api/dataset',
-    params: { dataset: dataset },
+    query: { dataset: dataset },
   }
   return apiRequest<DatasetData>(payload)
 }
@@ -74,8 +73,8 @@ const actions = {
   },
   updateDataset: async function (dataset: Dataset): Promise<void> {
     const response = await saveDataset(dataset)
-    const dataset = new Dataset(response)
-    console.log(dataset)
+    const d = new Dataset(response)
+    console.log(d)
     return Promise.resolve()
   },
 }

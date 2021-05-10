@@ -1,6 +1,6 @@
 const tsdAPI_key = process.env.TSD_API_KEY
 const fs = require('fs');
-const utilities = require('../utilities');
+const utilities = require('../routing/utilities');
 
 
 const tsdAuth = tsd => {
@@ -133,8 +133,7 @@ const exportConsent = (tsd, error, successCallback) => {
                 utvalg = utvalg.replace(regex1, '.');
                 const regex = /:/gi;
                 utvalg = utvalg.replace(regex, '-');
-               if ((utvalg.length > 0) && (utvalg.slice(-1) != '.'))
-                    utvalg = utvalg + '.';
+                if ((utvalg.length > 0) && (utvalg.slice(-1) != '.')) utvalg = utvalg + '.';
                 let filteredConsents = [];
                 if (consents.length != 0) {
                     filteredConsents = consents.filter(consent => {

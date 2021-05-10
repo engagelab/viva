@@ -17,6 +17,18 @@ const videoFolderNames = {
   error: 'error'
 }
 
+const userRolesAsArray = process.env.VUE_APP_USER_ROLES.split(',')
+const userRoles = {
+  user: 'user',
+  monitor: 'monitor',
+  admin: 'admin',
+}
+// Constants used both front and back end should be checked for consistency like this:
+userRolesAsArray.forEach(ur => {
+  if (!userRoles[ur]) console.error('constants.js > userRoles mismatch with env file')
+})
+
+
 // The pipeline does work on a video when the video has the following status:
 // These should be listed in correct order of operation, as the next status is based on list order
 // 'uploaded': video is about to be decrypted if necessary

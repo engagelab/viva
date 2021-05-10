@@ -20,11 +20,15 @@ function xhrRequest<T>({
 
     // Event listener must be added before calling open()
     xhr.addEventListener('loadend', () => {
-      if (xhr.status != 200) {
+      if (xhr.status > 299) {
         reject(xhr.response ? xhr.response : xhr)
       } else {
         resolve(xhr.response)
       }
+    })
+
+    xhr.addEventListener('error', (error) => {
+      reject(error)
     })
 
     xhr.open(method, url)
@@ -42,11 +46,11 @@ function xhrRequest<T>({
 }
 
 // credentials: true or false
-// params: An object containing key:value pairs representing query parameters
+// query: An object containing key:value pairs representing query parameters
 const apiRequest = function <T>({
   route,
   method,
-  params,
+  query,
   body = {}, // Can be FormData, JSON, text, or Object (unknown type). Use contentType to specify which
   headers,
   credentials = true,
@@ -54,8 +58,7 @@ const apiRequest = function <T>({
   baseURL,
 }: APIRequestPayload): Promise<T> {
   // Set token if available
-  // const token = localStorage.getItem('jwt') || ''
-  const token = ''
+  const token = localStorage.getItem('jwt') || ''
 
   const ct = contentType || XHR_CONTENT_TYPE.JSON
   const _baseUrl = baseURL ? baseURL : baseUrl
@@ -69,19 +72,17 @@ const apiRequest = function <T>({
     ...headers,
   }
 
-  // Encode params and body
-  let ps = ''
-  const paramKeys = params
-    ? Reflect.ownKeys(params).map((k) => k.toString())
-    : []
-  if (params && paramKeys.length > 0) {
-    ps += '?'
-    paramKeys.forEach((key, index) => {
-      ps += `${key}=${params[key]}`
-      ps += index < paramKeys.length - 1 ? '&' : ''
+  // Encode query and body
+  let qs = ''
+  const queryKeys = query ? Reflect.ownKeys(query).map((k) => k.toString()) : []
+  if (query && queryKeys.length > 0) {
+    qs += '?'
+    queryKeys.forEach((key, index) => {
+      qs += `${key}=${query[key]}`
+      qs += index < queryKeys.length - 1 ? '&' : ''
     })
   }
-  const encodedPs = encodeURI(ps)
+  const encodedQs = encodeURI(qs)
 
   // Convert body to correct format based on contentType
   if (ct !== XHR_CONTENT_TYPE.MULTIPART) {
@@ -95,7 +96,7 @@ const apiRequest = function <T>({
     delete headers['Content-Type'] // Adding an explicit content type causes problems with Multer. Allow the browser to set it.
   }
 
-  const url = `${_baseUrl}${route}${encodedPs}`
+  const url = `${_baseUrl}${route}${encodedQs}`
 
   // Make the request asynchronously
   return xhrRequest({
