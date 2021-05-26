@@ -106,7 +106,7 @@ app.use((req, res, next) => {
 })
 
 app.use('/upload', uploadRoutes)
-app.use('/viva/auth', authenticationRoutes)
+app.use('/auth', authenticationRoutes)
 app.use('/api', apiRoutes)
 
 function clientErrorHandler(err, req, res, next) {

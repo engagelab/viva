@@ -5,10 +5,6 @@ const videoStorageTypes = require('../constants').videoStorageTypes
 const samtykkeValg = require('../constants').samtykke
 const mongoose = require('mongoose')
 
-const pathSchema = {
-  path: { type: Array },
-  fileName: { type: Array },
-}
 const storageSchema = {
   name: {
     type: String,
@@ -17,14 +13,14 @@ const storageSchema = {
   },
   groupId: { type: String },
   storagePath: {
-    type: Object,
-    of: pathSchema,
+    path: { type: Array },
+    fileName: { type: Array },
   },
   category: { type: Array },
 }
 
 const datasettSchema = new mongoose.Schema({
-  navn: { type: String },
+  name: { type: String },
   created: { type: Date },
   lastUpdated: { type: Date, default: Date.now },
   elementer: { type: String },
@@ -58,7 +54,7 @@ const datasettSchema = new mongoose.Schema({
 datasettSchema.methods.redacted = function () {
   const d = {
     id: this._id.toString(),
-    navn: this.navn,
+    name: this.name,
     storages: this.storages,
     description: this.description,
     utvalgtPriority: this.utvalgtPriority,
