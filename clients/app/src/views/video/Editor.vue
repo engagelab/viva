@@ -118,6 +118,7 @@
           class="absolute top-0 right-0 w-8 m-4"
           src="@/assets/icons/svg/list_white.svg"
           @click="backToList()"
+          alt="back to list"
         />
         <!--SVGSymbol
         applyClasses="w-4 h-4 md:w-8 md:h-8"

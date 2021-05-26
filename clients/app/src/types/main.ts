@@ -263,9 +263,9 @@ export interface DatasetData {
   formId: string
 }
 export class Dataset {
-  datasetId = ''
-  name = ''
-  description = ''
+  datasetId: string
+  name: string
+  description: string
   created: string
   lastUpdated: string
   elements: string
@@ -309,16 +309,9 @@ export class Dataset {
     this.formId = data?.formId ? data.formId : ''
   }
 }
-// ---------------  Base CMS model classes ------------------
-// --- Extend these to represent real Squidex model types ---
 
-export enum DISPLAY_MODE {
-  linear = 'linear',
-  shuffle = 'shuffle',
-  mastery = 'mastery',
-}
+// ---------------  User -----------------
 
-// ---------------  User & Participant -----------------
 export interface UserData {
   _id: string
   username: string
@@ -334,18 +327,13 @@ export interface UserData {
   currentProjectId: string
 }
 export class User {
-  username: string
-  fullName: string
-  reference: string
-  encryptionKey: string
-  draftMetadataIDs: []
-  datasett: Dataset
-
   _id: string
   username: string
   fullName: string
   email: string
   role: USER_ROLE
+  participants: Participant[] = [] // NOTE: Participants are worked with in their own Store
+  projects: Project[] = []
   location: {
     name: string
   }
@@ -411,18 +399,6 @@ export class User {
   }
 }
 
-// -------------- Other UI Types ---------------
-
-export interface AvatarLayout {
-  eyeShape: string
-  eyeColour: string
-  hairShape: string
-  hairColour: string
-  skinColour: string
-  noseShape: string
-  lipColour: string
-  accessories: string
-}
 // ---------------  API -----------------
 
 enum XHR_REQUEST_TYPE {
@@ -446,10 +422,6 @@ interface APIRequestPayload {
     | unknown
     | string
     | User
-    | Participant
-    | Project
-    | ParticipantData
-    | TrackingData
     | FormData
   headers?: Record<string, string>
   query?: Record<string, string>

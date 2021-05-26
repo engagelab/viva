@@ -23,14 +23,23 @@ const datasettSchema = new mongoose.Schema({
   name: { type: String },
   created: { type: Date },
   lastUpdated: { type: Date, default: Date.now },
-  elementer: { type: String },
+  elements: { type: String },
   dataManager: {
     oauthID: { type: String },
     name: { type: String },
   },
-  active: { type: Boolean }, // active datasetts who will be fetch in app
-  accessGroupId: { type: String }, // Super Admin group who access to all the datasetts and videos
-  lock: { type: Object }, // lock the datasett if someone else is editing
+  status: {
+    active: { type: Boolean }, // active datasetts who will be fetch in app
+    accessGroupId: { type: String }, // Super Admin group who access to all the datasetts and videos
+    lock: { type: Object }, // lock the datasett if someone else is editing
+  },
+  consent: {
+    type: {
+      type: String,
+      enum: Object.values(samtykkeValg),
+      default: samtykkeValg.manual,
+    },
+  },
   description: { type: String },
   utvalgtPriority: { type: Array },
   utvalg: { type: Object },
@@ -40,11 +49,7 @@ const datasettSchema = new mongoose.Schema({
     of: storageSchema,
   },
   samtykkeHandling: { type: Object },
-  samtykke: {
-    type: String,
-    enum: Object.values(samtykkeValg),
-    default: samtykkeValg.manual,
-  },
+
   formId: { type: String },
   canvasCourseIds: { type: Array }, // Canvas course IDs
 })

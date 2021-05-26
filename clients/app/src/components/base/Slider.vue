@@ -6,13 +6,12 @@
       :enter-class="enterClass"
       mode="out-in"
     >
-      <component :is="selectedPage" :stateFromParent="stateToChildren" @slider-back="sliderBack" />
+      <component :is="selectedPage" :stateFromParent="stateToChildren" @slider-back="sliderBack" v-bind="$attrs" />
     </transition>
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
 export default {
   props: {
     pages: {
@@ -25,7 +24,7 @@ export default {
     },
     stateToChildren: {
       type: Object,
-      default: () => {},
+      default: () => ({}),
     },
   },
   data() {

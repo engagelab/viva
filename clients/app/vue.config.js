@@ -1,14 +1,11 @@
 // vue.config.js
 const fs = require('fs')
+const hotHost = process.env.VUE_APP_HOTRELOAD_SERVER_HOST
+const hotPort = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_LTI
 const host = process.env.VUE_APP_SERVER_HOST
 const port = process.env.VUE_APP_SERVER_PORT
-const hotHost = process.env.VUE_APP_HOTRELOAD_SERVER_HOST
-const hotPort = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_APP
 const https_key = fs.readFileSync(process.env.SSL_KEY_FILE)
 const https_cert = fs.readFileSync(process.env.SSL_CERT_FILE)
-
-// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
-//   .BundleAnalyzerPlugin
 
 module.exports = {
   pluginOptions: {
@@ -16,25 +13,15 @@ module.exports = {
       locale: 'no',
       fallbackLocale: 'no',
       localeDir: 'locales',
-      enableInSFC: true
+      enableInSFC: true,
     },
-    cordovaPath: 'src-cordova'
+    cordovaPath: 'src-cordova',
   },
   publicPath: process.env.BASE_URL || '',
   outputDir: 'www',
   configureWebpack: {
     devtool: 'source-map',
   },
-/*   configureWebpack: {
-    devtool: 'inline-source-map',
-    resolve: {
-      alias: {
-        '@': `${__dirname}/src`
-      }
-    },
-    plugins:
-      process.env.NODE_ENV == 'testing' ? [new BundleAnalyzerPlugin()] : []
-  }, */
   chainWebpack: config => {
     config.module
       .rule('i18n')
@@ -47,6 +34,17 @@ module.exports = {
       const tmp = args[0]
       tmp.template = 'src/index.html'
       tmp.favicon = 'src/assets/icons/favicon.ico'
+      return args
+    })
+    // raw-loader is for loading querys in .txt files
+    config.module
+      .rule('raw')
+      .test(/\.(gql|graphql|txt)$/i)
+      .use('raw-loader')
+      .loader('raw-loader')
+      .end()
+    config.plugin('fork-ts-checker').tap(args => {
+      args[0].typescript = { configFile: '../../tsconfig.json' }
       return args
     })
     if (process.env.NODE_ENV === 'development') {
@@ -64,7 +62,7 @@ module.exports = {
     port: hotPort,
     overlay: {
       warnings: true,
-      errors: true
+      errors: true,
     },
     proxy: {
       '/api': {
@@ -77,8 +75,8 @@ module.exports = {
       },
       '/upload': {
         target: `${host}:${port}`,
-        changeOrigin: true
-      }
-    }
-  }
+        changeOrigin: true,
+      },
+    },
+  },
 }
