@@ -3,28 +3,29 @@
  */
 
 const mongoose = require('mongoose')
-const userRolesAsArray = require('../constants').userRolesAsArray
+const userRoles = require('../constants').userRoles
 
 const userSchema = new mongoose.Schema({
   status: {
     role: {
       type: String,
-      enum : userRolesAsArray,
-      default: userRolesAsArray[0]
+      enum : Object.values(userRoles),
+      default: userRoles.user
     },
     created: { type: Date, default: Date.now },
     provider: { type: String }, // Dataporten or Canvas ?
-    lastLogin: { type: Date },
+    lastLogin: { type: Date, default: Date.now },
     totalDrafts: { type: Number, default: 0 },
     totalUploads: { type: Number, default: 0 },
     totalTransfers: { type: Number, default: 0 }
   },
   profile: {
-    username: { type: String },
+    username: { type: String, default: '' },
     password: { type: String },
-    fullName: { type: String },
+    fullName: { type: String, default: '' },
     oauthId: { type: String },
     reference: { type: String, index: { unique: true } }, // This should be sent to the client rather than _id
+    groups: { type: Array }, // Groups this user is a member of
   },
   tokens: {
     access_token: { type: String },

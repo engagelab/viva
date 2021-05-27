@@ -111,7 +111,7 @@ app.use('/api', apiRoutes)
 
 function clientErrorHandler(err, req, res, next) {
   if (req.xhr) {
-    res.status(500).send({ err })
+    res.status(400).send({ err })
   } else {
     next(err)
   }

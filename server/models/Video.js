@@ -17,7 +17,7 @@ const sharingSchema = {
 }
 const videoSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.ObjectId, ref: 'User' }, // Back end only.
-  settingId: { type: mongoose.Schema.ObjectId, ref: 'Datasett' },
+  datasetId: { type: mongoose.Schema.ObjectId, ref: 'Datasett' },
   fileType: { type: String, default: '' }, // File extension to use e.g. mp4  Assigned by FFMPEG, back end only.
   fileId: { type: String }, // Used instead of video._id front end, and for QR Code.
   filename: { type: String }, // The name of the file stored server-side by TUS
@@ -61,7 +61,7 @@ videoSchema.methods.redacted = function () {
   return {
     status: this.status,
     fileId: this.fileId,
-    settingId: this.settingId,
+    datasetId: this.datasetId,
     pipelineInProgress: this.pipelineInProgress,
     isEncrypted: this.isEncrypted,
     isEdited: this.isEdited,
@@ -74,7 +74,7 @@ videoSchema.methods.redacted = function () {
     duration: this.duration,
     errorInfo: this.errorInfo,
     consents: this.consents, // Array of consenters
-    sharing :this.sharing ,
+    sharing :this.sharing,
   }
 }
 

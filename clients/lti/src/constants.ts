@@ -9,20 +9,11 @@ if (process.env.NODE_ENV === 'development') {
   baseUrl = `${theHost}:${thePort}`
 }
 
-const cmsUrl: string = process.env.VUE_APP_CMS_HOST || ''
 const assetRoot: string = process.env.VUE_APP_CMS_HOST + '/api/assets' || ''
-const cmsTokenUrl = process.env.VUE_APP_SQUIDEX_TOKEN_URL || ''
-const cmsClientId = process.env.VUE_APP_SQUIDEX_CLIENT_ID || ''
-const cmsClientSecret = process.env.VUE_APP_SQUIDEX_CLIENT_SECRET || ''
 const userRolesString = process.env.VUE_APP_USER_ROLES || ''
 const userRoles = userRolesString.split(',')
 const consentStatesString = process.env.VUE_APP_CONSENT_STATES || ''
 const consentStates = consentStatesString.split(',')
-const projectNamesString = process.env.VUE_APP_PROJECT_NAMES || ''
-const projectNames = projectNamesString.split(',') || ''
-const projectTypesString = process.env.VUE_APP_PROJECT_TYPES || ''
-const projectTypes = projectTypesString.split(',') || ''
-const masteryBaselineID = 'mastery-baseline'
 let appVersion: string =
   document.documentElement.getAttribute('data-appversion') || ''
 
@@ -41,10 +32,8 @@ const cordovaConstants = {
   audioRecordingMaxDuration: 300000, // 5 minutes
 }
 
-const taskColours = ['#A861A6', '#F84016', '#009F4B', '#A9BD50', '#FFDE01']
-
 // User roles determine what is displayed on screen UI
-// FIXME: Edit this enum to match the content of the env file
+// Edit this enum to match the content of the env file
 enum USER_ROLE {
   user = 'user',
   monitor = 'monitor',
@@ -62,16 +51,10 @@ if (
 export {
   deviceType,
   baseUrl,
-  cmsUrl,
   assetRoot,
   userRoles,
   USER_ROLE,
   consentStates,
-  cmsTokenUrl,
-  cmsClientId,
-  cmsClientSecret,
   cordovaConstants,
   appVersion,
-  masteryBaselineID,
-  taskColours,
 }

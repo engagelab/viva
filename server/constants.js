@@ -28,7 +28,6 @@ userRolesAsArray.forEach(ur => {
   if (!userRoles[ur]) console.error('constants.js > userRoles mismatch with env file')
 })
 
-
 // The pipeline does work on a video when the video has the following status:
 // These should be listed in correct order of operation, as the next status is based on list order
 // 'uploaded': video is about to be decrypted if necessary
@@ -54,14 +53,14 @@ const videoStorageTypes = {
   none: 'none',
   google: 'google',
   onedrive: 'onedrive',
+  educloud: 'educloud',
   lagringshotell: 'lagringshotell'
 }
 
-const samtykke = {
+const consentTypes = {
   samtykke: 'samtykke',
   manuel: 'manuel',
   article6: 'article6',
-
 }
 
 const executables = {
@@ -161,5 +160,6 @@ module.exports = {
   adminUsers,
   pilotDatasett,
   pilotUsers,
-  samtykke
+  consentTypes,
+  userRoles
 }

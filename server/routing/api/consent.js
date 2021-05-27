@@ -7,8 +7,7 @@ const utilities = require('../utilities')
 const tsd = require('../../services/tsdConsent')
 const User = require('../../models/User')
 
-router.get('/consents', utilities.authoriseUser, (request, response) => {
-  // return utilities.successResponse([], response)
+router.get('/consents', utilities.authoriseUser, (request, response, next) => {
   User.findById(request.session.ref, (err, user) => {
     if (!err) {
       if (request.query.datasettId && request.query.formId && request.query.formId !== '')  {
@@ -19,35 +18,31 @@ router.get('/consents', utilities.authoriseUser, (request, response) => {
             formId: request.query.formId,
             utvalg: request.query.utvalg
           },
-          error => utilities.errorResponse(error, response, 400),
-          consents => utilities.successResponse(consents, response)
+          error => next(error),
+          consents => response.send(consents)
         )
       } else {
-        utilities.successResponse([], response)
+        response.send([])
       }
     } else if (err) {
-      utilities.errorResponse(err, response, 400)
+      next(err)
     }
   })
 })
 
 // Post to TSD with utvlag instances to create consent
-router.post('/consent', utilities.authoriseUser, (request, response) => {
+router.post('/consent', utilities.authoriseUser, (request, response, next) => {
   let datasett = request.query
   let groups = JSON.parse(datasett.dataportenGroupsId)
   console.log(groups)
   if (request.query.utvalg) {
     tsd.createConsent(
       { user: request.body, datasett: request.query },
-      error =>
-        utilities.errorResponse(
-          { status: 400, message: error.toString() },
-          response
-        ),
-      clientID => utilities.successResponse(clientID, response)
+      error => next(error),
+      clientID => response.send(clientID)
     )
   } else {
-    utilities.successResponse([], response)
+    response.send([])
   }
 })
 

@@ -9,7 +9,7 @@ export default class Datasett {
       this.created = d.created || ''
       this.elementer = d.elementer || ''
       this.dataManager = d.dataManager || {
-        oauthID: '',
+        oauthId: '',
         name: ''
       }
       this.utvalgtPriority = d.utvalgtPriority || []

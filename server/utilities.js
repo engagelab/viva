@@ -1,7 +1,7 @@
 /*
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
-const Datasett = require('./models/Datasett')
+const Datasett = require('./models/Dataset')
 const moment = require('moment');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');

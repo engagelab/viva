@@ -7,13 +7,11 @@ const utilities = require('../utilities')
 const videoStatusTypes = require('../../constants').videoStatusTypes;
 const Video = require('../../models/Video')
 
-
 /* ---------------- Video activities ---------------- */
 
-// Get the status of a User's videos for the app client
-// This route is used also for viva_inCanvas to fetch all user's videos
-router.get('/videos'/*, utilities.authoriseUser*/, (request, response) => {
-  Video.find({ userId: request.session.ref }, (error, videos) => {
+// Get the calling User's videos
+router.get('/videos', utilities.authoriseUser, (request, response) => {
+  Video.find({ userId: response.locals.user._id }, (error, videos) => {
     let videosToReturn = []
     if (error) {
       console.error(error)

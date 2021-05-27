@@ -2,23 +2,24 @@
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
 
-const https = require('https');
-const jwt = require('jsonwebtoken');
+const https = require('https')
+const jwt = require('jsonwebtoken')
 const ObjectId = require('mongoose').Types.ObjectId
-const User = require('../models/User');
+const User = require('../models/User')
+const { userRoles } = require('../constants')
 
-let TEST_MODE = false;
+let TEST_MODE = false
 const host = process.env.VUE_APP_SERVER_HOST
 const port = process.env.VUE_APP_SERVER_PORT
-const hotHost = process.env.VUE_APP_HOTRELOAD_SERVER_HOST;
-const hotPortAPP = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_APP;
-const hotPortLTI = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_LTI;
+const hotHost = process.env.VUE_APP_HOTRELOAD_SERVER_HOST
+const hotPortAPP = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_APP
+const hotPortLTI = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_LTI
 
-const tempUserStore = {};
+const tempUserStore = {}
 //TODO: Base url needs to be updated based on affliatiaon
 let baseUrl = `${host}`
 if (process.env.NODE_ENV === 'development') {
-  switch(process.env.VUE_APP_DEV_SERVER) {
+  switch (process.env.VUE_APP_DEV_SERVER) {
     case 'lti':
       baseUrl = `https://${hotHost}:${hotPortLTI}`
       break
@@ -31,39 +32,77 @@ if (process.env.NODE_ENV === 'development') {
   }
 }
 
-const errorResponse = (error, response, status) => {
-  console.log(`Error: ${error.message}`);
-  let statusNumber = status || error.status || 400;
-  response.status(statusNumber).send({
-    message: error.message,
-  });
-};
-
-const successResponse = (object, response) => {
-  response.status(200).send(object);
-};
-
-const shuffleArray = array => {
-  const a = array.slice();
+const shuffleArray = (array) => {
+  const a = array.slice()
   for (let i = a.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
   }
-  return a;
-};
+  return a
+}
 
-const setTestMode = mode => {
-  TEST_MODE = mode;
-};
+const setTestMode = (mode) => {
+  TEST_MODE = mode
+}
 
-const getTestMode = () => TEST_MODE;
+const getTestMode = () => TEST_MODE
+
+function createToken(req, res, next) {
+  const jwtToken = req.headers.authorization
+    ? req.headers.authorization.substring(4)
+    : req.query.jwt
+  try {
+    return jwt.verify(
+      jwtToken,
+      new Buffer.from(process.env.JWT_SECRET, 'base64')
+    )
+  } catch (error) {
+    return next(error)
+  }
+}
+
+function tokenAuth(req, res, next, googleMobileAppTransfer) {
+  // This is needed to compensate for an Android issue where session cookie is not being set in the webview.
+  // So we attempt to use the token for verification instead..
+  const token = createToken(req, res)
+  if (token && token.ref && tempUserStore[token.ref]) {
+    // Avoid a DB lookup if possible
+    req.session.ref = tempUserStore[token.ref]
+    req.session.save()
+    console.log(
+      `${new Date().toUTCString()} Authorisation by token (temp store) for userid: ${
+        req.session.ref
+      } ${googleMobileAppTransfer ? 'for Google Transfer' : ''}`
+    )
+    return next()
+  } else if (token && token.ref) {
+    User.findOne({ reference: token.ref }, (err2, user) => {
+      if (!err2 && user) {
+        req.session.ref = user.id
+        tempUserStore[token.ref] = user.id
+        req.session.save()
+        console.log(
+          `${new Date().toUTCString()} Authorisation by token for userid: ${
+            user.id
+          } username: ${user.username} ${
+            googleMobileAppTransfer ? 'for Google Transfer' : ''
+          }`
+        )
+        return next()
+      } else {
+        return next(err2)
+      }
+    })
+  }
+}
 
 const authoriseUser = (req, res, next) => {
   const device = req.query.device
   const mobileApp = typeof device === 'string' && device == 'mobileApp'
-  const googleMobileAppTransfer = mobileApp && req.route.path == '/google_transfer'
+  const googleMobileAppTransfer =
+    mobileApp && req.route.path == '/google_transfer'
   if (req.method == 'OPTIONS') {
-    next();
+    next()
   } else if (req.session && req.session.id && req.session.ref) {
     User.findById(req.session.ref, (usererr, user) => {
       if (!usererr && user) {
@@ -75,109 +114,79 @@ const authoriseUser = (req, res, next) => {
       }
     })
   } else if (req.headers.authorization || googleMobileAppTransfer) {
-    // This is needed to compensate for an Android issue where session cookie is not being set in the webview.
-    // So we attempt to use the token for verification instead..
-    const jwtToken = req.headers.authorization
-      ? req.headers.authorization.substring(4)
-      : req.query.jwt;
-    try {
-      const token = jwt.verify(
-        jwtToken,
-        new Buffer.from(process.env.JWT_SECRET, 'base64')
-      );
-      if (token) {
-        // Avoid a DB lookup if possible
-        if (tempUserStore[token.ref]) {
-          req.session.ref = tempUserStore[token.ref];
-          req.session.save();
-          console.log(`${new Date().toUTCString()} Authorisation by token (temp store) for userid: ${req.session.ref} ${googleMobileAppTransfer ? 'for Google Transfer' : ''}`);
-          return next();
-        } else {
-          User.findOne({ reference: token.ref }, (err2, user) => {
-            if (!err2 && user) {
-              req.session.ref = user.id;
-              tempUserStore[token.ref] = user.id;
-              req.session.save();
-              console.log(`${new Date().toUTCString()} Authorisation by token for userid: ${user.id} username: ${user.username} ${googleMobileAppTransfer ? 'for Google Transfer' : ''}`);
-              return next();
-            } else {
-              return errorResponse(err2, res, err.status);
-            }
-          });
-        }
-      }
-    } catch (err3) {
-      return errorResponse(err3, res, err.status);
-    }
+    tokenAuth(req, res, next, googleMobileAppTransfer)
   } else {
-    var err = new Error('Invalid login');
-    err.status = 401;
-    return errorResponse(err, res, err.status);
+    var err = new Error('Invalid login')
+    err.status = 401
+    return next(err)
   }
-};
+}
 
-// Get DP group IDs
-const dataportenGroupListForUser = user => {
-  const options = {
-    host: 'groups-api.dataporten.no',
-    port: 443,
-    path: '/groups/me/groups',
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${user.tokens.access_token}`,
-    },
-  };
-  return httpRequest(options, "");
-};
+// Check that a user has at least the role requested
+const hasMinimumUserRole = (user, requestedRole) => {
+  if (!user) return false
+  switch (requestedRole) {
+    case userRoles.user:
+      return true
+    case userRoles.monitor:
+      return user.profile.role === userRoles.monitor ||
+        user.profile.role === userRoles.admin
+        ? true
+        : false
+    case userRoles.admin:
+      return user.profile.role === userRoles.admin ? true : false
+    default:
+      return false
+  }
+}
 
 /**  https Request to TSD/ outside portal from  VIVA server */
 function httpRequest(params, postData) {
-  return new Promise(function(resolve, reject) {
-    const req = https.request(params, function(res) {
+  return new Promise(function (resolve, reject) {
+    const req = https.request(params, function (res) {
       if (res.statusCode < 200 || res.statusCode >= 300) {
         reject(
           new Error(
-            `Rejected HTTP Response. statusCode: ${
-              res.statusCode
-            } calling: ${params.hostname + params.path} `
+            `Rejected HTTP Response. statusCode: ${res.statusCode} calling: ${
+              params.hostname + params.path
+            } `
           )
-        );
+        )
       }
-      let body = [];
-      res.on('data', function(chunk) {
-        body.push(chunk);
-      });
-      res.on('end', function() {
+      let body = []
+      res.on('data', function (chunk) {
+        body.push(chunk)
+      })
+      res.on('end', function () {
         try {
-          body = JSON.parse(Buffer.concat(body).toString());
+          body = JSON.parse(Buffer.concat(body).toString())
         } catch (error) {
-          return reject(error);
+          return reject(error)
         }
-        resolve(body);
-      });
-    });
-    req.on('error', function(error) {
-      console.log(`HTTP Request error: ${error}`);
-      reject(error);
-    });
+        resolve(body)
+      })
+    })
+    req.on('error', function (error) {
+      console.log(`HTTP Request error: ${error}`)
+      reject(error)
+    })
     if (postData) {
-      req.write(postData);
+      req.write(postData)
     }
-    req.end();
-  });
+    req.end()
+  })
 }
 
-const isValidObjectId = id => ObjectId.isValid(id) ? String(new ObjectId(id) === id) ? true : false : false;
+const isValidObjectId = (id) =>
+  ObjectId.isValid(id) && String(new ObjectId(id) === id)
 
 module.exports = {
-  successResponse,
-  errorResponse,
   authoriseUser,
+  hasMinimumUserRole,
   shuffleArray,
   setTestMode,
   getTestMode,
   baseUrl,
-  dataportenGroupListForUser,
   httpRequest,
   isValidObjectId,
-};
+}

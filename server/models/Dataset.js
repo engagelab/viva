@@ -2,14 +2,14 @@
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
  */
 const videoStorageTypes = require('../constants').videoStorageTypes
-const samtykkeValg = require('../constants').samtykke
+const consentTypes = require('../constants').consentTypes
 const mongoose = require('mongoose')
 
 const storageSchema = {
   name: {
     type: String,
     enum: Object.values(videoStorageTypes),
-    default: videoStorageTypes.google,
+    default: videoStorageTypes.educloud,
   },
   groupId: { type: String },
   storagePath: {
@@ -21,37 +21,36 @@ const storageSchema = {
 
 const datasettSchema = new mongoose.Schema({
   name: { type: String },
-  created: { type: Date },
-  lastUpdated: { type: Date, default: Date.now },
-  elements: { type: String },
-  dataManager: {
-    oauthID: { type: String },
-    name: { type: String },
-  },
+  description: { type: String },
+  created: { type: Date, default: Date.now },
+  formId: { type: String }, // Nettskjema form ID
   status: {
-    active: { type: Boolean }, // active datasetts who will be fetch in app
-    accessGroupId: { type: String }, // Super Admin group who access to all the datasetts and videos
-    lock: { type: Object }, // lock the datasett if someone else is editing
+    lastUpdated: { type: Date, default: Date.now }, // Last time this Dataset was changed
+    active: { type: Boolean }, // Only active datasetts who will be fetched
+    lockedBy: { type: mongoose.Schema.ObjectId, ref: 'User' }  // Who has locked the datasett for editing
   },
   consent: {
     type: {
       type: String,
-      enum: Object.values(samtykkeValg),
-      default: samtykkeValg.manual,
+      enum: Object.values(consentTypes),
+      default: consentTypes.manual,
     },
   },
-  description: { type: String },
-  utvalgtPriority: { type: Array },
-  utvalg: { type: Object },
-  dataportenGroups: { type: Array },
+  users: {
+    dataManager: {
+      oauthId: { type: String },
+      name: { type: String },
+    },
+    adminGroup: { type: String },
+    dataportenGroups: { type: Array },
+    canvasGroups: { type: Array }  // Canvas course IDs
+  },
+  selectionPriority: { type: Array, default: [] }, // Order of appearance of the utvalg categories
+  selection: { type: Object, default: {}}, //  'utvalg' selection
   storages: {
     type: Array,
     of: storageSchema,
   },
-  samtykkeHandling: { type: Object },
-
-  formId: { type: String },
-  canvasCourseIds: { type: Array }, // Canvas course IDs
 })
 
 // Choose what attributes will be returned with the setting object
@@ -60,25 +59,24 @@ datasettSchema.methods.redacted = function () {
   const d = {
     id: this._id.toString(),
     name: this.name,
-    storages: this.storages,
     description: this.description,
-    utvalgtPriority: this.utvalgtPriority,
     created: this.created,
-    lastUpdated: this.lastUpdated,
-    elementer: this.elementer,
-    utvalg: this.utvalg,
-    samtykke: this.samtykke,
-    samtykkeHandling: this.samtykkeHandling,
-    dataManager: this.dataManager,
     formId: this.formId,
-    active: this.active,
-    accessGroupId: this.accessGroupId,
-    lock: this.lock,
+    selectionPriority: this.selectionPriority,
+    selection: this.utvalg,
+    status: {
+      lastUpdated: this.lastUpdated,
+      lockedBy: this.lock,
+    },
+    consent: this.consent,
+    users: {
+      dataManager: this.dataManager,
+    },
+    storages: this.storages,
   }
   delete d.storages.path
   return d
 }
-
 // Duplicate the ID field.
 // eslint-disable-next-line
 datasettSchema.virtual('id').get(function () {

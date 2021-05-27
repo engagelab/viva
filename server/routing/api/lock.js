@@ -7,18 +7,15 @@ const Datasett = require('../../models/Datasett')
 const User = require('../../models/User')
 
 /* To set/unset lock for a datasett */
-router.put('/lock', utilities.authoriseUser, (request, response) => {
+router.put('/lock', utilities.authoriseUser, (request, response, next) => {
     let datasett = request.body
     let lockMode = request.query.lock;
-    
+
     User.findById(request.session.ref, (err, user) => {
       if (!err) {
           Datasett.findOne({ _id: datasett.id }, (error, foundDatasett) => {
             if (error || !foundDatasett) {
-              utilities.errorResponse(
-                { status: 400, message: 'datasett not created' },
-                response
-              )
+              next(new Error({ status: 400, message: 'datasett not created' }))
             } else {
               const d = foundDatasett
                 if ((lockMode == 'check') &&
@@ -29,7 +26,7 @@ router.put('/lock', utilities.authoriseUser, (request, response) => {
                         .send(request.query.mode == 'Admin' ? string : '')
                         .status(200)
                         .end()
-                    
+
                 } else {
                     if (lockMode == 'set') {
                         let l = {
@@ -65,20 +62,20 @@ router.put('/lock', utilities.authoriseUser, (request, response) => {
                             .send(request.query.mode == 'Admin' ? d : {})
                             .status(200)
                             .end()
-                    } else { 
+                    } else {
                         response
                         .send(request.query.mode == 'Admin' ? d : {})
                         .status(200)
                         .end()
                     }
-                    
-                }  
+
+                }
             }
           })
      } else if (err) {
-        utilities.errorResponse(err, response, 400)
+        next(err)
       } else {
-        utilities.successResponse([], response)
+        response.send([])
       }
     })
 })

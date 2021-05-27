@@ -4,10 +4,10 @@
 
 const users = require('./users');
 const videos = require('./videos');
-const settings = require('./settings');
+const datasets = require('./datasets');
 const consents = require('./consent');
 const transfer = require('./googleTransfer');
 const groups = require('./dataportengroups');
 const lock = require('./lock');
 
-module.exports = [users, videos, settings, consents, transfer, groups, lock];
+module.exports = [users, videos, datasets, consents, transfer, groups, lock];

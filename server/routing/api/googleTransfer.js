@@ -37,7 +37,7 @@ const scopes = [
 ];
 
 // Authenticate for use of Google Drive with this user's account
-router.get('/google_transfer', utilities.authoriseUser, (request, response) => {
+router.get('/google_transfer', utilities.authoriseUser, (request, response, next) => {
   // const decodedUserToken = jwt.verify(request.user.id_token, 'shhhhh')
   const csrf_token = require('crypto')
     .randomBytes(20)
@@ -51,7 +51,7 @@ router.get('/google_transfer', utilities.authoriseUser, (request, response) => {
     user.tokens.csrf_token = csrf_token;
     user.save(error => {
       if (error) {
-        return utilities.errorResponse(error, response, 400);
+        return next(error)
       } else {
         // Create the request to Google
         const device = request.query.device;
