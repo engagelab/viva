@@ -5,13 +5,13 @@
 
 require('dotenv').config({ silent: process.env.NODE_ENV !== 'development' })
 const nodeCleanup = require('node-cleanup')
-const { pipelineErrorMessages, pipelineStates, videoFolderNames, videoStatusTypes } = require('./constants')
+const { pipelineErrorMessages, pipelineStates, videoFolderNames, videoStatusTypes, videoStorageTypes } = require('./constants')
 const Video = require('./models/Video')
 const db = require('./database')
 const ffmpeg = require('./subprocesses/ffmpegOperation')
 const fileOperations = require('./subprocesses/fileOperations')
 const lagringshotell = require('./subprocesses/lagringshotellOperations')
-const fetchStorage = require('./utilities').fetchStorage
+const fetchStorage = require('./services/storage').fetchStorage
 
 // Initialise queues and populate with unfinished work
 const videoBacklog = {} // Multiple arrays queuing videos for each state in the pipeline
@@ -149,7 +149,7 @@ const beginProcessingVideo = pStatus => {
         fetchStorage(nextVideo).then(stores => {
           const allPromises = []
           stores.forEach(store => {
-            if (store.type == 'lagringshotell') {
+            if (store.name == videoStorageTypes.lagringshotell) {
               console.log(store);
               const LHpromise = lagringshotell.createVideoAtLagringshotell(
                 {
@@ -185,7 +185,7 @@ const beginProcessingVideo = pStatus => {
 const runProcessing = () => {
   pipelineStates.forEach(pStatus => {
     // An active queue is empty and videos are waiting for the given state
-    if (!activelyProcessing[pStatus] && videoBacklog.hasOwnProperty(pStatus)) {
+    if (!activelyProcessing[pStatus] && Object.hasOwnProperty.call(videoBacklog, pStatus)) {
       // Shift a video from the front of the queue, if one exists
       const nextVideo = videoBacklog[pStatus].shift()
       if (nextVideo) {

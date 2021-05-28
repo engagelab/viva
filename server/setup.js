@@ -3,9 +3,9 @@ const fs = require('fs')
 const dirPath = process.cwd()
 
 //const User = require('./models/User')
-//const Datasett = require('./models/Datasett')
+//const Dataset = require('./models/Dataset')
 //const videoStorageTypes = require('./constants').videoStorageTypes
-//const pilotDatasett = require('./constants').pilotDatasett
+//const pilotDataset = require('./constants').pilotDataset
 const videoFolderNames = require('./constants').videoFolderNames
 
 /*const createReference = data =>
@@ -46,7 +46,7 @@ const videoFolderNames = require('./constants').videoFolderNames
       }
     )
     // Not needed anymore
-    /*Datasett.findOne(
+    /*Dataset.findOne(
         { 'storages[0].name': videoStorageTypes.google },
         (err, foundSetting) => {
           let dataSett = foundSetting
@@ -68,7 +68,7 @@ const videoFolderNames = require('./constants').videoFolderNames
               dataManager: 'engagelab',
               elementer: 23
             }
-            Datasett.create(dataSett)
+            Dataset.create(dataSett)
             console.log('Created a test Setting')
           }
         }
@@ -77,8 +77,8 @@ const videoFolderNames = require('./constants').videoFolderNames
 }
 
 const createPilotSchoolList = () => {
-  pilotDatasett.forEach(dataSett => {
-    Datasett.findOne({ navn: dataSett }, (err, foundSetting) => {
+  pilotDataset.forEach(dataSett => {
+    Dataset.findOne({ navn: dataSett }, (err, foundSetting) => {
       let setting = foundSetting
       if (err) {
         return console.log(err)
@@ -97,7 +97,7 @@ const createPilotSchoolList = () => {
           dataManager: 'engagelab',
           elementer: 23
         }
-        Datasett.create(setting)
+        Dataset.create(setting)
         console.log(`Created a pilot school: ${dataSett}`)
       }
     })

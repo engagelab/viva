@@ -112,11 +112,11 @@ router.put(
   utilities.authoriseUser,
   (request, response, next) => {
     const updateData = request.body
-    Dataset.findById(updateData._id, async (error, foundDatasett) => {
-      if (error || !foundDatasett)
+    Dataset.findById(updateData._id, async (error, foundDataset) => {
+      if (error || !foundDataset)
         next(error || new Error({ status: 400, message: 'datasett not found' }))
       else {
-        const d = foundDatasett
+        const d = foundDataset
         updateUtvalg({
           utvalg: d.utvalg,
           path: request.body.path,

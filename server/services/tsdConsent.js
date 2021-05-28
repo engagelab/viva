@@ -24,11 +24,11 @@ const tsdAuth = tsd => {
     }
     return utilities.httpRequest(options, data)
 }
-const tsdImportDatasett = (tsd) => {
+const tsdImportDataset = (tsd) => {
     return new Promise((resolve, reject) => {
         const options = {
             hostname: 'api.tsd.usit.no',
-            path: '/v1/p917/files/stream/vivaTestDatasett.json?group=p917-member-group',
+            path: '/v1/p917/files/stream/vivaTestDataset.json?group=p917-member-group',
             method: 'PUT',
             headers: {
                 Authorization: `Bearer ${tsd.importToken}`,
@@ -53,7 +53,7 @@ const jsonToFile = (tsd) => {
             console.log('Error writing file', err)
         } else {
             console.log('Successfully wrote file')
-            tsdImportDatasett(tsd);
+            tsdImportDataset(tsd);
         }
     })
 }

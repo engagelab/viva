@@ -6,7 +6,7 @@ const path = process.env.LAGRINGSHOTELL
 require('dotenv').config({ silent: process.env.NODE_ENV === 'production' })
 
 /* Create a folder if it does not exist */
-/* Need to create path based on Datasett.storagePath */
+/* Need to create path based on Dataset.storagePath */
 const createFolder = folderPath => {
   return new Promise((resolve, reject) => {
 

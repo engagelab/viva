@@ -23,32 +23,29 @@ tusServer.on(EVENTS.EVENT_UPLOAD_COMPLETE, (event) => {
   //tusMetaData decodes to string rather than array of objects
   const metadata = JSON.parse(metadataDecoded.video)
   const videoMetadata = Object.assign({}, metadata)
-  videoMetadata.status = videoStatusTypes.premeta
-  videoMetadata.filename = event.file.id
+  videoMetadata.status.main = videoStatusTypes.premeta
+  videoMetadata.file.name = event.file.id
 
   // remove draftId from user after a successful upload and create server video
-  User.findOne({ reference: videoMetadata.userRef }, (error, user) => {
+  User.findOne({ 'profile.reference': videoMetadata.userRef }, (error, u) => {
     if (error) {
       console.log('Unknown User')
     } else {
-      const u = user
-      const i = u.draftMetadataIDs.indexOf(videoMetadata.fileId)
+      const i = u.videos.draftIDs.indexOf(videoMetadata.details.id)
       if (i > -1) {
-        videoMetadata.userId = user.id
-        Video.create(videoMetadata, (error2) => {
-          if (error2) {
-            console.log('Error creating DB entry for file upload')
-          }
-          u.draftMetadataIDs.splice(i, 1)
+        videoMetadata.users.owner = u._id
+        Video.create(videoMetadata, (videoCreateError) => {
+          if (videoCreateError) console.log('Error creating DB entry for file upload')
+          u.videos.draftIDs.splice(i, 1)
           if (!u.stats.totalUploads) u.stats.totalUploads = 0
           u.stats.totalUploads += 1
           u.save()
         })
       }
       console.log(
-        `${new Date().toUTCString()} Upload received for user: ${user.id} id: ${
-          user.username
-        } filename: ${videoMetadata.filename}`
+        `${new Date().toUTCString()} Upload received for user: ${u.profile.username} id: ${
+          u._id
+        } filename: ${videoMetadata.file.name}`
       )
     }
   })

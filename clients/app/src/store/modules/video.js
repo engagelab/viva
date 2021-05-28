@@ -224,7 +224,7 @@ export default {
         })
       }
     },
-    // Create a new draft metadata for the given User and Setting
+    // Create a new draft metadata for the given User and Dataset
     createDraftVideo (
       { dispatch, commit, rootGetters },
       { setting, datasetInfo, user }

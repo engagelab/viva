@@ -17,8 +17,7 @@ interface State {
   selectedDataset: Dataset | undefined
   datasets: Map<string, Dataset>
   settings: Dataset[],
-  selectedDatasett: undefined,
-  presetDatasett: undefined,
+  presetDatasett: Dataset | undefined,
   selectedDatasettConsents: []
 }
 

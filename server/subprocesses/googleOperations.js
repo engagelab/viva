@@ -5,8 +5,8 @@
 const fs = require('fs');
 const { google } = require('googleapis');
 const fileOperations = require('./fileOperations');
-const videoStatusTypes = require('../constants').videoStatusTypes;
-const { formPath } = require('../utilities');
+const { videoStatusTypes, videoStorageTypes } = require('../constants');
+const { generatePath } = require('../services/storage');
 
 /* --------------    UiO Google Suite ----------------- */
 
@@ -162,7 +162,7 @@ function initializeStructure(video, drive, rootID, path, filename) {
 }
 
 // Upload a video file to the user's Google Drive space
-function createVideoAtGoogle(video, setting, auth) {
+function createVideoAtGoogle(video, dataset, auth) {
   return new Promise((resolve, reject) => {
     const drive = google.drive({ version: 'v3', auth });
     const vivaMetadata = {
@@ -171,23 +171,22 @@ function createVideoAtGoogle(video, setting, auth) {
       appProperties: { appID: 'viva-app-university-of-oslo', folderStructure: 'VIVA' },
     };
 
-    const folderMetaData = setting.storages.find(element => element.name === 'google');
-    const pathPromise = formPath(folderMetaData.storagePath.path, setting, video);
-    const filenamePromise = formPath(folderMetaData.storagePath.fileName, setting, video);
-    const slashes = /[/]/g;
+    const storage = dataset.storages.find(element => element.name === videoStorageTypes.google);
+    const formedPath = generatePath({ list: storage.file.path, dataset, video }, '/')
+    const formedName = generatePath({ list: storage.file.name, dataset, video }, '-')
 
-    return Promise.all([pathPromise, filenamePromise]).then(paths => checkFolderExists(drive, vivaMetadata)
+    return checkFolderExists(drive, vivaMetadata)
       .then(rootFolder => {
         if (rootFolder && rootFolder.file) {
           const rootID = rootFolder.file.id;
-          return initializeStructure(video, drive, rootID, paths[0], paths[1].replace(slashes, "-").substring(1)).then(() => resolve())
+          return initializeStructure(video, drive, rootID, formedPath, formedName.substring(1)).then(() => resolve())
         } else {
           console.log('VIVA folder not found ... \nCreating VIVA folder ...');
           return createGFile(drive, vivaMetadata).then(vivaFolder => {
-            return initializeStructure(video, drive, vivaFolder.id, paths[0], paths[1].replace(slashes, "-").substring(1)).then(() => resolve())
+            return initializeStructure(video, drive, vivaFolder.id, formedPath, formedName.substring(1)).then(() => resolve())
           });
         }
-    }).catch(error => reject(error)));
+    }).catch(error => reject(error));
   });
 }
 

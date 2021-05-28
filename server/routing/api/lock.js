@@ -3,7 +3,7 @@
 */
 const router = require('express').Router()
 const utilities = require('../utilities')
-const Datasett = require('../../models/Datasett')
+const Dataset = require('../../models/Dataset')
 const User = require('../../models/User')
 
 /* To set/unset lock for a datasett */
@@ -13,11 +13,11 @@ router.put('/lock', utilities.authoriseUser, (request, response, next) => {
 
     User.findById(request.session.ref, (err, user) => {
       if (!err) {
-          Datasett.findOne({ _id: datasett.id }, (error, foundDatasett) => {
-            if (error || !foundDatasett) {
+          Dataset.findOne({ _id: datasett.id }, (error, foundDataset) => {
+            if (error || !foundDataset) {
               next(new Error({ status: 400, message: 'datasett not created' }))
             } else {
-              const d = foundDatasett
+              const d = foundDataset
                 if ((lockMode == 'check') &&
                     (d.lock.active) && (d.lock.lockedBy != user.username)
                 ) {

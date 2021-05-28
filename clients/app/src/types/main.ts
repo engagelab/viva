@@ -1,4 +1,4 @@
-import { USER_ROLE } from '@/constants'
+import { USER_ROLE, CONSENT_TYPES, VIDEO_STATUS_TYPES, videoStorageTypes } from '../constants'
 
 // ---------------  Utility -----------------
 declare global {
@@ -85,15 +85,6 @@ export interface Callback<T, U> {
   (arg?: T): U
 }
 
-// This defined the additional functions available on a Question Type component
-// This allows Question.vue to control the question type child
-// The child should implement appropriate code that runs when these functions are called
-/* export interface AugmentedQuestionType extends Vue {
-  forwardInternal: () => void // Called when the user clicks the white 'forward' arrow
-  onIntroductionStart: () => void // Called when introduction begins
-  onIntroductionEnd: () => void // Called when introduction ends
-} */
-
 export interface LocalUser extends Record<string, unknown> {
   _id: string
   jwt: string
@@ -107,140 +98,264 @@ export interface PersistedAppState extends Record<string, unknown> {
   localUsers: Record<string, LocalUser>
 }
 
-interface ProjectData {
-  _id?: string
-  interventionName?: string
-  tsdGroupName: string
-  tsdGroupID: string
-  // Front-end use only
-  selected?: boolean
+//------------------------- Video and Dataset models -----------------
+interface EditDecriptionList {
+  trim: number[][]
+  blur: number[][]
 }
-export class Project implements ProjectData {
-  _id: string
-  interventionName: string
-  tsdGroupName: string
-  tsdGroupID: string
-
-  // Front-end use only
-  selected: boolean
-
-  constructor(data?: ProjectData) {
-    this._id = data && data._id ? data._id : ''
-    this.interventionName =
-      data && data.interventionName ? data.interventionName : ''
-    this.tsdGroupName = data && data.tsdGroupName ? data.tsdGroupName : ''
-    this.tsdGroupID = data && data.tsdGroupID ? data.tsdGroupID : ''
-    // Front end variables
-    this.selected = data && data.selected ? data.selected : false
-  }
-
-  update(project: Project): void {
-    this._id = project._id
-    this.interventionName = project.interventionName
-
-    // Front end variables
-    this.selected = project.selected
-  }
-
-  // Convert this to a Plain Old Javascript Object
-  asPOJO(): unknown {
-    const pojo = { ...this }
-    delete pojo.selected
-    return pojo
-  }
-}
-
-///-------------------------Viva vide and dataset model -----------------/
-
-// We need only file Id ,metadata  and sharing info for viva in canvas
-export interface DatasetInfoData {
-  name: string
-  utvalg: []
-}
-
-export interface SharingData {
-  users: []
-  access: boolean
-  // edl: {
-  //   start: string
-  //   end: string
-  // }
+interface VideoDetails {
+  id: string // Used instead of video._id front end, and for QR Code.
+  name: string // A human-readable string for naming this video
+  category: string // green, yellow, red
   description: string
+  duration: number // Seconds  created: { type: Date },
+  edl: EditDecriptionList
+  encryptionKey: string
+  encryptionIV: Uint8Array // Mixed type. Mongoose has no type for UInt8Array..
+}
+interface VideoStatus {
+  main: VIDEO_STATUS_TYPES
+  error: {
+    errorInfo: string
+  },
+  inPipeline: boolean // true if a pipeline is currently working on this file
+  isEncrypted: boolean // true if this video is encrypted
+  isEdited: boolean // true if this video has edits to perform
+  isConsented: boolean
+}
+interface VideoSharing {
+  users: string[],
+  access: boolean
+  description: string
+  edl: EditDecriptionList
+}
+interface VideoUsers {
+  owner: string
+  sharedWith: string[], // Users who can see this video. Used for easier searching
+  sharing: VideoSharing[] // Each entry is a share for a particular set of users, and particular EDL of this video
+}
+interface VideoDataset {
+  id: string
+  name: string
+  selection: string[] // 'utvalg' setting
 }
 export interface VideoData {
-  fileId: string
-  description: string
-  category: string
-  name: string
-  datasetInfo: DatasetInfoData
-  duration: number
-  consents: string[] // Array of consenters
-  sharing: SharingData
+  details: VideoDetails
+  status: VideoStatus
+  users: VideoUsers
+  dataset: VideoDataset
+  consents: string[]
+  storages: string[]
+}
+export interface VideoSpec {
+  video: Video
+  dataset: Dataset
+  presetDataset: Dataset
+  user: User
 }
 
 export class Video {
-  fileId: string
-  description: string
-  category: string
-  name: string
-  datasetInfo: DatasetInfoData
-  duration: number
-  consents: string[] // Array of consenters
-  sharing: SharingData
+  details: VideoDetails
+  status: VideoStatus
+  users: VideoUsers
+  dataset: VideoDataset
+  consents: string[]
+  storages: string[]
 
-  constructor(data?: VideoData) {
-    this.fileId = data?.fileId ? data.fileId : ''
-    this.description = data?.description ? data.description : ''
-    this.category = data?.category ? data.category : ''
-    this.name = data?.name ? data.name : ''
-    this.duration = data?.duration ? data.duration : 0
-    this.datasetInfo = data?.datasetInfo
-      ? data.datasetInfo
-      : {
-          name: '',
-          utvalg: [],
+  // Front-end attributes
+  aId: string
+
+
+  constructor(data?: VideoData | Video) {
+    details: this.details,
+    status: this.status,
+    users: this.users,
+    dataset: this.dataset,
+    consents: this.consents
+  }
+
+  constructor (data: VideoData | VideoSpec) {
+    if (data instanceof VideoData) {
+      this.details = data.details
+      this.status = data.status
+      this.users = data.users
+      this.dataset = data.dataset
+      this.consents = data.consents
+    }
+    else if (data instanceof VideoSpec) {
+      const v: Video = data.video || {}
+      const d: Dataset = data.dataset || {}
+      const p: Dataset = data.presetDataset || {}
+      const u: User = data.user || {}
+      const subState = v.subState || {}
+      const serverState = v.serverState || {}
+
+      this.aId = utilities.uuid()
+
+      this.details.id = v.details.id || utilities.uuid()
+      this.dataset.id = v.data || s.id
+      this.status.main = v.status.main || VIDEO_STATUS_TYPES.draft
+      this.
+      this.storages =
+        v.storages || (d && d.storages ? d.storages.map(store => store.name) : [])
+      this.userRef = v.userRef || u.reference
+
+      // This set of attributes are only used front-end
+      this.encryptionInProgress = v.encryptionInProgress || false
+      this.decryptionInProgress = v.decryptionInProgress || false
+      this.uploadInProgress = v.uploadInProgress || false
+      this.isUploaded = this.status != 'draft'
+      this.uploadProgress = v.uploadProgress || this.isUploaded ? 100 : 0
+      this.hasUnsavedChanges = false
+      this.hasNewDataAvailable = false
+      this.recordingExists = v.recordingExists
+      this.subState = {
+        consented: subState.consented || false,
+        classified: subState.classified || false,
+        edited: subState.edited || false
+      }
+      this.serverState = {
+        encryptionInProgress: serverState.encryptionInProgress || false,
+        decryptionInProgress: serverState.decryptionInProgress || false,
+        uploadInProgress: serverState.uploadInProgress || false
+      }
+
+      this.pipelineInProgress = !!v.pipelineInProgress
+      this.isEncrypted = !!v.isEncrypted
+
+      this.encryptionKey = v.encryptionKey || '' // This key is used to encrypt the video data
+      this.encryptionIV = v.encryptionIV || [] // This initial value is required for AES-GCM. The IV should never be reused
+      this.username = v.username || ''
+      this.consents = [] // These are the consents confirmed by the teacher in this recording
+      this.edl = v.edl
+        ? { ...v.edl }
+        : {
+          trim: [],
+          blur: []
         }
-    this.consents = data?.consents ? data.consents : []
-    this.sharing = data?.sharing
-      ? data.sharing
-      : {
-          users: [],
-          access: false,
-          // edl.start: data.sharing.edl.start || ''
-          // edl.end: data.sharing.edl.end || ''
-          //edl: data.sharing.edl
-          description: '',
+
+      // this.edlArray = JSON.stringify(v.edl) || '';
+      this.mimeType =
+        v.mimeType ||
+        (d
+          ? d.browser == 'Chrome'
+            ? 'video/webm'
+            : 'video/mp4'
+          : 'video/mp4')
+
+      this.datasetInfo = v.datasetInfo || spec.datasetInfo
+      if (!this.datasetInfo.id) {
+        this.datasetInfo.id = this.settingId
+      }
+
+      this.name = v.name || this.fileId.substring(0, 7)
+      this.description = v.description || ''
+      this.errorInfo = v.errorInfo || ''
+      this.category = v.category || ''
+      this.trinn = v.trinn || ''
+      this.fag = v.fag || ''
+      this.duration = v.duration || 0
+      this.created = v.created
+        ? typeof v.created === 'string'
+          ? new Date(v.created)
+          : v.created
+        : new Date()
+    }
+  }
+
+  // Convert this class to string representation
+  // Note: the encryptionIV does not convert directly using JSON.stringify
+  getAsString () {
+    const v = { ...this }
+    v.encryptionIV = utilities.ui8arr2str(this.encryptionIV)
+    return JSON.stringify(v)
+  }
+
+  getFileUploadInfo () {
+    const v = {
+      fileId: this.fileId,
+      userRef: this.userRef,
+    }
+    return JSON.stringify(v)
+  }
+
+  // Convert this class to a buffer suitable for encryption
+  getAsBuffer () {
+    return utilities.str2ab(this.getAsString())
+  }
+
+  // Set this video's data from a buffer value, used for decryption
+  // Ensure that the encryptionIV is correctly converted
+  setFromBuffer (buffer) {
+    const videoString = utilities.ab2str(buffer)
+    const videoObject = JSON.parse(videoString)
+    if (videoObject.encryptionIV.length > 0) {
+      videoObject.encryptionIV = utilities.str2ui8arr(videoObject.encryptionIV)
+    }
+    Object.keys(videoObject).map(key => (this[key] = videoObject[key]))
+    this.created = new Date(this.created)
+  }
+  // Create a copy of this video metadata
+  /* clone() {
+    const newVideo = new VideoMetadata({ video: this });
+    return newVideo;
+  } */
+  // Set all local monitor booleans to false; Should be set after initial load from indexedDB
+  falsifyAllMonitors () {
+    this.encryptionInProgress = false
+    this.decryptionInProgress = false
+    this.uploadInProgress = false
+    this.hasUnsavedChanges = false
+  }
+
+  // Compare a given EDL to ours to check for changes
+  edlEquals (anotherEdl) {
+    let i = this.edl.length
+    let j = anotherEdl.length
+    // Arays are the same length
+    if (i >= 0 && i === j) {
+      while (i > -1) {
+        if (
+          this.edl[i][0] !== anotherEdl[i][0] ||
+          this.edl[i][1] !== anotherEdl[i][1]
+        ) {
+          return false
         }
+        i--
+      }
+      return true
+    } else {
+      return false
+    }
   }
 }
 
-export interface DataManagerData {
-  oAuthId: string
-  name: string
+interface DatasetSelection {
+  title: string
+  [key: string]?: DatasetSelection
 }
-export interface PathData {
-  path: []
-  filename: []
+interface DatasetStatus {
+  lastUpdated: Date
+  lockedBy: string
 }
-// When TypeScript can extend enums, this can be made generic..
-export enum VIDEOSTORAGE_TYPES {
-  none = 'none',
-  lagringshotel = 'lagringshotel',
-  cloudian = 'cloudian',
-  gdrive = 'gdrive',
-}
-export enum CONSENT_SELECTION {
-  samtykke = 'samtykke',
-  manuel = 'manuel',
-  article6 = 'article6',
-}
-export interface StorageData {
-  name: VIDEOSTORAGE_TYPES
-  groupId: string
-  storagePath: PathData
-  category: []
+interface DatasetUsers {
+  dataManager: {
+    name: string
+  }
 }
 export interface DatasetData {
+  _id: string
+  name: string
+  description: string
+  created: Date
+  formId: string
+  selectionPriority: string[]
+  selection: [key: string]: DatasetSelection
+  status: DatasetStatus
+  consent: CONSENT_TYPES
+  users: DatasetUsers
+  storages: this.storages,
+
   datasetId: string
   name: string
   description: string
@@ -261,7 +376,7 @@ export interface DatasetData {
   formId: string
 }
 export class Dataset {
-  datasetId: string
+  id: string
   name: string
   description: string
   created: string
@@ -281,7 +396,7 @@ export class Dataset {
   formId: string
 
   constructor(data?: DatasetData) {
-    this.datasetId = data?.datasetId ? data.datasetId : ''
+    this.id = data?.id // undefined if a new dataset
     this.name = data?.name ? data.name : ''
     this.description = data?.description ? data.description : ''
     this.created = data?.created ? data.created : ''
@@ -309,91 +424,55 @@ export class Dataset {
 }
 
 // ---------------  User -----------------
-
+interface UserStatus {
+  role: USER_ROLE
+  created: Date
+  provider: string // Dataporten or Canvas ?
+  lastLogin: Date
+  totalDrafts: number
+  totalUploads: number
+  totalTransfers: number
+}
+interface UserProfile {
+  username: string
+  password: string
+  fullName: string
+  oauthId: string
+  reference: string // This should be sent to the client rather than _id
+  groups: string[] // Groups this user is a member of
+}
+interface UserLock { // { [datasetID]: { date: Date.now(), keyName: String }
+  date: Date
+  keyName: string
+}
+interface UserDataset {
+  id: string
+  utvalg: string[]
+  locks: Record<string, UserLock>
+}
+interface UserVideos {
+  draftIDs: string[]
+}
 export interface UserData {
   _id: string
-  username: string
-  fullName: string
-  email: string
-  role: USER_ROLE
-  participants: ParticipantData[]
-  projects: ProjectData[]
-  location: {
-    name: string
-  }
-  lastLogin: Date
-  currentProjectId: string
+  status: UserStatus
+  profile: UserProfile
+  datasett: UserDataset
+  videos: UserVideos
 }
 export class User {
   _id: string
-  username: string
-  fullName: string
-  email: string
-  role: USER_ROLE
-  participants: Participant[] = [] // NOTE: Participants are worked with in their own Store
-  projects: Project[] = []
-  location: {
-    name: string
-  }
-  lastLogin: Date | undefined
-  currentProjectId: string
+  status: UserStatus
+  profile: UserProfile
+  datasett: UserDataset
+  videos: UserVideos
 
   constructor(data?: UserData | User) {
-    this._id = data ? data._id : ''
-    this.username = data ? data.username : ''
-    this.fullName = data ? data.fullName : ''
-    this.email = data ? data.email : ''
-    this.lastLogin =
-      data && data.lastLogin ? new Date(data.lastLogin) : undefined
-    this.role = data ? data.role : USER_ROLE.user
-    this.participants = []
-    if (data) {
-      data.participants.forEach((pr: ParticipantData | Participant) => {
-        const newParticipant = new Participant(pr)
-        this.participants.push(newParticipant)
-      })
-    }
-    this.projects = []
-    this.location = { name: '' }
-    this.location.name =
-      data && data.location && data.location.name ? data.location.name : ''
-    if (data) {
-      data.projects.forEach((pr: ProjectData) => {
-        const newProject = new Project(pr)
-        newProject.selected = data.currentProjectId === pr._id
-        this.projects.push(newProject)
-      })
-    }
-    this.currentProjectId = data ? data.currentProjectId : ''
-  }
-
-  public update(user: UserData | User): void {
-    this._id = user._id
-    this.username = user.username
-    this.fullName = user.fullName
-    this.email = user.email
-    this.lastLogin = user.lastLogin ? new Date(user.lastLogin) : undefined
-    this.role = user.role
-  }
-
-  // Convert this to a Plain Old Javascript Object
-  asPOJO(): unknown {
-    const participants: unknown[] = []
-    if (this.participants) {
-      const paArray = Array.from(this.participants.values())
-      paArray.forEach((p) => {
-        participants.push(p.asPOJO())
-      })
-    }
-    const projects: unknown[] = []
-    if (this.projects) {
-      const prArray = Array.from(this.projects.values())
-      prArray.forEach((pr) => {
-        projects.push(pr.asPOJO())
-      })
-    }
-    const pojo = { ...this, participants, projects }
-    return pojo
+    this._id = data?._id
+    this.status = data?.status
+    this.profile = data?.profile
+    this.datasett = data?.datasett
+    this.videos = data?.videos
   }
 }
 

@@ -13,7 +13,7 @@ const googleOperations = require('../../subprocesses/googleOperations');
 const videoStatusTypes = require('../../constants').videoStatusTypes;
 // const videoStorageTypes = require('../../constants').videoStorageTypes
 const utilities = require('../utilities');
-const Datasett = require('../../models/Datasett');
+const Dataset = require('../../models/Dataset');
 const Video = require('../../models/Video');
 const User = require('../../models/User');
 
@@ -155,7 +155,7 @@ router.get('/authenticated_google_transfer', (request, response) => {
       if (error2) return console.error(`${new Date().toUTCString()} Error retrieving access token ${error2} foro userid: ${user.id} username: ${user.username} videoFileId: ${fileId}`);
       oauth2Client.setCredentials(tokens);
       // Check that the supplied settingID is indeed configured to transfer to this location
-      Datasett.findById(settingId, (error3, setting) => {
+      Dataset.findById(settingId, (error3, setting) => {
         if (error3) {
           return console.error(error3);
         } else if (setting) {

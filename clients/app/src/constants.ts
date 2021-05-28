@@ -86,9 +86,6 @@ const opptakAttributes = ['Opptak', 'Når', 'Hvem', 'Datasett']
 // If not built with Cordova, 'data-appversion' will === '%%VERSION%%'
 if (appVersion === '%%VERSION%%') appVersion = process.env.VUE_APP_VERSION || ''
 
-projectTypes.push('none')
-projectNames.push('none')
-
 const deviceType: string =
   window.location.protocol == 'file:' ? 'mobile' : 'web'
 
@@ -129,6 +126,24 @@ if (
   console.error('CONSENT_TYPES enum mismatch', { ct, consentTypes })
 }
 
+enum VIDEO_STORAGE_TYPES {
+  none = 'none',
+  google = 'google',
+  onedrive = 'onedrive',
+  educloud = 'educloud',
+  lagringshotell = 'lagringshotell'
+}
+enum VIDEO_STATUS_TYPES {
+  draft = 'draft', // Before upload has been attempted
+  premeta = 'premeta', // Pre-stage when awaiting linking of file upload to complete uploaded metadata in DB
+  uploaded = 'uploaded', // First pipeline state after file was uploaded
+  decrypted = 'decrypted', // (Currently unused)
+  converted = 'converted', // Video was converted by FFMPEG, ready to be sent to storage(s)
+  edited = 'edited', // Video was saved to Lagringshotell. Video is ready to be transferred to another location.
+  complete = 'complete', // Video has now been uploaded, decrypted, trimmed/watermarked, saved and transferred to another location. This is the LAST pipeline stage
+  error = 'error' // Something went wrong. Videos in this state will not move further in the pipeline until attended to
+}
+
 export {
   deviceType,
   baseUrl,
@@ -137,6 +152,8 @@ export {
   USER_ROLE,
   consentTypes,
   CONSENT_TYPES,
+  VIDEO_STORAGE_TYPES,
+  VIDEO_STATUS_TYPES,
   appVersion,
   taskColours,
   vivaServer,

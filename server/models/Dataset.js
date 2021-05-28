@@ -12,14 +12,15 @@ const storageSchema = {
     default: videoStorageTypes.educloud,
   },
   groupId: { type: String },
-  storagePath: {
+  file: {
+    // Path and name will be constructed from attributes from Video and Dataset based on these array entries
     path: { type: Array },
-    fileName: { type: Array },
+    name: { type: Array },
   },
   category: { type: Array },
 }
 
-const datasettSchema = new mongoose.Schema({
+const datasetSchema = new mongoose.Schema({
   name: { type: String },
   description: { type: String },
   created: { type: Date, default: Date.now },
@@ -55,9 +56,9 @@ const datasettSchema = new mongoose.Schema({
 
 // Choose what attributes will be returned with the setting object
 // ** These attributes should be matched in the front end model **
-datasettSchema.methods.redacted = function () {
+datasetSchema.methods.redacted = function () {
   const d = {
-    id: this._id.toString(),
+    _id: this._id.toString(),
     name: this.name,
     description: this.description,
     created: this.created,
@@ -72,26 +73,31 @@ datasettSchema.methods.redacted = function () {
     users: {
       dataManager: this.dataManager,
     },
-    storages: this.storages,
+    storages: this.storages.map((store) => {
+      const s = { ...store }
+      delete s.file.path
+      return s
+    }),
   }
+  delete d.users.dataManager.oauthId
   delete d.storages.path
   return d
 }
 // Duplicate the ID field.
 // eslint-disable-next-line
-datasettSchema.virtual('id').get(function () {
+datasetSchema.virtual('id').get(function () {
   // eslint-disable-next-line
   return this._id.toString()
 })
 
 // Ensure virtual fields are serialised.
-datasettSchema.set('toJSON', {
+datasetSchema.set('toJSON', {
   getters: true,
   virtuals: true,
 })
-datasettSchema.set('toObject', {
+datasetSchema.set('toObject', {
   getters: true,
   virtuals: true,
 })
 
-module.exports = mongoose.model('Datasett', datasettSchema)
+module.exports = mongoose.model('Dataset', datasetSchema)

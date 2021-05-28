@@ -77,7 +77,7 @@ const adminUsers = [
   'olesm'
 ]
 
-const pilotDatasett = []
+const pilotDataset = []
 
 const pilotUsers = [
   { id: '592075', username: 'smalgeno', email: 'smalgeno@student.uv.uio.no' },
@@ -158,7 +158,7 @@ module.exports = {
   videoFolderNames,
   executables,
   adminUsers,
-  pilotDatasett,
+  pilotDataset,
   pilotUsers,
   consentTypes,
   userRoles
