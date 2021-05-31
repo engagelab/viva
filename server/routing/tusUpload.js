@@ -27,7 +27,7 @@ tusServer.on(EVENTS.EVENT_UPLOAD_COMPLETE, (event) => {
   videoMetadata.file.name = event.file.id
 
   // remove draftId from user after a successful upload and create server video
-  User.findOne({ 'profile.reference': videoMetadata.userRef }, (error, u) => {
+  User.findById(videoMetadata.users.owner, (error, u) => {
     if (error) {
       console.log('Unknown User')
     } else {

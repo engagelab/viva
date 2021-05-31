@@ -77,7 +77,7 @@ const fetchConsent = (query) => {
     // const regex = /:/gi;
     // queryString = queryString.replace(regex, '-');
     const data = JSON.stringify({
-        reference: { "dataset": query.datasettId }
+        reference: { "dataset": query.datasetId }
     })
     const options = {
         hostname: 'api.tsd.usit.no',
@@ -96,10 +96,10 @@ const fetchConsent = (query) => {
     })
 }
 
-const tsdAuthDataporten = tsd => {
+const tsdAuthDataporten = tsdData => {
     return new Promise((resolve, reject) => {
         const data = JSON.stringify({
-            idtoken: tsd.user.tokens.id_token
+            idtoken: tsdData.user.tokens.id_token
         })
         const options = {
             hostname: 'api.tsd.usit.no',
@@ -118,18 +118,18 @@ const tsdAuthDataporten = tsd => {
 
 }
 // Method to export consents from TSD
-const exportConsent = (tsd, error, successCallback) => {
-    tsdAuthDataporten(tsd).then(shortlivedToken => {
+const exportConsent = (data, error, successCallback) => {
+    tsdAuthDataporten(data).then(shortlivedToken => {
         fetchConsent({
-            datasettId: tsd.datasettId,
-            utvalg: tsd.utvalg,
-            formId: tsd.formId,
+            datasetId: data.datasetId,
+            utvalg: data.utvalg,
+            formId: data.formId,
             token: shortlivedToken.token
         })
             .then(consents => {
-                let utvalg = tsd.utvalg;
+                let utvalg = data.utvalg;
                 const regex1 = /,/gi;
-                utvalg= decodeURIComponent(utvalg)
+                utvalg = decodeURIComponent(utvalg)
                 utvalg = utvalg.replace(regex1, '.');
                 const regex = /:/gi;
                 utvalg = utvalg.replace(regex, '-');
@@ -138,7 +138,7 @@ const exportConsent = (tsd, error, successCallback) => {
                 if (consents.length != 0) {
                     filteredConsents = consents.filter(consent => {
                         if (consent.reference.subset.slice(-1) != '.') {
-                            consent.reference.subset=consent.reference.subset+'.'
+                            consent.reference.subset = consent.reference.subset + '.'
                         }
                         if (consent.reference.subset == utvalg && consent.current == true)
                             return consent

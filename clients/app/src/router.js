@@ -7,8 +7,14 @@ import Editor from './views/video/Editor.vue'
 import Privacy from './views/Privacy.vue'
 import ErrorDisplay from './views/video/ErrorDisplay.vue'
 
-import store from './store/index'
 import constants from './constants'
+
+import { useAppStore } from './useAppStore'
+import { useDatasetStore } from './useDatasetStore'
+import { useVideoStore } from './useVideoStore'
+const { getters: appGetters, actions: appActions } = useAppStore()
+const { getters: datasetGetters, actions: datasetActions } = useVideoStore()
+const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
 const { strings } = constants
 Vue.use(Router)

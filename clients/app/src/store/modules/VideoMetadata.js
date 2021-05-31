@@ -16,7 +16,7 @@ export default class VideoMetadata {
       this.settingId = v.settingId || s.id
       this.status = v.status || 'draft'
       this.storages =
-        v.storages || (s && s.storages ? s.storages.map(s => s.name) : [])
+        v.storages || (s && s.storages ? s.storages.map(st => st.name) : [])
       this.userRef = v.userRef || u.reference
 
       // This set of attributes are only used front-end

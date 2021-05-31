@@ -1,4 +1,4 @@
-import { USER_ROLE, CONSENT_TYPES, VIDEO_STATUS_TYPES, videoStorageTypes } from '../constants'
+import { USER_ROLE, CONSENT_TYPES, VIDEO_STATUS_TYPES, videoStorageTypes, VIDEO_STORAGE_TYPES, utvalger } from '../constants'
 
 // ---------------  Utility -----------------
 declare global {
@@ -98,6 +98,24 @@ export interface PersistedAppState extends Record<string, unknown> {
   localUsers: Record<string, LocalUser>
 }
 
+export interface Consent {
+  id: string
+  name: string
+  checked: boolean
+  current: boolean
+  submission_id: string
+  questions: Record<string, string>
+  reference: {
+    subset: string
+  }
+}
+export interface DeviceStatus {
+  mobile: boolean
+  browser: string
+  isFullScreen: boolean
+  lastActive: number, // ms from epoch
+}
+
 //------------------------- Video and Dataset models -----------------
 interface EditDecriptionList {
   trim: number[][]
@@ -107,6 +125,7 @@ interface VideoDetails {
   id: string // Used instead of video._id front end, and for QR Code.
   name: string // A human-readable string for naming this video
   category: string // green, yellow, red
+  created: Date
   description: string
   duration: number // Seconds  created: { type: Date },
   edl: EditDecriptionList
@@ -122,6 +141,16 @@ interface VideoStatus {
   isEncrypted: boolean // true if this video is encrypted
   isEdited: boolean // true if this video has edits to perform
   isConsented: boolean
+
+  // Front end only (not saved at server)
+  recordingExists: boolean // true if a recording data file has been assigned to this video
+  encryptionInProgress: boolean
+  decryptionInProgress: boolean
+  uploadInProgress: boolean
+  isUploaded: boolean
+  uploadProgress: number
+  hasUnsavedChanges: boolean
+  hasNewDataAvailable: boolean
 }
 interface VideoSharing {
   users: string[],
@@ -140,6 +169,9 @@ interface VideoDataset {
   selection: string[] // 'utvalg' setting
 }
 export interface VideoData {
+  file: {
+    mimeType: string
+  }
   details: VideoDetails
   status: VideoStatus
   users: VideoUsers
@@ -148,13 +180,17 @@ export interface VideoData {
   storages: string[]
 }
 export interface VideoSpec {
-  video: Video
-  dataset: Dataset
-  presetDataset: Dataset
-  user: User
+  video?: Video
+  dataset?: Dataset
+  utvalg?: string[]
+  user?: User
+  deviceStatus?: DeviceStatus
 }
 
 export class Video {
+  file: {
+    mimeType: string
+  }
   details: VideoDetails
   status: VideoStatus
   users: VideoUsers
@@ -162,9 +198,8 @@ export class Video {
   consents: string[]
   storages: string[]
 
-  // Front-end attributes
+  // Front-end only attributes
   aId: string
-
 
   constructor(data?: VideoData | Video) {
     details: this.details,
@@ -176,6 +211,7 @@ export class Video {
 
   constructor (data: VideoData | VideoSpec) {
     if (data instanceof VideoData) {
+      data = data as VideoData
       this.details = data.details
       this.status = data.status
       this.users = data.users
@@ -183,83 +219,78 @@ export class Video {
       this.consents = data.consents
     }
     else if (data instanceof VideoSpec) {
+      data = data as VideoSpec
       const v: Video = data.video || {}
       const d: Dataset = data.dataset || {}
-      const p: Dataset = data.presetDataset || {}
+      const ds: DeviceStatus = data.deviceStatus || {}
       const u: User = data.user || {}
-      const subState = v.subState || {}
-      const serverState = v.serverState || {}
 
       this.aId = utilities.uuid()
 
-      this.details.id = v.details.id || utilities.uuid()
-      this.dataset.id = v.data || s.id
-      this.status.main = v.status.main || VIDEO_STATUS_TYPES.draft
-      this.
-      this.storages =
-        v.storages || (d && d.storages ? d.storages.map(store => store.name) : [])
-      this.userRef = v.userRef || u.reference
-
-      // This set of attributes are only used front-end
-      this.encryptionInProgress = v.encryptionInProgress || false
-      this.decryptionInProgress = v.decryptionInProgress || false
-      this.uploadInProgress = v.uploadInProgress || false
-      this.isUploaded = this.status != 'draft'
-      this.uploadProgress = v.uploadProgress || this.isUploaded ? 100 : 0
-      this.hasUnsavedChanges = false
-      this.hasNewDataAvailable = false
-      this.recordingExists = v.recordingExists
-      this.subState = {
-        consented: subState.consented || false,
-        classified: subState.classified || false,
-        edited: subState.edited || false
-      }
-      this.serverState = {
-        encryptionInProgress: serverState.encryptionInProgress || false,
-        decryptionInProgress: serverState.decryptionInProgress || false,
-        uploadInProgress: serverState.uploadInProgress || false
-      }
-
-      this.pipelineInProgress = !!v.pipelineInProgress
-      this.isEncrypted = !!v.isEncrypted
-
-      this.encryptionKey = v.encryptionKey || '' // This key is used to encrypt the video data
-      this.encryptionIV = v.encryptionIV || [] // This initial value is required for AES-GCM. The IV should never be reused
-      this.username = v.username || ''
-      this.consents = [] // These are the consents confirmed by the teacher in this recording
-      this.edl = v.edl
-        ? { ...v.edl }
-        : {
+      this.details = {
+        id: v.details.id || utilities.uuid()
+        name: v.details.name || this.details.id.substring(0, 7)
+        category: v.details.category || ''
+        created: v.details.created || new Date()
+        description: v.details.description || ''
+        duration: v.details.duration || 0
+        edl: edl: v.details.edl ? { ...v.details.edl } : {
           trim: [],
           blur: []
         }
+        encryptionKey: v.details.encryptionKey || '' // This key is used to encrypt the video data
+        encryptionIV: v.details.encryptionIV || [] // This initial value is required for AES-GCM. The IV should never be reused
+      }
+      this.dataset = {
+        id: v.dataset.id || s.id
+        name: v.dataset.name || s.name
+        selection: v.dataset.selection || data.utvalg || []
+      }
+      this.status = {
+        main: v.status.main || VIDEO_STATUS_TYPES.draft
+        error: {
+          errorInfo: v.status.error.errorInfo || ''
+        },
+        inPipeline: !!v.status.inPipeline
+        isEncrypted: !!v.status.isEncrypted
+        isEdited: !!v.status.isEdited
+        isConsented: !!v.status.isConsented
 
-      // this.edlArray = JSON.stringify(v.edl) || '';
-      this.mimeType =
-        v.mimeType ||
-        (d
-          ? d.browser == 'Chrome'
+        // Front end only (not saved at server)
+        recordingExists: !!v.status.recordingExists
+        encryptionInProgress: !!v.status.encryptionInProgress
+        decryptionInProgress: !!v.status.decryptionInProgress
+        uploadInProgress: !!v.status.uploadInProgress
+        isUploaded: this.status.main != VIDEO_STATUS_TYPES.draft
+        uploadProgress: v.uploadProgress || this.isUploaded ? 100 : 0
+        hasUnsavedChanges: false
+        hasNewDataAvailable: false
+      }
+      this.users = {
+        owner: v.users.owner || u._id
+        sharedWith: v.users.sharedWith || []
+        sharing: v.users.sharing.map((s: VideoSharing) => {
+          return {
+            users: s.users,
+            access: s.access,
+            description: s.description,
+            edl: s.edl ? { ...s.edl } : {
+              trim: [],
+              blur: []
+            }
+          }
+        })
+      }
+      this.consents = v.consents || []
+      this.storages =
+        v.storages || (d && d.storages ? d.storages.map(store => store.name) : [])
+      this.file.mimeType =
+        v.file.mimeType ||
+        (ds
+          ? ds.browser == 'Chrome'
             ? 'video/webm'
             : 'video/mp4'
           : 'video/mp4')
-
-      this.datasetInfo = v.datasetInfo || spec.datasetInfo
-      if (!this.datasetInfo.id) {
-        this.datasetInfo.id = this.settingId
-      }
-
-      this.name = v.name || this.fileId.substring(0, 7)
-      this.description = v.description || ''
-      this.errorInfo = v.errorInfo || ''
-      this.category = v.category || ''
-      this.trinn = v.trinn || ''
-      this.fag = v.fag || ''
-      this.duration = v.duration || 0
-      this.created = v.created
-        ? typeof v.created === 'string'
-          ? new Date(v.created)
-          : v.created
-        : new Date()
     }
   }
 
@@ -274,7 +305,7 @@ export class Video {
   getFileUploadInfo () {
     const v = {
       fileId: this.fileId,
-      userRef: this.userRef,
+      userId: this.users.owner,
     }
     return JSON.stringify(v)
   }
@@ -338,10 +369,21 @@ interface DatasetStatus {
   lastUpdated: Date
   lockedBy: string
 }
+interface DatasetConsent {
+  type: CONSENT_TYPES
+}
 interface DatasetUsers {
   dataManager: {
     name: string
   }
+}
+interface DatasetStorage {
+  name: VIDEO_STORAGE_TYPES
+  groupId: string
+  file: {
+    name: string[],
+  },
+  category: string[],
 }
 export interface DatasetData {
   _id: string
@@ -349,77 +391,48 @@ export interface DatasetData {
   description: string
   created: Date
   formId: string
-  selectionPriority: string[]
-  selection: [key: string]: DatasetSelection
   status: DatasetStatus
-  consent: CONSENT_TYPES
+  consent: DatasetConsent
   users: DatasetUsers
-  storages: this.storages,
-
-  datasetId: string
-  name: string
-  description: string
-  created: string
-  lastUpdated: string
-  elements: string
-  dataManager: DataManagerData
-  active: boolean // active datasetts who will be fetch in app
-  accessGroupId: string // super admin group who  has access to all the datasets and videos
-  lock: Record<string, unknown> // lock the datasett if someone else is editing
+  selection: [key: string]: DatasetSelection
   selectionPriority: string[]
-  selection: Record<string, unknown>
-  dataportenGroups: string[]
-  canvasCourses: string[] // Admin LMS uses canvas courses
-  storages: StorageData[]
-  consentHandling: Record<string, unknown>
-  consent: CONSENT_SELECTION
-  formId: string
+  storages: DatasetStorage
 }
 export class Dataset {
-  id: string
+  _id: string
   name: string
   description: string
-  created: string
-  lastUpdated: string
-  elements: string
-  dataManager: DataManagerData | undefined
-  active: boolean // active datasetts who will be fetch in app
-  accessGroupId: string // super admin group who  has access to all the datasets and videos
-  lock: Record<string, unknown> | undefined // lock the datasett if someone else is editing
-  selectionPriority: string[]
-  selection: Record<string, unknown> | undefined
-  dataportenGroups: string[]
-  canvasCourses: string[] // Admin LMS uses canvas courses
-  storages: StorageData[]
-  consentHandling: Record<string, unknown> | undefined
-  consent: CONSENT_SELECTION
+  created: Date
   formId: string
+  status: DatasetStatus
+  consent: DatasetConsent
+  users: DatasetUsers
+  selection: [key: string]: DatasetSelection
+  selectionPriority: string[]
+  storages: DatasetStorage[]
 
   constructor(data?: DatasetData) {
-    this.id = data?.id // undefined if a new dataset
-    this.name = data?.name ? data.name : ''
-    this.description = data?.description ? data.description : ''
-    this.created = data?.created ? data.created : ''
-    this.lastUpdated = data?.lastUpdated ? data.lastUpdated : ''
-    this.elements = data?.elements ? data.elements : ''
-    this.dataManager = data?.dataManager ? data?.dataManager : undefined
-    this.active = data?.active ? data.active : false // active datasetts who will be fetch in app
-    this.accessGroupId = data?.accessGroupId ? data.accessGroupId : ''
-    this.lock = data?.lock ? data?.lock : undefined
-    this.selectionPriority = data?.selectionPriority
-      ? data?.selectionPriority
-      : []
-    this.selection = data?.selection ? data.selection : undefined
-    this.dataportenGroups = data?.dataportenGroups ? data.dataportenGroups : []
-    this.canvasCourses = data?.canvasCourses ? data.canvasCourses : [] // Admin LMS uses canvas courses
-    this.storages = data?.storages ? data?.storages : []
-    this.consentHandling = data?.consentHandling
-      ? data.consentHandling
-      : undefined
-    this.consent = data?.consent
-      ? (data.consent as CONSENT_SELECTION)
-      : CONSENT_SELECTION.manuel
-    this.formId = data?.formId ? data.formId : ''
+    this._id = data?._id // undefined if a new dataset
+    this.name = data?.name || ''
+    this.description = data?.description || ''
+    this.created = data?.created || new Date()
+    this.formId = data?.formId || ''
+    this.status.lastUpdated = data?.status.lastUpdated || new Date()
+    this.status.lockedBy = data?.status.lockedBy || ''
+    this.consent.type = data?.consent
+      ? (data.consent.type as CONSENT_SELECTION)
+      : CONSENT_TYPES.manuel
+    this.users.dataManager = data?.users.dataManager || ''
+    this.selection = data?.selection as DatasetSelection || {}
+    this.selectionPriority = data?.selectionPriority || []
+    this.storages = data?.storages.map((s: DatasetStorage) => {
+      return {
+        name: s.name || '',
+        groupId: s.groupId || '',
+        file: { name: s.file.name || [] },
+        category: s.category || []
+      }
+    })
   }
 }
 

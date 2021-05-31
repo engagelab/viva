@@ -5,9 +5,11 @@ import {
   PersistedAppState,
   LocalUser,
   User,
+  UserData,
+  DeviceStatus,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
-} from '@/types/main'
+} from '../types/main'
 
 import { useVideoStore } from './useVideoStore'
 import { useDatasetStore } from './useDatasetStore'
@@ -20,12 +22,6 @@ interface Dialog {
   visible: boolean
   data: Record<string, unknown>
   doneCallback: () => ()
-}
-interface DeviceStatus {
-  mobile: boolean
-  browser: string
-  isFullScreen: boolean
-  lastActive: number, // ms from epoch
 }
 interface ServerStatus {
   cpuload: Record<string, unknown>
@@ -138,21 +134,21 @@ interface Actions {
   detectDevice: () => void
   detectAppVersion: (fade: boolean) => void
   logout: () => void
-  updateUser: () => void
+  updateUser: () => Promise<void>
   redirectedLogin: () => Promise<void>
   getLoginSession: () => Promise<void>
   tokenLogin: () => Promise<boolean>
   detectOldApp: () => Promise<void>
 }
 const actions = {
-  setSnackbar(message) {
+  setSnackbar(message: string): void {
     _appState.value.snackbar = {
       visibility: true,
       text: message,
       callback: undefined,
     };
   },
-  errorMessage(error: Error | string) {
+  errorMessage(error: Error | string): void {
     let errorMessage: string = error.message || error as String;
     errorMessage += error.code ? ` Code: ${error.code}` : '';
     console.log(`Error: ${errorMessage}`);
@@ -174,7 +170,7 @@ const actions = {
       callback: undefined,
     });
   },
-  detectDevice() {
+  detectDevice(): void {
     const ua = navigator.userAgent;
     console.log(ua);
     const deviceStatus = {
@@ -187,7 +183,7 @@ const actions = {
     _appState.value.deviceStatus.mobile = deviceStatus.mobile;
     _appState.value.deviceStatus.browser = deviceStatus.browser;
   },
-  detectAppVersion() {
+  detectAppVersion(): void {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/api/appversion',
@@ -204,7 +200,7 @@ const actions = {
         }
       })
   },
-  logout() {
+  logout(): void {
     _appState.value.selectedUser = undefined;
     _appState.value.isLoggedIn = false;
     _appState.value.isAuthorised = false;
@@ -222,7 +218,7 @@ const actions = {
   // Used by mobile app to exchange token for session.
   // Token is attached inside communication.js
   // Token is only used if session is not available
-  getLoginSession() {
+  getLoginSession(): Promise<void> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/auth/token',
@@ -235,7 +231,7 @@ const actions = {
       });
   },
   // Called after successful login to retieve user and mark as 'logged in'
-  redirectedLogin() {
+  redirectedLogin(): Promise<void> {
     const errorOnLogin = error => {
       this.setSnackbar({
         visibility: true,
@@ -251,15 +247,15 @@ const actions = {
         route: '/api/user',
         credentials: true,
       }
-      return apiRequest(payload).then(response => {
-          const user = response ? response.user : false;
+      return apiRequest<UserData>(payload).then(response: UserData => {
+          const user: User = response ? new User(response.user) : undefined;
           if (user) {
             _appState.value.isLoggedIn = true;
             _appState.value.isAuthorised = true;
 
             this.activeNow()
             this.selectUser(user)
-            datasetActions.setPresetDatasett(user.datasett)
+            datasetActions.setPresetDatasett(user.datasett.id)
           } else {
             return errorOnLogin('User not found');
           }
@@ -283,7 +279,7 @@ const actions = {
     };
     return completeLogin();
   },
-  updateUser(user) {
+  updateUser(user): Promise<void> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.PUT,
       route: '/api/user',

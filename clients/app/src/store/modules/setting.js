@@ -155,7 +155,7 @@ export default {
       }
       subSetToAddTo[key].push(item)
       commit('updateDatasett', newDataset)
-      dispatch('updateDatasett', { id: datasett.id, path, name: newUtvalgName })
+      dispatch('updateDatasett', { _id: datasett.id, path, name: newUtvalgName })
     },
     fetchConsents ({ state, commit, dispatch }, video) {
       // Relies on a setting being already selected

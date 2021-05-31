@@ -10,11 +10,11 @@ const User = require('../../models/User')
 router.get('/consents', utilities.authoriseUser, (request, response, next) => {
   User.findById(request.session.ref, (err, user) => {
     if (!err) {
-      if (request.query.datasettId && request.query.formId && request.query.formId !== '')  {
+      if (request.query.datasetId && request.query.formId && request.query.formId !== '')  {
         tsd.exportConsent(
           {
             user,
-            datasettId: request.query.datasettId,
+            datasetId: request.query.datasetId,
             formId: request.query.formId,
             utvalg: request.query.utvalg
           },

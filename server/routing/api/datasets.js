@@ -97,7 +97,7 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
 
 // CREATE a dataset
 router.post('/dataset', utilities.authoriseUser, (request, response, next) => {
-  let dataset = request.body.datasett
+  let dataset = request.body
   const u = response.locals.user
   dataset.dataManager.name = u.profile.username
   dataset.dataManager.oauthId = u.profile.oauthId
@@ -111,8 +111,7 @@ router.put(
   '/dataset/selection',
   utilities.authoriseUser,
   (request, response, next) => {
-    const updateData = request.body
-    Dataset.findById(updateData._id, async (error, foundDataset) => {
+    Dataset.findById(request.body._id, async (error, foundDataset) => {
       if (error || !foundDataset)
         next(error || new Error({ status: 400, message: 'datasett not found' }))
       else {

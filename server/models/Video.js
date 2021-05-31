@@ -39,8 +39,9 @@ const videoSchema = new mongoose.Schema({
     },
     inPipeline: { type: Boolean, default: false }, // true if a pipeline is currently working on this file
     isEncrypted: { type: Boolean, default: false }, // true if this video is encrypted
-    isEdited: { type: Boolean, default: false }, // true if this video has edits to perform
+    isClassified: { type: Boolean, default: false }, // true if this video is sensitivity colour-rated
     isConsented: { type: Boolean, default: false }, // true if user has given consent before submitting
+    isEdited: { type: Boolean, default: false }, // true if this video has edits to perform
   },
   users: {
     owner: { type: mongoose.Schema.ObjectId, ref: 'User' },
@@ -71,6 +72,9 @@ const videoSchema = new mongoose.Schema({
 // ** These attributes should be read by the front end model **
 videoSchema.methods.redacted = function () {
   const v = {
+    file: {
+      mimeType: this.file.mimeType
+    },
     details: this.details,
     status: this.status,
     users: this.users,
