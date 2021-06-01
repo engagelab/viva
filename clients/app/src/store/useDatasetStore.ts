@@ -20,9 +20,9 @@ const { getters: videoGetters, actions: videoActions } = useVideoStore()
 const { getters: appGetters, actions: appActions } = useAppStore()
 //State
 interface DatasetState {
-  datasets: Dataset[],
+  datasets: Dataset[]
   selectedDataset: Dataset | undefined
-  presetDataset: Dataset | undefined,
+  presetDataset: Dataset | undefined
   selectedDatasetConsents: Consent[]
 }
 
@@ -41,7 +41,7 @@ const state: Ref<DatasetState> = ref({
   selectedDataset: undefined,
   datasets: [],
   presetDataset: undefined,
-  selectedDatasettConsents: []
+  selectedDatasettConsents: [],
 })
 
 //----------------- Server side functions----------------//
@@ -80,33 +80,27 @@ const getters = {
   get presetDataset(): ComputedRef<Dataset> {
     return computed(() => state.value.selectedDataset)
   },
-  selectedDatasetInfo: state => {
-    const utvalg = state.presetDatasett.utvalg.map(
-      utvalg => `${utvalg.keyName}:${utvalg.title}`
-    )
-    return {
-      name: state.selectedDatasett.navn,
-      utvalg,
-      id: state.selectedDatasett.id
-    }
+  get consents(): ComputedRef<Dataset> {
+    return computed(() => state.value.selectedDatasettConsents)
   },
-  consents: state => state.selectedDatasettConsents
 }
 //Actions
 interface Actions {
   datasetById: (id: string) => ComputedRef<Dataset>
-  errorMessage(error: Error) => void
-  selectDataset(dataset: Dataset) => void
-  selectDatasetById(datasetId: string) => void
-  fetchDatasets() => Promise<void>
-  setPresetDataset(id: string) => void
-  addSelectionToDataset(data: SelectionOptions) => void
-  fetchConsents(video: Video) => void
+  errorMessage: (error: Error) => void
+  selectDataset: (dataset: Dataset) => void
+  selectDatasetById: (datasetId: string) => void
+  fetchDatasets: () => Promise<void>
+  setPresetDataset: (id: string) => void
+  addSelectionToDataset: (data: SelectionOptions) => void
+  fetchConsents: (video: Video) => void
 }
 
 const actions = {
   datasetById(id: string): ComputedRef<Dataset> {
-    return computed(() => state.value.datasets.find((d: Dataset) => id === d._id))
+    return computed(() =>
+      state.value.datasets.find((d: Dataset) => id === d._id)
+    )
   },
   errorMessage(error: Error): void {
     let errorMessage = error.message || error
@@ -118,9 +112,9 @@ const actions = {
     state.value.selectedDataset = dataset
   },
   selectDatasetById(datasetId: string): void {
-    const dataset = state.datasets.find(s => s._id == datasetId)
-    if (dataset) state.selectedDataset = dataset
-    else state.selectedDataset = undefined
+    const dataset = state.value.datasets.find((s) => s._id == datasetId)
+    if (dataset) state.value.selectedDataset = dataset
+    else state.value.selectedDataset = undefined
   },
   fetchDatasets(): Promise<void> {
     const payload: APIRequestPayload = {
@@ -128,22 +122,23 @@ const actions = {
       route: '/api/datasets',
       credentials: true,
     }
-    return apiRequest(payload).then((datasets) => {
-      state.value.datasets = []
-      datasets.forEach(s => {
-        const newDataset = new Datasett(s)
-        state.value.datasets.push(newDataset)
-        if (
-          state.presetDatasett &&
-          state.presetDatasett.id == newDataset.id
-        ) {
-          state.value.selectedDataset = newDataset
-        }
+    return apiRequest(payload)
+      .then((datasets) => {
+        state.value.datasets = []
+        datasets.forEach((s) => {
+          const newDataset = new Datasett(s)
+          state.value.datasets.push(newDataset)
+          if (
+            state.value.presetDatasett &&
+            state.value.presetDatasett.id == newDataset.id
+          ) {
+            state.value.selectedDataset = newDataset
+          }
+        })
       })
-    })
-    .catch(error => {
-      dispatch('errorMessage', error)
-    })
+      .catch((error) => {
+        dispatch('errorMessage', error)
+      })
   },
   setPresetDataset(id: string): void {
     const d = state.value.datasets.find((ds) => ds._id === id)
@@ -151,32 +146,30 @@ const actions = {
       state.value.selectedDataset = d
       state.value.presetDataset = d
     }
-    // if (!dataset.locks) dataset.locks = {}
   },
   addSelectionToDataset(data: SelectionOptions): void {
-    const { path: string[]; newSelectionName: string; datasett: Dataset } = data
-    const newDataset = new Datasett(datasett)
+    const newDataset = new Datasett(data.datasett)
     let subSetToAddTo = newDataset.selection
     let key
-    path.forEach((p, index) => {
+    data.path.forEach((p, index) => {
       key = newDataset.selectionPriority[index]
-      subSetToAddTo = subSetToAddTo[key].find(item => item.title == p)
+      subSetToAddTo = subSetToAddTo[key].find((item) => item.title == p)
     })
-    key = newDataset.selectionPriority[path.length]
+    key = newDataset.selectionPriority[data.path.length]
     if (!subSetToAddTo[key]) {
       subSetToAddTo[key] = []
     }
-    const item = { title: newSelectionName }
-    if (path.length + 1 < newDataset.selectionPriority.length) {
+    const newItem = { title: data.newSelectionName }
+    if (data.path.length + 1 < newDataset.selectionPriority.length) {
       const nextKeyDown = newDataset.selectionPriority[path.length + 1]
-      item[nextKeyDown] = []
+      newItem[nextKeyDown] = []
     }
-    subSetToAddTo[key].push(item)
+    subSetToAddTo[key].push(newItem)
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.PUT,
       credentials: true,
       route: '/api/dataset/selection',
-      body: { _id: datasett.id, path, name: newSelectionName },
+      body: { _id: datasett.id, path, name: data.newSelectionName },
     }
     apiRequest<DatasetSelection>(payload).then(() => {
       state.value.selectedDataset.selection = newDataset.selection
@@ -184,7 +177,9 @@ const actions = {
   },
   fetchConsents(video: Video): void {
     // Relies on a setting being already selected
-    const datasetForVideo: Dataset = state.datasets.find(d => d._id == video.dataset.id)
+    const datasetForVideo: Dataset = state.value.datasets.find(
+      (d) => d._id == video.dataset.id
+    )
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/api/consents',
@@ -194,15 +189,19 @@ const actions = {
         formId: datasetForVideo.formId,
       },
       credentials: true,
-      body: undefined
+      body: undefined,
     }
-    apiRequest(payload).then((consents: Consent[]) => {
-        state.value.selectedDatasetConsents = consents.map(c => ({ ...c, checked: false }))
+    apiRequest(payload)
+      .then((consents: Consent[]) => {
+        state.value.selectedDatasetConsents = consents.map((c) => ({
+          ...c,
+          checked: false,
+        }))
       })
       .catch((error: Error) => {
         this.errorMessage(error)
       })
-  }
+  },
 }
 
 // This defines the interface used externally

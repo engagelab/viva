@@ -20,18 +20,6 @@
           preload="metadata"
           :type="videoMimeType"
         ></video>
-        <!-- Old method for video capture: iOS Safari-->
-        <label v-if="!useCordova">
-          <input
-            type="file"
-            accept="video/*"
-            capture="environment"
-            id="safariVideoInput"
-            ref="safariVideoInput"
-            style="position:absolute;width:0;height:0"
-            @change="videoInputAvailable($event)"
-          />
-        </label>
       </div>
       <!--/div>
           <div v-show="selectedVideo.decryptionInProgress">
@@ -42,13 +30,6 @@
           <div class="mx-4 text-white">{{ playerTime }}</div>
         </div>
         <div class="flex flex-grow justify-center items-center" v-if="pageNumber == 0">
-          <SVGSymbol
-            v-show="recording"
-            applyClasses="w-8 h-8 md:w-12"
-            @click.native="stopRecording()"
-            width="50"
-            symbol="stop"
-          ></SVGSymbol>
           <SVGSymbol
             v-show="!recording"
             applyClasses="w-8 h-8 md:w-12"
@@ -372,22 +353,18 @@ export default {
     },
     stopPlaying() {
       const player = this.$refs.playbackVideo;
-      if (this.recording) {
-        this.stopRecording();
+      player.pause();
+      player.volume = this.currentVolume;
+      this.playing = false;
+      player.currentTime = this.playerLowerBound;
+      this.playerCurrentTime = player.currentTime;
+      this.stateToChildren.playerCurrentTime = this.playerCurrentTime;
+      if (this.timeIsMasked(player.currentTime)) {
+        player.style.filter = 'blur(15px)';
       } else {
-        player.pause();
-        player.volume = this.currentVolume;
-        this.playing = false;
-        player.currentTime = this.playerLowerBound;
-        this.playerCurrentTime = player.currentTime;
-        this.stateToChildren.playerCurrentTime = this.playerCurrentTime;
-        if (this.timeIsMasked(player.currentTime)) {
-          player.style.filter = 'blur(15px)';
-        } else {
-          player.style.filter = 'blur(0)';
-        }
-        player.removeEventListener('timeupdate', this.onTimeUpdate);
+        player.style.filter = 'blur(0)';
       }
+      player.removeEventListener('timeupdate', this.onTimeUpdate);
     },
     timeIsMasked(currentTime) {
       return this.video.edl.blur.some(
@@ -469,18 +446,6 @@ export default {
         }
       }
     },
-    // Receive video data from the old recording method - <input> tag
-    videoInputAvailable(event) {
-      this.recording = false;
-      const videoData = event.target.files[0];
-
-      // Save the video data in both raw and encrypted form
-      this.appendChunk({ fileId: this.selectedVideo.fileId, chunk: videoData });
-      this.encryptChunk({
-        chunk: videoData,
-        fileId: this.selectedVideo.fileId,
-      }).then(() => this.saveVideo(this.selectedVideo.fileId));
-    },
     /**
      *  calculateMediaDuration()
      *  Force media element duration calculation.
@@ -539,10 +504,8 @@ export default {
       };
 
       const dataLoaded = () => {
-        if (this.useCordova) {
-          setVideoDuration(player.duration);
-          this.setPlayerBounds();
-        }
+        setVideoDuration(player.duration);
+        this.setPlayerBounds();
         player.removeEventListener('loadeddata', dataLoaded);
         this.videoDataLoaded = true;
         this.setRecordingNow(false);
@@ -553,12 +516,7 @@ export default {
           player.srcObject = null;
         }
         player.setAttribute('src', objectURL + '#t=0.1');
-        if (!this.useCordova) {
-          this.calculateMediaDuration(player).then(duration => {
-            setVideoDuration(duration);
-            this.setPlayerBounds();
-          });
-        } // else, set the media bounds in the dataLoaded function..
+        //set the media bounds in the dataLoaded function..
         player.addEventListener('loadeddata', dataLoaded);
         player.load();
       };
@@ -572,31 +530,11 @@ export default {
       );
 
       const data = this.unencryptedData(this.selectedVideo.fileId); // Ensure chunks exist
-      if (this.useCordova) {
-        if (data) {
-          // <- FileEntry
-          this.loadCordovaMedia(data).then(mediaFile => {
-            // <- MediaFile
-            const p = mediaFile.nativeURL; // data.toURL(); //data.nativeURL; // toInternalURL() // toNativeURL() // toURI(mimeType)
-            loadData(p);
-          });
-        }
-      } else {
-        if (data && data.length > 0) {
-          let blob;
-          if (!this.useOldRecorder) {
-            blob = new Blob(data, {
-              type: this.selectedVideo.mimeType,
-            });
-            // For Safari desktop and mobile (but not Cordova!) data is direct from iOS camera rsponse
-          } else {
-            blob = data[0];
-          }
-          if (blob) {
-            const objectURL = window.URL.createObjectURL(blob);
-            loadData(objectURL);
-          }
-        }
+      if (data) { // <- FileEntry
+        this.loadCordovaMedia(data).then(mediaFile => { // <- MediaFile
+          const p = mediaFile.nativeURL; // data.toURL(); //data.nativeURL; // toInternalURL() // toNativeURL() // toURI(mimeType)
+          loadData(p);
+        });
       }
     },
 
@@ -630,11 +568,6 @@ export default {
 
     // Begin recording a video using MediaRecorder or Input method depending on device
     async recordVideo() {
-      // Prevent if we have not checked samtykker
-      /* if (!this.selectedVideo.subState.consented) {
-        return;
-      } */
-
       // Make sure EDL is cleared if it is
       this.video.edl = {
         trim: [],
@@ -642,138 +575,31 @@ export default {
       };
       this.recording = true;
       this.videoWasReplaced = true;
-      let finalChunk = false;
-      const player = this.$refs.playbackVideo;
-
       this.setRecordingNow(true);
 
-      if (this.useOldRecorder && !this.useCordova) {
-        // Safari does not support MediaRecorder yet..
-        // * Using the old method for recording on Safari mobile
-        // * No soltion currently for Safari desktop. A minor use case, can it wait until fall 2019 - MediaRecorder support?
-        // Also - we must call this very early after the user interaction to prevent Safari blocking the Javasscript
-        document.getElementById('safariVideoInput').click();
-      }
-
-      // Request video data after some time delay to produce chunks
-      const getRecordedChunk = () => {
-        this.dataTimeout = setTimeout(() => {
-          if (this.recorder && this.recorder.state == 'recording') {
-            if (this.recorder.currentTime > strings.recordingMaxDurationWeb) {
-              this.stopRecording();
-            } else {
-              this.recorder.requestData();
-            }
-          }
-        }, strings.recordingDataInterval * 1000);
-      };
-
-      // Clean up after recording is finished and load the video
-      const finishedRecording = () => {
-        this.saveVideo(this.selectedVideo.fileId);
-      };
-
-      // Process a new chunk
-      const processChunk = chunk => {
-        const finalChunkReceived = finalChunk;
-        // Stop the timer until we're done encrypting the current chunk
-        clearTimeout(this.dataTimeout);
-        // Add the raw chunk to the current video for immediate playback
-        this.appendChunk({ fileId: this.selectedVideo.fileId, chunk });
-        // Encrypt this chunk and append it to the video's data
-        this.encryptChunk({ chunk, fileId: this.selectedVideo.fileId })
-          .then(() => {
-            // If the recording was finished meanwhile, encrypt the final chunk
-            // Otherwise wait for the next timeout
-            if (finalChunkReceived) {
-              finishedRecording();
-            } else {
-              // After we have finished encrypting, timeout again for a new chunk
-              getRecordedChunk();
-            }
-          })
-          .catch(error => console.log(error));
-      };
-
-      // If using Cordova, call the device camera
-      if (this.useCordova) {
-        this.recording = true;
-        cordovaService
-          .captureVideo()
-          .then(async data => {
-            this.replaceVideoData({
-              setting: this.selectedDatasett,
-              user: this.user,
-              fileId: this.selectedVideo.fileId,
-            }).then(() => {
-              const fileId = this.selectedVideo.fileId;
-              // Add the MediaFile object (this is not video data!) to the store
-              this.setDecryptedVideoData({ fileId, data });
-              // This will move the video from a temp directory to our app storage
-              this.saveVideo(fileId);
-              this.recording = false;
-            })
-          })
-          .catch(error => {
-            console.log(error)
+      // Call the device camera
+      this.recording = true;
+      cordovaService
+        .captureVideo()
+        .then(async data => {
+          this.replaceVideoData({
+            setting: this.selectedDatasett,
+            user: this.user,
+            fileId: this.selectedVideo.fileId,
+          }).then(() => {
+            const fileId = this.selectedVideo.fileId;
+            // Add the MediaFile object (this is not video data!) to the store
+            this.setDecryptedVideoData({ fileId, data });
+            // This will move the video from a temp directory to our app storage
+            this.saveVideo(fileId);
             this.recording = false;
-          });
-      }
-
-      // Otherwise, use the new MediaRecorder interface to record video
-      if (!this.useOldRecorder && !this.useCordova) {
-        if (this.useFullScreen) {
-          this.toggleFullScreen();
-        }
-
-        await this.replaceVideoData({
-          setting: this.selectedDatasett,
-          user: this.user,
-          fileId: this.selectedVideo.fileId,
+          })
+        })
+        .catch(error => {
+          console.log(error)
+          this.recording = false;
         });
 
-        // Define constraints for recording
-        const constraints = {
-          audio: true,
-          video: {
-            facingMode: 'environment',
-          },
-        };
-
-        // Request a stream with the constraints from the browser
-        navigator.mediaDevices.getUserMedia(constraints).then(stream => {
-          // Create a recorder using the stream
-
-          if (this.deviceStatus.mobile && this.deviceStatus.browser !== 'Safari') {
-            this.recorder = new MediaRecorder(stream);
-          } else {
-            this.recorder = new MediaRecorder(stream, {
-              mimeType: this.selectedVideo.mimeType,
-              videoBitsPerSecond: 256 * 8 * 1024,
-            });
-          }
-
-          // Assign the stream to the player to show the recording as it happens
-          if ('srcObject' in player) {
-            player.srcObject = stream;
-            player.play();
-          }
-
-          // Await data to come from the stream in chunks
-          this.recorder.ondataavailable = event => {
-            this.playerCurrentTime = player.currentTime;
-            // If we are still recording, then there is more data to come after this chunk
-            if (this.recorder.state != 'recording') {
-              finalChunk = true;
-            }
-            processChunk(event.data);
-          };
-
-          this.recorder.start();
-          this.recording = true;
-          getRecordedChunk();
-        }).catch(err => console.log(err))
-      }
     },
     stopRecording() {
       const player = this.$refs.playbackVideo;

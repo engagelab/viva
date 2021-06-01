@@ -131,7 +131,7 @@ enum VIDEO_STORAGE_TYPES {
   google = 'google',
   onedrive = 'onedrive',
   educloud = 'educloud',
-  lagringshotell = 'lagringshotell'
+  lagringshotell = 'lagringshotell',
 }
 enum VIDEO_STATUS_TYPES {
   draft = 'draft', // Before upload has been attempted
@@ -141,7 +141,7 @@ enum VIDEO_STATUS_TYPES {
   converted = 'converted', // Video was converted by FFMPEG, ready to be sent to storage(s)
   edited = 'edited', // Video was saved to Lagringshotell. Video is ready to be transferred to another location.
   complete = 'complete', // Video has now been uploaded, decrypted, trimmed/watermarked, saved and transferred to another location. This is the LAST pipeline stage
-  error = 'error' // Something went wrong. Videos in this state will not move further in the pipeline until attended to
+  error = 'error', // Something went wrong. Videos in this state will not move further in the pipeline until attended to
 }
 
 export {
@@ -164,6 +164,7 @@ export {
   recordingMaxDurationWeb,
   videoExpiryTime,
   cryptoAlgorithm,
+  cordovaConstants,
   videoProgressCheckInterval,
   dbVersion,
   device,

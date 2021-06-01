@@ -83,22 +83,9 @@ export default {
     selectVideo (state, video) {
       state.selectedVideo = video
     },
-    /* setTempVideo (state, video) {
-      state.tempVideo = new VideoMetadata({ video })
-    }, */
     setRecordingNow (state, value) {
       state.recordingNow = value
     },
-    /* updateTempVideoAttribs (state, attribs) {
-      if (state.tempVideo) {
-        const keys = Object.keys(attribs)
-        keys.forEach(k => {
-          if (Object.prototype.hasOwnProperty.call(state.tempVideo, k)) {
-            Vue.set(state.tempVideo, k, attribs[k])
-          }
-        })
-      }
-    }, */
     clearAllMetadata (state) {
       state.videos = {}
       state.draftVideos = {}
@@ -657,7 +644,10 @@ export default {
           endpoint: `${remoteAddress}/upload`,
           retryDelays: [0, 1000, 3000, 5000],
           chunkSize: 512 * 1024, // 512kB
-          withCredentials: true,
+          onBeforeRequestSend: (req) => {
+            const xhr = req.getUnderlyingObject()
+            xhr.withCredentials = true
+          },
           headers: {
             Authorization: `jwt ${token}`
           },

@@ -9,6 +9,7 @@ import {
   DeviceStatus,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
+  Callback,
 } from '../types/main'
 
 import { useVideoStore } from './useVideoStore'
@@ -21,15 +22,15 @@ import { appVersion } from '../constants'
 interface Dialog {
   visible: boolean
   data: Record<string, unknown>
-  doneCallback: () => ()
+  doneCallback: Callback
 }
 interface ServerStatus {
   cpuload: Record<string, unknown>
 }
 interface Snackbar {
-  visibility: boolean, // A toggle for showing error messages to the user
-  text: string,
-  callback: () => (),
+  visibility: boolean // A toggle for showing error messages to the user
+  text: string
+  callback: Callback
 }
 export interface AppState {
   selectedUser: User
@@ -45,31 +46,31 @@ export interface AppState {
 }
 // ------------  State (internal) --------------
 const _appState: Ref<AppState> = ref({
-    selectedUser: undefined,
-    hostType: 'tablet',
-    isLoggedIn: false,
-    isAuthorised: false,
-    useCordova: false,
-    appIsOld: false,
-    dialog: {
-      visible: false,
-      data: undefined, // Data object to pass to the child dialog
-      doneCallback: undefined, // Callback function from the originating component
-    },
-    deviceStatus: {
-      mobile: false,
-      browser: '',
-      isFullScreen: false,
-      lastActive: new Date().getTime(), // ms from epoch
-    },
-    serverStatus: {
-      cpuload: {},
-    },
-    snackbar: {
-      visibility: false, // A toggle for showing error messages to the user
-      text: '',
-      callback: undefined,
-    }
+  selectedUser: User | undefined,
+  hostType: 'tablet',
+  isLoggedIn: false,
+  isAuthorised: false,
+  useCordova: false,
+  appIsOld: false,
+  dialog: {
+    visible: false,
+    data: undefined, // Data object to pass to the child dialog
+    doneCallback: undefined, // Callback function from the originating component
+  },
+  deviceStatus: {
+    mobile: false,
+    browser: '',
+    isFullScreen: false,
+    lastActive: new Date().getTime(), // ms from epoch
+  },
+  serverStatus: {
+    cpuload: {},
+  },
+  snackbar: {
+    visibility: false, // A toggle for showing error messages to the user
+    text: '',
+    callback: undefined,
+  },
 })
 
 // This will be saved to device storage
@@ -80,17 +81,17 @@ const _persistedAppState: Ref<PersistedAppState> = ref({
 // ------------  Getters (Read only) --------------
 interface Getters {
   hostType: ComputedRef<string>
-  lastActive: ComputedRef<number>,
+  lastActive: ComputedRef<number>
   isLoggedIn: ComputedRef<boolean>
   isAuthorised: ComputedRef<boolean>
   useCordova: ComputedRef<boolean>
   appIsOld: ComputedRef<boolean>
-  isFullScreen: ComputedRef<boolean>,
+  isFullScreen: ComputedRef<boolean>
   dialog: ComputedRef<Dialog>
-  snackbar: ComputedRef<Snackbar>,
-  deviceStatus: ComputedRef<DeviceStatus>,
-  serverStatus: ComputedRef<ServerStatus>,
-  user: ComputedRef<User>,
+  snackbar: ComputedRef<Snackbar>
+  deviceStatus: ComputedRef<DeviceStatus>
+  serverStatus: ComputedRef<ServerStatus>
+  user: ComputedRef<User>
 }
 const getters = {
   get hostType(): ComputedRef<string> {
@@ -129,6 +130,9 @@ const getters = {
 }
 // ------------  Actions --------------
 interface Actions {
+  addDraftId: (fileID) => void
+  removeDraftId: (fileID) => void
+  setDialog: (dialog: Dialog) => void
   setSnackbar: (message: string) => void
   errorMessage: (message: Error | string) => void
   detectDevice: () => void
@@ -141,17 +145,32 @@ interface Actions {
   detectOldApp: () => Promise<void>
 }
 const actions = {
+  addDraftId(fileID): void {
+    _appState.value.selectedUser.videos.draftIDs.push(fileID)
+  },
+  removeDraftId(fileID): void {
+    const i = _appState.value.selectedUser.videos.draftIDs.indexOf(fileID)
+    if (i > -1) {
+      _appState.value.selectedUser.videos.removedDraftIDs.push(
+        _appState.value.selectedUser.videos.draftIDs[i]
+      )
+      _appState.value.selectedUser.videos.draftIDs.splice(i, 1)
+    }
+  },
+  setDialog(dialog: Dialog): void {
+    _appState.value.dialog = dialog
+  },
   setSnackbar(message: string): void {
     _appState.value.snackbar = {
       visibility: true,
       text: message,
       callback: undefined,
-    };
+    }
   },
   errorMessage(error: Error | string): void {
-    let errorMessage: string = error.message || error as String;
-    errorMessage += error.code ? ` Code: ${error.code}` : '';
-    console.log(`Error: ${errorMessage}`);
+    let errorMessage: string = error.message || (error as string)
+    errorMessage += error.code ? ` Code: ${error.code}` : ''
+    console.log(`Error: ${errorMessage}`)
     if (errorMessage == 'Invalid login') {
       this.logout()
       window.setTimeout(() => {
@@ -161,59 +180,61 @@ const actions = {
           type: 'error',
           callback: undefined,
         })
-      }, 2000);
+      }, 2000)
     }
     this.setSnackbar({
       visibility: true,
       text: errorMessage,
       type: 'error',
       callback: undefined,
-    });
+    })
   },
   detectDevice(): void {
-    const ua = navigator.userAgent;
-    console.log(ua);
+    const ua = navigator.userAgent
+    console.log(ua)
     const deviceStatus = {
       mobile: ua.indexOf('Mobi') !== -1,
       browser:
         ua.indexOf('Chrome') !== -1 && ua.indexOf('Safari') !== -1
           ? 'Chrome'
           : 'Safari',
-    };
-    _appState.value.deviceStatus.mobile = deviceStatus.mobile;
-    _appState.value.deviceStatus.browser = deviceStatus.browser;
+    }
+    _appState.value.deviceStatus.mobile = deviceStatus.mobile
+    _appState.value.deviceStatus.browser = deviceStatus.browser
   },
   detectAppVersion(): void {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/api/appversion',
-      contentType: 'text/html'
+      contentType: 'text/html',
     }
     apiRequest(payload).then((version) => {
-        if (appVersion !== version) {
-          _appState.value.appIsOld = true
-          this.setSnackbar({
-            visibility: true,
-            text: 'Viva appen er en eldre versjon, og du må laste ned en ny versjon fra Appstore',
-            callback: undefined,
-          });
-        }
-      })
+      if (appVersion !== version) {
+        _appState.value.appIsOld = true
+        this.setSnackbar({
+          visibility: true,
+          text: 'Viva appen er en eldre versjon, og du må laste ned en ny versjon fra Appstore',
+          callback: undefined,
+        })
+      }
+    })
   },
   logout(): void {
-    _appState.value.selectedUser = undefined;
-    _appState.value.isLoggedIn = false;
-    _appState.value.isAuthorised = false;
+    _appState.value.selectedUser = undefined
+    _appState.value.isLoggedIn = false
+    _appState.value.isAuthorised = false
     videoActions.clearDataUponLogout()
     videoActions.abortAllUploads()
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
-      route: '/auth/logout'
+      route: '/auth/logout',
     }
-    apiRequest(payload).then(() => {
-      localStorage.removeItem('jwt')
-      router.push('/logout')
-    }).catch(err => console.log(err))
+    apiRequest(payload)
+      .then(() => {
+        localStorage.removeItem('jwt')
+        router.push('/logout')
+      })
+      .catch((err) => console.log(err))
   },
   // Used by mobile app to exchange token for session.
   // Token is attached inside communication.js
@@ -224,22 +245,21 @@ const actions = {
       route: '/auth/token',
       credentials: true,
     }
-    return apiRequest(payload)
-      .catch(error => {
-        console.log(error);
-        this.logout()
-      });
+    return apiRequest(payload).catch((error) => {
+      console.log(error)
+      this.logout()
+    })
   },
   // Called after successful login to retieve user and mark as 'logged in'
   redirectedLogin(): Promise<void> {
-    const errorOnLogin = error => {
+    const errorOnLogin = (error) => {
       this.setSnackbar({
         visibility: true,
         text: error,
         callback: undefined,
-      });
+      })
       this.logout()
-    };
+    }
 
     const completeLogin = () => {
       const payload: APIRequestPayload = {
@@ -247,17 +267,18 @@ const actions = {
         route: '/api/user',
         credentials: true,
       }
-      return apiRequest<UserData>(payload).then(response: UserData => {
-          const user: User = response ? new User(response.user) : undefined;
+      return apiRequest<UserData>(payload)
+        .then((response: UserData) => {
+          const user: User = response ? new User(response.user) : undefined
           if (user) {
-            _appState.value.isLoggedIn = true;
-            _appState.value.isAuthorised = true;
+            _appState.value.isLoggedIn = true
+            _appState.value.isAuthorised = true
 
             this.activeNow()
             this.selectUser(user)
             datasetActions.setPresetDatasett(user.datasett.id)
           } else {
-            return errorOnLogin('User not found');
+            return errorOnLogin('User not found')
           }
 
           // Check for an encryptionKey, create one and save, if not found
@@ -265,19 +286,19 @@ const actions = {
           // The entire User model should not persist in browser and be removed from browser on logout
           if (!user.encryptionKey && !state.useCordova) {
             // Generate a key, export and convert to string for storage sever-side
-            return webcryptoService.generateKey().then(key => {
-              webcryptoService.keyToString(key).then(exportedKey => {
-                user.encryptionKey = exportedKey;
+            return webcryptoService.generateKey().then((key) => {
+              webcryptoService.keyToString(key).then((exportedKey) => {
+                user.encryptionKey = exportedKey
                 this.updateUser(user)
-              });
-            });
+              })
+            })
           }
         })
-        .catch(error => {
-          return errorOnLogin(error);
-        });
-    };
-    return completeLogin();
+        .catch((error) => {
+          return errorOnLogin(error)
+        })
+    }
+    return completeLogin()
   },
   updateUser(user): Promise<void> {
     const payload: APIRequestPayload = {
@@ -288,10 +309,10 @@ const actions = {
     }
     user.datasett = datasetGetters.presetDatasett
     return apiRequest(payload)
-      .then(u => _appState.value.selectedUser = u)
-      .catch(error => {
+      .then((u) => (_appState.value.selectedUser = u))
+      .catch((error) => {
         this.errorMessage(error)
-      });
+      })
   },
 
   // Call server for the current version of the app

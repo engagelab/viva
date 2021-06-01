@@ -249,8 +249,8 @@ export default {
     ...mapActions('video', ['createDraftVideo']),
     newVideo() {
       this.createDraftVideo({
-        setting: this.selectedDatasett,
-        datasetInfo: this.selectedDatasetInfo,
+        dataset: this.selectedDatasett,
+        selection: this.selectedDataset.selection,
         user: this.user,
       }).then(() => this.$router.push('/videos/editor?page=0'));
     },

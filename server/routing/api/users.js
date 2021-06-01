@@ -24,7 +24,7 @@ router.put('/user', authoriseUser, (request, response, next) => {
       const newDrafts = update.videos.draftIDs.filter(
         (id) => !u.videos.draftIDs.includes(id)
       )
-      const removedDrafts = update.removedDraftMetadataIDs || []
+      const removedDrafts = update.videos.removedDraftIDs || []
 
       // Remove drafts
       let dbDrafts = u.videos.draftIDs.filter((r) => !removedDrafts.includes(r))

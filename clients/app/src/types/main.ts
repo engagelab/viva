@@ -1,4 +1,10 @@
-import { USER_ROLE, CONSENT_TYPES, VIDEO_STATUS_TYPES, videoStorageTypes, VIDEO_STORAGE_TYPES, utvalger } from '../constants'
+import {
+  USER_ROLE,
+  CONSENT_TYPES,
+  VIDEO_STATUS_TYPES,
+  VIDEO_STORAGE_TYPES,
+} from '../constants'
+import { ui8arr2str, str2ab } from '../utilities'
 
 // ---------------  Utility -----------------
 declare global {
@@ -113,7 +119,7 @@ export interface DeviceStatus {
   mobile: boolean
   browser: string
   isFullScreen: boolean
-  lastActive: number, // ms from epoch
+  lastActive: number // ms from epoch
 }
 
 //------------------------- Video and Dataset models -----------------
@@ -122,69 +128,58 @@ interface EditDecriptionList {
   blur: number[][]
 }
 interface VideoDetails {
-  id: string // Used instead of video._id front end, and for QR Code.
-  name: string // A human-readable string for naming this video
-  category: string // green, yellow, red
-  created: Date
-  description: string
-  duration: number // Seconds  created: { type: Date },
-  edl: EditDecriptionList
-  encryptionKey: string
-  encryptionIV: Uint8Array // Mixed type. Mongoose has no type for UInt8Array..
+  id?: string // Used instead of video._id front end, and for QR Code.
+  name?: string // A human-readable string for naming this video
+  category?: string // green, yellow, red
+  created?: Date
+  description?: string
+  duration?: number // Seconds  created: { type: Date },
+  edl?: EditDecriptionList
+  encryptionKey?: string
+  encryptionIV?: Uint8Array // Mixed type. Mongoose has no type for UInt8Array..
 }
 interface VideoStatus {
-  main: VIDEO_STATUS_TYPES
-  error: {
+  main?: VIDEO_STATUS_TYPES
+  error?: {
     errorInfo: string
-  },
-  inPipeline: boolean // true if a pipeline is currently working on this file
-  isEncrypted: boolean // true if this video is encrypted
-  isEdited: boolean // true if this video has edits to perform
-  isConsented: boolean
+  }
+  inPipeline?: boolean // true if a pipeline is currently working on this file
+  isEncrypted?: boolean // true if this video is encrypted
+  isEdited?: boolean // true if this video has edits to perform
+  isConsented?: boolean
 
   // Front end only (not saved at server)
-  recordingExists: boolean // true if a recording data file has been assigned to this video
-  encryptionInProgress: boolean
-  decryptionInProgress: boolean
-  uploadInProgress: boolean
-  isUploaded: boolean
-  uploadProgress: number
-  hasUnsavedChanges: boolean
-  hasNewDataAvailable: boolean
+  recordingExists?: boolean // true if a recording data file has been assigned to this video
+  encryptionInProgress?: boolean
+  decryptionInProgress?: boolean
+  uploadInProgress?: boolean
+  isUploaded?: boolean
+  uploadProgress?: number
+  hasUnsavedChanges?: boolean
+  hasNewDataAvailable?: boolean
 }
 interface VideoSharing {
-  users: string[],
-  access: boolean
-  description: string
-  edl: EditDecriptionList
+  users?: string[]
+  access?: boolean
+  description?: string
+  edl?: EditDecriptionList
 }
 interface VideoUsers {
-  owner: string
-  sharedWith: string[], // Users who can see this video. Used for easier searching
-  sharing: VideoSharing[] // Each entry is a share for a particular set of users, and particular EDL of this video
+  owner?: string
+  sharedWith?: string[] // Users who can see this video. Used for easier searching
+  sharing?: VideoSharing[] // Each entry is a share for a particular set of users, and particular EDL of this video
 }
 interface VideoDataset {
-  id: string
-  name: string
-  selection: string[] // 'utvalg' setting
+  id?: string
+  name?: string
+  selection?: string[] // 'utvalg' setting
 }
-export interface VideoData {
-  file: {
-    mimeType: string
-  }
-  details: VideoDetails
-  status: VideoStatus
-  users: VideoUsers
-  dataset: VideoDataset
-  consents: string[]
-  storages: string[]
-}
+
 export interface VideoSpec {
-  video?: Video
-  dataset?: Dataset
-  utvalg?: string[]
-  user?: User
-  deviceStatus?: DeviceStatus
+  dataset: Dataset
+  selection: string[] // 'selection' as string array from PresetDataset
+  user: User
+  deviceStatus: DeviceStatus
 }
 
 export class Video {
@@ -198,111 +193,105 @@ export class Video {
   consents: string[]
   storages: string[]
 
-  // Front-end only attributes
-  aId: string
+  constructor(data: Video | VideoSpec) {
+    this.details = {
+      id: utilities.uuid(),
+      name: id.substring(0, 7),
+      category: '',
+      created: new Date(),
+      description: '',
+      duration: 0,
+      edl: {
+        trim: [],
+        blur: [],
+      },
+      encryptionKey: '', // This key is used to encrypt the video data
+      encryptionIV: [], // This initial value is required for AES-GCM. The IV should never be reused
+    }
+    this.status = {
+      main: VIDEO_STATUS_TYPES.draft,
+      error: {
+        errorInfo: '',
+      },
+      inPipeline: false,
+      isEncrypted: false,
+      isEdited: false,
+      isConsented: false,
 
-  constructor(data?: VideoData | Video) {
-    details: this.details,
-    status: this.status,
-    users: this.users,
-    dataset: this.dataset,
-    consents: this.consents
+      // Front end only (not saved at server)
+      recordingExists: false,
+      encryptionInProgress: false,
+      decryptionInProgress: false,
+      uploadInProgress: false,
+      isUploaded: VIDEO_STATUS_TYPES.premeta,
+      uploadProgress: 0,
+      hasUnsavedChanges: false,
+      hasNewDataAvailable: false,
+    }
+    this.users = {
+      owner: '',
+      sharedWith: [],
+      sharing: [],
+    }
+    this.dataset = {
+      id: '',
+      name: '',
+      selection: [],
+    }
+    this.consents = []
+    this.storages = []
+    this.file.mimeType = 'video/mp4'
+
+    // Create a Video using the current App state
+    if (data instanceof VideoSpec) {
+      data = data as VideoSpec
+      this.updateDataset({
+        id: data.dataset._id,
+        name: data.dataset.name,
+        selection: data.selection,
+      })
+      this.updateUsers({ owner: data.user._id })
+      this.storages = data.dataset.storages.map((storage) => storage.name)
+      this.file.mimeType =
+        data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4'
+    } else {
+      // Create a video based on a given Video
+      this.updateAll(data as Video)
+    }
   }
 
-  constructor (data: VideoData | VideoSpec) {
-    if (data instanceof VideoData) {
-      data = data as VideoData
-      this.details = data.details
-      this.status = data.status
-      this.users = data.users
-      this.dataset = data.dataset
-      this.consents = data.consents
-    }
-    else if (data instanceof VideoSpec) {
-      data = data as VideoSpec
-      const v: Video = data.video || {}
-      const d: Dataset = data.dataset || {}
-      const ds: DeviceStatus = data.deviceStatus || {}
-      const u: User = data.user || {}
+  updateDetails(details: VideoDetails): void {
+    Object.keys(details).forEach((key) => (this.details[key] = details[key]))
+  }
+  updateStatus(status: VideoStatus): void {
+    Object.keys(status).forEach((key) => (this.status[key] = status[key]))
+  }
+  updateUsers(users: VideoUsers): void {
+    Object.keys(users).forEach((key) => (this.users[key] = users[key]))
+  }
+  updateDataset(dataset: VideoDataset): void {
+    Object.keys(dataset).forEach((key) => (this.dataset[key] = dataset[key]))
+  }
 
-      this.aId = utilities.uuid()
-
-      this.details = {
-        id: v.details.id || utilities.uuid()
-        name: v.details.name || this.details.id.substring(0, 7)
-        category: v.details.category || ''
-        created: v.details.created || new Date()
-        description: v.details.description || ''
-        duration: v.details.duration || 0
-        edl: edl: v.details.edl ? { ...v.details.edl } : {
-          trim: [],
-          blur: []
-        }
-        encryptionKey: v.details.encryptionKey || '' // This key is used to encrypt the video data
-        encryptionIV: v.details.encryptionIV || [] // This initial value is required for AES-GCM. The IV should never be reused
-      }
-      this.dataset = {
-        id: v.dataset.id || s.id
-        name: v.dataset.name || s.name
-        selection: v.dataset.selection || data.utvalg || []
-      }
-      this.status = {
-        main: v.status.main || VIDEO_STATUS_TYPES.draft
-        error: {
-          errorInfo: v.status.error.errorInfo || ''
-        },
-        inPipeline: !!v.status.inPipeline
-        isEncrypted: !!v.status.isEncrypted
-        isEdited: !!v.status.isEdited
-        isConsented: !!v.status.isConsented
-
-        // Front end only (not saved at server)
-        recordingExists: !!v.status.recordingExists
-        encryptionInProgress: !!v.status.encryptionInProgress
-        decryptionInProgress: !!v.status.decryptionInProgress
-        uploadInProgress: !!v.status.uploadInProgress
-        isUploaded: this.status.main != VIDEO_STATUS_TYPES.draft
-        uploadProgress: v.uploadProgress || this.isUploaded ? 100 : 0
-        hasUnsavedChanges: false
-        hasNewDataAvailable: false
-      }
-      this.users = {
-        owner: v.users.owner || u._id
-        sharedWith: v.users.sharedWith || []
-        sharing: v.users.sharing.map((s: VideoSharing) => {
-          return {
-            users: s.users,
-            access: s.access,
-            description: s.description,
-            edl: s.edl ? { ...s.edl } : {
-              trim: [],
-              blur: []
-            }
-          }
-        })
-      }
-      this.consents = v.consents || []
-      this.storages =
-        v.storages || (d && d.storages ? d.storages.map(store => store.name) : [])
-      this.file.mimeType =
-        v.file.mimeType ||
-        (ds
-          ? ds.browser == 'Chrome'
-            ? 'video/webm'
-            : 'video/mp4'
-          : 'video/mp4')
-    }
+  updateAll(data: Video): void {
+    this.updateDetails(data.details)
+    this.updateStatus(data.status)
+    this.updateUsers(data.users)
+    this.updateDataset(data.dataset)
+    this.consents = data.consents
+    this.storages = data.storages
+    this.file.mimeType = data.file.mimeType
   }
 
   // Convert this class to string representation
   // Note: the encryptionIV does not convert directly using JSON.stringify
-  getAsString () {
+  getAsString(): string {
     const v = { ...this }
-    v.encryptionIV = utilities.ui8arr2str(this.encryptionIV)
+    v.encryptionIV = ui8arr2str(this.encryptionIV)
     return JSON.stringify(v)
   }
 
-  getFileUploadInfo () {
+  getFileUploadInfo(): string {
     const v = {
       fileId: this.fileId,
       userId: this.users.owner,
@@ -311,20 +300,22 @@ export class Video {
   }
 
   // Convert this class to a buffer suitable for encryption
-  getAsBuffer () {
-    return utilities.str2ab(this.getAsString())
+  getAsBuffer(): ArrayBuffer {
+    return str2ab(this.getAsString())
   }
 
   // Set this video's data from a buffer value, used for decryption
   // Ensure that the encryptionIV is correctly converted
-  setFromBuffer (buffer) {
-    const videoString = utilities.ab2str(buffer)
-    const videoObject = JSON.parse(videoString)
-    if (videoObject.encryptionIV.length > 0) {
-      videoObject.encryptionIV = utilities.str2ui8arr(videoObject.encryptionIV)
+  setFromBuffer(buffer: ArrayBuffer): void {
+    const videoString = ab2str(buffer)
+    const videoObject: VideoData = JSON.parse(videoString)
+    if (videoObject.details.encryptionIV.length > 0) {
+      videoObject.details.encryptionIV = str2ui8arr(
+        videoObject.details.encryptionIV
+      )
     }
-    Object.keys(videoObject).map(key => (this[key] = videoObject[key]))
-    this.created = new Date(this.created)
+    this.update(videoObject)
+    this.details.created = new Date(this.created)
   }
   // Create a copy of this video metadata
   /* clone() {
@@ -332,7 +323,7 @@ export class Video {
     return newVideo;
   } */
   // Set all local monitor booleans to false; Should be set after initial load from indexedDB
-  falsifyAllMonitors () {
+  falsifyAllMonitors(): void {
     this.encryptionInProgress = false
     this.decryptionInProgress = false
     this.uploadInProgress = false
@@ -340,9 +331,9 @@ export class Video {
   }
 
   // Compare a given EDL to ours to check for changes
-  edlEquals (anotherEdl) {
+  edlEquals(anotherEdl: EditDecriptionList): boolean {
     let i = this.edl.length
-    let j = anotherEdl.length
+    const j = anotherEdl.length
     // Arays are the same length
     if (i >= 0 && i === j) {
       while (i > -1) {
@@ -360,10 +351,9 @@ export class Video {
     }
   }
 }
-
 interface DatasetSelection {
   title: string
-  [key: string]?: DatasetSelection
+  [key: string]: DatasetSelection
 }
 interface DatasetStatus {
   lastUpdated: Date
@@ -381,9 +371,9 @@ interface DatasetStorage {
   name: VIDEO_STORAGE_TYPES
   groupId: string
   file: {
-    name: string[],
-  },
-  category: string[],
+    name: string[]
+  }
+  category: string[]
 }
 export interface DatasetData {
   _id: string
@@ -394,7 +384,7 @@ export interface DatasetData {
   status: DatasetStatus
   consent: DatasetConsent
   users: DatasetUsers
-  selection: [key: string]: DatasetSelection
+  selection: { [key: string]: DatasetSelection }
   selectionPriority: string[]
   storages: DatasetStorage
 }
@@ -407,7 +397,7 @@ export class Dataset {
   status: DatasetStatus
   consent: DatasetConsent
   users: DatasetUsers
-  selection: [key: string]: DatasetSelection
+  selection: { [key: string]: DatasetSelection }
   selectionPriority: string[]
   storages: DatasetStorage[]
 
@@ -423,16 +413,20 @@ export class Dataset {
       ? (data.consent.type as CONSENT_SELECTION)
       : CONSENT_TYPES.manuel
     this.users.dataManager = data?.users.dataManager || ''
-    this.selection = data?.selection as DatasetSelection || {}
+    this.selection = (data?.selection as DatasetSelection) || {}
     this.selectionPriority = data?.selectionPriority || []
     this.storages = data?.storages.map((s: DatasetStorage) => {
       return {
         name: s.name || '',
         groupId: s.groupId || '',
         file: { name: s.file.name || [] },
-        category: s.category || []
+        category: s.category || [],
       }
     })
+  }
+
+  get selection(): string[] {
+    return this.selection.map((s) => `${s.keyName}:${s.title}`)
   }
 }
 
@@ -454,7 +448,8 @@ interface UserProfile {
   reference: string // This should be sent to the client rather than _id
   groups: string[] // Groups this user is a member of
 }
-interface UserLock { // { [datasetID]: { date: Date.now(), keyName: String }
+interface UserLock {
+  // { [datasetID]: { date: Date.now(), keyName: String }
   date: Date
   keyName: string
 }
@@ -465,6 +460,7 @@ interface UserDataset {
 }
 interface UserVideos {
   draftIDs: string[]
+  removedDraftIDs: string[]
 }
 export interface UserData {
   _id: string
@@ -508,11 +504,7 @@ interface APIRequestPayload {
   method: XHR_REQUEST_TYPE
   route: string
   credentials?: boolean
-  body?:
-    | unknown
-    | string
-    | User
-    | FormData
+  body?: unknown | string | User | FormData
   headers?: Record<string, string>
   query?: Record<string, string>
   contentType?: string
