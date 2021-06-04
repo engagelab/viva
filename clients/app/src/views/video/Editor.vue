@@ -2,7 +2,14 @@
   <!--div v-if="selectedVideo && video" class="flex flex-col flex-grow min-h-0 relative"-->
   <div class="flex flex-col flex-grow min-h-0 w-full">
     <div
-      class="flex flex-col flex-grow min-h-o overflow-y-auto scrolling-touch w-full relative"
+      class="
+        flex flex-col flex-grow
+        min-h-o
+        overflow-y-auto
+        scrolling-touch
+        w-full
+        relative
+      "
     >
       <!--div
             v-show="!selectedVideo.decryptionInProgress"
@@ -11,7 +18,7 @@
       -->
       <div class="flex-none bg-black" @click="toggleScreenMode()">
         <video
-          :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
+          class="playbackVideoSmall"
           ref="playbackVideo"
           id="playbackVideo"
           oncontextmenu="return false;"
@@ -25,39 +32,47 @@
           <div v-show="selectedVideo.decryptionInProgress">
             <div>dekryptering..</div>
       </div-->
-      <div class="flex flex-row flex-grow-0 w-full bg-black py-1 md:py-4 justify-between">
+      <div
+        class="
+          flex flex-row flex-grow-0
+          w-full
+          bg-black
+          py-1
+          md:py-4
+          justify-between
+        "
+      >
         <div class="flex flex-grow-0 justify-center items-center">
           <div class="mx-4 text-white">{{ playerTime }}</div>
         </div>
-        <div class="flex flex-grow justify-center items-center" v-if="pageNumber == 0">
+        <div
+          class="flex flex-grow justify-center items-center"
+          v-if="pageNumber == 0"
+        >
           <SVGSymbol
             v-show="!recording"
             applyClasses="w-8 h-8 md:w-12"
-            @click.native="startRecording()"
+            @click="startRecording()"
             width="50"
             symbol="record"
-            :disabled="pageNumber == 2"
           ></SVGSymbol>
         </div>
         <div
           class="flex flex-grow-0 justify-center content-center items-center"
-
           v-show="videoDataLoaded"
         >
           <SVGSymbol
             v-show="!recording && !playing && videoDataLoaded"
             class="pr-4 justify-center content-center"
             applyClasses="w-6 h-8 md:w-12"
-            @click.native="startPlaying()"
-
+            @click="startPlaying()"
             symbol="play"
           ></SVGSymbol>
           <SVGSymbol
             v-show="playing"
             class="pr-4 justify-center content-center"
             applyClasses="w-6 j-8 md:w-12"
-            @click.native="stopPlaying()"
-
+            @click="stopPlaying()"
             symbol="stop"
           ></SVGSymbol>
         </div>
@@ -66,10 +81,13 @@
           style="width:90px;height:50px;"
           v-show="!playing && !videoDataLoaded"
         ></div-->
-        <div class="flex flex-grow justify-center items-center" style="width:90px;">
+        <div
+          class="flex flex-grow justify-center items-center"
+          style="width: 90px"
+        >
           <SVGSymbol
             v-show="!recording"
-            @click.native="deleteDraft($event)"
+            @click="deleteDraft($event)"
             applyClasses="w-4 md:w-8"
             symbol="delete"
           ></SVGSymbol>
@@ -90,10 +108,23 @@
           </span>
       </div-->
 
-      <div class="absolute p-4 top-0 z-10 text-white w-full flex flex-row justify-between">
+      <div
+        class="
+          absolute
+          p-4
+          top-0
+          z-10
+          text-white
+          w-full
+          flex flex-row
+          justify-between
+        "
+      >
         <div>
           <p class="text-sm">{{ datasetName }}</p>
-          <p class="font-vagBold">{{ selectedVideo.name }}</p>
+          <p v-if="selectedVideo" class="font-vagBold">
+            {{ selectedVideo.details.name }}
+          </p>
         </div>
         <img
           class="absolute top-0 right-0 w-8 m-4"
@@ -110,7 +141,6 @@
       </div>
 
       <Slider
-        v-if="!fullScreenMode"
         class="flex flex-col flex-grow min-h-0"
         :pages="pages"
         :movePageTo="pageNumber"
@@ -121,30 +151,37 @@
   </div>
 </template>
 
-<i18n>
-{
-  "no": {
-  },
-  "en": {
-  }
-}
-</i18n>
+<script lang="ts">
+import {
+  defineComponent,
+  ref,
+  Ref,
+  computed,
+  onMounted,
+  onUpdated,
+  watch,
+} from 'vue'
+import router from '@/router'
+import { CONSENT_TYPES, VIDEO_STATUS_TYPES } from '@/constants'
+import { Video } from '@/types/main'
+import { useAppStore } from '@/store/useAppStore'
+import { useDatasetStore } from '@/store/useDatasetStore'
+import { useVideoStore } from '@/store/useVideoStore'
+import { useDeviceService } from '@/store/useDevice'
+const { actions: deviceActions, getters: deviceGetters } = useDeviceService()
+const { actions: appActions, getters: appGetters } = useAppStore()
+const { actions: videoActions, getters: videoGetters } = useVideoStore()
+const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
 
-<script>
-import { mapGetters, mapMutations, mapActions } from 'vuex';
-import Slider from '../../components/base/Slider.vue';
-import SVGSymbol from '../../components/base/SVGSymbol.vue';
-import cordovaService from '../../api/cordovaService';
-import constants from '../../constants';
-const { strings } = constants;
+import Slider from '@/components/base/Slider.vue'
+import SVGSymbol from '@/components/base/SVGSymbol.vue'
+import main from './pages/main'
+import consent from './pages/consent'
+import edit from './pages/edit'
+import metadata from './pages/metadata'
+import upload from './pages/upload'
 
-import main from './pages/main';
-import consent from './pages/consent';
-import edit from './pages/edit';
-import metadata from './pages/metadata';
-import upload from './pages/upload';
-
-export default {
+export default defineComponent({
   name: 'editor',
   components: {
     Slider,
@@ -156,164 +193,145 @@ export default {
       default: 0,
     },
   },
-  data: () => ({
-    pages: [main, consent, edit, metadata, upload],
-    showConfirmDeleteDialog: false,
-    video: undefined,
-    fullScreenMode: false,
-    stateToChildren: {
-      playerCurrentTime: 0,
-    },
+  setup() {
+    const pages = [main, consent, edit, metadata, upload]
+    const selectedVideo = videoGetters.selectedVideo
+    const selectedDataset = datasetGetters.selectedDataset
+    const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
+    const video = ref(new Video())
+    const fullScreenMode = ref(false)
+    const stateToChildren = ref({
+      playerCurrentTime: '0',
+    })
+    const recording = ref(false)
+    const playing = ref(false)
+    const videoDataLoaded = ref(false)
 
-    recording: false,
-    playing: false,
-    useFullScreen: false,
-    recorder: undefined,
-    recordingData: [],
-    dataTimeout: undefined,
-    selected: '',
-    playerLowerBound: 0, // Time >= 0 when video should start playing, when using the scrubber
-    playerUpperBound: 0, // Time <= player end time when video should stop playing, when using the scrubber
-    playerCurrentTime: 0,
-    videoDataLoaded: false,
-    videoWasReplaced: false,
-    reloadVideo: false,
-    currentVolume: 0,
-  }),
-  created() {
+    let playerLowerBound = 0 // Time >= 0 when video should start playing, when using the scrubber
+    let playerUpperBound = 0 // Time <= player end time when video should stop playing, when using the scrubber
+    let currentVolume = 0
+    let playerCurrentTime = '0'
+    let videoWasReplaced = false
+    let reloadVideo = false
+
     document.addEventListener('fullscreenchange', () => {
       // document.fullscreenElement will point to the element that
       // is in fullscreen mode if there is one. If not, the value
       // of the property is null.
-      if (document.fullscreenElement) {
-        this.$store.commit('general/isFullScreen', true);
-      } else {
-        this.$store.commit('general/isFullScreen', false);
+      appActions.setFullScreen(!!document.fullscreenElement)
+    })
+
+    // Lifecycle Hooks
+
+    onMounted(() => {
+      if (!selectedVideo.value) {
+        return router.push('/videos/list')
       }
-    });
-  },
-  mounted() {
-    if (!this.selectedVideo) {
-      return this.$router.push('/videos/list')
-    }
-    if (this.selectedDatasett.samtykke == 'samtykke') {
-      this.fetchConsents(this.selectedVideo);
-    }
-    this.setupVideo(this.selectedVideo);
-    this.setRecordingNow(false);
-    this.reloadVideo = true;
-    this.videoDataLoaded = false;
-    this.videoWasReplaced = false;
-    if (this.selectedVideo.status == 'draft' && this.selectedVideo.recordingExists) {
-      this.loadVideo(this.selectedVideo);
-    }
-  },
-  updated() {
-    if (this.reloadVideo) {
-      this.reloadVideo = false;
-      this.loadPlayerWithVideo();
-    }
-  },
-  watch: {
-    selectedVideo(newVideo) {
-      this.setupVideo(newVideo);
-    },
-    hasNewDataAvailable(newDataAvailable) {
-      if (newDataAvailable) {
-        this.loadPlayerWithVideo();
+      if (selectedDataset.value.consent.type === CONSENT_TYPES.samtykke) {
+        datasetActions.fetchConsents(selectedVideo.value)
       }
-    },
-  },
-  computed: {
-    // 'video' is created as a placeholder for new user data
-    // 'seelctedVideo' will still be used for dynamic status updates
-    ...mapGetters('video', [
-      'selectedVideo',
-      'unencryptedData',
-      'hasTUSUploadReady',
-      'estimatedStorageRemaining',
-      'useCordova',
-    ]),
-    ...mapGetters('setting', ['selectedDatasett']),
-    ...mapGetters('general', ['deviceStatus', 'user', 'isFullScreen']),
-    useOldRecorder() {
-      return this.deviceStatus.browser == 'Safari';
-    },
-    datasetName() {
-      if (this.selectedVideo.datasetInfo && this.selectedVideo.datasetInfo.utvalg) {
-        const utvalg = this.selectedVideo.datasetInfo.utvalg.reduce((acc, curr) => {
-          const split = curr.split(':')
-          return `${acc} > ${split[1]}`
-        }, '')
-        return `${this.selectedVideo.datasetInfo.name} ${utvalg}`
+      setupVideo(selectedVideo.value)
+      videoActions.setRecordingNow(false)
+      reloadVideo = true
+      videoDataLoaded.value = false
+      videoWasReplaced = false
+      if (
+        selectedVideo.value.status.main == VIDEO_STATUS_TYPES.draft &&
+        selectedVideo.value.status.recordingExists
+      ) {
+        videoActions.loadVideo(selectedVideo.value)
+      }
+    })
+
+    onUpdated(() => {
+      if (reloadVideo) {
+        reloadVideo = false
+        loadPlayerWithVideo()
+      }
+    })
+
+    // Computed values
+
+    const datasetName = computed(() => {
+      if (selectedVideo.value?.dataset.selection) {
+        const utvalg = selectedVideo.value.dataset.selection.reduce(
+          (acc, curr) => {
+            const split = curr.split(':')
+            return `${acc} > ${split[1]}`
+          },
+          ''
+        )
+        return `${selectedVideo.value.dataset.name} ${utvalg}`
       } else {
         return ''
       }
-    },
-    playerTime() {
-      if (this.recording) {
+    })
+
+    const playerTime = computed(() => {
+      if (recording.value) {
         return '--:--.-'
       } else {
-        const timeAsInt = parseInt(this.playerCurrentTime);
-        let minutes = Math.floor(timeAsInt / 60);
+        const timeAsInt = parseInt(playerCurrentTime)
+        let minutes = Math.floor(timeAsInt / 60)
         // prettier-ignore
         let seconds = minutes > 0 ? timeAsInt % (60 * minutes) : timeAsInt;
-        let milliseconds = this.playerCurrentTime.toFixed(2);
-        milliseconds = milliseconds.substring(milliseconds.length - 2);
-        minutes = minutes > 9 ? minutes : '0' + minutes;
-        seconds = seconds > 9 ? seconds : '0' + seconds;
-        return `${minutes}:${seconds}.${milliseconds}`;
+        let milliseconds = timeAsInt.toFixed(2)
+        milliseconds = milliseconds.substring(milliseconds.length - 2)
+        const minutesString = minutes > 9 ? minutes : '0' + minutes
+        const secondsString = seconds > 9 ? seconds : '0' + seconds
+        return `${minutesString}:${secondsString}.${milliseconds}`
       }
-    },
-    videoMimeType() {
-      if (this.deviceStatus.mobile) {
-        return this.deviceStatus.browser == 'Safari'
-          ? 'video/mp4'
-          : 'video/mp4';
-      } else {
-        return this.deviceStatus.browser == 'Safari'
-          ? 'video/quicktime'
-          : 'video/webm';
+    })
+
+    const videoMimeType = computed(() => {
+      return appGetters.deviceStatus.value.browser === 'Chrome'
+        ? 'video/webm'
+        : 'video/mp4'
+    })
+
+    const hasNewDataAvailable = computed(() => {
+      return selectedVideo.value
+        ? selectedVideo.value.status.hasNewDataAvailable
+        : false
+    })
+
+    watch(
+      () => hasNewDataAvailable,
+      () => loadPlayerWithVideo()
+    )
+    watch(
+      () => selectedVideo,
+      (newValue) => {
+        if (newValue.value) setupVideo(newValue.value)
       }
-    },
-    hasNewDataAvailable() {
-      return this.selectedVideo
-        ? this.selectedVideo.hasNewDataAvailable
-        : false;
-    },
-  },
-  methods: {
-    ...mapMutations('general', ['setDialog']),
-    ...mapMutations('video', [
-      'setTempVideo',
-      'setRecordingNow',
-      'resetEDL',
-      'setDecryptedVideoData',
-    ]),
-    ...mapActions('setting', ['fetchConsents']),
-    ...mapActions('video', [
-      'upload',
-      'appendChunk',
-      'encryptChunk',
-      'updateDraftMetadata',
-      'loadVideo',
-      'saveVideo',
-      'loadCordovaMedia',
-      'replaceVideoData',
-      'setUnsavedChanges',
-      'removeDraftVideo'
-    ]),
-    backToList() {
-      if (!this.recording) {
-        this.$router.push('/videos/list').catch(err => {});
+    )
+
+    // METHODS
+
+    function backToList(): void {
+      if (!recording.value) router.push('/videos/list')
+    }
+
+    function toggleScreenMode(): void {
+      fullScreenMode.value = !fullScreenMode.value
+    }
+
+    function confirmDeleteModalDone(confirmed: boolean) {
+      appActions.setDialog({
+        visible: false,
+        data: {},
+        doneCallback: undefined,
+      })
+      if (confirmed && selectedVideo.value) {
+        videoActions.removeVideo(selectedVideo.value).then(() => {
+          router.push('/videos/list')
+        })
       }
-    },
-    toggleScreenMode() {
-      this.fullScreenMode = !this.fullScreenMode;
-    },
-    deleteDraft(event) {
-      event.stopPropagation();
-      this.setDialog({
+    }
+
+    function deleteDraft(event: Event): void {
+      event.stopPropagation()
+      appActions.setDialog({
         visible: true,
         data: {
           titleText: 'Advarsel',
@@ -322,225 +340,165 @@ export default {
           cancelText: 'avbryt',
           confirmText: 'bekreft',
         },
-        doneCallback: this.confirmDeleteModalDone,
-      });
-    },
-    confirmDeleteModalDone(confirmed) {
-      this.setDialog({
-        visible: false,
-        data: {},
-        doneCallback: undefined,
-      });
-      if (confirmed) {
-        this.removeDraftVideo({
-          video: this.selectedVideo,
-          user: this.user,
-        }).then(() => {
-          this.$router.push('/videos/list');
-        })
-      }
-    },
-    // Called on initialisation of this view to create placeholder for edited data
-    setupVideo(videoTemplate) {
-      // Create a video placeholder that can be modifed by the user
-      if (videoTemplate) {
-        this.video = {
-          edl: videoTemplate.edl,
-          duration: videoTemplate.duration,
-        };
-        this.setPlayerBounds();
-      }
-    },
-    stopPlaying() {
-      const player = this.$refs.playbackVideo;
-      player.pause();
-      player.volume = this.currentVolume;
-      this.playing = false;
-      player.currentTime = this.playerLowerBound;
-      this.playerCurrentTime = player.currentTime;
-      this.stateToChildren.playerCurrentTime = this.playerCurrentTime;
-      if (this.timeIsMasked(player.currentTime)) {
-        player.style.filter = 'blur(15px)';
-      } else {
-        player.style.filter = 'blur(0)';
-      }
-      player.removeEventListener('timeupdate', this.onTimeUpdate);
-    },
-    timeIsMasked(currentTime) {
-      return this.video.edl.blur.some(
-        blur => currentTime >= blur[0] && currentTime <= blur[1]
-      );
-    },
-    onTimeUpdate() {
-      const player = this.$refs.playbackVideo;
-      let trim = this.video.edl.trim.length > 0;
-      let mask = this.video.edl.blur.length > 0;
-      this.playerCurrentTime = player.currentTime;
-      this.stateToChildren.playerCurrentTime = player.currentTime;
-      if (
-        player.currentTime >= this.playerUpperBound ||
-        (trim && player.currentTime >= this.video.edl.trim[1])
-      ) {
-        this.stopPlaying();
-      } else if (mask) {
-        let blurOn = this.timeIsMasked(player.currentTime);
-        if (blurOn) {
-          player.muted = true;
-          player.style.filter = 'blur(15px)';
-        } else {
-          player.muted = false;
-          player.style.filter = 'blur(0)';
-        }
-      }
-    },
-    startPlaying() {
-      this.setPlayerBounds();
-      const player = this.$refs.playbackVideo;
-      this.currentVolume = player.volume;
-      if (this.playing) {
-        player.pause();
-        this.playing = false;
-      } else {
-        this.playing = true;
-        player.addEventListener('timeupdate', this.onTimeUpdate);
-        player.play();
-      }
-    },
+        doneCallback: confirmDeleteModalDone,
+      })
+    }
+
     // Event handler for Edit Decision List updates
-    edlUpdated({ type, newValue }) {
-      let player = this.$refs.playbackVideo;
-      if (
-        type == 'trim' &&
-        !isNaN(player.duration) &&
-        player.duration >= newValue[1]
-      ) {
-        this.playerUpperBound = newValue[1];
-        this.playerLowerBound = newValue[0];
-        player.currentTime = this.playerLowerBound;
-      } else if (type == 'move' && player.duration >= newValue[0]) {
-        player.currentTime = newValue[0];
-      }
-      this.playerCurrentTime = player.currentTime;
-    },
-    toggleFullScreen() {
-      let videoContainer = this.$refs.videoContainer;
-      if (!this.isFullScreen) {
-        if (videoContainer.requestFullscreen) {
-          videoContainer.requestFullscreen();
-        } else if (videoContainer.msRequestFullscreen) {
-          videoContainer.msRequestFullscreen();
-        } else if (videoContainer.mozRequestFullScreen) {
-          videoContainer.mozRequestFullScreen();
-        } else if (videoContainer.webkitRequestFullscreen) {
-          videoContainer.webkitRequestFullscreen();
-        }
-      } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-          document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        }
-      }
-    },
-    /**
-     *  calculateMediaDuration()
-     *  Force media element duration calculation.
-     *  Returns a promise, that resolves when duration is calculated
-     **/
-    // https://stackoverflow.com/questions/38443084/how-can-i-add-predefined-length-to-audio-recorded-from-mediarecorder-in-chrome/39971175#39971175
-    calculateMediaDuration(player) {
-      return new Promise(resolve => {
-        player.onloadedmetadata = () => {
-          // set the mediaElement.currentTime  to a high value beyond its real duration
-          player.currentTime = Number.MAX_SAFE_INTEGER;
-          // listen to time position change
-          player.ontimeupdate = () => {
-            player.ontimeupdate = function() {};
-            // setting player currentTime back to 0 can be buggy too, set it first to .1 sec
-            player.currentTime = 0.1;
-            player.currentTime = 0;
-            // player.duration should now have its correct value, return it...
-            resolve(player.duration);
-          };
-        };
-      });
-    },
-    setPlayerBounds() {
-      const player = this.$refs.playbackVideo;
+    function edlUpdated(d: { type: string; newValue: number[] }) {
+      const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
-        if (this.video.edl.trim.length > 1) {
-          this.playerLowerBound = this.video.edl.trim[0];
-          this.playerUpperBound = this.video.edl.trim[1];
-          player.currentTime = this.playerLowerBound;
+        if (
+          d.type == 'trim' &&
+          !isNaN(player.duration) &&
+          player.duration >= d.newValue[1]
+        ) {
+          playerUpperBound = d.newValue[1]
+          playerLowerBound = d.newValue[0]
+          player.currentTime = playerLowerBound
+        } else if (d.type == 'move' && player.duration >= d.newValue[0]) {
+          player.currentTime = d.newValue[0]
         }
-        if (this.timeIsMasked(player.currentTime)) {
-          player.style.filter = 'blur(15px)';
+        playerCurrentTime = player.currentTime.toString()
+      }
+    }
+
+    // Called on initialisation of this view to create placeholder for edited data
+    function setupVideo(chosenVideo: Video): void {
+      // Create a video placeholder that can be modifed by the user
+      if (chosenVideo) {
+        video.value.updateAll(chosenVideo)
+        setPlayerBounds()
+      }
+    }
+
+    function timeIsMasked(currentTime: number): boolean {
+      return video.value.details.edl.blur.some(
+        (blur) => currentTime >= blur[0] && currentTime <= blur[1]
+      )
+    }
+
+    function setPlayerBounds(): void {
+      const player: HTMLVideoElement | null = playbackVideo.value
+      const edl = video.value.details.edl
+      if (player && edl) {
+        if (edl.trim.length > 1) {
+          playerLowerBound = edl.trim[0]
+          playerUpperBound = edl.trim[1]
+          player.currentTime = playerLowerBound
+        }
+        if (timeIsMasked(player.currentTime)) {
+          player.style.filter = 'blur(15px)'
         } else {
-          player.style.filter = 'blur(0)';
+          player.style.filter = 'blur(0)'
         }
       }
-    },
+    }
+
+    function onTimeUpdate() {
+      const player: HTMLVideoElement | null = playbackVideo.value
+      let trim = video.value.details.edl.trim.length > 0
+      let mask = video.value.details.edl.blur.length > 0
+      if (player) {
+        playerCurrentTime = player.currentTime.toString()
+        stateToChildren.value.playerCurrentTime = playerCurrentTime
+        if (
+          player.currentTime >= playerUpperBound ||
+          (trim && player.currentTime >= video.value.details.edl.trim[1])
+        ) {
+          stopPlaying()
+        } else if (mask) {
+          let blurOn = timeIsMasked(player.currentTime)
+          if (blurOn) {
+            player.muted = true
+            player.style.filter = 'blur(15px)'
+          } else {
+            player.muted = false
+            player.style.filter = 'blur(0)'
+          }
+        }
+      }
+    }
+
+    function startPlaying() {
+      const player: HTMLVideoElement | null = playbackVideo.value
+      setPlayerBounds()
+      if (player) {
+        currentVolume = player.volume
+        if (playing.value) {
+          player.pause()
+          playing.value = false
+        } else {
+          playing.value = true
+          player.addEventListener('timeupdate', onTimeUpdate)
+          player.play()
+        }
+      }
+    }
+
+    function stopPlaying() {
+      const player: HTMLVideoElement | null = playbackVideo.value
+      if (player) {
+        player.pause()
+        player.volume = currentVolume
+        playing.value = false
+        player.currentTime = playerLowerBound
+        playerCurrentTime = player.currentTime.toString()
+        stateToChildren.value.playerCurrentTime = playerCurrentTime
+        if (timeIsMasked(player.currentTime)) {
+          player.style.filter = 'blur(15px)'
+        } else {
+          player.style.filter = 'blur(0)'
+        }
+        player.removeEventListener('timeupdate', onTimeUpdate)
+      }
+    }
+
     // Load the player with video data from a new result
     // or reload it from store if reloadingFromStore == true
     // reloadingFromStore is true / triggered after the video data has been decrypted
     // or after returning to the video from the list
-    loadPlayerWithVideo() {
-      const player = this.$refs.playbackVideo;
-
-      const setVideoDuration = duration => {
-        this.playerUpperBound = duration;
-        this.video.duration = duration;
-        // We need to save the duration
-        this.saveMetadata().then(() => {
-          // But if this is new video replacing an old, the unsavedChanges must be set true to request 'samtykker' acceptance
-          if (this.videoWasReplaced) {
-            this.setUnsavedChanges(this.selectedVideo.fileId);
-          }
-        });
-      };
-
-      const dataLoaded = () => {
-        setVideoDuration(player.duration);
-        this.setPlayerBounds();
-        player.removeEventListener('loadeddata', dataLoaded);
-        this.videoDataLoaded = true;
-        this.setRecordingNow(false);
-      };
-
-      const loadData = objectURL => {
-        if (player.srcObject) {
-          player.srcObject = null;
+    function loadPlayerWithVideo(): void {
+      const player: HTMLVideoElement | null = playbackVideo.value
+      if (player && selectedVideo.value) {
+        const dataLoaded = () => {
+          playerUpperBound = player.duration
+          video.value.details.duration = player.duration
+          // We need to save the latest duration
+          videoActions.updateMetadata(video.value).then(() => {
+            // But if this is new video replacing an old, the unsavedChanges must be set true to request 'samtykker' acceptance
+            if (videoWasReplaced)
+              videoActions.setUnsavedChanges(video.value.details.id)
+          })
+          setPlayerBounds()
+          player.removeEventListener('loadeddata', dataLoaded)
+          videoDataLoaded.value = true
+          videoActions.setRecordingNow(false)
         }
-        player.setAttribute('src', objectURL + '#t=0.1');
-        //set the media bounds in the dataLoaded function..
-        player.addEventListener('loadeddata', dataLoaded);
-        player.load();
-      };
 
-      player.addEventListener(
-        'ended',
-        () => {
-          this.stopPlaying();
-        },
-        false
-      );
+        player.addEventListener('loadeddata', dataLoaded)
+        player.addEventListener('ended', stopPlaying, false)
 
-      const data = this.unencryptedData(this.selectedVideo.fileId); // Ensure chunks exist
-      if (data) { // <- FileEntry
-        this.loadCordovaMedia(data).then(mediaFile => { // <- MediaFile
-          const p = mediaFile.nativeURL; // data.toURL(); //data.nativeURL; // toInternalURL() // toNativeURL() // toURI(mimeType)
-          loadData(p);
-        });
+        const data = videoGetters.videoDataFile(selectedVideo.value.details.id) // Ensure chunks exist
+        if (data.value) {
+          // <- FileEntry
+          videoActions.loadCordovaMedia(data.value).then((fileEntry) => {
+            // <- MediaFile
+            if (fileEntry) {
+              const objectURL = fileEntry.nativeURL
+              if (player.srcObject) player.srcObject = null
+              player.setAttribute('src', objectURL + '#t=0.1')
+              //set the media bounds in the dataLoaded function..
+              player.load()
+            }
+          })
+        }
       }
-    },
+    }
 
-    startRecording() {
-      if (this.video.duration > 0) {
-        this.setDialog({
+    function startRecording() {
+      if (video.value.details.duration > 0) {
+        appActions.setDialog({
           visible: true,
           data: {
             titleText: 'Advarsel',
@@ -549,117 +507,71 @@ export default {
             cancelText: 'avbryt',
             confirmText: 'bekreft',
           },
-          doneCallback: this.confirmRecordingModalDone,
-        });
+          doneCallback: confirmRecordingModalDone,
+        })
       } else {
-        this.recordVideo()
+        recordVideo()
       }
-    },
-    confirmRecordingModalDone(confirmed) {
-      this.setDialog({
+    }
+
+    function confirmRecordingModalDone(confirmed: boolean): void {
+      appActions.setDialog({
         visible: false,
         data: {},
         doneCallback: undefined,
-      });
+      })
       if (confirmed) {
-        this.recordVideo()
+        recordVideo()
       }
-    },
+    }
 
     // Begin recording a video using MediaRecorder or Input method depending on device
-    async recordVideo() {
+    async function recordVideo() {
       // Make sure EDL is cleared if it is
-      this.video.edl = {
+      video.value.details.edl = {
         trim: [],
         blur: [],
-      };
-      this.recording = true;
-      this.videoWasReplaced = true;
-      this.setRecordingNow(true);
+      }
+      recording.value = true
+      videoWasReplaced = true
+      videoActions.setRecordingNow(true)
 
       // Call the device camera
-      this.recording = true;
-      cordovaService
-        .captureVideo()
-        .then(async data => {
-          this.replaceVideoData({
-            setting: this.selectedDatasett,
-            user: this.user,
-            fileId: this.selectedVideo.fileId,
-          }).then(() => {
-            const fileId = this.selectedVideo.fileId;
-            // Add the MediaFile object (this is not video data!) to the store
-            this.setDecryptedVideoData({ fileId, data });
-            // This will move the video from a temp directory to our app storage
-            this.saveVideo(fileId);
-            this.recording = false;
-          })
-        })
-        .catch(error => {
-          console.log(error)
-          this.recording = false;
-        });
+      deviceActions.recordVideo().then(() => {
+        video.value.status.isEncrypted = true
+        video.value.status.hasNewDataAvailable = true
+        video.value.status.recordingExists = true
+        video.value.status.hasUnsavedChanges = true
+        recording.value = false
+        videoActions
+          .updateMetadata(video.value)
+          .then(() => console.log('Completed video data save'))
+      })
+    }
 
-    },
-    stopRecording() {
-      const player = this.$refs.playbackVideo;
-      if (this.recording) {
-        this.recording = false;
-        if (player.srcObject) {
-          player.srcObject.getTracks().forEach(track => {
-            track.stop();
-          });
-        }
-        this.recorder.stop();
-        if (this.isFullScreen) {
-          this.toggleFullScreen();
-        }
-      } else {
-        player.pause();
-      }
-    },
-    // Save video changes into the stored metadata > to Store and indexedDB/Cordova storage
-    saveMetadata() {
-      return this.updateDraftMetadata({
-        setting: this.selectedDatasett,
-        user: this.user,
-        fileId: this.selectedVideo.fileId,
-        updates: this.video,
-      });
-    },
-    handleCheckAll() {
-      if (!this.indeterminate) {
-        this.checkAll = true;
-        this.indeterminate = true;
-      } else {
-        this.checkAll = !this.checkAll;
-        this.indeterminate = false;
-      }
-      if (this.checkAll) {
-        this.checkAllGroup = ['One', 'Two', 'Three'];
-      } else {
-        this.checkAllGroup = [];
-      }
-    },
-    checkAllGroupChange(data) {
-      if (data.length === 3) {
-        this.indeterminate = false;
-        this.checkAll = true;
-      } else if (data.length > 0) {
-        this.indeterminate = true;
-        this.checkAll = false;
-      } else {
-        this.indeterminate = false;
-        this.checkAll = false;
-      }
-    },
-    /*disableDownloadVideo(event) {
-      event.preventDefault();
-      event.stopPropagation();
-      return false;
-    },*/
+    return {
+      // methods
+      stopPlaying,
+      startPlaying,
+      startRecording,
+      backToList,
+      toggleScreenMode,
+      deleteDraft,
+      // data
+      selectedVideo,
+      datasetName,
+      playerTime,
+      videoMimeType,
+      edlUpdated,
+      stateToChildren,
+      pages,
+      // booleans
+      videoDataLoaded,
+      recording,
+      playing,
+    }
   },
-};
+})
 </script>
 <style scoped>
 .layout {

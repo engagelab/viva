@@ -6,7 +6,6 @@
 
 import { ref, Ref, computed, ComputedRef } from 'vue'
 import {
-  DatasetData,
   Dataset,
   Video,
   Consent,
@@ -14,10 +13,8 @@ import {
   XHR_REQUEST_TYPE,
 } from '../types/main'
 import { apiRequest } from '../api/apiRequest'
-import { useVideoStore } from './useVideoStore'
 import { useAppStore } from './useAppStore'
-const { getters: videoGetters, actions: videoActions } = useVideoStore()
-const { getters: appGetters, actions: appActions } = useAppStore()
+const { actions: appActions } = useAppStore()
 //State
 interface DatasetState {
   datasets: Dataset[]
@@ -44,41 +41,20 @@ const state: Ref<DatasetState> = ref({
   selectedDatasettConsents: [],
 })
 
-//----------------- Server side functions----------------//
-
-async function fetchDatasets(): Promise<DatasetData> {
-  const payload: APIRequestPayload = {
-    method: XHR_REQUEST_TYPE.GET,
-    credentials: true,
-    route: '/api/dataset',
-  }
-  return apiRequest<DatasetData>(payload)
-}
-
-async function saveDataset(dataset: Dataset): Promise<DatasetData> {
-  const payload: APIRequestPayload = {
-    method: XHR_REQUEST_TYPE.POST,
-    credentials: true,
-    route: '/api/dataset',
-    body: dataset,
-  }
-  return apiRequest<DatasetData>(payload)
-}
-
 //Getters
 interface Getters {
   datasets: ComputedRef<Dataset[]>
-  selectedDataset: ComputedRef<State['selectedDataset']>
+  selectedDataset: ComputedRef<Dataset>
 }
 const getters = {
   get datasets(): ComputedRef<Dataset[]> {
     return computed(() => state.value.datasets)
   },
-  get selectedDataset(): ComputedRef<Dataset> {
+  get selectedDataset(): ComputedRef<Dataset | undefined> {
     return computed(() => state.value.selectedDataset)
   },
-  get presetDataset(): ComputedRef<Dataset> {
-    return computed(() => state.value.selectedDataset)
+  get presetDataset(): ComputedRef<Dataset | undefined> {
+    return computed(() => state.value.presetDataset)
   },
   get consents(): ComputedRef<Dataset> {
     return computed(() => state.value.selectedDatasettConsents)

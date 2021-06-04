@@ -25,6 +25,9 @@ const uploadS3File = async ({ path, keyname }) => {
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: keyname,
     Body: fs.createReadStream(path),
+    // ServerSideEncryption: 'AES256', // must be "AES256",
+    SSECustomerAlgorithm: 'AES256',
+    SSECustomerKey: Buffer.from(process.env.AWS_SSE_CUSTOMER_KEY), // 256-bit, base64-encoded encryption key, Base-64 encoded
   };
   return s3.send(new PutObjectCommand(objectParams));
 };
@@ -40,6 +43,9 @@ const uploadS3File = async ({ path, keyname }) => {
   const objectParams = {
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: keyname,
+    // ServerSideEncryption: 'AES256', // must be "AES256",
+    SSECustomerAlgorithm: 'AES256',
+    SSECustomerKey: Buffer.from(process.env.AWS_SSE_CUSTOMER_KEY), // 256-bit, base64-encoded encryption key, Base-64 encoded
   };
   return s3.send(new GetObjectCommand(objectParams));
 };

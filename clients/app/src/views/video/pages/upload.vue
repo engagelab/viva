@@ -3,26 +3,46 @@
     <SVGSymbol
       class="text-viva-korall fill-current"
       applyClasses="w-4 md:w-8"
-      @click.native="back()"
+      @click="back()"
       width="25"
       rotation="180"
     ></SVGSymbol>
-    <div class="flex flex-col flex-grow w-full justify-center items-center mt-6">
-      <p v-show="selectedVideo.uploadProgress > 0">{{ selectedVideo.uploadProgress }}%</p>
-      <label v-if="!uploadComplete" for="checkbox">{{$t('opptakSendes')}}&nbsp;</label>
-      <label v-else for="checkbox">{{$t('opptakSendt')}}&nbsp;</label>
+    <div
+      class="flex flex-col flex-grow w-full justify-center items-center mt-6"
+    >
+      <p v-show="selectedVideo && selectedVideo.status.uploadProgress > 0">
+        {{ selectedVideo ? selectedVideo.status.uploadProgress : '' }}%
+      </p>
+      <label v-if="!uploadComplete" for="checkbox"
+        >{{ $t('opptakSendes') }}&nbsp;</label
+      >
+      <label v-else for="checkbox">{{ $t('opptakSendt') }}&nbsp;</label>
       <Button
         class="mt-4"
-        v-show="!selectedVideo.uploadInProgress"
-        :disabled="!(selectedVideo.recordingExists && selectedVideo.subState.classified)"
+        v-show="selectedVideo && !selectedVideo.status.uploadInProgress"
+        :disabled="
+          selectedVideo &&
+          !(
+            selectedVideo.status.recordingExists &&
+            selectedVideo.status.isClassified
+          )
+        "
         @click="startUpload()"
-      >{{$t('send')}}</Button>
+        >{{ $t('send') }}</Button
+      >
       <Button
         class="mt-4"
-        v-show="selectedVideo.uploadInProgress"
-        :disabled="!(selectedVideo.recordingExists && selectedVideo.subState.classified)"
+        v-show="selectedVideo && selectedVideo.status.uploadInProgress"
+        :disabled="
+          selectedVideo &&
+          !(
+            selectedVideo.status.recordingExists &&
+            selectedVideo.status.isClassified
+          )
+        "
         @click="stopUpload()"
-      >{{$t('cancel')}}</Button>
+        >{{ $t('cancel') }}</Button
+      >
     </div>
   </div>
 </template>
@@ -44,45 +64,58 @@
 }
 </i18n>
 
-<script>
-import { mapGetters, mapActions } from 'vuex';
-import Button from '../../../components/base/Button.vue';
-import SVGSymbol from '../../../components/base/SVGSymbol.vue';
-export default {
+<script lang="ts">
+import { defineComponent, computed } from 'vue'
+import router from '@/router'
+import { useVideoStore } from '@/store/useVideoStore'
+const { actions: videoActions, getters: videoGetters } = useVideoStore()
+
+import Button from '@/components/base/Button.vue'
+import SVGSymbol from '@/components/base/SVGSymbol.vue'
+export default defineComponent({
   components: {
     Button,
     SVGSymbol,
   },
-  computed: {
-    ...mapGetters('video', ['selectedVideo']),
-    uploadComplete() {
-      return this.selectedVideo.uploadProgress == 100;
+  setup() {
+    const selectedVideo = videoGetters.selectedVideo
+    const uploadComplete = computed(() => {
+      return (
+        selectedVideo.value && selectedVideo.value.status.uploadProgress == 100
+      )
+    })
+    function startUpload() {
+      if (selectedVideo.value) {
+        videoActions.controlUpload({
+          control: 'start',
+          fileId: selectedVideo.value.details.id,
+        })
+      }
+    }
+    function stopUpload() {
+      if (selectedVideo.value) {
+        videoActions.controlUpload({
+          control: 'abort',
+          fileId: selectedVideo.value.details.id,
+        })
+      }
+    }
+    function back() {
+      if (uploadComplete.value) {
+        router.push('/videos/list')
+      } else {
+        router.push('/videos/editor?page=0')
+      }
+    }
+    return {
+      startUpload,
+      stopUpload,
+      back,
+      selectedVideo,
+      uploadComplete,
     }
   },
-  methods: {
-    ...mapActions('video', ['controlUpload']),
-    startUpload() {
-      this.controlUpload({
-        control: 'start',
-        fileId: this.selectedVideo.fileId,
-      });
-    },
-    stopUpload() {
-      this.controlUpload({
-        control: 'abort',
-        fileId: this.selectedVideo.fileId,
-      });
-    },
-    back() {
-      if (this.uploadComplete) {
-        this.$router.push('/videos/list');
-      } else {
-        this.$router.push('/videos/editor?page=0');
-      }
-    },
-  },
-};
+})
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

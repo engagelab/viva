@@ -1,4 +1,5 @@
 {
+  "extends": "@tsconfig/node14/tsconfig.json",
   "compilerOptions": {
     "target": "ES2020",
     "module": "ES2020",
@@ -13,24 +14,27 @@
     "sourceMap": true,
     "checkJs": false,
     "baseUrl": "./",
+    "typeRoots": ["node_modules/@types", "src/types"],
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "lib": ["ES2020", "dom", "dom.iterable", "scripthost"]
   },
   "include": [
-    "clients/**/src/**/*.ts",
-    "clients/**/src/**/*.d.ts",
-    "clients/**/src-cordova/node_modules/**/*.d.ts",
-    "clients/**/src/**/*.tsx",
-    "clients/**/src/**/*.vue",
-    "clients/**/src/**/*.json",
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src-cordova/node_modules/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "src/**/*.json",
     "tests/**/*.ts",
     "tests/**/*.tsx", "client/src/types/cordova-plugin-file/index.d.old"
   ],
   "exclude": [
-    "clients/**/tailwind.config.js",
-    "clients/**/src-cordova/**/*",
-    "clients/**/www/**/*",
-    "clients/**/dist/**/*",
-    "clients/**/node_modules",
+    "tailwind.config.js",
+    "src-cordova/**/*",
+    "www/**/*",
+    "dist/**/*",
     "node_modules",
     "server"
   ]

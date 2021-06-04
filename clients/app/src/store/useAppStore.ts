@@ -2,8 +2,6 @@ import { ref, computed, ComputedRef, Ref } from 'vue'
 import router from '../router'
 import { apiRequest } from '@/api/apiRequest'
 import {
-  PersistedAppState,
-  LocalUser,
   User,
   UserData,
   DeviceStatus,
@@ -11,10 +9,12 @@ import {
   XHR_REQUEST_TYPE,
   Callback,
 } from '../types/main'
+import { useDeviceService, CordovaPathName } from './useDevice'
 
 import { useVideoStore } from './useVideoStore'
 import { useDatasetStore } from './useDatasetStore'
-const { getters: videoGetters, actions: videoActions } = useVideoStore()
+const { actions: deviceActions } = useDeviceService()
+const { actions: videoActions } = useVideoStore()
 const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
 import { appVersion } from '../constants'
 
@@ -43,6 +43,7 @@ export interface AppState {
   deviceStatus: DeviceStatus
   serverStatus: ServerStatus
   snackbar: Snackbar
+  cordovaPath: string[]
 }
 // ------------  State (internal) --------------
 const _appState: Ref<AppState> = ref({
@@ -51,6 +52,7 @@ const _appState: Ref<AppState> = ref({
   isLoggedIn: false,
   isAuthorised: false,
   useCordova: false,
+  cordovaPath: [],
   appIsOld: false,
   dialog: {
     visible: false,
@@ -71,11 +73,6 @@ const _appState: Ref<AppState> = ref({
     text: '',
     callback: undefined,
   },
-})
-
-// This will be saved to device storage
-const _persistedAppState: Ref<PersistedAppState> = ref({
-  localUsers: {},
 })
 
 // ------------  Getters (Read only) --------------
@@ -130,7 +127,9 @@ const getters = {
 }
 // ------------  Actions --------------
 interface Actions {
-  addDraftId: (fileID) => void
+  setFullScreen: (value: boolean) => void
+  activeNow: () => void
+  addDraftIdToUser: (fileID) => void
   removeDraftId: (fileID) => void
   setDialog: (dialog: Dialog) => void
   setSnackbar: (message: string) => void
@@ -138,14 +137,21 @@ interface Actions {
   detectDevice: () => void
   detectAppVersion: (fade: boolean) => void
   logout: () => void
-  updateUser: () => Promise<void>
+  updateUserAtServer: (user: User | void) => Promise<void>
   redirectedLogin: () => Promise<void>
   getLoginSession: () => Promise<void>
   tokenLogin: () => Promise<boolean>
   detectOldApp: () => Promise<void>
+  setCordovaPath: (path: string[]) => void
 }
 const actions = {
-  addDraftId(fileID): void {
+  setFullScreen(value: boolean): void {
+    _appState.value.deviceStatus.isFullScreen = value
+  },
+  activeNow(): void {
+    _appState.value.deviceStatus.lastActive = new Date().getTime()
+  },
+  addDraftIdToUser(fileID): void {
     _appState.value.selectedUser.videos.draftIDs.push(fileID)
   },
   removeDraftId(fileID): void {
@@ -276,22 +282,12 @@ const actions = {
 
             this.activeNow()
             this.selectUser(user)
+            this.setCordovaPath([CordovaPathName.users, user._id])
+            deviceActions.setCordovaPath([CordovaPathName.users, user._id])
+            videoActions.setCordovaPath([CordovaPathName.users, user._id])
             datasetActions.setPresetDatasett(user.datasett.id)
           } else {
             return errorOnLogin('User not found')
-          }
-
-          // Check for an encryptionKey, create one and save, if not found
-          // This key is needed at the top level to encrypt Video metadata items
-          // The entire User model should not persist in browser and be removed from browser on logout
-          if (!user.encryptionKey && !state.useCordova) {
-            // Generate a key, export and convert to string for storage sever-side
-            return webcryptoService.generateKey().then((key) => {
-              webcryptoService.keyToString(key).then((exportedKey) => {
-                user.encryptionKey = exportedKey
-                this.updateUser(user)
-              })
-            })
           }
         })
         .catch((error) => {
@@ -300,14 +296,15 @@ const actions = {
     }
     return completeLogin()
   },
-  updateUser(user): Promise<void> {
+  updateUserAtServer(user: User | void): Promise<void> {
+    const u: User = user || _appState.value.selectedUser
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.PUT,
       route: '/api/user',
       credentials: true,
-      body: user,
+      body: u,
     }
-    user.datasett = datasetGetters.presetDatasett
+    u.datasett = datasetGetters.presetDatasett
     return apiRequest(payload)
       .then((u) => (_appState.value.selectedUser = u))
       .catch((error) => {
@@ -352,6 +349,9 @@ const actions = {
         return Promise.resolve(false)
       })
   },
+  setCordovaPath: (path: string[]): void => {
+    state.value.cordovaPath = path
+  },
 }
 // This defines the interface used externally
 interface ServiceInterface {
@@ -366,4 +366,3 @@ export function useAppStore(): ServiceInterface {
 }
 
 export type AppStoreType = ReturnType<typeof useAppStore>
-//export const AppKey: InjectionKey<UseApp> = Symbol('UseApp')

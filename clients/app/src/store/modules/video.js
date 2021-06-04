@@ -36,61 +36,61 @@ export default {
     recordingNow: false,
     estimatedStorageRemaining: 'unknown', // Percentage
     useCordova: false,
-    storageService: undefined
+    storageService: undefined,
   },
   getters: {
-    selectedVideo: state => state.selectedVideo,
+    selectedVideo: (state) => state.selectedVideo,
     // tempVideo: state => state.tempVideo,
-    videos: state => settingid => {
+    videos: (state) => (settingid) => {
       const filteredVids = Object.values(state.videos).filter(
-        v => v.settingId == settingid
+        (v) => v.settingId == settingid
       )
       return orderBy(filteredVids, 'created', 'desc')
     },
-    allVideos: state => {
+    allVideos: (state) => {
       const v = Object.values(state.videos)
       return orderBy(v, 'created', 'desc')
     },
-    draftVideos: state => settingid => {
+    draftVideos: (state) => (settingid) => {
       const filteredVids = Object.values(state.draftVideos).filter(
-        v => v.settingId == settingid
+        (v) => v.settingId == settingid
       )
       return orderBy(filteredVids, 'created', 'desc')
     },
-    allDraftVideos: state => {
+    allDraftVideos: (state) => {
       const v = state.draftVideos
       return orderBy(v, 'created', 'desc')
     },
-    unencryptedData: state => fileId => state.videoUnEncryptedData[fileId],
-    hasUnsavedChanges: state => fileId =>
+    unencryptedData: (state) => (fileId) => state.videoUnEncryptedData[fileId],
+    hasUnsavedChanges: (state) => (fileId) =>
       state.draftVideos[fileId].hasUnsavedChanges,
-    uploadingData: state =>
-      Object.values(state.draftVideos).some(v => v.uploadingData),
-    recordingNow: state => state.recordingNow,
-    hasTUSUploadReady: state => video =>
+    uploadingData: (state) =>
+      Object.values(state.draftVideos).some((v) => v.uploadingData),
+    recordingNow: (state) => state.recordingNow,
+    hasTUSUploadReady: (state) => (video) =>
       Object.prototype.hasOwnProperty.call(
         state.tusUploadInstances,
         video.fileId
       ),
-    estimatedStorageRemaining: state => state.estimatedStorageRemaining,
-    useCordova: state => state.useCordova
+    estimatedStorageRemaining: (state) => state.estimatedStorageRemaining,
+    useCordova: (state) => state.useCordova,
   },
   mutations: {
-    useCordova (state, useIt) {
+    useCordova(state, useIt) {
       state.useCordova = useIt
       state.storageService = useIt ? cordovaService : indexedDBService
     },
-    selectVideo (state, video) {
+    selectVideo(state, video) {
       state.selectedVideo = video
     },
-    setRecordingNow (state, value) {
+    setRecordingNow(state, value) {
       state.recordingNow = value
     },
-    clearAllMetadata (state) {
+    clearAllMetadata(state) {
       state.videos = {}
       state.draftVideos = {}
     },
-    addVideo (state, video) {
+    addVideo(state, video) {
       if (video.status == 'draft') {
         Vue.set(state.draftVideos, video.fileId, video)
         Vue.set(state.videoEncryptedData, video.fileId, [])
@@ -107,13 +107,13 @@ export default {
       Vue.set(state.allVideos, video.fileId, video)
     }, */
     // Updates video attributes only by mutation, without replacing video item
-    mutateVideo (state, { fileId, updates }) {
+    mutateVideo(state, { fileId, updates }) {
       let videoStore = state.draftVideos
       if (!videoStore[fileId]) {
         videoStore = state.videos
       }
       if (videoStore[fileId]) {
-        Object.keys(updates).forEach(key => {
+        Object.keys(updates).forEach((key) => {
           Vue.set(videoStore[fileId], key, updates[key])
           // videoStore[fileId][key] = updates[key];
         })
@@ -122,39 +122,39 @@ export default {
         }
       }
     },
-    removeDraftVideo (state, fileId) {
+    removeDraftVideo(state, fileId) {
       if (state.draftVideos[fileId]) {
         Vue.delete(state.draftVideos, fileId)
       }
     },
     // Add a chunk of video data to the current video
-    appendChunk (state, { fileId, chunk }) {
+    appendChunk(state, { fileId, chunk }) {
       const a = state.videoUnEncryptedData[fileId]
       a.push(chunk)
       Vue.set(state.videoUnEncryptedData, fileId, a)
     },
     // Add an encrypted chunk of video data
-    appendEncryptedChunk (state, { data, fileId }) {
+    appendEncryptedChunk(state, { data, fileId }) {
       const a = state.videoEncryptedData[fileId]
       a.push(data)
       Vue.set(state.videoEncryptedData, fileId, a)
     },
-    clearVolatileVideoData (state, fileId) {
+    clearVideoDataFiles(state, fileId) {
       state.videoUnEncryptedData[fileId] = state.useCordova ? undefined : []
       Vue.set(state.videoEncryptedData, fileId, [])
     },
-    setDecryptedVideoData (state, { fileId, data }) {
+    setDecryptedVideoData(state, { fileId, data }) {
       state.videoUnEncryptedData[fileId] = data
     },
-    setTUSUpload (state, { upload, fileId }) {
+    setTUSUpload(state, { upload, fileId }) {
       Vue.set(state.tusUploadInstances, fileId, upload)
     },
-    removeTUSUpload (state, fileId) {
+    removeTUSUpload(state, fileId) {
       if (state.tusUploadInstances[fileId]) {
         Vue.delete(state.tusUploadInstances, fileId)
       }
     },
-    clearDataUponLogout (state) {
+    clearDataUponLogout(state) {
       state.videoEncryptedData = {}
       state.videoUnEncryptedData = {}
       // state.tempVideo = undefined
@@ -163,16 +163,16 @@ export default {
       state.draftVideos = {}
     },
     // Abort all existing TUS uploads
-    abortAllUploads (state) {
+    abortAllUploads(state) {
       const keys = Object.keys(state.tusUploadInstances)
-      keys.forEach(tu => state.tusUploadInstances[tu].abort())
+      keys.forEach((tu) => state.tusUploadInstances[tu].abort())
     },
-    setEstimateStorageRemaining (state, value) {
+    setEstimateStorageRemaining(state, value) {
       state.estimatedStorageRemaining = value
-    }
+    },
   },
   actions: {
-    errorMessage ({ commit }, error) {
+    errorMessage({ commit }, error) {
       let errorMessage = error.message || error
       errorMessage += error.code ? ` Code: ${error.code}` : ''
       console.log(`Error: ${errorMessage}`)
@@ -182,27 +182,27 @@ export default {
           visibility: true,
           text: errorMessage,
           type: 'error',
-          callback: undefined
+          callback: undefined,
         },
         { root: true }
       )
     },
-    selectVideo ({ commit }, video) {
+    selectVideo({ commit }, video) {
       commit('selectVideo', video)
     },
     // This is a tracker to notify the rest of the app that something chas changed in the Editor
     // which needs to be saved after 'samtykker'
-    setUnsavedChanges ({ commit }, fileId) {
+    setUnsavedChanges({ commit }, fileId) {
       const updates = { hasUnsavedChanges: true }
       commit('mutateVideo', { fileId, updates })
     },
-    estimateStorageRemaining ({ state, commit, rootGetters }) {
+    estimateStorageRemaining({ state, commit, rootGetters }) {
       const deviceStatus = rootGetters['general/deviceStatus']
       if (
         !state.useCordova &&
         (deviceStatus.browser == 'Chrome' || deviceStatus.browser == 'Firefox')
       ) {
-        state.storageService.getStorageEstimate(estimate => {
+        state.storageService.getStorageEstimate((estimate) => {
           const e = (
             ((estimate.quota - estimate.usage) / estimate.quota) *
             100
@@ -212,7 +212,7 @@ export default {
       }
     },
     // Create a new draft metadata for the given User and Dataset
-    createDraftVideo (
+    createDraftVideo(
       { dispatch, commit, rootGetters },
       { setting, datasetInfo, user }
     ) {
@@ -221,24 +221,24 @@ export default {
         setting,
         user,
         datasetInfo,
-        deviceStatus
+        deviceStatus,
       })
       commit('addVideo', updatedVideoMetadata)
       commit('selectVideo', updatedVideoMetadata)
       commit('general/addDraftmetadataId', updatedVideoMetadata.fileId, {
-        root: true
+        root: true,
       })
       dispatch('estimateStorageRemaining')
       dispatch('general/updateUser', user, { root: true })
       return dispatch('saveDraftMetadata', {
         user,
         setting,
-        updatedVideoMetadata
+        updatedVideoMetadata,
       }).catch(() => dispatch('errorMessage', 'Save draft video'))
     },
     // Remove draft video
-    removeDraftVideo ({ dispatch, commit }, { video, user }) {
-      return new Promise(resolve => {
+    removeDraftVideo({ dispatch, commit }, { video, user }) {
+      return new Promise((resolve) => {
         // Remove draft videodata and metadata
         // Storage removal
         dispatch('removeLocalVideoData', video.fileId)
@@ -248,7 +248,7 @@ export default {
             // Store removal
             commit('removeDraftVideo', video.fileId)
             commit('general/removeDraftmetadataIds', video.fileId, {
-              root: true
+              root: true,
             })
             dispatch('general/updateUser', user, { root: true }).then(() => {
               console.log(`Removed a draft video: ${video.fileId}`)
@@ -265,10 +265,10 @@ export default {
     //    generate a new IV and VIDEO ENCRYPTION KEY (best practice)
     //    save this new structure as the current metadata item
     // ** Async **
-    replaceVideoData ({ state, dispatch, commit }, { setting, user, fileId }) {
-      return new Promise(resolve => {
+    replaceVideoData({ state, dispatch, commit }, { setting, user, fileId }) {
+      return new Promise((resolve) => {
         const updates = {}
-        commit('clearVolatileVideoData', fileId)
+        commit('clearVideoDataFiles', fileId)
         commit('removeTUSUpload', fileId)
         dispatch('removeLocalVideoData', fileId)
 
@@ -278,7 +278,7 @@ export default {
           dispatch('saveDraftMetadata', {
             user,
             setting,
-            updatedVideoMetadata
+            updatedVideoMetadata,
           })
             .then(() => resolve())
             .catch(() => dispatch('errorMessage', 'Replace draft video error'))
@@ -293,8 +293,8 @@ export default {
           // Generate an initialisation vector to encrypt the video's data (in idb.videoStore)
           updates.encryptionIV = webcryptoService.getRandomValues()
           // Generate an encryption key, export and convert to string suitable for storage
-          webcryptoService.generateKey().then(key => {
-            webcryptoService.keyToString(key).then(exportedKey => {
+          webcryptoService.generateKey().then((key) => {
+            webcryptoService.keyToString(key).then((exportedKey) => {
               updates.encryptionKey = exportedKey
               replaceDataDone()
             })
@@ -302,22 +302,22 @@ export default {
         }
       })
     },
-    updateDraftMetadata (
+    updateDraftMetadata(
       { state, dispatch, commit },
       { setting, user, fileId, updates }
     ) {
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         const updatedData = {
           ...updates,
           hasUnsavedChanges: false,
-          hasNewDataAvailable: false
+          hasNewDataAvailable: false,
         }
         commit('mutateVideo', { fileId, updates: updatedData })
         let updatedVideoMetadata = state.draftVideos[fileId]
         dispatch('saveDraftMetadata', {
           user,
           setting,
-          updatedVideoMetadata
+          updatedVideoMetadata,
         })
           .then(() => {
             resolve()
@@ -327,7 +327,7 @@ export default {
     },
     // Retrieve all draft video metadata from indexedDB, decrypt and add them to this store
     // ENCRYPTION KEY for metadata comes from the User model, downloaded after login
-    loadDraftMetadata (
+    loadDraftMetadata(
       { state, commit, dispatch, rootGetters },
       { user, setting }
     ) {
@@ -365,60 +365,60 @@ export default {
         .getAllFromStorage(deviceStatus, {
           store: stores.metadataStore,
           index: { name: 'setting', keys: [] },
-          criteria: {}
+          criteria: {},
         })
-        .then(foundVideos => {
+        .then((foundVideos) => {
           if (foundVideos) {
             if (state.useCordova) {
               const loadFilePromises = []
               const userVideos = user.draftMetadataIDs
 
               foundVideos
-                .filter(v => userVideos.includes(v.name))
-                .forEach(fileEntry => {
+                .filter((v) => userVideos.includes(v.name))
+                .forEach((fileEntry) => {
                   loadFilePromises.push(
                     state.storageService.readFile({
                       store: stores.metadataStore,
                       cordovaData: {
-                        fileEntry
-                      }
+                        fileEntry,
+                      },
                     })
                   )
                 })
-              Promise.all(loadFilePromises).then(files =>
-                files.forEach(videoObject => {
+              Promise.all(loadFilePromises).then((files) =>
+                files.forEach((videoObject) => {
                   createVideo(videoObject, true)
                 })
               )
             } else {
               foundVideos
-                .filter(eachItem =>
+                .filter((eachItem) =>
                   // Only attempt to decrypt our own metadata items
                   user.draftMetadataIDs.includes(eachItem.fileId)
                 )
-                .forEach(item => {
+                .forEach((item) => {
                   webcryptoService
                     .keyFromString(user.encryptionKey) // <- Async
-                    .then(importedKey =>
+                    .then((importedKey) =>
                       webcryptoService
                         .decrypt(importedKey, item.iv, item.data) // <- Async
-                        .then(videoMetadataBuffer =>
+                        .then((videoMetadataBuffer) =>
                           createVideo(videoMetadataBuffer, false)
                         )
-                        .catch(error => {
+                        .catch((error) => {
                           console.log(error)
                         })
                     )
-                    .catch(error => {
+                    .catch((error) => {
                       console.log(error)
                     })
                 })
             }
           }
         })
-        .catch(error => {
+        .catch((error) => {
           if (error.name !== 'NotFoundError') {
-            () => dispatch('errorMessage', 'Get all draft videos') // Async errors bubble out here
+            ;() => dispatch('errorMessage', 'Get all draft videos') // Async errors bubble out here
           }
         })
     },
@@ -426,7 +426,7 @@ export default {
     // Call whenever the user requires updates to metadata to be saved
     // If using Cordova, save an unencrypted copy
     // ** Async **
-    saveDraftMetadata (
+    saveDraftMetadata(
       { state, dispatch },
       { user, setting, updatedVideoMetadata }
     ) {
@@ -437,7 +437,7 @@ export default {
         // Encryption requires an ArrayBuffer. This converts Object -> JSON -> ArrayBuffer
         const videoMetadataAsBuffer = updatedVideoMetadata.getAsBuffer()
 
-        const saveToStorage = metaData => {
+        const saveToStorage = (metaData) => {
           return state.storageService.saveToStorage({
             store: stores.metadataStore,
             index: stores.metadataStore.indexes.settingAndFile,
@@ -446,12 +446,12 @@ export default {
               fileId: updatedVideoMetadata.fileId,
               iv,
               created: new Date(),
-              data: metaData
+              data: metaData,
             },
             cordovaData: {
               fileName: updatedVideoMetadata.fileId,
-              data: metaData
-            }
+              data: metaData,
+            },
           }) // <- Async
         }
 
@@ -466,11 +466,11 @@ export default {
         // Import the CryptoKey that is stored in metadata as a string
         return webcryptoService
           .keyFromString(user.encryptionKey)
-          .then(importedKey =>
+          .then((importedKey) =>
             webcryptoService
               // Wait for encryption of the data
               .encrypt(importedKey, iv, videoMetadataAsBuffer) // <- Async
-              .then(encryptedMetadata => saveToStorage(encryptedMetadata))
+              .then((encryptedMetadata) => saveToStorage(encryptedMetadata))
               .then(() => {
                 console.log('Completed metadata encryption and save')
                 resolve()
@@ -486,7 +486,7 @@ export default {
     // Clear the existing data first
     // Load draft metadata items from local IndexedDB
     // Load previously sent (unchangable) metadata items from the server
-    fetchVideoMetadata ({ dispatch, commit }, { user, setting }) {
+    fetchVideoMetadata({ dispatch, commit }, { user, setting }) {
       commit('clearAllMetadata')
       dispatch('loadDraftMetadata', { user, setting })
       return serverService
@@ -494,15 +494,15 @@ export default {
           route: '/api/videos',
           method: 'GET',
           credentials: true,
-          body: {}
+          body: {},
         })
-        .then(videos => {
-          videos.forEach(v =>
+        .then((videos) => {
+          videos.forEach((v) =>
             commit('addVideo', new VideoMetadata({ video: v }))
           )
           dispatch('estimateStorageRemaining')
         })
-        .catch(error => {
+        .catch((error) => {
           dispatch('errorMessage', 'Fetch server videos')
           return Promise.reject(error)
         })
@@ -510,16 +510,16 @@ export default {
     // Given a video, fetch it from server (used for status update)
     // This will cause an update to the video status in store, and also return the update
     // ** Async **
-    fetchVideoMetadataByReference ({ commit, dispatch }, video) {
+    fetchVideoMetadataByReference({ commit, dispatch }, video) {
       return serverService
         .request({
           route: '/api/video',
           method: 'GET',
           params: { videoref: video.fileId },
           credentials: true,
-          body: {}
+          body: {},
         })
-        .then(v => {
+        .then((v) => {
           if (
             v.status !== video.status ||
             v.pipelineInProgress !== video.pipelineInProgress
@@ -533,55 +533,55 @@ export default {
           }
           return v
         })
-        .catch(error => {
+        .catch((error) => {
           return Promise.reject(error)
         })
     },
 
     // Remove the encrypted VIDEO from IndexedDB
     // Should be called only after an upload is confirmed as completed / successful
-    removeLocalVideoData ({ state, dispatch }, fileId) {
+    removeLocalVideoData({ state, dispatch }, fileId) {
       state.storageService
         .removeFromStorage({
           store: stores.videoStore,
           index: stores.videoStore.indexes.fileId,
           criteria: { fileId },
           cordovaData: {
-            fileName: fileId + '.mp4'
-          }
+            fileName: fileId + '.mp4',
+          },
         })
         .catch(() => dispatch('errorMessage', 'Remove local videos'))
     },
     // Remove the encrypted video METADATA from IndexedDB
-    removeLocalMetadata ({ state }, video) {
+    removeLocalMetadata({ state }, video) {
       if (video) {
         return state.storageService.removeFromStorage({
           store: stores.metadataStore,
           index: stores.metadataStore.indexes.settingAndFile,
           criteria: {
             settingId: video.settingId,
-            fileId: video.fileId
+            fileId: video.fileId,
           },
           cordovaData: {
-            fileName: video.fileId
-          }
+            fileName: video.fileId,
+          },
         })
       } else {
         return Promise.reject()
       }
     },
     // Check server periodically for videos that are marked 'in progress' at the *SERVER* pipeline
-    checkVideoProgress ({ dispatch }, video) {
+    checkVideoProgress({ dispatch }, video) {
       return new Promise((resolve, reject) => {
         dispatch('fetchVideoMetadataByReference', video)
-          .then(updatedVideo => resolve(updatedVideo))
+          .then((updatedVideo) => resolve(updatedVideo))
           .catch(() => reject())
       })
     },
     // Create or continue a TUS upload for the encrypted video to the server
     // * Returns a promise *
-    generateUpload ({ state, dispatch, commit, rootGetters }, fileId) {
-      return new Promise(resolve => {
+    generateUpload({ state, dispatch, commit, rootGetters }, fileId) {
+      return new Promise((resolve) => {
         const deviceStatus = rootGetters['general/deviceStatus']
         const remoteAddress = baseUrl()
         const token = localStorage.getItem('jwt') || ''
@@ -591,36 +591,36 @@ export default {
         const onSuccess = () => {
           // Send the video metadata to match with the uploaded file
           return serverService
-          .request({
-            route: '/api/video',
-            method: 'POST',
-            credentials: true,
-            body: state.selectedVideo.getAsString()
-          })
-          .then(() => {
-            // Clear all information relating to this draft video from the client
-            commit('removeTUSUpload', fileId)
-            commit('clearVolatileVideoData', fileId)
-            dispatch('removeLocalVideoData', fileId)
-            dispatch('removeLocalMetadata', state.selectedVideo)
-              .then(() => {
-                // After IndexedDB data removal is confirmed, also remove in-memory copies
-                // then reload fresh from server
-                commit('removeDraftVideo', fileId)
-                return dispatch('fetchVideoMetadata', {
-                  user,
-                  setting
-                }).then(() => {
-                  const uploadedVideo = state.videos[fileId]
-                  commit('selectVideo', uploadedVideo)
+            .request({
+              route: '/api/video',
+              method: 'POST',
+              credentials: true,
+              body: state.selectedVideo.getAsString(),
+            })
+            .then(() => {
+              // Clear all information relating to this draft video from the client
+              commit('removeTUSUpload', fileId)
+              commit('clearVideoDataFiles', fileId)
+              dispatch('removeLocalVideoData', fileId)
+              dispatch('removeLocalMetadata', state.selectedVideo)
+                .then(() => {
+                  // After IndexedDB data removal is confirmed, also remove in-memory copies
+                  // then reload fresh from server
+                  commit('removeDraftVideo', fileId)
+                  return dispatch('fetchVideoMetadata', {
+                    user,
+                    setting,
+                  }).then(() => {
+                    const uploadedVideo = state.videos[fileId]
+                    commit('selectVideo', uploadedVideo)
+                  })
                 })
-              })
-              .catch(error => dispatch('errorMessage', error))
-          })
-          .catch(error => {
-            dispatch('errorMessage', 'Send metadata to server')
-            return Promise.reject(error)
-          })
+                .catch((error) => dispatch('errorMessage', error))
+            })
+            .catch((error) => {
+              dispatch('errorMessage', 'Send metadata to server')
+              return Promise.reject(error)
+            })
         }
 
         const onProgress = (bytesUploaded, bytesTotal) => {
@@ -628,7 +628,7 @@ export default {
           uploadProgress = uploadProgress > 100 ? 100 : uploadProgress
           commit('mutateVideo', {
             fileId,
-            updates: { uploadProgress }
+            updates: { uploadProgress },
           })
         }
 
@@ -649,17 +649,17 @@ export default {
             xhr.withCredentials = true
           },
           headers: {
-            Authorization: `jwt ${token}`
+            Authorization: `jwt ${token}`,
           },
           metadata: { video: state.selectedVideo.getFileUploadInfo() },
           resume: false, //! state.useCordova, // TUS resume ability requires indexedDB
           // onChunkComplete,
           onProgress,
           onSuccess,
-          onError: error => dispatch('errorMessage', error)
+          onError: (error) => dispatch('errorMessage', error),
         }
 
-        const createTusUpload = fileObject => {
+        const createTusUpload = (fileObject) => {
           // Establish a TUS upload instance for this item
           const upload = new tus.Upload(fileObject, options)
           commit('setTUSUpload', { upload, fileId })
@@ -673,13 +673,13 @@ export default {
             criteria: { fileId },
             cordovaData: {
               fileName: fileId + '.mp4',
-              readFile: false
-            }
+              readFile: false,
+            },
           })
-          .then(data => {
+          .then((data) => {
             if (data) {
               if (state.useCordova) {
-                data.file(fileObject => {
+                data.file((fileObject) => {
                   createTusUpload(fileObject)
                 })
               } else {
@@ -694,7 +694,7 @@ export default {
               resolve()
             }
           })
-          .catch(error => {
+          .catch((error) => {
             dispatch('errorMessage', error)
             resolve()
           })
@@ -703,10 +703,10 @@ export default {
 
     // Signal TUS to change upload state for a given video
     // Create a TUS object if it doesn't alrady exist
-    controlUpload ({ state, commit, dispatch }, { control, fileId }) {
+    controlUpload({ state, commit, dispatch }, { control, fileId }) {
       const upload = state.tusUploadInstances[fileId]
 
-      const toggleUpload = upload => {
+      const toggleUpload = (upload) => {
         const updates = {}
         if (upload && control == 'start') {
           upload.start()
@@ -721,12 +721,14 @@ export default {
       if (upload) {
         toggleUpload(upload)
       } else {
-        dispatch('generateUpload', fileId).then(upload => toggleUpload(upload))
+        dispatch('generateUpload', fileId).then((upload) =>
+          toggleUpload(upload)
+        )
       }
     },
     // Add a new UNENCRYPTED piece of recorded video to the temporary chunk list
     // We need to retain unencrypted video for ONLY THE CURRENT RECORDING to allow playback
-    appendChunk ({ commit }, { fileId, chunk }) {
+    appendChunk({ commit }, { fileId, chunk }) {
       commit('appendChunk', { fileId, chunk })
     },
     // Encrypt a given chunk of video data
@@ -735,7 +737,7 @@ export default {
     // The idea is to allow this method to be called even if video recording continues, with the aim
     // to encrypt DURING recording to prevent too much encryption delay when recording is finished
     // * Returns a promise *
-    encryptChunk ({ state, commit, dispatch }, { chunk, fileId }) {
+    encryptChunk({ state, commit, dispatch }, { chunk, fileId }) {
       return new Promise((resolve, reject) => {
         if (state.useCordova) {
           return resolve()
@@ -745,15 +747,15 @@ export default {
         commit('mutateVideo', { fileId, updates })
         return webcryptoService
           .keyFromString(video.encryptionKey) // <- Async
-          .then(importedKey => {
-            new Response(chunk).arrayBuffer().then(arraybuffer => {
+          .then((importedKey) => {
+            new Response(chunk).arrayBuffer().then((arraybuffer) => {
               // <- Async
               webcryptoService
                 .encrypt(importedKey, video.encryptionIV, arraybuffer) // <- Async
-                .then(data => {
+                .then((data) => {
                   commit('appendEncryptedChunk', {
                     data,
-                    fileId
+                    fileId,
                   })
                   updates.encryptionInProgress = false
                   commit('mutateVideo', { fileId, updates })
@@ -776,7 +778,7 @@ export default {
     // Call after all chunks are encrypted
     // If we're using cordova, save the unencrypted video to device storage instead
     // * Async *
-    saveVideo ({ dispatch, state, commit }, fileId) {
+    saveVideo({ dispatch, state, commit }, fileId) {
       const updates = {}
       const dataWasSaved = () => {
         updates.isEncrypted = true
@@ -795,10 +797,10 @@ export default {
             store: stores.videoStore,
             cordovaData: {
               fileName: fileId + '.mp4',
-              fileToMove: state.videoUnEncryptedData[fileId]
-            }
+              fileToMove: state.videoUnEncryptedData[fileId],
+            },
           })
-          .then(data => {
+          .then((data) => {
             // What was a MediaFile will now be a FileEntry
             commit('setDecryptedVideoData', { fileId, data })
             dataWasSaved()
@@ -812,8 +814,8 @@ export default {
             idbData: {
               fileId,
               created: new Date(),
-              data: state.videoEncryptedData[fileId]
-            }
+              data: state.videoEncryptedData[fileId],
+            },
           })
           .then(dataWasSaved)
           .catch(() => dispatch('errorMessage', 'Save video'))
@@ -823,7 +825,7 @@ export default {
     // We need to ensure the chunks are retrieved in order
     // If using Cordova, skip the decryption procedure and load directly
     // * Returns a promise *
-    loadVideo ({ state, commit, dispatch, rootGetters }, video) {
+    loadVideo({ state, commit, dispatch, rootGetters }, video) {
       const updates = {}
       // Resolve only once finished each chunk, so the Video knows when to retrieve the data to play
       return new Promise((resolve, reject) => {
@@ -846,7 +848,7 @@ export default {
             const chunk = encryptedArray.shift()
             webcryptoService
               .decrypt(importedKey, video.encryptionIV, chunk)
-              .then(dd => {
+              .then((dd) => {
                 decryptedData.push(dd)
                 decryptChunks()
               })
@@ -856,14 +858,14 @@ export default {
               })
           } else {
             const dataArray = decryptedData.map(
-              data =>
+              (data) =>
                 new Blob([new Uint8Array(data)], {
-                  type: video.mimeType
+                  type: video.mimeType,
                 })
             )
             commit('setDecryptedVideoData', {
               fileId: video.fileId,
-              data: dataArray
+              data: dataArray,
             })
             loadCompleted()
           }
@@ -878,15 +880,15 @@ export default {
             criteria: { fileId: video.fileId },
             cordovaData: {
               fileName: video.fileId + '.mp4',
-              readFile: false
-            }
+              readFile: false,
+            },
           }) // <- Async
-          .then(loadedData => {
+          .then((loadedData) => {
             if (loadedData) {
               if (state.useCordova) {
                 commit('setDecryptedVideoData', {
                   fileId: video.fileId,
-                  data: loadedData
+                  data: loadedData,
                 })
                 loadCompleted()
               } else if (video.encryptionKey) {
@@ -895,7 +897,7 @@ export default {
                 commit('mutateVideo', { fileId: video.fileId, updates })
                 webcryptoService
                   .keyFromString(video.encryptionKey)
-                  .then(key => {
+                  .then((key) => {
                     importedKey = key
                     decryptChunks()
                   })
@@ -914,12 +916,12 @@ export default {
       })
     },
     // This is only for video data only.
-    loadCordovaMedia (store, fileEntry) {
+    loadCordovaMedia(store, fileEntry) {
       const copyFile = () =>
         cordovaService.copyFileToTemp({
           cordovaData: {
-            fileEntry
-          }
+            fileEntry,
+          },
         })
 
       // iOS WKWebkit can only load video from the <app_id>/tmp folder!
@@ -928,7 +930,7 @@ export default {
         return cordovaService
           .clearTempFolder()
           .then(() => copyFile())
-          .catch(error => copyFile(error))
+          .catch((error) => copyFile(error))
       } else {
         return Promise.resolve(fileEntry)
       }
@@ -938,8 +940,8 @@ export default {
     // Then, redirects back to our app
     // Second redirect has enough info for router.js to open Editor view on this video
     // See also: transferSuccess()  below..
-    initiateTransfer ({ state, dispatch }, { video, settingId, mode }) {
-      if (video.storages.some(name => name == 'google')) {
+    initiateTransfer({ state, dispatch }, { video, settingId, mode }) {
+      if (video.storages.some((name) => name == 'google')) {
         let route = '/api/google_transfer'
         let device = ''
 
@@ -950,10 +952,14 @@ export default {
 
         // Original Google Transfer Method using OAuth plugin (problem is: unable to pass session or JWT header to OAuth plugin)
         if (state.useCordova) {
-          const token = localStorage.getItem('jwt') || '';
+          const token = localStorage.getItem('jwt') || ''
           route = `${baseUrl()}/api/google_transfer`
           route += `?device=mobileApp&videoReference=${video.fileId}&settingId=${settingId}&mode=${mode}&jwt=${token}`
-          return window.OAuth(route, 'oauth:google', 'allowinlinemediaplayback=YES')
+          return window.OAuth(
+            route,
+            'oauth:google',
+            'allowinlinemediaplayback=YES'
+          )
         }
 
         return (
@@ -966,14 +972,16 @@ export default {
                 device,
                 videoReference: video.fileId,
                 settingId,
-                mode
+                mode,
               },
               credentials: true,
-              body: {}
+              body: {},
             })
             // Redirect must be done from front end to aoid CORS issues
-            .then(response => (window.location.href = decodeURI(response.data)))
-            .catch(error => {
+            .then(
+              (response) => (window.location.href = decodeURI(response.data))
+            )
+            .catch((error) => {
               dispatch('errorMessage', error)
               return Promise.reject(error)
             })
@@ -982,11 +990,11 @@ export default {
     },
     // This is called after a successful redirect from the final video storage API
     // It returns the VIVA app to the state it was in before redirection
-    transferSuccess (
+    transferSuccess(
       { state, dispatch, commit, rootGetters },
       { videoReference, settingId, error }
     ) {
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         dispatch('setting/selectSettingById', settingId, { root: true })
         const setting = rootGetters['setting/selectedDatasett']
         const user = rootGetters['general/user']
@@ -1024,6 +1032,6 @@ export default {
           )
         }
       })
-    }
-  }
+    },
+  },
 }

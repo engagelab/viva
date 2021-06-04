@@ -248,10 +248,12 @@ export default {
     ]),
     ...mapActions('video', ['createDraftVideo']),
     newVideo() {
-      this.createDraftVideo({
+
+      appActions.createDraftMetadata({
         dataset: this.selectedDatasett,
         selection: this.selectedDataset.selection,
         user: this.user,
+        deviceStatus: appGetters.deviceStatus,
       }).then(() => this.$router.push('/videos/editor?page=0'));
     },
     changeSlide({ data, keyName }) {
@@ -320,7 +322,7 @@ export default {
           keyName: l.keyName,
         })),
       });
-      this.updateUser(this.user);
+      this.updateUserAtServer(this.user);
       // this.$router.push('/videos/list');
     },
     newUtvalgItem(newUtvalgName) {

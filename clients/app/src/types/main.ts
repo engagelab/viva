@@ -124,55 +124,55 @@ export interface DeviceStatus {
 
 //------------------------- Video and Dataset models -----------------
 interface EditDecriptionList {
-  trim: number[][]
+  trim: number[]
   blur: number[][]
 }
 interface VideoDetails {
-  id?: string // Used instead of video._id front end, and for QR Code.
-  name?: string // A human-readable string for naming this video
-  category?: string // green, yellow, red
-  created?: Date
-  description?: string
-  duration?: number // Seconds  created: { type: Date },
-  edl?: EditDecriptionList
-  encryptionKey?: string
-  encryptionIV?: Uint8Array // Mixed type. Mongoose has no type for UInt8Array..
+  id: string // Used instead of video._id front end, and for QR Code.
+  name: string // A human-readable string for naming this video
+  category: string // green, yellow, red
+  created: Date
+  description: string
+  duration: number // Seconds  created: { type: Date },
+  edl: EditDecriptionList
+  encryptionKey: string
 }
 interface VideoStatus {
-  main?: VIDEO_STATUS_TYPES
-  error?: {
+  main: VIDEO_STATUS_TYPES
+  error: {
     errorInfo: string
   }
-  inPipeline?: boolean // true if a pipeline is currently working on this file
-  isEncrypted?: boolean // true if this video is encrypted
-  isEdited?: boolean // true if this video has edits to perform
-  isConsented?: boolean
+  inPipeline: boolean // true if a pipeline is currently working on this file
+  isEncrypted: boolean // true if this video is encrypted
+  isEdited: boolean // true if this video has edits to perform
+  isConsented: boolean
+  isClassified: boolean // true if a sensitivity colour has been assigned
 
   // Front end only (not saved at server)
-  recordingExists?: boolean // true if a recording data file has been assigned to this video
-  encryptionInProgress?: boolean
-  decryptionInProgress?: boolean
-  uploadInProgress?: boolean
-  isUploaded?: boolean
-  uploadProgress?: number
-  hasUnsavedChanges?: boolean
-  hasNewDataAvailable?: boolean
+  recordingExists: boolean // true if a recording data file has been assigned to this video
+  encryptionInProgress: boolean
+  decryptionInProgress: boolean
+  uploadInProgress: boolean
+  isUploaded: boolean
+  uploadProgress: number
+  hasUnsavedChanges: boolean
+  hasNewDataAvailable: boolean
 }
 interface VideoSharing {
-  users?: string[]
-  access?: boolean
-  description?: string
-  edl?: EditDecriptionList
+  users: string[]
+  access: boolean
+  description: string
+  edl: EditDecriptionList
 }
 interface VideoUsers {
-  owner?: string
-  sharedWith?: string[] // Users who can see this video. Used for easier searching
-  sharing?: VideoSharing[] // Each entry is a share for a particular set of users, and particular EDL of this video
+  owner: string
+  sharedWith: string[] // Users who can see this video. Used for easier searching
+  sharing: VideoSharing[] // Each entry is a share for a particular set of users, and particular EDL of this video
 }
 interface VideoDataset {
-  id?: string
-  name?: string
-  selection?: string[] // 'utvalg' setting
+  id: string
+  name: string
+  selection: string[] // 'utvalg' setting
 }
 
 export interface VideoSpec {
@@ -193,7 +193,7 @@ export class Video {
   consents: string[]
   storages: string[]
 
-  constructor(data: Video | VideoSpec) {
+  constructor(data?: Video | VideoSpec) {
     this.details = {
       id: utilities.uuid(),
       name: id.substring(0, 7),
@@ -217,6 +217,7 @@ export class Video {
       isEncrypted: false,
       isEdited: false,
       isConsented: false,
+      isClassified: false,
 
       // Front end only (not saved at server)
       recordingExists: false,
@@ -243,7 +244,7 @@ export class Video {
     this.file.mimeType = 'video/mp4'
 
     // Create a Video using the current App state
-    if (data instanceof VideoSpec) {
+    if (data && data instanceof VideoSpec) {
       data = data as VideoSpec
       this.updateDataset({
         id: data.dataset._id,
@@ -254,7 +255,7 @@ export class Video {
       this.storages = data.dataset.storages.map((storage) => storage.name)
       this.file.mimeType =
         data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4'
-    } else {
+    } else if (data) {
       // Create a video based on a given Video
       this.updateAll(data as Video)
     }
@@ -287,8 +288,13 @@ export class Video {
   // Note: the encryptionIV does not convert directly using JSON.stringify
   getAsString(): string {
     const v = { ...this }
-    v.encryptionIV = ui8arr2str(this.encryptionIV)
+    v.encryptionIV = ui8arr2str(this.details.encryptionIV)
     return JSON.stringify(v)
+  }
+
+  // Convert this to a Plain Old Javascript Object
+  get asPOJO(): unknown {
+    return { ...this }
   }
 
   getFileUploadInfo(): string {
