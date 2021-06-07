@@ -303,8 +303,9 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent, computed } from 'vue'
+export default defineComponent({
   props: {
     applyClasses: {
       type: String,
@@ -323,16 +324,18 @@ export default {
       default: false,
     },
   },
-  data() {
-    return {};
+  setup(props) {
+    const name = Math.random()
+    const rotate = computed(() => {
+      const saturation = props.disabled ? 0 : 1;
+      return `transform: rotate(${props.rotation}deg); filter: saturate(${saturation});`;
+    })
+    return {
+      name,
+      rotate
+    }
   },
-  computed: {
-    rotate() {
-      const saturation = this.disabled ? 0 : 1;
-      return `transform: rotate(${this.rotation}deg); filter: saturate(${saturation});`;
-    },
-  },
-};
+})
 </script>
 
 <style scoped>

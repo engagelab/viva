@@ -17,7 +17,7 @@
     </div>
     <div v-if="type == 'checkbox'">
       <label :for="name">{{ label }}</label>
-      <input type="checkbox" :id="name" :name="name" :checked="value" @input="changeValue" />
+      <input type="checkbox" :id="name" :name="name" :checked="value" @input="$emit('input', $event.target.value)" />
     </div>
     <div v-if="type == 'textarea'" class="flex-1 p-4">
       <textarea
@@ -35,8 +35,9 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue'
+export default defineComponent({
   model: {
     prop: 'value',
     event: 'input',
@@ -63,20 +64,17 @@ export default {
       default: '',
     },
   },
-  data() {
+  setup() {
+    const name = Math.random()
+    const iOSScrollFix = () => {
+      window.scrollBy(0, 0)
+    }
     return {
       name,
-    };
+      iOSScrollFix,
+    }
   },
-  created() {
-    this.name = Math.random();
-  },
-  methods: {
-    iOSScrollFix() {
-      window.scrollBy(0, 0);
-    },
-  },
-};
+})
 </script>
 
 <style scoped>

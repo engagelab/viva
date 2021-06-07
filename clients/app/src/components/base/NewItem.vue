@@ -41,11 +41,12 @@
   </div>
 </template>
 
-<script>
-import SVGSymbol from '../../components/base/SVGSymbol';
-import Input from '../../components/base/Input';
+<script lang="ts">
+import { defineComponent, ref } from 'vue'
+import SVGSymbol from './SVGSymbol.vue'
+import Input from './Input.vue'
 
-export default {
+export default defineComponent({
   components: {
     SVGSymbol,
     Input,
@@ -60,35 +61,38 @@ export default {
       default: '\\W',
     },
   },
-  data() {
-    return {
-      editing: false,
-      name: '',
-    };
-  },
-  mounted() {
-    if (this.initialName) {
-      this.name = this.initialName;
+  setup (props, context) {
+    const name = ref('')
+    const editing = ref(false)
+    if (props.initialName) {
+      name.value = props.initialName
     }
-  },
-  methods: {
-    editNewitem() {
-      if (this.initialName) {
-        this.name = this.initialName;
+    function editNewitem() {
+      if (props.initialName) {
+        name.value = props.initialName;
       }
-      this.editing = true;
-    },
-    removeNewitem() {
-      this.name = this.initialName || '';
-      this.editing = false;
-    },
-    addNewitem() {
+      editing.value = true
+    }
+    function removeNewitem() {
+      name.value = props.initialName || ''
+      editing.value = false
+    }
+    function addNewitem() {
       let regex;
-      regex = new RegExp(this.filter, 'g');
-      const newName = this.name.replace(regex, '');
-      this.$emit('new-text', newName);
-      this.removeNewitem();
-    },
-  },
-};
+      regex = new RegExp(props.filter, 'g')
+      const newName = name.value.replace(regex, '');
+      context.emit('new-text', newName)
+      removeNewitem()
+    }
+
+    return {
+      editing,
+      name,
+
+      editNewitem,
+      removeNewitem,
+      addNewitem
+    }
+  }
+})
 </script>

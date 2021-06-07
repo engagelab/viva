@@ -50,9 +50,9 @@ import { Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
-import Input from '@/components/base/Input'
-import NewItem from '@/components/base/NewItem'
-import SVGSymbol from '@/components/base/SVGSymbol'
+import Input from '@/components/base/Input.vue'
+import NewItem from '@/components/base/NewItem.vue'
+import SVGSymbol from '@/components/base/SVGSymbol.vue'
 
 export default defineComponent({
   components: {
