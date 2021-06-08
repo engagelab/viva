@@ -1,6 +1,7 @@
 import {
   USER_ROLE,
   CONSENT_TYPES,
+  CONSENT_SELECTION,
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
 } from '../constants'
@@ -22,21 +23,21 @@ declare global {
   }
 }
 
-String.prototype.toPascalCase = function () {
+String.prototype.toPascalCase = function() {
   const text = this.valueOf().replace(/[-_\s.]+(.)?/g, (_, c) =>
     c ? c.toUpperCase() : ''
   )
   return text.substr(0, 1).toUpperCase() + text.substr(1)
 }
 
-String.prototype.toCamelCase = function () {
+String.prototype.toCamelCase = function() {
   const text = this.valueOf().replace(/[-_\s.]+(.)?/g, (_, c) =>
     c ? c.toUpperCase() : ''
   )
   return text.substr(0, 1).toLowerCase() + text.substr(1)
 }
 
-String.prototype.padZero = function (length: number): string {
+String.prototype.padZero = function(length: number): string {
   let s = String(this)
   while (s.length < length) {
     s = '0' + s
@@ -252,7 +253,7 @@ export class Video {
         selection: data.selection,
       })
       this.updateUsers({ owner: data.user._id })
-      this.storages = data.dataset.storages.map((storage) => storage.name)
+      this.storages = data.dataset.storages.map(storage => storage.name)
       this.file.mimeType =
         data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4'
     } else if (data) {
@@ -262,16 +263,16 @@ export class Video {
   }
 
   updateDetails(details: VideoDetails): void {
-    Object.keys(details).forEach((key) => (this.details[key] = details[key]))
+    Object.keys(details).forEach(key => (this.details[key] = details[key]))
   }
   updateStatus(status: VideoStatus): void {
-    Object.keys(status).forEach((key) => (this.status[key] = status[key]))
+    Object.keys(status).forEach(key => (this.status[key] = status[key]))
   }
   updateUsers(users: VideoUsers): void {
-    Object.keys(users).forEach((key) => (this.users[key] = users[key]))
+    Object.keys(users).forEach(key => (this.users[key] = users[key]))
   }
   updateDataset(dataset: VideoDataset): void {
-    Object.keys(dataset).forEach((key) => (this.dataset[key] = dataset[key]))
+    Object.keys(dataset).forEach(key => (this.dataset[key] = dataset[key]))
   }
 
   updateAll(data: Video): void {
@@ -432,7 +433,7 @@ export class Dataset {
   }
 
   get selection(): string[] {
-    return this.selection.map((s) => `${s.keyName}:${s.title}`)
+    return this.selection.map(s => `${s.keyName}:${s.title}`)
   }
 }
 
