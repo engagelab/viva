@@ -88,7 +88,12 @@ const actions = {
     let errorMessage = error.message || error
     errorMessage += error.code ? ` Code: ${error.code}` : ''
     console.log(`Error: ${errorMessage}`)
-    appActions.setSnackbar(errorMessage)
+    appActions.setSnackbar({
+      visibility: true,
+      text: errorMessage,
+      type: 'error',
+      callback: undefined,
+    })
   },
   selectDataset(dataset: Dataset): void {
     state.value.selectedDataset = dataset

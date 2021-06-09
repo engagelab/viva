@@ -31,6 +31,7 @@ interface Snackbar {
   visibility: boolean // A toggle for showing error messages to the user
   text: string
   callback: Callback
+  type: string
 }
 export interface AppState {
   selectedUser: User
@@ -132,10 +133,10 @@ interface Actions {
   addDraftIdToUser: (fileID) => void
   removeDraftId: (fileID) => void
   setDialog: (dialog: Dialog) => void
-  setSnackbar: (message: string) => void
+  setSnackbar: (newSnackbar: Snackbar) => void
   errorMessage: (message: Error | string) => void
   detectDevice: () => void
-  detectAppVersion: (fade: boolean) => void
+  detectAppVersion: () => void
   logout: () => void
   updateUserAtServer: (user: User | void) => Promise<void>
   redirectedLogin: () => Promise<void>
@@ -166,12 +167,8 @@ const actions = {
   setDialog(dialog: Dialog): void {
     _appState.value.dialog = dialog
   },
-  setSnackbar(message: string): void {
-    _appState.value.snackbar = {
-      visibility: true,
-      text: message,
-      callback: undefined,
-    }
+  setSnackbar(newSnackbar: Snackbar): void {
+    _appState.value.snackbar = newSnackbar
   },
   errorMessage(error: Error | string): void {
     let errorMessage: string = error.message || (error as string)
@@ -221,6 +218,7 @@ const actions = {
           visibility: true,
           text: 'Viva appen er en eldre versjon, og du må laste ned en ny versjon fra Appstore',
           callback: undefined,
+          type: 'message',
         })
       }
     })
@@ -263,6 +261,7 @@ const actions = {
         visibility: true,
         text: error,
         callback: undefined,
+        type: 'message',
       })
       this.logout()
     }
@@ -306,7 +305,7 @@ const actions = {
     }
     u.datasetConfig = datasetGetters.presetDatasetConfig
     return apiRequest(payload)
-      .then((u) => (_appState.value.selectedUser = u))
+      .then((su) => (_appState.value.selectedUser = su))
       .catch((error) => {
         this.errorMessage(error)
       })

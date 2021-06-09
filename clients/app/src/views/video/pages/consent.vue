@@ -57,23 +57,6 @@
 </template>
 
 <script lang="ts">
-const messages = {
-  nb_NO: {
-    SjekkAlt: 'Velg alle',
-    ManualHandling: 'Samtykker i dette datasettet håndteres manuelt',
-    noConsentsFound: 'Ingen samtykker er gitt for ',
-    understood: 'Forstått',
-    consentDelayNote: 'Det kan ta opptil en time før nye samtykker vises her',
-  },
-  en: {
-    SjekkAlt: 'Choose everyone',
-    ManualHandling: 'Consents in this data set is handled manually',
-    noConsentsFound: 'No consents are given for ',
-    understood: 'Understood',
-    consentDelayNote:
-      'It can take up to an hour before new consents are visible here',
-  },
-}
 import { defineComponent, ref, Ref, onMounted, watch } from 'vue'
 import router from '@/router'
 import { CONSENT_TYPES } from '@/constants'
@@ -111,6 +94,24 @@ export default defineComponent({
     Button,
   },
   setup() {
+    const messages = {
+      nb_NO: {
+        SjekkAlt: 'Velg alle',
+        ManualHandling: 'Samtykker i dette datasettet håndteres manuelt',
+        noConsentsFound: 'Ingen samtykker er gitt for ',
+        understood: 'Forstått',
+        consentDelayNote:
+          'Det kan ta opptil en time før nye samtykker vises her',
+      },
+      en: {
+        SjekkAlt: 'Choose everyone',
+        ManualHandling: 'Consents in this data set is handled manually',
+        noConsentsFound: 'No consents are given for ',
+        understood: 'Understood',
+        consentDelayNote:
+          'It can take up to an hour before new consents are visible here',
+      },
+    }
     const { t } = useI18n({ messages })
     const selectedVideo = videoGetters.selectedVideo
     const selectedDataset = datasetGetters.selectedDataset

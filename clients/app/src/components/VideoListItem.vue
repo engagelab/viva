@@ -2,22 +2,23 @@
   <div
     class="flex flex-row items-center justify-between viva-item max-w-xs"
     :class="backgroundColour"
-    @click.native="openVideo()"
   >
     <div class="max-w-24">
       <p class="text-sm">{{ datasetName }}</p>
-      <p class="font-vagBold">{{ video.name }}</p>
-      <p>{{ video.description }}</p>
+      <p class="font-vagBold">{{ video.details.name }}</p>
+      <p>{{ video.details.description }}</p>
       <p :class="videoStatus.textClass">
         {{ videoStatus.text }} {{ videoProgress }}
       </p>
       <Button
-        v-if="video.status == 'edited' && videoStatus.google"
+        v-if="
+          video.status.main == VIDEO_STATUS_TYPES.edited && videoStatus.google
+        "
         logo="google"
         customWidth="250px"
         :disabled="disableTransfer"
         @click="transferVideo()"
-        >{{ $t('Overføre') }}</Button
+        >{{ t('Overføre') }}</Button
       >
     </div>
     <div class="pl-4" @click="clickItem(videoStatus)">
@@ -32,17 +33,6 @@
   </div>
 </template>
 
-<i18n>
-{
-  "no": {
-    "Overføre": "Overføre til permanent lagring"
-  },
-  "en": {
-    "Overføre": "Transfer to permanent storage"
-  }
-}
-</i18n>
-
 <script lang="ts">
 import {
   defineComponent,
@@ -53,25 +43,24 @@ import {
   toRefs,
   PropType,
 } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Video } from '@/types/main'
-import { useAppStore } from '@/store/useAppStore'
-import { useDatasetStore } from '@/store/useDatasetStore'
 import { useVideoStore } from '@/store/useVideoStore'
-import { useDeviceService } from '@/store/useDevice'
-const { actions: deviceActions } = useDeviceService()
-const { actions: appActions, getters: appGetters } = useAppStore()
-const { actions: videoActions, getters: videoGetters } = useVideoStore()
-const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
+
+const { actions: videoActions } = useVideoStore()
 
 import SVGSymbol from './base/SVGSymbol.vue'
 import Button from './base/Button.vue'
-import {
-  baseUrl,
-  appVersion,
-  CONSENT_TYPES,
-  VIDEO_STATUS_TYPES,
-  videoProgressCheckInterval,
-} from '@/constants'
+import { VIDEO_STATUS_TYPES, videoProgressCheckInterval } from '@/constants'
+
+interface VideoStatus {
+  text: string
+  textClass: string
+  status: string
+  symbol: string
+  symbolClass: string
+  google: boolean
+}
 
 export default defineComponent({
   components: {
@@ -83,15 +72,20 @@ export default defineComponent({
       type: Object as PropType<Video>,
       default: undefined,
     },
-    isLastVideo: {
-      type: Boolean,
-      default: false,
-    },
   },
-  setup(props) {
-    const { video, isLastVideo } = toRefs(props)
+  setup(props, context) {
+    const messages = {
+      nb_NO: {
+        Overføre: 'Overføre til permanent lagring',
+      },
+      en: {
+        Overføre: 'Transfer to permanent storage',
+      },
+    }
+    const { t } = useI18n({ messages })
+    const { video } = toRefs(props)
     const itemSelected = false
-    let progressUpdateTimeout: undefined
+    let progressUpdateTimeout: number
     const disableTransfer = ref(false)
     const backgroundColour = computed(() => {
       const status =
@@ -111,7 +105,7 @@ export default defineComponent({
     })
     const videoStatus = computed(() => {
       const v = video.value
-      const status = {
+      const status: VideoStatus = {
         text: 'Sjekk samtykker',
         textClass: 'text-viva-korall',
         status: 'draft',
@@ -143,10 +137,9 @@ export default defineComponent({
         status.symbolClass = 'red'
         status.textClass = 'red'
       } else if (
-        v.status.main != VIDEO_STATUS_TYPES.draft &&
-        v.status.main != VIDEO_STATUS_TYPES.edited &&
-        v.status.main != VIDEO_STATUS_TYPES.error &&
-        v.status.main != VIDEO_STATUS_TYPES.complete
+        v.status.main === VIDEO_STATUS_TYPES.uploaded ||
+        v.status.main === VIDEO_STATUS_TYPES.decrypted ||
+        v.status.main === VIDEO_STATUS_TYPES.converted
       ) {
         status.text = 'Opptak behandles av UiOs VIVA tjeneste ...'
         status.symbol = 'wait'
@@ -157,7 +150,7 @@ export default defineComponent({
         status.symbol = 'accept'
         status.symbolClass = 'green'
         status.textClass = 'green'
-        status.google = this.video.storages.some((name) => name == 'google')
+        status.google = video.value.storages.some((name) => name == 'google')
       }
       return status
     })
@@ -182,7 +175,7 @@ export default defineComponent({
           video.value.status.main != VIDEO_STATUS_TYPES.complete &&
           video.value.status.main != VIDEO_STATUS_TYPES.error
         ) {
-          videoActions.fetchVideoStatus(this.video).catch(() => {
+          videoActions.fetchVideoStatus(video.value).catch(() => {
             window.clearInterval(progressUpdateTimeout)
           })
         } else if (progressUpdateTimeout) {
@@ -191,42 +184,43 @@ export default defineComponent({
       }, videoProgressCheckInterval * 1000)
     })
 
+    onBeforeUnmount(() => {
+      if (progressUpdateTimeout) {
+        window.clearInterval(progressUpdateTimeout)
+      }
+    })
+
+    function clickItem(status: VideoStatus) {
+      if (status.symbol == 'viva') {
+        setTimeout(() => {
+          context.emit('select-video', { video: video.value })
+        }, 100)
+      }
+    }
+    // Initiate transfer of the video from VIVA server to final storage location
+    function transferVideo() {
+      if (!disableTransfer.value) {
+        /* this.initiateTransfer({
+          video: this.video,
+          settingId: this.video.settingId,
+          mode: 'transfer',
+        }) */
+      }
+      disableTransfer.value = true
+    }
+
     return {
+      t,
       disableTransfer,
       videoProgress,
       videoStatus,
       datasetName,
       backgroundColour,
-    }
-  },
+      VIDEO_STATUS_TYPES,
 
-  beforeDestroy() {
-    if (this.progressUpdateTimeout) {
-      window.clearInterval(this.progressUpdateTimeout)
+      clickItem,
+      transferVideo,
     }
-  },
-  methods: {
-    ...mapGetters('general', ['useCordova', 'isLoggedIn']),
-    ...mapActions('video', ['checkVideoProgress', 'initiateTransfer']),
-    clickItem(status) {
-      if (status.symbol == 'viva') {
-        // this.itemSelected = true;
-        setTimeout(() => {
-          this.$emit('select-video', { video: this.video })
-        }, 100)
-      }
-    },
-    // Initiate transfer of the video from VIVA server to final storage location
-    transferVideo() {
-      if (!this.disableTransfer) {
-        this.initiateTransfer({
-          video: this.video,
-          settingId: this.video.settingId,
-          mode: 'transfer',
-        })
-      }
-      this.disableTransfer = true
-    },
   },
 })
 </script>
