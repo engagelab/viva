@@ -5,6 +5,8 @@
   "author": "Engagelab",
   "scripts": {
     "postinstall": "(cd clients/app && yarn install); (cd clients/lti && yarn install); (cd server && yarn install);",
+    "serve:admin": "env-cmd yarn --cwd clients/admin run serve",
+    "build:admin": "env-cmd yarn --cwd clients/admin run build",
     "serve:lti": "env-cmd yarn --cwd clients/lti run serve",
     "build:lti": "env-cmd yarn --cwd clients/lti run build",
     "serve:app": "env-cmd yarn --cwd clients/app run serve",
@@ -16,7 +18,7 @@
     "server": "node server/viva.js",
     "test": "yarn run jest"
   },
-  "displayName": "slplus",
+  "displayName": "viva",
   "license": "Apache-2.0",
   "devDependencies": {
     "@vue/cli-plugin-unit-jest": "~4.5.8",

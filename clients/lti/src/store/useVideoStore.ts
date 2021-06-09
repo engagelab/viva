@@ -1,9 +1,14 @@
-//Store to do student / teacher /external guest user operations
+//Store to video operations
 /**
  *
  TODO:
- 1. fetchVideoMetadata and fetch video Data from S3 bucket
- 2. savevideo Metadat()//Along with sharing info
+ 1. Route call to mongoDB to fetch own and shared video metadata  for the logged in user
+ 2. httpsRequest to S3 bucket  fetch the video based on the video metadata
+ 3. Route call to canvas to  fetch users and roles for the  course ÍD
+ 4. Action function to play the video (if it is shared video , just play trim part of it )
+ 5. Action function to store the sharing info  , also  checks number of sharing possible -to check dataset
+ 6. Action function to retrive access to sharing
+ 7. Route call to mongoDB to update video metadata
  */
 import { PROJECT_NAME } from '@/constants'
 import { ref, Ref, computed, ComputedRef } from 'vue'

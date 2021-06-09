@@ -13,7 +13,7 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "checkJs": false,
-    "baseUrl": "./",
+    "baseUrl": "/",
     "typeRoots": ["node_modules/@types", "src/types"],
     "paths": {
       "@/*": ["src/*"]
