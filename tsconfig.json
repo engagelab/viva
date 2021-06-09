@@ -12,7 +12,7 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "checkJs": false,
-    "baseUrl": "./",
+    "baseUrl": "/",
     "lib": ["ES2020", "dom", "dom.iterable", "scripthost"]
   },
   "include": [

@@ -40,7 +40,7 @@ router.put('/user', authoriseUser, (request, response, next) => {
     if (!u.tokens.encryptionKey && update.tokens.encryptionKey) {
       u.tokens.encryptionKey = update.tokens.encryptionKey
     }
-    if (update.datasett) u.datasett = update.datasett
+    if (update.datasetConfig) u.datasetConfig = update.datasetConfig
     u.save((error2, savedUser) => {
       if (error2) return next(error2)
       response.send(savedUser.redacted())

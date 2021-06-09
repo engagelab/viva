@@ -168,18 +168,18 @@ import { useAppStore } from '@/store/useAppStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useVideoStore } from '@/store/useVideoStore'
 import { useDeviceService } from '@/store/useDevice'
-const { actions: deviceActions, getters: deviceGetters } = useDeviceService()
+const { actions: deviceActions } = useDeviceService()
 const { actions: appActions, getters: appGetters } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
 
 import Slider from '@/components/base/Slider.vue'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
-import main from './pages/main'
-import consent from './pages/consent'
-import edit from './pages/edit'
-import metadata from './pages/metadata'
-import upload from './pages/upload'
+import main from './pages/main.vue'
+import consent from './pages/consent.vue'
+import edit from './pages/edit.vue'
+import metadata from './pages/metadata.vue'
+import upload from './pages/upload.vue'
 
 export default defineComponent({
   name: 'editor',
@@ -536,16 +536,18 @@ export default defineComponent({
       videoWasReplaced = true
       videoActions.setRecordingNow(true)
 
-      // Call the device camera
-      deviceActions.recordVideo().then(() => {
-        video.value.status.isEncrypted = true
-        video.value.status.hasNewDataAvailable = true
-        video.value.status.recordingExists = true
-        video.value.status.hasUnsavedChanges = true
-        recording.value = false
-        videoActions
-          .updateMetadata(video.value)
-          .then(() => console.log('Completed video data save'))
+      // Call the device camera. Video will be stored under the name: video.details.id
+      videoActions.replaceDraftVideo(video.value.details.id).then(() => {
+        deviceActions.recordVideo(video.value.details.id).then(() => {
+          video.value.status.isEncrypted = true
+          video.value.status.hasNewDataAvailable = true
+          video.value.status.recordingExists = true
+          video.value.status.hasUnsavedChanges = true
+          recording.value = false
+          videoActions
+            .updateMetadata(video.value)
+            .then(() => console.log('Completed video data save'))
+        })
       })
     }
 

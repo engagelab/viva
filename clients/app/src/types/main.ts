@@ -113,7 +113,11 @@ export interface Consent {
   submission_id: string
   questions: Record<string, string>
   reference: {
-    subset: string
+    subset?: string
+    user_identifier?: string
+    user_fullname?: string
+    child_fullname?: string
+    username?: string
   }
 }
 export interface DeviceStatus {
@@ -300,8 +304,8 @@ export class Video {
 
   getFileUploadInfo(): string {
     const v = {
-      fileId: this.fileId,
-      userId: this.users.owner,
+      details: { id: this.details.id },
+      users: { owner: this.users.owner },
     }
     return JSON.stringify(v)
   }
@@ -382,6 +386,13 @@ interface DatasetStorage {
   }
   category: string[]
 }
+interface DatasetLock {
+  date: Date
+  selection: {
+    keyName: string
+    title: string
+  }
+}
 export interface DatasetData {
   _id: string
   name: string
@@ -455,15 +466,10 @@ interface UserProfile {
   reference: string // This should be sent to the client rather than _id
   groups: string[] // Groups this user is a member of
 }
-interface UserLock {
-  // { [datasetID]: { date: Date.now(), keyName: String }
-  date: Date
-  keyName: string
-}
-interface UserDataset {
+export interface UserDatasetConfig {
   id: string
-  utvalg: string[]
-  locks: Record<string, UserLock>
+  selection: string[]
+  locks: Record<string, DatasetLock>
 }
 interface UserVideos {
   draftIDs: string[]
@@ -473,14 +479,14 @@ export interface UserData {
   _id: string
   status: UserStatus
   profile: UserProfile
-  datasett: UserDataset
+  datasetConfig: UserDatasetConfig
   videos: UserVideos
 }
 export class User {
   _id: string
   status: UserStatus
   profile: UserProfile
-  datasett: UserDataset
+  datasetConfig: UserDatasetConfig
   videos: UserVideos
 
   constructor(data?: UserData | User) {

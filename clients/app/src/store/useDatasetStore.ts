@@ -9,6 +9,8 @@ import {
   Dataset,
   Video,
   Consent,
+  UserDatasetConfig,
+  DatasetLock,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
 } from '../types/main'
@@ -19,7 +21,7 @@ const { actions: appActions } = useAppStore()
 interface DatasetState {
   datasets: Dataset[]
   selectedDataset: Dataset | undefined
-  presetDataset: Dataset | undefined
+  presetDatasetConfig: UserDatasetConfig | undefined
   selectedDatasetConsents: Consent[]
 }
 
@@ -35,16 +37,18 @@ interface SelectionOptions {
 }
 
 const state: Ref<DatasetState> = ref({
-  selectedDataset: undefined,
   datasets: [],
-  presetDataset: undefined,
-  selectedDatasettConsents: [],
+  selectedDataset: undefined,
+  presetDatasetConfig: undefined,
+  selectedDatasetConsents: [],
 })
 
 //Getters
 interface Getters {
   datasets: ComputedRef<Dataset[]>
   selectedDataset: ComputedRef<Dataset>
+  presetDatasetConfig: ComputedRef<UserDatasetConfig | undefined>
+  consents: ComputedRef<Consent[]>
 }
 const getters = {
   get datasets(): ComputedRef<Dataset[]> {
@@ -53,10 +57,10 @@ const getters = {
   get selectedDataset(): ComputedRef<Dataset | undefined> {
     return computed(() => state.value.selectedDataset)
   },
-  get presetDataset(): ComputedRef<Dataset | undefined> {
-    return computed(() => state.value.presetDataset)
+  get presetDatasetConfig(): ComputedRef<UserDatasetConfig | undefined> {
+    return computed(() => state.value.presetDatasetConfig)
   },
-  get consents(): ComputedRef<Dataset> {
+  get consents(): ComputedRef<Consent[]> {
     return computed(() => state.value.selectedDatasettConsents)
   },
 }
@@ -66,8 +70,10 @@ interface Actions {
   errorMessage: (error: Error) => void
   selectDataset: (dataset: Dataset) => void
   selectDatasetById: (datasetId: string) => void
+  lockSelection: (d: { datasettId: string; lock: DatasetLock }) => void
+  unlockSelection: (datasettId) => void
   fetchDatasets: () => Promise<void>
-  setPresetDataset: (id: string) => void
+  setDatasetConfig: (config: UserDatasetConfig) => void
   addSelectionToDataset: (data: SelectionOptions) => void
   fetchConsents: (video: Video) => void
 }
@@ -92,6 +98,12 @@ const actions = {
     if (dataset) state.value.selectedDataset = dataset
     else state.value.selectedDataset = undefined
   },
+  lockSelection(d: { datasettId: string; lock: DatasetLock }): void {
+    state.value.presetDatasetConfig.locks[d.datasettId] = d.lock
+  },
+  unlockSelection(datasettId): void {
+    delete state.value.presetDatasetConfig.locks[datasettId]
+  },
   fetchDatasets(): Promise<void> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
@@ -105,8 +117,8 @@ const actions = {
           const newDataset = new Datasett(s)
           state.value.datasets.push(newDataset)
           if (
-            state.value.presetDatasett &&
-            state.value.presetDatasett.id == newDataset.id
+            state.value.presetDatasetConfig &&
+            state.value.presetDatasetConfig.id == newDataset.id
           ) {
             state.value.selectedDataset = newDataset
           }
@@ -116,12 +128,10 @@ const actions = {
         dispatch('errorMessage', error)
       })
   },
-  setPresetDataset(id: string): void {
-    const d = state.value.datasets.find((ds) => ds._id === id)
-    if (d) {
-      state.value.selectedDataset = d
-      state.value.presetDataset = d
-    }
+  setDatasetConfig(config: UserDatasetConfig): void {
+    state.value.presetDatasetConfig = config
+    const d = state.value.datasets.find((ds) => ds._id === config.id)
+    if (d) state.value.selectedDataset = d
   },
   addSelectionToDataset(data: SelectionOptions): void {
     const newDataset = new Datasett(data.datasett)

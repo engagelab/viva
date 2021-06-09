@@ -285,7 +285,7 @@ const actions = {
             this.setCordovaPath([CordovaPathName.users, user._id])
             deviceActions.setCordovaPath([CordovaPathName.users, user._id])
             videoActions.setCordovaPath([CordovaPathName.users, user._id])
-            datasetActions.setPresetDatasett(user.datasett.id)
+            datasetActions.setDatasetConfig(user.datasetConfig)
           } else {
             return errorOnLogin('User not found')
           }
@@ -304,7 +304,7 @@ const actions = {
       credentials: true,
       body: u,
     }
-    u.datasett = datasetGetters.presetDatasett
+    u.datasetConfig = datasetGetters.presetDatasetConfig
     return apiRequest(payload)
       .then((u) => (_appState.value.selectedUser = u))
       .catch((error) => {

@@ -12,8 +12,9 @@
   />
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue'
+export default defineComponent({
   props: {
     value: {
       type: String,
@@ -32,15 +33,13 @@ export default {
       default: 1,
     },
   },
-  data() {
+  setup() {
+    const name = Math.random()
     return {
       name,
-    };
+    }
   },
-  created() {
-    this.name = Math.random();
-  },
-};
+})
 </script>
 
 <style scoped>

@@ -1,5 +1,9 @@
 <template>
-  <div class="flex flex-row items-center justify-between px-4 md:px-12" :class="backgroundColour" @click="clickItem()">
+  <div
+    class="flex flex-row items-center justify-between px-4 md:px-12"
+    :class="backgroundColour"
+    @click="clickItem()"
+  >
     <div class="max-w-24">
       <slot></slot>
     </div>
@@ -14,13 +18,11 @@
   </div>
 </template>
 
-<script>
-import { mapGetters, mapActions } from 'vuex';
-import SVGSymbol from '../../components/base/SVGSymbol';
-import constants from '../../constants';
+<script lang="ts">
+import { defineComponent, computed } from 'vue'
+import SVGSymbol from './SVGSymbol'
 
-const { baseUrl } = constants;
-export default {
+export default defineComponent({
   components: {
     SVGSymbol,
   },
@@ -34,28 +36,25 @@ export default {
       default: false,
     },
   },
-  computed: {
-    backgroundColour() {
-      return this.itemSelected ? 'bg-white' : '';
-    },
-  },
-  data() {
+  setup() {
+    const backgroundColour = computed(() => {
+      return this.itemSelected ? 'bg-white' : ''
+    })
+    function clickItem() {
+      if (!this.disabled) {
+        this.itemSelected = true
+        setTimeout(() => {
+          this.$router.push(this.routePath)
+        }, 100)
+      }
+    }
     return {
       itemSelected: false,
-    };
+      backgroundColour,
+      clickItem,
+    }
   },
-  methods: {
-    clickItem() {
-      if (!this.disabled) {
-        this.itemSelected = true;
-        setTimeout(() => {
-          this.$router.push(this.routePath);
-        }, 100);
-      }
-    },
-  },
-};
+})
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

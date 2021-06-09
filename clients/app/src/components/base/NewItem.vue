@@ -20,7 +20,7 @@
       </div>
     </div>
     <div v-else class="flex">
-      <Input @input="newValue => name = newValue" v-model="name" />
+      <Input @input="(newValue) => (name = newValue)" v-model="name" />
       <div class="pl-4" @click="removeNewitem()">
         <SVGSymbol
           class="p-2 text-viva-korall fill-current cursor-pointer"
@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, toRefs } from 'vue'
 import SVGSymbol from './SVGSymbol.vue'
 import Input from './Input.vue'
 
@@ -61,26 +61,27 @@ export default defineComponent({
       default: '\\W',
     },
   },
-  setup (props, context) {
+  setup(props, context) {
+    const { initialName, filter } = toRefs(props)
     const name = ref('')
     const editing = ref(false)
-    if (props.initialName) {
-      name.value = props.initialName
+    if (initialName.value) {
+      name.value = initialName.value
     }
     function editNewitem() {
-      if (props.initialName) {
-        name.value = props.initialName;
+      if (initialName.value) {
+        name.value = initialName.value
       }
       editing.value = true
     }
     function removeNewitem() {
-      name.value = props.initialName || ''
+      name.value = initialName.value || ''
       editing.value = false
     }
     function addNewitem() {
-      let regex;
-      regex = new RegExp(props.filter, 'g')
-      const newName = name.value.replace(regex, '');
+      let regex
+      regex = new RegExp(filter.value, 'g')
+      const newName = name.value.replace(regex, '')
       context.emit('new-text', newName)
       removeNewitem()
     }
@@ -91,8 +92,8 @@ export default defineComponent({
 
       editNewitem,
       removeNewitem,
-      addNewitem
+      addNewitem,
     }
-  }
+  },
 })
 </script>

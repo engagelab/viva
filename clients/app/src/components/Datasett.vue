@@ -249,7 +249,7 @@ export default {
     ...mapActions('video', ['createDraftVideo']),
     newVideo() {
 
-      appActions.createDraftMetadata({
+      appActions.createMetadata({
         dataset: this.selectedDatasett,
         selection: this.selectedDataset.selection,
         user: this.user,

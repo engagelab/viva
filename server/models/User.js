@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema({
     viva_token: { type: String },
     encryptionKey: { type: String },
   },
-  datasett: {
+  datasetConfig: {
     id: { type: String },
     utvalg: { type: Array },
     locks: { type: mongoose.Mixed, default: {} } // { [datasetID]: { date: Date.now(), keyName: String }
