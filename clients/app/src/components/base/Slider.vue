@@ -6,17 +6,24 @@
       :enter-class="enterClass"
       mode="out-in"
     >
-      <component :is="selectedPage" :stateFromParent="stateToChildren" @slider-back="sliderBack" v-bind="$attrs" />
+      <component
+        :is="selectedPage"
+        :stateFromParent="stateToChildren"
+        @slider-back="sliderBack"
+        v-bind="$attrs"
+      />
     </transition>
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent, onMounted, watch, ref, PropType, Ref } from 'vue'
+import router from '@/router'
+export default defineComponent({
   props: {
     pages: {
-      type: Array,
-      default: () => [],
+      type: Object as PropType<number[]>,
+      required: true,
     },
     movePageTo: {
       type: Number,
@@ -27,39 +34,44 @@ export default {
       default: () => ({}),
     },
   },
-  data() {
-    return {
-      selectedPage: undefined,
-      previousPages: [],
-      leaveToClass: 'slide-fade-leave-to-right',
-      enterClass: 'slide-fade-enter-right',
-    };
-  },
-  mounted() {
-    const page = this.movePageTo || 0;
-    this.selectedPage = this.pages.length > 0 ? this.pages[page] : 0;
-  },
-  watch: {
-    movePageTo(nextPageNumber) {
-      const currentPageNumber = this.pages.indexOf(this.selectedPage);
-      const direction = currentPageNumber < nextPageNumber ? 'left' : 'right';
-      this.enterClass = `slide-fade-enter-${direction}`;
-      this.leaveToClass = `slide-fade-leave-to-${direction}`;
-      this.selectedPage = this.pages[nextPageNumber];
-      if (nextPageNumber === 0) {
-        this.previousPages.length = 0;
-      } else if (nextPageNumber > currentPageNumber) {
-        this.previousPages.push(currentPageNumber);
+  setup(props) {
+    const selectedPage = ref(0)
+    const previousPages: Ref<number[]> = ref([])
+    const leaveToClass = ref('slide-fade-leave-to-right')
+    const enterClass = ref('slide-fade-enter-right')
+    onMounted(() => {
+      const page = props.movePageTo || 0
+      selectedPage.value = props.pages.length > 0 ? props.pages[page] : 0
+    })
+    watch(
+      () => props.movePageTo,
+      (nextPageNumber) => {
+        const currentPageNumber = props.pages.indexOf(selectedPage.value)
+        const direction = currentPageNumber < nextPageNumber ? 'left' : 'right'
+        enterClass.value = `slide-fade-enter-${direction}`
+        leaveToClass.value = `slide-fade-leave-to-${direction}`
+        selectedPage.value = props.pages[nextPageNumber]
+        if (nextPageNumber === 0) {
+          previousPages.value.length = 0
+        } else if (nextPageNumber > currentPageNumber) {
+          previousPages.value.push(currentPageNumber)
+        }
       }
-    },
+    )
+    function sliderBack() {
+      const nextPageNumber = previousPages.value.pop() || 0
+      router.push(`/login?page=${nextPageNumber}`)
+    }
+
+    return {
+      selectedPage,
+      previousPages: [],
+      leaveToClass,
+      enterClass,
+      sliderBack,
+    }
   },
-  methods: {
-    sliderBack() {
-      const nextPageNumber = this.previousPages.pop() || 0;
-      this.$router.push(`/login?page=${nextPageNumber}`);
-    },
-  },
-};
+})
 </script>
 
 <style scoped>

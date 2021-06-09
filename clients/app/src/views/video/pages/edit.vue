@@ -39,7 +39,7 @@
             <transition name="expand">
               <div
                 class="flex flex-row items-center"
-                v-if="video.edl.trim.length > 0"
+                v-if="video.details.edl.trim.length > 0"
               >
                 <div
                   class="
@@ -66,7 +66,7 @@
                     symbol="scissor"
                   ></SVGSymbol>
                   <p class="ml-2 leading-none pointer-events-none">
-                    ⇤{{ video.edl.trim[0].toFixed(2) }}s
+                    ⇤{{ video.details.edl.trim[0].toFixed(2) }}s
                   </p>
                 </div>
                 <div
@@ -86,7 +86,7 @@
                   @click="setTrim(1)"
                 >
                   <p class="mr-2 leading-none pointer-events-none">
-                    {{ video.edl.trim[1].toFixed(2) }}s⇥
+                    {{ video.details.edl.trim[1].toFixed(2) }}s⇥
                   </p>
                   <SVGSymbol
                     class="pointer-events-none fill-current"
@@ -99,7 +99,7 @@
               </div>
             </transition>
             <SVGSymbol
-              v-if="video.edl.trim.length > 0"
+              v-if="video.details.edl.trim.length > 0"
               class="ml-4 md:ml-12 p-2 rounded-full"
               applyClasses="w-4 md:w-8"
               @click="clearTrim()"
@@ -125,7 +125,7 @@
         >
           <div
             class="flex-1 flex-col mt-4"
-            v-for="(item, index) in video.edl.blur"
+            v-for="(item, index) in video.details.edl.blur"
             :key="index + 'key'"
           >
             <div
@@ -159,7 +159,7 @@
                       symbol="blur"
                     ></SVGSymbol>
                     <p class="ml-2 leading-none pointer-events-none">
-                      ⇤{{ video.edl.blur[index][0].toFixed(2) }}s
+                      ⇤{{ video.details.edl.blur[index][0].toFixed(2) }}s
                     </p>
                   </div>
                   <div
@@ -179,7 +179,7 @@
                     @click="setBlur(index, 1)"
                   >
                     <p class="mr-2 leading-none pointer-events-none">
-                      {{ video.edl.blur[index][1].toFixed(2) }}s⇥
+                      {{ video.details.edl.blur[index][1].toFixed(2) }}s⇥
                     </p>
                     <SVGSymbol
                       class="pointer-events-none fill-current"
@@ -231,32 +231,15 @@ const messages = {
     blur: 'Blur',
   },
 }
-import {
-  defineComponent,
-  ref,
-  Ref,
-  computed,
-  onMounted,
-  onUpdated,
-  watch,
-  PropType,
-} from 'vue'
+import { defineComponent, ref, computed, onMounted, watch, PropType } from 'vue'
 import router from '@/router'
-import { CONSENT_TYPES, VIDEO_STATUS_TYPES } from '@/constants'
 import { useI18n } from 'vue-i18n'
 import { Video } from '@/types/main'
-import { useAppStore } from '@/store/useAppStore'
-import { useDatasetStore } from '@/store/useDatasetStore'
 import { useVideoStore } from '@/store/useVideoStore'
-import { useDeviceService } from '@/store/useDevice'
-const { actions: deviceActions, getters: deviceGetters } = useDeviceService()
-const { actions: appActions, getters: appGetters } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
-const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
 
-import Button from '../../../components/base/Button'
-import SVGSymbol from '../../../components/base/SVGSymbol'
-import Scrubber from '../../../components/base/Scrubber'
+import SVGSymbol from '@/components/base/SVGSymbol.vue'
+import Scrubber from '@/components/base/Scrubber.vue'
 
 interface StateFromParent {
   playerCurrentTime: string
@@ -273,7 +256,7 @@ export default defineComponent({
       required: true,
     },
   },
-  setup() {
+  setup(props, context) {
     const { t } = useI18n({ messages })
     const selectedVideo = videoGetters.selectedVideo
     const moveScrubber = ref('0')
@@ -283,13 +266,20 @@ export default defineComponent({
     onMounted(() => {
       if (selectedVideo.value) {
         video.value.details.edl = selectedVideo.value.details.edl
-        let scrubberMin = 0
+        let scrubberMinimum = 0
         if (video.value.details.edl.trim.length > 0) {
-          scrubberMin = video.value.details.edl.trim[0]
+          scrubberMinimum = video.value.details.edl.trim[0]
         }
-        updateEDL('move', [scrubberMin.toString()])
+        updateEDL('move', [scrubberMinimum])
       }
     })
+
+    watch(
+      () => props.stateFromParent.playerCurrentTime,
+      (newValue) => {
+        moveScrubber.value = newValue
+      }
+    )
 
     // ---------- Computed -------
 
@@ -311,9 +301,9 @@ export default defineComponent({
       videoActions.updateMetadata(video.value)
       router.push('/videos/editor?page=0')
     }
-    function updateEDL(type: string, newValue: number) {
+    function updateEDL(type: string, newValue: number[]) {
       // TODO: Can we use the store to fix this instead?
-      this.$bubble('edl-updated', { type, newValue })
+      context.emit('edl-updated', { type, newValue })
     }
 
     // ----------------   Blur and Trim ------------------
@@ -358,27 +348,27 @@ export default defineComponent({
         updateEDL('trim', [0, selectedVideo.value.details.duration])
       }
     }
-    function setTrim(bound) {
-      if (!this.trimButtonDisabled(bound)) {
-        Vue.set(video.value.details.edl.trim, bound, parseFloat(this.moveScrubber))
+    function setTrim(bound: number) {
+      if (!trimButtonDisabled(bound)) {
+        video.value.details.edl.trim[bound] = parseFloat(moveScrubber.value)
         videoActions.updateMetadata(video.value)
       }
     }
     function addBlur() {
       video.value.details.edl.blur.push([0, 0])
     }
-    function setBlur(index, bound) {
-      if (!this.blurButtonDisabled(index, bound)) {
+    function setBlur(index: number, bound: number) {
+      if (!blurButtonDisabled(index, bound)) {
         const newValue = [
           video.value.details.edl.blur[index][0],
           video.value.details.edl.blur[index][1],
         ]
-        newValue[bound] = parseFloat(this.moveScrubber)
-        Vue.set(video.value.details.edl.blur, index, newValue)
+        newValue[bound] = parseFloat(moveScrubber.value)
+        video.value.details.edl.blur[index] = newValue
         videoActions.updateMetadata(video.value)
       }
     }
-    function clearBlur(index) {
+    function clearBlur(index: number) {
       video.value.details.edl.blur.splice(index, 1)
       videoActions.updateMetadata(video.value)
     }
@@ -388,31 +378,20 @@ export default defineComponent({
       step,
       video,
       moveScrubber,
+
+      back,
+      scrubberMax,
+      scrubberMin,
+      trimButtonDisabled,
+      blurButtonDisabled,
+      addTrim,
+      clearTrim,
+      setTrim,
+      addBlur,
+      setBlur,
+      clearBlur,
+      updateEDL,
     }
-  },
-
-  watch: {
-    /* duration(newD, oldD) {
-      if (newD >= 0 && oldD !== newD) {
-        const newTrim = [...video.value.details.edl.trim];
-        newTrim[1] = newD;
-        video.value.details.edl.trim = newTrim;
-      }
-    }, */
-    'stateFromParent.playerCurrentTime': function (newVal, oldVal) {
-      //console.log('Prop changed: ', newVal, ' | was: ', oldVal);
-      this.moveScrubber = newVal.toString()
-    },
-  },
-  computed: {
-    ...mapGetters('video', ['selectedVideo']),
-    ...mapGetters('general', ['user']),
-    ...mapGetters('setting', ['selectedDatasett']),
-
-  },
-  methods: {
-    ...mapActions('video', ['setUnsavedChanges', 'updateDraftMetadata']),
-
   },
 })
 </script>

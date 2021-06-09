@@ -31,7 +31,7 @@ module.exports = {
       .loader('raw-loader')
       .end()
     config.plugin('fork-ts-checker').tap((args) => {
-      args[0].typescript = { configFile: '../../tsconfig.json' }
+      args[0].typescript = { configFile: './tsconfig.json' }
       return args
     })
   },

@@ -22,7 +22,7 @@ module.exports = {
   configureWebpack: {
     devtool: 'source-map',
   },
-  chainWebpack: config => {
+  chainWebpack: (config) => {
     config.module
       .rule('i18n')
       .resourceQuery(/blockType=i18n/)
@@ -30,7 +30,7 @@ module.exports = {
       .use('i18n')
       .loader('@kazupon/vue-i18n-loader')
       .end()
-    config.plugin('html').tap(args => {
+    config.plugin('html').tap((args) => {
       const tmp = args[0]
       tmp.template = 'src/index.html'
       tmp.favicon = 'src/assets/icons/favicon.ico'
@@ -43,7 +43,7 @@ module.exports = {
       .use('raw-loader')
       .loader('raw-loader')
       .end()
-    config.plugin('fork-ts-checker').tap(args => {
+    config.plugin('fork-ts-checker').tap((args) => {
       args[0].typescript = { configFile: '../../tsconfig.json' }
       return args
     })

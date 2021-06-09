@@ -86,18 +86,12 @@ export default defineComponent({
     })
     function startUpload() {
       if (selectedVideo.value) {
-        videoActions.controlUpload({
-          control: 'start',
-          fileId: selectedVideo.value.details.id,
-        })
+        videoActions.controlUpload('start', selectedVideo.value)
       }
     }
     function stopUpload() {
       if (selectedVideo.value) {
-        videoActions.controlUpload({
-          control: 'abort',
-          fileId: selectedVideo.value.details.id,
-        })
+        videoActions.controlUpload('abort', selectedVideo.value)
       }
     }
     function back() {

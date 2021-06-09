@@ -2,7 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import Landing from './views/landing/Landing.vue'
 import Datasett from './components/Datasett.vue'
-import MinneOpptak from './views/video/MinneOpptak.vue'
+import MyRecordings from './views/video/MyRecordings.vue'
 import Editor from './views/video/Editor.vue'
 import Privacy from './views/Privacy.vue'
 import ErrorDisplay from './views/video/ErrorDisplay.vue'
@@ -85,7 +85,7 @@ const router = new Router({
     {
       path: '/videos/list',
       name: 'video',
-      component: MinneOpptak
+      component: MyRecordings
     },
     {
       path: '/videos/editor',

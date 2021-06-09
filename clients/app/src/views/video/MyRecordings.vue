@@ -58,7 +58,7 @@
         :rotation="showDatasett ? '270' : '90'"
       ></SVGSymbol>
       <p class="absolute leading-tight bottom-0 pb-2 text-2xl">
-        {{ t('minneOpptak') }}
+        {{ t('MyRecordings') }}
       </p>
     </div>
     <div
@@ -119,31 +119,21 @@
 </template>
 
 <script lang="ts">
-const messages = {
-  nb_NO: {
-    lagringSamtykke: 'Lagring og samtykker',
-    minneOpptak: 'Mine opptak',
-    uploadedVideos: 'Overførte opptak',
-  },
-  en: {
-    lagringSamtykke: 'Storage and consents',
-    minneOpptak: 'My recordings',
-    uploadedVideos: 'Transferred recordings',
-  },
-}
-
 import { defineComponent, ref, onMounted } from 'vue'
 import router from '@/router'
+import moment from 'moment'
 import { useI18n } from 'vue-i18n'
-import VideoListItem from '@/components/VideoListItem'
-import Datasett from '@/components/Datasett'
-import SVGSymbol from '@/components/base/SVGSymbol'
+import VideoListItem from '@/components/VideoListItem.vue'
+import Datasett from '@/components/Datasett.vue'
+import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import { VIDEO_STATUS_TYPES } from '@/constants'
 
-import { useDatasetStore } from '../../store/useDatasetStore'
-import { useVideoStore } from '../../store/useVideoStore'
+import { useDatasetStore } from '@/store/useDatasetStore'
+import { useVideoStore } from '@/store/useVideoStore'
+import { useAppStore } from '@/store/useAppStore'
+const { actions: appActions } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
-const { getters: datasetGetters } = useDatasetStore()
+const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
 
 import { Video } from '@/types/main'
 
@@ -154,6 +144,18 @@ export default defineComponent({
     SVGSymbol,
   },
   setup() {
+    const messages = {
+      nb_NO: {
+        lagringSamtykke: 'Lagring og samtykker',
+        MyRecordings: 'Mine opptak',
+        uploadedVideos: 'Overførte opptak',
+      },
+      en: {
+        lagringSamtykke: 'Storage and consents',
+        MyRecordings: 'My recordings',
+        uploadedVideos: 'Transferred recordings',
+      },
+    }
     const { t } = useI18n({ messages })
     const leaveToClass = ref('slide-fade-leave-to-right')
     const enterClass = ref('slide-fade-enter-right')
@@ -164,6 +166,22 @@ export default defineComponent({
     onMounted(() => {
       videoActions.selectVideo(undefined)
       videoActions.loadMetadata().then(() => videoActions.fetchMetadata())
+
+      // Dataset locks
+      const presetConfig = datasetGetters.presetDatasetConfig.value
+      if (presetConfig) {
+        const locks = Object.keys(presetConfig.locks)
+        let locksChanged = false
+        locks.forEach((datasetId) => {
+          const today = moment()
+          const lockedDay = moment(presetConfig.locks[datasetId].date)
+          if (today.isAfter(lockedDay, 'day')) {
+            datasetActions.unlockSelection(datasetId)
+            locksChanged = true
+          }
+        })
+        if (locksChanged) appActions.updateUserAtServer()
+      }
     })
 
     function clickIcon(newRoute: string): void {

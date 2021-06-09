@@ -13,26 +13,27 @@
     <div class="ml-4 flex flex-row">
       <img
         class="w-6"
+        alt="consent question"
         v-for="question in consentQuestions"
         :key="question.key"
         :src="question.source"
       />
     </div>
-    <p
-      class="ml-4 font-vagBold"
-    >{{formattedName}}</p>
+    <p class="ml-4 font-vagBold">{{ formattedName }}</p>
   </div>
 </template>
 
-<script>
-import circle1 from '../../assets/icons/svg/circle1.svg';
-import circle2 from '../../assets/icons/svg/circle2.svg';
-import circle3 from '../../assets/icons/svg/circle3.svg';
-import circle4 from '../../assets/icons/svg/circle4.svg';
-import circle5 from '../../assets/icons/svg/circle5.svg';
-import circleX from '../../assets/icons/svg/circleX.svg';
+<script lang="ts">
+import { defineComponent, computed, PropType } from 'vue'
+import { Consent } from '@/types/main'
+import circle1 from '@/assets/icons/svg/circle1.svg'
+import circle2 from '@/assets/icons/svg/circle2.svg'
+import circle3 from '@/assets/icons/svg/circle3.svg'
+import circle4 from '@/assets/icons/svg/circle4.svg'
+import circle5 from '@/assets/icons/svg/circle5.svg'
+import circleX from '@/assets/icons/svg/circleX.svg'
 
-export default {
+export default defineComponent({
   model: {
     prop: 'checked',
     event: 'change',
@@ -43,27 +44,24 @@ export default {
       default: false,
     },
     consent: {
-      type: Object,
-      default: undefined,
+      type: Object as PropType<Consent>,
+      required: true,
     },
     checkboxes: {
       type: String,
       default: 'false',
     },
   },
-  data() {
-    return {
-      circle1,
-      circle2,
-      circle3,
-      circle4,
-      circle5,
-      circleX
-    };
-  },
-  computed: {
-    formattedName() {
-      const ref = this.consent.reference
+  setup(props, context) {
+    const circles: { [index: number]: unknown } = {
+      1: circle1,
+      2: circle2,
+      3: circle3,
+      4: circle4,
+      5: circle5,
+    }
+    const formattedName = computed(() => {
+      const ref = props.consent.reference
       if (ref.user_identifier == 'child') {
         return ref.user_fullname
       } else if (ref.user_identifier == 'parent') {
@@ -71,25 +69,36 @@ export default {
       } else {
         return ref.username
       }
-    },
-    consentQuestions() {
-      const sortedAnswerKeys = Object.keys(this.consent.questions).sort();
+    })
+    const consentQuestions = computed(() => {
+      const sortedAnswerKeys = Object.keys(props.consent.questions).sort()
       return sortedAnswerKeys.map((key, index) => {
-        const checked = this.consent.questions[key];
-        const truthy = new String(checked).toLowerCase() == 'true'
-        const source = truthy ? this[`circle${index + 1}`] : this['circleX'];
-        return { checked, source, key: `question-circle-id-${index}` };
-      });
-    },
+        const checked = props.consent.questions[key]
+        const truthy = checked.toLowerCase() === 'true'
+        const source = truthy ? circles[index + 1] : circleX
+        return { checked, source, key: `question-circle-id-${index}` }
+      })
+    })
+    function inputChanged($event: InputEvent) {
+      const ie = $event.target as HTMLInputElement
+      if ($event) {
+        context.emit('input-change', {
+          checked: ie.value === 'true',
+          id: props.consent.submission_id,
+        })
+      }
+    }
+    return {
+      formattedName,
+      consentQuestions,
+      inputChanged,
+      circle1,
+      circle2,
+      circle3,
+      circle4,
+      circle5,
+      circleX,
+    }
   },
-  methods: {
-    inputChanged($event) {
-      this.$emit('change', $event.target.checked);
-      this.$emit('input-change', {
-        checked: $event.target.checked,
-        id: this.consent.submission_id,
-      });
-    },
-  },
-};
+})
 </script>

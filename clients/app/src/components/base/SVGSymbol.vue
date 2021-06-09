@@ -106,7 +106,9 @@
       :style="rotate"
     >
       <g id="acceptButton" data-name="acceptButtonPath1">
-        <polygon points="11.66 27.91 0 16.05 4.15 11.97 11.65 19.6 30.84 0 35 4.07 11.66 27.91" />
+        <polygon
+          points="11.66 27.91 0 16.05 4.15 11.97 11.65 19.6 30.84 0 35 4.07 11.66 27.91"
+        />
       </g>
     </svg>
 
@@ -223,7 +225,11 @@
       :style="rotate"
     >
       <g id="showListButton" data-name="showListPath1" class="white">
-        <path class="cls-1" d="M45,31H15V15H45ZM17,29H43V17H17Z" transform="translate(-15 -15)" />
+        <path
+          class="cls-1"
+          d="M45,31H15V15H45ZM17,29H43V17H17Z"
+          transform="translate(-15 -15)"
+        />
         <rect class="cls-1" y="21" width="30" height="2" />
         <rect class="cls-1" y="28" width="30" height="2" />
       </g>
@@ -327,12 +333,12 @@ export default defineComponent({
   setup(props) {
     const name = Math.random()
     const rotate = computed(() => {
-      const saturation = props.disabled ? 0 : 1;
-      return `transform: rotate(${props.rotation}deg); filter: saturate(${saturation});`;
+      const saturation = props.disabled ? 0 : 1
+      return `transform: rotate(${props.rotation}deg); filter: saturate(${saturation});`
     })
     return {
       name,
-      rotate
+      rotate,
     }
   },
 })

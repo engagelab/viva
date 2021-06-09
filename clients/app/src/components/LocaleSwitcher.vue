@@ -20,8 +20,8 @@
 <template>
   <div class="locale-select">
     <select v-model="$i18n.locale">
-      <option v-for="(lang, i) in langs" :key="`Lang${i}`" :value="lang"
-        >{{ getFlag(lang) }}
+      <option v-for="(lang, i) in langs" :key="`Lang${i}`" :value="lang">
+        {{ getFlag(lang) }}
       </option>
     </select>
   </div>
@@ -33,15 +33,18 @@
 }
 </style>
 
-<script>
-export default {
-  data: () => ({
-    langs: ['no', 'en'],
-  }),
-  methods: {
-    getFlag(lang) {
-      return lang === 'en' ? '🇬🇧' : '🇳🇴';
-    },
+<script lang="ts">
+import { defineComponent } from 'vue'
+export default defineComponent({
+  setup() {
+    function getFlag(lang: string): string {
+      return lang === 'en' ? '🇬🇧' : '🇳🇴'
+    }
+    const langs = ['no', 'en']
+    return {
+      langs,
+      getFlag,
+    }
   },
-};
+})
 </script>

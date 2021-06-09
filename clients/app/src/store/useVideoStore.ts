@@ -1,4 +1,9 @@
-import { VIDEO_STATUS_TYPES, videoExpiryTime } from '../constants'
+import {
+  VIDEO_STATUS_TYPES,
+  videoExpiryTime,
+  baseUrl,
+  stores,
+} from '../constants'
 import { ref, Ref, computed, ComputedRef } from 'vue'
 import orderBy from 'lodash/orderBy'
 import {
@@ -121,7 +126,7 @@ interface Actions {
   setRecordingNow: (value: boolean) => void
   addMetadata: (video: Video) => void
   removeDraftVideo: (fileId: string) => void
-  clearVideoDataFile: (fileId: string) => void
+  clearVideoDataFile: (videoId: string) => void
   setDecryptedVideoData: (d: { fileId: string; data: FileEntry }) => void
   setTUSUpload: (d: { fileId: string; upload: Upload }) => void
   removeTUSUpload: (fileId: string) => void
@@ -129,7 +134,9 @@ interface Actions {
   clearDataUponLogout: () => void
   selectVideo: (video: Video | undefined) => void
   setUnsavedChanges: (fileId: string) => void
-  controlUpload: (d: { control: string; fileId: string }) => void
+
+  controlUpload: (control: string, video: Video) => void
+  fetchVideoStatus(video: Video): Promise<void>
 
   loadMetadata: () => Promise<void>
   fetchMetadata: () => Promise<void>
@@ -138,6 +145,7 @@ interface Actions {
 
   loadVideo(video: Video): Promise<boolean>
   removeVideo: (video: Video) => Promise<void>
+  replaceDraftVideo: (videoId: string) => Promise<void>
 }
 
 const actions = {
@@ -148,8 +156,9 @@ const actions = {
   setRecordingNow: (value: boolean): void => {
     state.value.recordingNow = value
   },
-  clearVideoDataFile: (fileId: string): void => {
-    state.value.videoDataFiles.delete(fileId)
+  clearVideoDataFile: (videoId: string): void => {
+    if (state.value.videoDataFiles.has(videoId))
+      state.value.videoDataFiles.delete(videoId)
   },
   setDecryptedVideoData: (d: { fileId: string; data: FileEntry }): void => {
     state.value.videoDataFiles.set(d.fileId, d.data)
@@ -157,9 +166,9 @@ const actions = {
   setTUSUpload: (d: { fileId: string; upload: Upload }): void => {
     state.value.tusUploadInstances.set(d.fileId, d.data)
   },
-  removeTUSUpload: (fileId: string): void => {
-    if (state.value.tusUploadInstances.has(fileId))
-      state.value.tusUploadInstances.delete(fileId)
+  removeTUSUpload: (videoId: string): void => {
+    if (state.value.tusUploadInstances.has(videoId))
+      state.value.tusUploadInstances.delete(videoId)
   },
   // Abort all existing TUS uploads
   abortAllUploads: (): void => {
@@ -187,9 +196,8 @@ const actions = {
   },
   // Signal TUS to change upload state for a given video
   // Create a TUS object if it doesn't alrady exist
-  controlUpload: (d: { control: string; fileId: string }): void => {
+  controlUpload: (control: string, video: Video): void => {
     const toggleUpload = (upload: Upload) => {
-      const video = state.value.draftVideos.get(d.fileId)
       if (video && upload) {
         if (control == 'start') {
           upload.start()
@@ -198,12 +206,149 @@ const actions = {
           upload.abort()
           video.status.uploadInProgress = false
         }
+        actions.updateMetadata(video)
       }
     }
 
-    const up = state.value.tusUploadInstances.get(d.fileId)
+    const up = state.value.tusUploadInstances.get(video.details.id)
     if (up) toggleUpload(up)
-    else actions.generateUpload(fileId).then((upload) => toggleUpload(upload))
+    else actions.generateUpload(video).then((upload) => toggleUpload(upload))
+  },
+  // Given a video, fetch it from server (used for status update)
+  // This will cause an update to the video status in store, and also return the update
+  // ** Async **
+  fetchVideoStatus(video: Video): Promise<void> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.GET,
+      route: '/api/video',
+      params: { videoref: video.details.id },
+      credentials: true,
+    }
+    return apiRequest(payload)
+      .then((v: Video) => {
+        if (
+          v.status.main !== video.status.main ||
+          v.status.inPipeline !== video.status.inPipeline
+        ) {
+          actions.updateMetadata(v)
+        }
+        return v
+      })
+      .catch((error) => {
+        return Promise.reject(error)
+      })
+  },
+  // Create or continue a TUS upload for the encrypted video to the server
+  // * Returns a promise *
+  generateUpload(video: Video): void {
+    return new Promise((resolve) => {
+      const deviceStatus = appGetters.deviceStatus
+      const token = localStorage.getItem('jwt') || ''
+      const dataset = datasetGetters.selectedDataset
+      const user = appGetters.user
+      const fileId = video.details.id
+
+      const onSuccess = () => {
+        const payload: APIRequestPayload = {
+          method: XHR_REQUEST_TYPE.POST,
+          route: '/api/video',
+          credentials: true,
+          body: video.getAsString(),
+        }
+        return apiRequest(payload)
+          .then(() => {
+            actions.removeTUSUpload(fileId)
+            actions.clearVideoDataFile(fileId)
+            actions.removeVideoFile(video)
+          })
+          .catch((error) => {
+            return Promise.reject(error)
+          })
+        // Send the rest of the video metadata to match with the uploaded file
+        return serverService
+          .request({
+            route: '/api/video',
+            method: 'POST',
+            credentials: true,
+            body: video.getAsString(),
+          })
+          .then(() => {
+            // Clear all information relating to this draft video from the client
+            commit('removeTUSUpload', fileId)
+            commit('clearVideoDataFiles', fileId)
+            dispatch('removeLocalVideoData', fileId)
+            dispatch('removeLocalMetadata', state.value.selectedVideo)
+              .then(() => {
+                // After IndexedDB data removal is confirmed, also remove in-memory copies
+                // then reload fresh from server
+                commit('removeDraftVideo', fileId)
+                return dispatch('fetchVideoMetadata', {
+                  user,
+                  setting,
+                }).then(() => {
+                  const uploadedVideo = state.value.videos[fileId]
+                  commit('selectVideo', uploadedVideo)
+                })
+              })
+              .catch((error) => dispatch('errorMessage', error))
+          })
+          .catch((error) => {
+            dispatch('errorMessage', 'Send metadata to server')
+            return Promise.reject(error)
+          })
+      }
+
+      const onProgress = (bytesUploaded, bytesTotal) => {
+        let uploadProgress = Math.round((bytesUploaded / bytesTotal) * 100)
+        uploadProgress = uploadProgress > 100 ? 100 : uploadProgress
+        video.status.uploadProgress = uploadProgress
+        actions.updateMetadata(video)
+      }
+
+      const options = {
+        endpoint: `${baseUrl}/upload`,
+        retryDelays: [0, 1000, 3000, 5000],
+        chunkSize: 512 * 1024, // 512kB
+        onBeforeRequestSend: (req) => {
+          const xhr = req.getUnderlyingObject()
+          xhr.withCredentials = true
+        },
+        headers: {
+          Authorization: `jwt ${token}`,
+        },
+        metadata: { video: state.value.selectedVideo.getFileUploadInfo() },
+        resume: false, //! state.useCordova, // TUS resume ability requires indexedDB
+        // onChunkComplete,
+        onProgress,
+        onSuccess,
+        onError: (error) => appActions.errorMessage(error.toString()),
+      }
+
+      const createTusUpload = (fileObject: File) => {
+        // Establish a TUS upload instance for this item
+        const upload: Upload = new Upload(fileObject, options)
+        commit('setTUSUpload', { upload, fileId })
+        resolve(upload)
+      }
+
+      const cd: CordovaData = new CordovaData({
+        fileName: video.details.id,
+        readFile: false,
+        path: state.value.cordovaPath,
+      })
+      deviceActions
+        .loadFromStorage<FileEntry>(cd)
+        .then((fileEntry: FileEntry | void) => {
+          if (fileEntry) {
+            fileEntry.file((fileObject) => {
+              createTusUpload(fileObject)
+            })
+          } else {
+            appActions.errorMessage('Create upload: No video data file')
+            resolve()
+          }
+        })
+    })
   },
 
   // -------  Video METADATA functions (.json file) ------------
@@ -233,7 +378,11 @@ const actions = {
   updateMetadata: (video: Video): Promise<void> => {
     video.status.hasUnsavedChanges = false
     video.status.hasNewDataAvailable = false
-    const videoToUpdate = state.value.draftVideos.get(d.video.details.id)
+    let videoToUpdate: Video
+    if (state.value.draftVideos.has(video.details.id))
+      videoToUpdate = state.value.draftVideos.get(video.details.id)
+    else if (state.value.videos.has(video.details.id))
+      videoToUpdate = state.value.videos.get(video.details.id)
     if (videoToUpdate) {
       videoToUpdate.updateAll(video)
       return actions.saveMetadata()
@@ -241,7 +390,7 @@ const actions = {
   },
   // Remove the video in store (by fileId) and save to local disk
   removeMetadata: (video: Video): Promise<void> => {
-    state.value.draftVideos.delete(d.video.details.id)
+    state.value.draftVideos.delete(video.details.id)
     return actions.saveMetadata()
   },
   // Save all metadata as a file to local disk
@@ -307,7 +456,7 @@ const actions = {
 
   // Remove a video (data and metadata)
   removeVideo: (video: Video): Promise<void> => {
-    return appActions.removeVideoFile(video).then(() => {
+    return appActions.removeVideoFile(video.details.id).then(() => {
       actions.clearVideoDataFile(video.details.id)
       return actions
         .removeMetadata(video)
@@ -323,29 +472,29 @@ const actions = {
     })
   },
 
-  // Call if e.g. a draft video is recorded to replace an older draft video
-  replaceDraftVideo: (fileId: string): Promise<void> => {
-    const video = state.value.draftVideos.get(fileId)
-    if (video) {
-      actions.clearVideoDataFile(fileId)
-      actions.removeTUSUpload(fileId)
-      actions.removeVideoFile(video)
-      video.details.duration = 0
-      video.details.edl = { trim: [], blur: [] }
-      video.status.hasNewDataAvailable = false
+  // Call when a draft video is recorded to replace an older draft video
+  replaceDraftVideo: (videoId: string): Promise<void> => {
+    actions.clearVideoDataFile(videoId)
+    actions.removeTUSUpload(videoId)
+    actions.removeVideoFile(videoId).then(() => {
+      const video = state.value.draftVideos.get(videoid)
+      if (video) {
+        video.details.duration = 0
+        video.details.edl = { trim: [], blur: [] }
+        video.status.hasNewDataAvailable = false
+      }
       return actions
         .saveMetadata()
         .catch(() => appActions.errorMessage('Replace draft video error'))
-    }
-    return Promise.resolve()
+    })
   },
 
   // ----------   video DATA functions (.mp4 file) ------------
 
-  // Remove a video data
-  removeVideoFile: (video: Video): Promise<void> => {
+  // Remove a video data from disk
+  removeVideoFile: (videoId: string): Promise<void> => {
     const cd: CordovaData = new CordovaData({
-      fileName: video.details.id,
+      fileName: videoId,
       path: state.value.cordovaPath,
     })
     return cordovaService

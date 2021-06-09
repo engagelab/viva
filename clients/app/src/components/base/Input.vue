@@ -1,7 +1,9 @@
 <template>
   <div class="flex p-2 bg-white rounded-md">
     <div v-if="type == 'text'" class="flex flex-row flex-1">
-      <label v-if="label" :for="name" class="flex-grow-0 mr-4">{{ label }}:</label>
+      <label v-if="label" :for="name" class="flex-grow-0 mr-4"
+        >{{ label }}:</label
+      >
       <div class="flex flex-1">
         <input
           type="text"
@@ -17,7 +19,13 @@
     </div>
     <div v-if="type == 'checkbox'">
       <label :for="name">{{ label }}</label>
-      <input type="checkbox" :id="name" :name="name" :checked="value" @input="$emit('input', $event.target.value)" />
+      <input
+        type="checkbox"
+        :id="name"
+        :name="name"
+        :checked="value"
+        @input="$emit('input', $event.target.value)"
+      />
     </div>
     <div v-if="type == 'textarea'" class="flex-1 p-4">
       <textarea

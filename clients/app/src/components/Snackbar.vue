@@ -1,21 +1,47 @@
 <template>
   <div class="snackbar" :class="snackbarClass">
-    <div class="text-sm" style="flex-grow : 1;">{{ snackbar ? snackbar.text : '' }}</div>
+    <div class="text-sm" style="flex-grow: 1">
+      {{ snackbar ? snackbar.text : '' }}
+    </div>
 
-    <button class="snackbar-button" @click="closeSnackbar">{{ $t('close') }}</button>
+    <button class="snackbar-button" @click="closeSnackbar">
+      {{ $t('close') }}
+    </button>
   </div>
 </template>
 
-<i18n>
-{
-  "no": {
-    "close": "Lukk"
+<script lang="ts">
+import { defineComponent, computed } from 'vue'
+import { useAppStore } from '@/store/useAppStore'
+const { actions: appActions, getters: appGetters } = useAppStore()
+export default defineComponent({
+  setup() {
+    const snackbar = appGetters.snackbar
+    const snackbarClass = computed(() => {
+      return {
+        'snackbar-show': snackbar.value.visibility === true,
+        'snackbar-hidden': snackbar.value.visibility === false,
+        'bg-viva-korall': snackbar.value.type == 'error',
+        'bg-black': snackbar.value.type != 'error',
+      }
+    })
+    function closeSnackbar() {
+      const newSnackbar = {
+        visibility: false,
+        text: 'Closed',
+        type: 'none',
+        callback: undefined,
+      }
+      if (snackbar.value.callback) snackbar.value.callback()
+      appActions.setSnackbar(newSnackbar)
+    }
+    return {
+      snackbar,
+      snackbarClass,
+    }
   },
-  "en": {
-    "close": "Close"
-  }
-}
-</i18n>
+})
+</script>
 
 <style scoped>
 /* The snackbar - position it at the bottom and in the middle of the screen */
@@ -101,33 +127,3 @@
   }
 }
 </style>
-
-<script>
-export default {
-  computed: {
-    snackbar() {
-      return this.$store.getters['general/snackbar'];
-    },
-    snackbarClass() {
-      return {
-        'snackbar-show': this.snackbar.visibility === true,
-        'snackbar-hidden': this.snackbar.visibility === false,
-        'bg-viva-korall': this.snackbar.type == 'error',
-        'bg-black': this.snackbar.type != 'error'
-      }
-    }
-  },
-  methods: {
-    closeSnackbar() {
-      const snackbar = {
-        visibility: false,
-        text: 'Closed',
-        type: 'none',
-        callback: undefined,
-      };
-      if (this.snackbar.callback) this.snackbar.callback();
-      this.$store.commit('general/setSnackbar', snackbar);
-    },
-  },
-};
-</script>
