@@ -25,11 +25,6 @@ interface DatasetState {
   selectedDatasetConsents: Consent[]
 }
 
-interface DatasetSelection {
-  _id: string
-  name: string
-  path: string[]
-}
 interface SelectionOptions {
   path: string[]
   newSelectionName: string
@@ -46,7 +41,7 @@ const state: Ref<DatasetState> = ref({
 //Getters
 interface Getters {
   datasets: ComputedRef<Dataset[]>
-  selectedDataset: ComputedRef<Dataset>
+  selectedDataset: ComputedRef<Dataset | undefined>
   presetDatasetConfig: ComputedRef<UserDatasetConfig | undefined>
   consents: ComputedRef<Consent[]>
 }
@@ -68,7 +63,7 @@ const getters = {
 interface Actions {
   datasetById: (id: string) => ComputedRef<Dataset>
   errorMessage: (error: Error) => void
-  selectDataset: (dataset: Dataset) => void
+  selectDataset: (dataset: Dataset | undefined) => void
   selectDatasetById: (datasetId: string) => void
   lockSelection: (d: { datasettId: string; lock: DatasetLock }) => void
   unlockSelection: (datasettId) => void
@@ -88,9 +83,14 @@ const actions = {
     let errorMessage = error.message || error
     errorMessage += error.code ? ` Code: ${error.code}` : ''
     console.log(`Error: ${errorMessage}`)
-    appActions.setSnackbar(errorMessage)
+    appActions.setSnackbar({
+      visibility: true,
+      text: errorMessage,
+      type: 'error',
+      callback: undefined,
+    })
   },
-  selectDataset(dataset: Dataset): void {
+  selectDataset(dataset: Dataset | undefined): void {
     state.value.selectedDataset = dataset
   },
   selectDatasetById(datasetId: string): void {
@@ -157,7 +157,7 @@ const actions = {
       route: '/api/dataset/selection',
       body: { _id: datasett.id, path, name: data.newSelectionName },
     }
-    apiRequest<DatasetSelection>(payload).then(() => {
+    apiRequest(payload).then(() => {
       state.value.selectedDataset.selection = newDataset.selection
     })
   },

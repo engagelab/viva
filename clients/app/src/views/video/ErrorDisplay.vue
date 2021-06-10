@@ -10,7 +10,9 @@
       ></SVGSymbol>
     </div>
     <div>
-      <p class="p-4">{{ selectedVideo.errorInfo }}</p>
+      <p v-if="selectedVideo" class="p-4">
+        {{ selectedVideo.status.error.errorInfo }}
+      </p>
     </div>
   </div>
 </template>

@@ -38,6 +38,7 @@ export default defineComponent({
     return {
       snackbar,
       snackbarClass,
+      closeSnackbar,
     }
   },
 })

@@ -26,7 +26,6 @@
 
       <div class="flex-1 rounded mt-4">
         <p>{{ t('filnavn') }}: {{ video.details.name }}</p>
-        <!--NewItem v-if="video.name" class="my-2" :initialName="video.name" @new-text="newVideoName" /-->
       </div>
 
       <div class="flex-1 rounded mt-4">
@@ -51,7 +50,6 @@ import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
 import Input from '@/components/base/Input.vue'
-import NewItem from '@/components/base/NewItem.vue'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 
 export default defineComponent({

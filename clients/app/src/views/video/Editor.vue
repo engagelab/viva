@@ -227,7 +227,10 @@ export default defineComponent({
       if (!selectedVideo.value) {
         return router.push('/videos/list')
       }
-      if (selectedDataset.value.consent.type === CONSENT_TYPES.samtykke) {
+      if (
+        selectedDataset.value &&
+        selectedDataset.value.consent.type === CONSENT_TYPES.samtykke
+      ) {
         datasetActions.fetchConsents(selectedVideo.value)
       }
       setupVideo(selectedVideo.value)
@@ -253,7 +256,7 @@ export default defineComponent({
     // Computed values
 
     const datasetName = computed(() => {
-      if (selectedVideo.value?.dataset.selection) {
+      if (selectedVideo.value && selectedVideo.value.dataset.selection) {
         const utvalg = selectedVideo.value.dataset.selection.reduce(
           (acc, curr) => {
             const split = curr.split(':')

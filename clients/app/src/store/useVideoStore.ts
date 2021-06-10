@@ -138,6 +138,7 @@ interface Actions {
   controlUpload: (control: string, video: Video) => void
   fetchVideoStatus(video: Video): Promise<void>
 
+  createMetadata: (d: VideoSpec) => Promise<void>
   loadMetadata: () => Promise<void>
   fetchMetadata: () => Promise<void>
   updateMetadata: (video: Video) => Promise<void>
@@ -353,7 +354,7 @@ const actions = {
 
   // -------  Video METADATA functions (.json file) ------------
 
-  // Create a new draft metadata for the given User and Dataset
+  // Create a new draft metadata
   createMetadata: (d: VideoSpec): Promise<void> => {
     const newVideo = new Video({
       dataset: d.dataset,

@@ -181,7 +181,7 @@ interface VideoDataset {
 
 export interface VideoSpec {
   dataset: Dataset
-  selection: string[] // 'selection' as string array from PresetDataset
+  selection: DatasetSelection[] // 'selection' as string array from PresetDataset
   user: User
   deviceStatus: DeviceStatus
 }
@@ -361,9 +361,9 @@ export class Video {
     }
   }
 }
-interface DatasetSelection {
+export interface DatasetSelection {
   title: string
-  [key: string]: DatasetSelection
+  [key: string]: DatasetSelection[]
 }
 interface DatasetStatus {
   lastUpdated: Date
@@ -385,7 +385,7 @@ interface DatasetStorage {
   }
   category: string[]
 }
-interface DatasetLock {
+export interface DatasetLock {
   date: Date
   selection: {
     keyName: string
@@ -414,7 +414,7 @@ export class Dataset {
   status: DatasetStatus
   consent: DatasetConsent
   users: DatasetUsers
-  selection: { [key: string]: DatasetSelection }
+  selection: { [key: string]: DatasetSelection[] }
   selectionPriority: string[]
   storages: DatasetStorage[]
 
@@ -465,9 +465,13 @@ interface UserProfile {
   reference: string // This should be sent to the client rather than _id
   groups: string[] // Groups this user is a member of
 }
+export interface UserDatasetSelection {
+  title: string
+  keyName: string
+}
 export interface UserDatasetConfig {
   id: string
-  selection: string[]
+  selection: UserDatasetSelection[]
   locks: Record<string, DatasetLock>
 }
 interface UserVideos {
