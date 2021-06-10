@@ -1,12 +1,12 @@
 import { ref, computed, ComputedRef, Ref } from 'vue'
 import router from '../router'
-import { apiRequest } from '@/api/apiRequest'
+import { apiRequest } from '../api/apiRequest'
 import {
   PersistedAppState,
   LocalUser,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
-} from '@/types/main'
+} from '../types/main'
 
 import { appVersion } from '../constants'
 

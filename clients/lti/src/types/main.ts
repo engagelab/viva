@@ -1,6 +1,5 @@
 import moment from 'moment'
-import { uuid } from '@/utilities'
-import { USER_ROLE, taskColours } from '@/constants'
+import { uuid } from '../utilities'
 
 import {
   USER_ROLE,
