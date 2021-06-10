@@ -316,7 +316,7 @@ export class Video {
 
   // Set this video's data from a buffer value, used for decryption
   // Ensure that the encryptionIV is correctly converted
-  setFromBuffer(buffer: ArrayBuffer): void {
+  /*   setFromBuffer(buffer: ArrayBuffer): void {
     const videoString = ab2str(buffer)
     const videoObject: VideoData = JSON.parse(videoString)
     if (videoObject.details.encryptionIV.length > 0) {
@@ -326,7 +326,7 @@ export class Video {
     }
     this.update(videoObject)
     this.details.created = new Date(this.created)
-  }
+  } */
   // Create a copy of this video metadata
   /* clone() {
     const newVideo = new VideoMetadata({ video: this });
@@ -492,12 +492,12 @@ export class User {
   datasetConfig: UserDatasetConfig
   videos: UserVideos
 
-  constructor(data?: UserData | User) {
-    this._id = data?._id
-    this.status = data?.status
-    this.profile = data?.profile
-    this.datasett = data?.datasett
-    this.videos = data?.videos
+  constructor(data: UserData | User) {
+    this._id = data._id
+    this.status = data.status
+    this.profile = data.profile
+    this.datasetConfig = data.datasetConfig
+    this.videos = data.videos
   }
 }
 

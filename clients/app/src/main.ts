@@ -5,6 +5,7 @@ import { globalTranslations } from '@/translations'
 import router from './router'
 import App from './App.vue'
 
+import cordovaService from '@/api/cordovaService'
 import { useAppStore } from './store/useAppStore'
 
 const { actions: appActions } = useAppStore()

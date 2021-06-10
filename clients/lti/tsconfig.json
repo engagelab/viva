@@ -18,23 +18,5 @@
       "@/*": ["src/*"]
     },
     "lib": ["ES2020", "dom", "dom.iterable", "scripthost"]
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "src-cordova/node_modules/**/*.d.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "src/**/*.json",
-    "tests/**/*.ts",
-    "tests/**/*.tsx", "client/src/types/cordova-plugin-file/index.d.old"
-  ],
-  "exclude": [
-    "tailwind.config.js",
-    "src-cordova/**/*",
-    "www/**/*",
-    "dist/**/*",
-    "node_modules",
-    "server"
-  ]
+  }
 }

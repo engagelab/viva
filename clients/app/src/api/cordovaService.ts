@@ -577,6 +577,18 @@ const saveLog = (errorText: string): Promise<void> => {
   )
 }
 
+const copyToClipboard = (
+  text: string,
+  success: Callback,
+  error: Callback
+): void => {
+  window.cordova.plugins.clipboard.copy(text, success, error)
+}
+
+const getFromClipboard = (success: Callback, error: Callback): void => {
+  cordova.plugins.clipboard.paste(success(text), error)
+}
+
 export default {
   // File storage
   getPath,
@@ -606,4 +618,8 @@ export default {
 
   // Other
   saveLog,
+
+  // Clipboard
+  copyToClipboard,
+  getFromClipboard,
 }

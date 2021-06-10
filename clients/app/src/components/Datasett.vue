@@ -2,10 +2,10 @@
   <div>
     <div
       class="pl-4 pt-2 font-vagBold flex flex-row items-center"
-      v-if="selectedDatasett"
+      v-if="selectedDataset"
     >
       <SVGSymbol
-        v-if="selectedDatasett"
+        v-if="selectedDataset"
         class="text-viva-korall fill-current mr-4 cursor-pointer"
         applyClasses="w-4 md:w-8"
         @click="backToUtvalgSelection()"
@@ -13,10 +13,10 @@
         rotation="180"
       ></SVGSymbol>
       <span
-        v-if="selectedDatasett"
+        v-if="selectedDataset"
         class="text-black"
         style="width: min-content"
-        >{{ selectedDatasett.navn }}</span
+        >{{ selectedDataset.name }}</span
       >
       <!--span v-html="completeSelectionName"></span-->
 
@@ -40,11 +40,11 @@
       <p class="text-xl" v-if="!selectionReady">Velg {{ selectionName }}</p>
     </div>
     <div
-      v-if="settings.length === 0"
+      v-if="datasets.length === 0"
       class="flex flex-col items-center w-full px-4 py-2 max-h-1/2"
     >
       <p class="pr-2">
-        {{ `${user.username} ${$t('Not registered')}` }}
+        {{ `${user.profile.username} ${t('Not registered')}` }}
         <a class="text-blue-500" href="mailto:ils-kontakt@ils.uio.no"
           >ils-kontakt@ils.uio.no</a
         >
@@ -76,8 +76,8 @@
       </transition-group>
       <NewItem
         v-if="
-          selectedDatasett &&
-          currentSelection.length < selectedDatasett.utvalgtPriority.length
+          selectedDataset &&
+          currentSelection.length < selectedDataset.selectionPriority.length
         "
         class="my-2"
         :filter="'[.-\\s]'"
@@ -85,21 +85,24 @@
       />
     </div>
     <div v-if="selectionReady" class="flex flex-col items-center w-full">
-      <div v-if="selectedDatasett.samtykke == 'samtykke'">
-        <p>{{ $t('Link to consent Nettschema') }}</p>
+      <div
+        v-if="
+          selectedDataset &&
+          selectedDataset.consent.type == CONSENT_TYPES.samtykke
+        "
+      >
+        <p>{{ t('Link to consent Nettschema') }}</p>
         <Button class="mt-4 ml-2 my-2 w-64" @click="copyLink()">{{
-          $t('Kopier lenke til skjema')
+          t('Kopier lenke til skjema')
         }}</Button>
-        <!--Button :text="$t('Send epost med skjema')" class="mt-4 ml-2 my-2 w-64" @click="sendEmail()" /-->
+        <!--Button :text="t('Send epost med skjema')" class="mt-4 ml-2 my-2 w-64" @click="sendEmail()" /-->
         <Button v-if="!useCordova" class="mt-4 ml-2 my-2 w-64">
-          <a :href="mailtoURI">{{ $t('Send epost med skjema') }}</a>
+          <a :href="mailtoURI">{{ t('Send epost med skjema') }}</a>
         </Button>
       </div>
       <div v-else>
-        <p class="p-2">
-          {{
-            selectedDatasett.samtykkeHandling[selectedDatasett.samtykke].value
-          }}
+        <p v-if="selectedDataset" class="p-2">
+          {{ behandlings[selectedDataset.consent.type].description }}
         </p>
       </div>
     </div>
@@ -107,7 +110,7 @@
       v-if="selectionReady"
       class="px-4 pt-4 pb-2 text-2xl flex flex-row justify-end items-center"
     >
-      <p class="pr-2">{{ $t('Nytt opptak') }}</p>
+      <p class="pr-2">{{ t('Nytt opptak') }}</p>
       <SVGSymbol
         class="text-viva-korall fill-current"
         applyClasses="w-6 md:w-8"
@@ -130,7 +133,8 @@ import {
 } from 'vue'
 import router from '@/router'
 import { useI18n } from 'vue-i18n'
-import { copyToClipboard } from '@/api/CordovaService'
+import { CONSENT_TYPES, behandlings } from '@/constants'
+import cordovaService from '@/api/cordovaService'
 import { Video, Dataset, DatasetLock, DatasetSelection } from '@/types/main'
 import { useAppStore } from '@/store/useAppStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
@@ -243,10 +247,12 @@ export default defineComponent({
         (acc, u) => acc + `${u.keyName}-${u.title}.`,
         ''
       )
-      return `https://nettskjema.no/a/${this.selectedDatasett.formId}?CBdataset=${this.selectedDatasett.id}?CBsubset=${subsetString}`
+      if (selectedDataset.value) {
+        return `https://nettskjema.no/a/${selectedDataset.value.formId}?CBdataset=${selectedDataset.value.id}?CBsubset=${subsetString}`
+      } else return ''
     })
     const mailtoURI = computed(() => {
-      const string = `mailto:?subject=${this.$t('mailtoSubject')}&body=${
+      const string = `mailto:?subject=${t('mailtoSubject')}&body=${
         getConsentUrl.value
       }`
       return encodeURI(string)
@@ -363,7 +369,7 @@ export default defineComponent({
             const su: ListData = { ...data, keyName: u.keyName, title: u.title }
             tempSelection.push(su)
           })
-          this.currentSelection = tempSelection
+          currentSelection.value = tempSelection
         }
       }
     }
@@ -388,8 +394,8 @@ export default defineComponent({
 
     function newUtvalgItem(newselectionName): void {
       const path = this.currentSelection.map((u) => u.title)
-      this.addUtvalgToDatasett({
-        datasett: this.selectedDatasett,
+      datasetActions.addUtvalgToDatasett({
+        datasett: selectedDataset.value,
         newselectionName,
         path,
       })
@@ -401,7 +407,7 @@ export default defineComponent({
       const copySuccess = () => {
         appActions.setSnackbar({
           visibility: true,
-          text: this.$t('linkCopied'),
+          text: t('linkCopied'),
           type: 'message',
           callback: undefined,
         })
@@ -409,102 +415,20 @@ export default defineComponent({
       const copyError = () => {
         appActions.setSnackbar({
           visibility: true,
-          text: this.$t('copyFailed'),
+          text: t('copyFailed'),
           type: 'error',
           callback: undefined,
         })
       }
-      if (this.useCordova) {
-        copyToClipboard(this.getConsentUrl, copySuccess, copyError)
+      if (appGetters.useCordova) {
+        cordovaService.copyToClipboard(
+          getConsentUrl.value,
+          copySuccess,
+          copyError
+        )
       } else {
-        clipboard.writeText(this.getConsentUrl).then(copySuccess, copyError)
+        clipboard.writeText(getConsentUrl.value).then(copySuccess, copyError)
       }
-    }
-
-    function sendEmail(): void {
-      function Mailto_url() {
-        var encode_mailto_component = function (str) {
-          try {
-            return encodeURIComponent(str)
-          } catch (e) {
-            return escape(str)
-          }
-        }
-        var AddressList = function () {
-          var list = []
-          this.length = 0
-          this.add = function (address) {
-            if (address) {
-              list.push(address)
-              this.length = list.length
-            }
-          }
-          this.get = function () {
-            return list.join(';')
-          }
-        }
-        var subject = '',
-          body = '',
-          mainList = new AddressList(),
-          ccList = new AddressList(),
-          bccList = new AddressList()
-        this.setSubject = function (str) {
-          subject = encode_mailto_component(str)
-        }
-        this.setBody = function (str) {
-          body = encode_mailto_component(str)
-        }
-        this.addMain = function (x) {
-          mainList.add(x)
-        }
-        this.addCC = function (x) {
-          ccList.add(x)
-        }
-        this.addBCC = function (x) {
-          bccList.add(x)
-        }
-        this.getURL = function (allow_empty_mainList) {
-          var out = ['mailto:']
-          var extras = []
-          if (mainList.length === 0 && !allow_empty_mainList) {
-            throw 'Mailto_url: no main addressees'
-          } else {
-            out.push(mainList.get())
-          }
-          if (subject) {
-            extras.push('subject=' + subject)
-          }
-          if (ccList.length) {
-            extras.push('cc=' + ccList.get())
-          }
-          if (bccList.length) {
-            extras.push('bcc=' + bccList.get())
-          }
-          if (body) {
-            extras.push('body=' + body)
-          }
-          if (extras.length) {
-            out.push('?' + extras.join('&'))
-          }
-          return out.join('')
-        }
-      }
-
-      const link = document.createElement('a')
-      const mailTo = new Mailto_url()
-      const consentFormURL = this.getConsentUrl()
-      mailTo.addMain('exampleuser@uio.no')
-      mailTo.setSubject(this.$t('mailtoSubject'))
-      mailTo.setBody(this.$t('mailtoBody') + '\n' + consentFormURL)
-
-      link.href = mailTo.getURL(true)
-      link.style.display = 'none'
-      link.download = 'consent.eml'
-      link.click()
-    }
-
-    function checkConsent(consent): void {
-      console.log(consent)
     }
 
     return {
@@ -512,6 +436,8 @@ export default defineComponent({
       leaveToClass,
       enterClass,
       currentSelection,
+      CONSENT_TYPES,
+      behandlings,
 
       user,
       deviceStatus,
@@ -533,8 +459,6 @@ export default defineComponent({
       saveSelection,
       newUtvalgItem,
       copyLink,
-      sendEmail,
-      checkConsent,
     }
   },
 })

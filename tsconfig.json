@@ -18,7 +18,6 @@
   "include": [
     "clients/**/src/**/*.ts",
     "clients/**/src/**/*.d.ts",
-    "clients/**/src-cordova/node_modules/**/*.d.ts",
     "clients/**/src/**/*.tsx",
     "clients/**/src/**/*.vue",
     "clients/**/src/**/*.json",

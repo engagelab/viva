@@ -266,15 +266,6 @@ const getFreeSpace = (): Promise<unknown> => {
 
 // ------------------------- Audio / Video Permissions --------------------------
 
-/* const mediaFileToFile = mediaFile =>
-  new File(
-    mediaFile.name,
-    mediaFile.localURL,
-    mediaFile.type,
-    mediaFile.lastModifiedDate,
-    mediaFile.size
-  ) */
-
 const isMicrophoneAuthorized = (): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     if (window.cordova.plugins.diagnostic.getMicrophoneAuthorizationStatus) {
