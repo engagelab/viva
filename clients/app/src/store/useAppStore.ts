@@ -1,9 +1,8 @@
 import { ref, computed, ComputedRef, Ref } from 'vue'
 import router from '../router'
-import { apiRequest } from '@/api/apiRequest'
+import { apiRequest } from '../api/apiRequest'
 import {
   User,
-  UserData,
   DeviceStatus,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
@@ -28,13 +27,13 @@ interface ServerStatus {
   cpuload: Record<string, unknown>
 }
 interface Snackbar {
+  type: string
   visibility: boolean // A toggle for showing error messages to the user
   text: string
-  callback: Callback
-  type: string
+  callback?: Callback
 }
 export interface AppState {
-  selectedUser: User
+  selectedUser: User | undefined
   hostType: string
   isLoggedIn: boolean
   isAuthorised: boolean
@@ -48,7 +47,7 @@ export interface AppState {
 }
 // ------------  State (internal) --------------
 const _appState: Ref<AppState> = ref({
-  selectedUser: User | undefined,
+  selectedUser: undefined,
   hostType: 'tablet',
   isLoggedIn: false,
   isAuthorised: false,
@@ -57,8 +56,8 @@ const _appState: Ref<AppState> = ref({
   appIsOld: false,
   dialog: {
     visible: false,
-    data: undefined, // Data object to pass to the child dialog
-    doneCallback: undefined, // Callback function from the originating component
+    data: {}, // Data object to pass to the child dialog
+    doneCallback: () => ({}), // Callback function from the originating component
   },
   deviceStatus: {
     mobile: false,
@@ -71,8 +70,8 @@ const _appState: Ref<AppState> = ref({
   },
   snackbar: {
     visibility: false, // A toggle for showing error messages to the user
+    type: 'none',
     text: '',
-    callback: undefined,
   },
 })
 
@@ -89,14 +88,14 @@ interface Getters {
   snackbar: ComputedRef<Snackbar>
   deviceStatus: ComputedRef<DeviceStatus>
   serverStatus: ComputedRef<ServerStatus>
-  user: ComputedRef<User>
+  user: ComputedRef<User | undefined>
 }
 const getters = {
   get hostType(): ComputedRef<string> {
     return computed(() => _appState.value.hostType)
   },
   get lastActive(): ComputedRef<number> {
-    return computed(() => _appState.value.lastActive)
+    return computed(() => _appState.value.deviceStatus.lastActive)
   },
   get isLoggedIn(): ComputedRef<boolean> {
     return computed(() => _appState.value.isLoggedIn)
@@ -110,6 +109,9 @@ const getters = {
   get appIsOld(): ComputedRef<boolean> {
     return computed(() => _appState.value.appIsOld)
   },
+  get isFullScreen(): ComputedRef<boolean> {
+    return computed(() => _appState.value.deviceStatus.isFullScreen)
+  },
   get dialog(): ComputedRef<Dialog> {
     return computed(() => _appState.value.dialog)
   },
@@ -122,16 +124,17 @@ const getters = {
   get serverStatus(): ComputedRef<ServerStatus> {
     return computed(() => _appState.value.serverStatus)
   },
-  get user(): ComputedRef<User> {
-    return computed(() => _appState.value.user)
+  get user(): ComputedRef<User | undefined> {
+    return computed(() => _appState.value.selectedUser)
   },
 }
 // ------------  Actions --------------
 interface Actions {
   setFullScreen: (value: boolean) => void
+  setUseCordova: (value: boolean) => void
   activeNow: () => void
-  addDraftIdToUser: (fileID) => void
-  removeDraftId: (fileID) => void
+  addDraftIdToUser: (fileID: string) => void
+  removeDraftId: (fileID: string) => void
   setDialog: (dialog: Dialog) => void
   setSnackbar: (newSnackbar: Snackbar) => void
   errorMessage: (message: Error | string) => void
@@ -149,19 +152,25 @@ const actions = {
   setFullScreen(value: boolean): void {
     _appState.value.deviceStatus.isFullScreen = value
   },
+  setUseCordova(value: boolean): void {
+    _appState.value.useCordova = value
+  },
   activeNow(): void {
     _appState.value.deviceStatus.lastActive = new Date().getTime()
   },
-  addDraftIdToUser(fileID): void {
-    _appState.value.selectedUser.videos.draftIDs.push(fileID)
+  addDraftIdToUser(fileID: string): void {
+    if (_appState.value.selectedUser)
+      _appState.value.selectedUser.videos.draftIDs.push(fileID)
   },
-  removeDraftId(fileID): void {
-    const i = _appState.value.selectedUser.videos.draftIDs.indexOf(fileID)
-    if (i > -1) {
-      _appState.value.selectedUser.videos.removedDraftIDs.push(
-        _appState.value.selectedUser.videos.draftIDs[i]
-      )
-      _appState.value.selectedUser.videos.draftIDs.splice(i, 1)
+  removeDraftId(fileID: string): void {
+    if (_appState.value.selectedUser) {
+      const i = _appState.value.selectedUser.videos.draftIDs.indexOf(fileID)
+      if (i > -1) {
+        _appState.value.selectedUser.videos.removedDraftIDs.push(
+          _appState.value.selectedUser.videos.draftIDs[i]
+        )
+        _appState.value.selectedUser.videos.draftIDs.splice(i, 1)
+      }
     }
   },
   setDialog(dialog: Dialog): void {
@@ -171,8 +180,9 @@ const actions = {
     _appState.value.snackbar = newSnackbar
   },
   errorMessage(error: Error | string): void {
-    let errorMessage: string = error.message || (error as string)
-    errorMessage += error.code ? ` Code: ${error.code}` : ''
+    let errorMessage = ''
+    if (typeof error === 'string') errorMessage = error
+    else errorMessage = error.message
     console.log(`Error: ${errorMessage}`)
     if (errorMessage == 'Invalid login') {
       this.logout()
@@ -211,7 +221,7 @@ const actions = {
       route: '/api/appversion',
       contentType: 'text/html',
     }
-    apiRequest(payload).then((version) => {
+    apiRequest<string>(payload).then((version: string) => {
       if (appVersion !== version) {
         _appState.value.appIsOld = true
         this.setSnackbar({
@@ -238,7 +248,7 @@ const actions = {
         localStorage.removeItem('jwt')
         router.push('/logout')
       })
-      .catch((err) => console.log(err))
+      .catch((error: Error) => console.log(error))
   },
   // Used by mobile app to exchange token for session.
   // Token is attached inside communication.js
@@ -249,66 +259,63 @@ const actions = {
       route: '/auth/token',
       credentials: true,
     }
-    return apiRequest(payload).catch((error) => {
+    return apiRequest<void>(payload).catch((error: Error) => {
       console.log(error)
       this.logout()
     })
   },
   // Called after successful login to retieve user and mark as 'logged in'
   redirectedLogin(): Promise<void> {
-    const errorOnLogin = (error) => {
-      this.setSnackbar({
-        visibility: true,
-        text: error,
-        callback: undefined,
-        type: 'message',
-      })
-      this.logout()
-    }
-
     const completeLogin = () => {
       const payload: APIRequestPayload = {
         method: XHR_REQUEST_TYPE.GET,
         route: '/api/user',
         credentials: true,
       }
-      return apiRequest<UserData>(payload)
-        .then((response: UserData) => {
-          const user: User = response ? new User(response.user) : undefined
-          if (user) {
+      return apiRequest<User>(payload)
+        .then((response: User) => {
+          if (response) {
+            const user: User = new User(response)
             _appState.value.isLoggedIn = true
             _appState.value.isAuthorised = true
 
-            this.activeNow()
-            this.selectUser(user)
-            this.setCordovaPath([CordovaPathName.users, user._id])
+            actions.activeNow()
+            _appState.value.selectedUser = user
+            actions.setCordovaPath([CordovaPathName.users, user._id])
             deviceActions.setCordovaPath([CordovaPathName.users, user._id])
             videoActions.setCordovaPath([CordovaPathName.users, user._id])
-            datasetActions.setDatasetConfig(user.datasetConfig)
+            datasetActions.setPresetDatasetConfig(user.datasetConfig)
           } else {
-            return errorOnLogin('User not found')
+            actions.errorMessage('User not found')
+            actions.logout()
           }
         })
-        .catch((error) => {
-          return errorOnLogin(error)
+        .catch((error: Error) => {
+          return actions.errorMessage(error)
         })
     }
     return completeLogin()
   },
   updateUserAtServer(user: User | void): Promise<void> {
-    const u: User = user || _appState.value.selectedUser
-    const payload: APIRequestPayload = {
-      method: XHR_REQUEST_TYPE.PUT,
-      route: '/api/user',
-      credentials: true,
-      body: u,
-    }
-    u.datasetConfig = datasetGetters.presetDatasetConfig
-    return apiRequest(payload)
-      .then((su) => (_appState.value.selectedUser = su))
-      .catch((error) => {
-        this.errorMessage(error)
-      })
+    const u = user || _appState.value.selectedUser
+    if (u) {
+      const payload: APIRequestPayload = {
+        method: XHR_REQUEST_TYPE.PUT,
+        route: '/api/user',
+        credentials: true,
+        body: u,
+      }
+      if (datasetGetters.presetDatasetConfig.value)
+        u.datasetConfig = datasetGetters.presetDatasetConfig.value
+      return apiRequest<User>(payload)
+        .then((su: User) => {
+          _appState.value.selectedUser = su
+          return Promise.resolve()
+        })
+        .catch((error: Error) => {
+          actions.errorMessage(error)
+        })
+    } else return Promise.resolve()
   },
 
   // Call server for the current version of the app
@@ -344,12 +351,11 @@ const actions = {
       .catch(() => {
         // Exchange was not accepted, clear the token and redirect to login page
         console.log('No valid token. Redirecting to login page..')
-        _appState.value.currentLocalUser = undefined
         return Promise.resolve(false)
       })
   },
   setCordovaPath: (path: string[]): void => {
-    state.value.cordovaPath = path
+    _appState.value.cordovaPath = path
   },
 }
 // This defines the interface used externally

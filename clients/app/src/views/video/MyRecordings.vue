@@ -124,7 +124,7 @@ import router from '@/router'
 import moment from 'moment'
 import { useI18n } from 'vue-i18n'
 import VideoListItem from '@/components/VideoListItem.vue'
-import Datasett from '@/components/Datasett.vue'
+import Datasett from '@/components/Dataset.vue'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import { VIDEO_STATUS_TYPES } from '@/constants'
 

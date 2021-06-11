@@ -21,13 +21,15 @@ export default defineComponent({
     Slider,
   },
   props: {
-    pageNumber: {
-      type: Number,
-      default: 0,
+    page: {
+      type: String,
+      default: '0',
     },
   },
-  data() {
+  data(props) {
+    const pageNumber = parseInt(props.page)
     return {
+      pageNumber,
       pages: [page0, page1, page2, page3],
     }
   },

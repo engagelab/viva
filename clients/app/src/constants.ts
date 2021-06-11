@@ -27,7 +27,7 @@ const videoExpiryTime = 1209600000 // milliseconds (1209600000 = 2 weeks)
 const cryptoAlgorithm = 'AES-GCM'
 const videoProgressCheckInterval = 20 // seconds
 const dbVersion = 1
-const device = useCordova ? 'mobile' : 'web'
+const device = 'mobile'
 const videoStorageTypes = ['none', 'google', 'onedrive', 'lagringshotell']
 const utvalger = ['Feltsted', 'Klasse', 'Fag', 'Lærer']
 
@@ -170,7 +170,6 @@ export {
   device,
   videoStorageTypes,
   utvalger,
-  samtykke,
   behandlings,
   stores,
   datasettAttributes,

@@ -43,7 +43,7 @@
       v-if="datasets.length === 0"
       class="flex flex-col items-center w-full px-4 py-2 max-h-1/2"
     >
-      <p class="pr-2">
+      <p v-if="user" class="pr-2">
         {{ `${user.profile.username} ${t('Not registered')}` }}
         <a class="text-blue-500" href="mailto:ils-kontakt@ils.uio.no"
           >ils-kontakt@ils.uio.no</a
@@ -65,12 +65,12 @@
       >
         <DatasetItem
           class="p-2"
-          v-for="item in listItems"
-          :key="item.id"
+          v-for="(item, index) in listItems"
+          :key="index"
           :title="item.title"
+          :description="item.description ? item.description : ''"
           :keyName="item.keyName"
           :data="item.data"
-          :description="item.description ? item.description : ''"
           @slider-change="changeSlide"
         />
       </transition-group>
@@ -122,20 +122,12 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  computed,
-  onMounted,
-  watch,
-  ref,
-  PropType,
-  Ref,
-} from 'vue'
+import { defineComponent, computed, onMounted, ref, Ref } from 'vue'
 import router from '@/router'
 import { useI18n } from 'vue-i18n'
 import { CONSENT_TYPES, behandlings } from '@/constants'
 import cordovaService from '@/api/cordovaService'
-import { Video, Dataset, DatasetLock, DatasetSelection } from '@/types/main'
+import { Dataset, DatasetLock, DatasetSelection, User } from '@/types/main'
 import { useAppStore } from '@/store/useAppStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useVideoStore } from '@/store/useVideoStore'
@@ -150,11 +142,10 @@ import NewItem from './base/NewItem.vue'
 import SVGSymbol from './base/SVGSymbol.vue'
 
 interface ListData {
-  id: string
   title: string
-  description: string
+  description?: string
   keyName: string
-  data: Dataset | DatasetSelection
+  data: DatasetSelection
 }
 
 export default defineComponent({
@@ -248,7 +239,7 @@ export default defineComponent({
         ''
       )
       if (selectedDataset.value) {
-        return `https://nettskjema.no/a/${selectedDataset.value.formId}?CBdataset=${selectedDataset.value.id}?CBsubset=${subsetString}`
+        return `https://nettskjema.no/a/${selectedDataset.value.formId}?CBdataset=${selectedDataset.value._id}?CBsubset=${subsetString}`
       } else return ''
     })
     const mailtoURI = computed(() => {
@@ -257,16 +248,21 @@ export default defineComponent({
       }`
       return encodeURI(string)
     })
+
     const listItems = computed(() => {
       let items: ListData[] = []
       if (!selectedDataset.value) {
-        items = datasets.value.map((d) => ({
-          id: d._id,
-          title: d.name,
-          description: d.description,
-          keyName: '',
-          data: d,
-        }))
+        items = datasets.value.map((d) => {
+          const data = {
+            title: d.name,
+          }
+          return {
+            title: d.name,
+            description: d.description,
+            keyName: '',
+            data,
+          }
+        })
       } else if (
         selectedDataset.value.selectionPriority.length >
         currentSelection.value.length
@@ -275,8 +271,10 @@ export default defineComponent({
         const key = selectedDataset.value.selectionPriority[depth]
         let list: DatasetSelection[] = []
         if (depth === 0) list = selectedDataset.value.selection[key]
-        else if (currentSelection.value[depth - 1].data[key])
-          list = currentSelection.value[depth - 1].data[key]
+        else {
+          const s = currentSelection.value[depth - 1].data.selection
+          if (s) list = s[key]
+        }
         if (list) {
           items = list.map((ds) => ({
             id: Math.random().toString(),
@@ -319,20 +317,21 @@ export default defineComponent({
             const u = lock.selection
             const list = d.data.selection[u.keyName]
             const data = list.find((item) => item.title == u.title)
-            const su: ListData = { ...data, keyName: u.keyName, title: u.title }
-            currentSelection.value = [su]
+            if (data) {
+              const su: ListData = { data, keyName: u.keyName, title: u.title }
+              currentSelection.value = [su]
+            }
           }
         }
       } else if (
-        d.data instanceof DatasetSelection &&
+        selectedDataset.value &&
         currentSelection.value.length <
           selectedDataset.value.selectionPriority.length
       ) {
-        const level = selectedDataset.value?.selectionPriority.indexOf(
-          d.keyName
-        )
+        const data = d.data as DatasetSelection
+        const level = selectedDataset.value.selectionPriority.indexOf(d.keyName)
         if (level === currentSelection.value.length) {
-          const su: ListData = { ...d.data, keyName: d.keyName }
+          const su: ListData = { data, keyName: d.keyName, title: data.title }
           currentSelection.value.push(su)
         }
         if (
@@ -354,23 +353,25 @@ export default defineComponent({
     }
 
     function rebuildPresetUtvalg(): void {
-      const p = presetConfig.value
-      if (p) {
-        const dataset = datasets.value.find((d) => d._id == p.id)
-        if (dataset) {
-          datasetActions.selectDataset(dataset)
-          const tempSelection: ListData[] = []
-          p.selection.forEach((u, depth) => {
-            const list =
-              depth === 0
-                ? dataset.selection[u.keyName]
-                : tempSelection[depth - 1][u.keyName]
-            const data = list.find((item) => item.title == u.title)
-            const su: ListData = { ...data, keyName: u.keyName, title: u.title }
+      const presetID = presetConfig.value?.id || ''
+      const dataset = datasets.value.find((d) => d._id == presetID)
+      if (dataset && presetConfig.value) {
+        datasetActions.selectDataset(dataset)
+        const tempSelection: ListData[] = []
+        presetConfig.value.selection.forEach((u, depth) => {
+          let list: DatasetSelection[] = []
+          if (depth === 0) list = dataset.selection[u.keyName]
+          else {
+            const s = tempSelection[depth - 1].data.selection
+            if (s) list = s[u.keyName]
+          }
+          const data = list.find((item) => item.title == u.title)
+          if (data) {
+            const su: ListData = { data, keyName: u.keyName, title: u.title }
             tempSelection.push(su)
-          })
-          currentSelection.value = tempSelection
-        }
+          }
+        })
+        currentSelection.value = tempSelection
       }
     }
 
@@ -380,7 +381,7 @@ export default defineComponent({
         presetConfig.value &&
         currentSelection.value
       ) {
-        datasetActions.setDatasetConfig({
+        datasetActions.setPresetDatasetConfig({
           id: selectedDataset.value._id,
           locks: presetConfig.value.locks, // A dictionary of Dates referenced by dataset ID
           selection: currentSelection.value.map((l) => ({
@@ -392,13 +393,15 @@ export default defineComponent({
       }
     }
 
-    function newUtvalgItem(newselectionName): void {
-      const path = this.currentSelection.map((u) => u.title)
-      datasetActions.addUtvalgToDatasett({
-        datasett: selectedDataset.value,
-        newselectionName,
-        path,
-      })
+    function newUtvalgItem(newSelectionName: string): void {
+      const path = currentSelection.value.map((u) => u.title)
+      if (selectedDataset.value) {
+        datasetActions.addSelectionToDataset({
+          path,
+          newSelectionName,
+          dataset: selectedDataset.value,
+        })
+      }
     }
 
     function copyLink(): void {
@@ -463,7 +466,7 @@ export default defineComponent({
   },
 })
 </script>
-<style scoped>
+<style scoped lang="postcss">
 input {
   display: inline;
   max-width: 100%;

@@ -1,11 +1,10 @@
 import './tailwind.css'
 import { createApp } from 'vue'
 import { createI18n } from 'vue-i18n'
-import { globalTranslations } from '@/translations'
+import { globalTranslations } from './translations'
 import router from './router'
 import App from './App.vue'
 
-import cordovaService from '@/api/cordovaService'
 import { useAppStore } from './store/useAppStore'
 
 const { actions: appActions } = useAppStore()
@@ -45,6 +44,12 @@ const i18n = createI18n({
   messages: globalTranslations,
 })
 
+// Bootstrap the Vue app when called
+const initialiseApp = () => {
+  app.use(i18n)
+  app.use(router).mount('#app')
+}
+
 // add cordova.js only if serving the app through file://
 // After cordova is ready, bootstrap the Vue app
 if (window.cordova) {
@@ -59,56 +64,60 @@ if (window.cordova) {
       permissions.WRITE_EXTERNAL_STORAGE,
       permissions.INTERNET,
     ]
-    const permissionError = (p, callback) => {
+    const permissionError = (
+      p: AndroidPermissions,
+      callback: () => void
+    ): void => {
       console.warn(`Permission ${p} is not turned on`)
-      return callback()
+      callback()
     }
-    const permissionSuccess = (p, callback, status) => {
+    const permissionSuccess = (
+      p: AndroidPermissions,
+      callback: () => void,
+      status: { hasPermission: boolean }
+    ): void => {
       if (!status.hasPermission) {
         permissions.requestPermission(
           p,
           (status2) => {
-            if (!status2.hasPermission) return permissionError(p, callback)
+            if (!status2.hasPermission) permissionError(p, callback)
           },
-          permissionError(p, callback)
+          () => {
+            permissionError(p, callback)
+          }
         )
       }
     }
-    const checkPermission = (p, callback) => {
+    const checkPermission = (
+      p: AndroidPermissions,
+      callback: () => void
+    ): void => {
       permissions.checkPermission(
         p,
-        (status) => permissionSuccess(p, callback, status),
-        permissionError(p, callback)
+        (status) => {
+          permissionSuccess(p, callback, status)
+        },
+        () => {
+          permissionError(p, callback)
+        }
       )
     }
 
     // Check permissions in series, asynchronously
-    function checkPermissionList() {
+    const checkPermissionList = (): void => {
       if (permissionList.length > 0) {
         window.setTimeout(() => {
-          checkPermission(permissionList.pop(), checkPermissionList)
+          const p = permissionList.pop()
+          if (p) checkPermission(p, checkPermissionList)
         }, 2000)
       }
     }
     checkPermissionList()
 
-    cordovaService.createStorage()
-    store.commit('general/useCordova')
-    store.commit('video/useCordova', true)
-    // eslint-disable-next-line no-undef
-    StatusBar.hide()
+    appActions.setUseCordova(true)
     initialiseApp()
   }
   document.addEventListener('deviceready', onDeviceReady, false)
-} else {
-  // preventChromeRefresh()
-  if (webcryptoService.setupAPI()) {
-    indexedDBService.createDatabase()
-    store.commit('video/useCordova', false)
-    initialiseApp()
-  } else {
-    console.log('Required cryptography services not supported on this platform')
-  }
 }
 
 /* interface SLPlusCustomEventDetail {
@@ -131,11 +140,5 @@ window.addEventListener('unhandledrejection', function (event) {
     `Uncaught promise: ${event.promise.toString()} Reason: ${event.reason.toString()}`
   )
 })
-
-// Bootstrap the Vue app when called
-const initialiseApp = () => {
-  app.use(i18n)
-  app.use(router).mount('#app')
-}
 
 initialiseApp()

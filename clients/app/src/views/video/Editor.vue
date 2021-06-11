@@ -188,13 +188,14 @@ export default defineComponent({
     SVGSymbol,
   },
   props: {
-    pageNumber: {
-      type: Number,
-      default: 0,
+    page: {
+      type: String,
+      default: '0',
     },
   },
-  setup() {
+  setup(props) {
     const pages = [main, consent, edit, metadata, upload]
+    const pageNumber = parseInt(props.page)
     const selectedVideo = videoGetters.selectedVideo
     const selectedDataset = datasetGetters.selectedDataset
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
@@ -562,6 +563,7 @@ export default defineComponent({
       backToList,
       toggleScreenMode,
       deleteDraft,
+      pageNumber,
       // data
       selectedVideo,
       datasetName,

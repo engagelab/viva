@@ -7,7 +7,7 @@ import {
 } from 'vue-router'
 
 import Landing from '@/views/landing/Landing.vue'
-import Datasett from '@/components/Datasett.vue'
+import Dataset from '@/components/Dataset.vue'
 import MyRecordings from '@/views/video/MyRecordings.vue'
 import Editor from '@/views/video/Editor.vue'
 import Privacy from '@/views/Privacy.vue'
@@ -19,57 +19,54 @@ import { useVideoStore } from '../store/useVideoStore'
 const { actions: datasetActions } = useDatasetStore()
 const { getters: appGetters, actions: appActions } = useAppStore()
 const { getters: videoGetters } = useVideoStore()
-import constants from './constants'
-
-const { strings } = constants
+import { idleTimeout } from '../constants'
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
     name: 'profile',
     component: Landing,
-    props: (route) => ({ pageNumber: parseInt(route.query.page) }),
+    props: (route) => ({ page: route.query.page }),
   },
   {
     path: '/logout',
     name: 'logout',
-    beforeEnter: (to, from, next) => {
-      if (from.path != '/login') {
-        next('/login?page=0')
-      }
+    redirect: () => {
+      return { path: '/login?page=0' }
     },
   },
   // ---------- These routes manage server redirects ------------
   // -------- after login or after file transfer to 3rd party API -------
   {
     path: '/settings',
-    beforeEnter: (to, from, next) => {
+    beforeEnter: () => {
       appActions
         .redirectedLogin()
         .then(() => {
-          if (appGetters.isLoggedIn) {
-            datasetActions
+          if (appGetters.isLoggedIn.value) {
+            return datasetActions
               .fetchDatasets()
               .then(() => {
-                next('/videos/list')
+                return { path: '/videos/list' }
               })
               .catch((error) => {
                 console.log(error)
               })
           } else {
-            next('/login?page=0')
+            return { path: '/login?page=0' }
           }
         })
         .catch((error) => {
           console.log(error)
         })
     },
+    redirect: () => ({}),
   },
   // --------------------------------------------------------
   {
     path: '/dataset',
     name: 'datasett',
-    component: Datasett,
+    component: Dataset,
     props: (route) => ({ page: route.query.page }),
   },
   {
@@ -81,7 +78,7 @@ const routes: Array<RouteRecordRaw> = [
     path: '/videos/editor',
     name: 'editor',
     component: Editor,
-    props: (route) => ({ pageNumber: parseInt(route.query.page) }),
+    props: (route) => ({ page: route.query.page }),
   },
   {
     path: '/videos/error',
@@ -105,11 +102,11 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const idleTime = Math.floor(
-    new Date().getTime() - appGetters.lastActive / 1000
+    new Date().getTime() - appGetters.lastActive.value / 1000
   )
-  const isLoggedIn = appGetters.isLoggedIn
-  const uploadingData = videoGetters.uploadingData
-  const recordingNow = videoGetters.recordingNow
+  const isLoggedIn = appGetters.isLoggedIn.value
+  const uploadingData = videoGetters.uploadingData.value
+  const recordingNow = videoGetters.recordingNow.value
   appActions.activeNow()
 
   window.scroll({
@@ -119,10 +116,7 @@ router.beforeEach((to, from, next) => {
   })
 
   const idleTooLong =
-    isLoggedIn &&
-    !uploadingData &&
-    idleTime > strings.idleTimeout &&
-    !recordingNow
+    isLoggedIn && !uploadingData && idleTime > idleTimeout && !recordingNow
 
   const forceToLoginScreen =
     !isLoggedIn &&

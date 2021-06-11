@@ -44,7 +44,7 @@ export default defineComponent({
 })
 </script>
 
-<style scoped>
+<style scoped lang="postcss">
 /* The snackbar - position it at the bottom and in the middle of the screen */
 .snackbar {
   display: flex;

@@ -17,7 +17,7 @@
         {{ dialog.data.titleText }}
       </p>
       <p class="mt-4 text-center">{{ dialog.data.messageText }}</p>
-      <div class="flex justify-around mt-6 mb-3">
+      <div v-if="dialog" class="flex justify-around mt-6 mb-3">
         <Button
           @click="dialog.doneCallback(true)"
           :text="dialog.data.confirmText"
@@ -35,8 +35,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import router from '@/router'
-import Button from '@/components/base/Button.vue'
 import { useAppStore } from '@/store/useAppStore'
 const { getters: appGetters } = useAppStore()
 export default defineComponent({

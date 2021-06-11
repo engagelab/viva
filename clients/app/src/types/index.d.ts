@@ -3,6 +3,7 @@
 /// <reference path="./media.d.ts" />
 /// <reference path="./cordova-plugin-oauth-engagelab/index.d.ts" />
 /// <reference path="./cordova-plugin-android-permissions/index.d.ts" />
+/// <reference path="./cordova-plugin-clipboard/index.d.ts" />
 /// <reference path="../../src-cordova/node_modules/tus-js-client/lib/index.d.ts" />
 /// <reference path="../../src-cordova/node_modules/cordova-plugin-file/types/index.d.ts" />
 /// <reference path="../../src-cordova/node_modules/cordova-plugin-device/types/index.d.ts" />
