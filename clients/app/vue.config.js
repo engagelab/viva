@@ -24,12 +24,17 @@ module.exports = {
   },
   chainWebpack: (config) => {
     config.module
+      .rule('i18n-resource')
+      .test(/\.(json5?|ya?ml)$/)
+      .type('javascript/auto')
+      .use('i18n-resource')
+      .loader('@intlify/vue-i18n-loader')
+    config.module
       .rule('i18n')
       .resourceQuery(/blockType=i18n/)
       .type('javascript/auto')
       .use('i18n')
-      .loader('@kazupon/vue-i18n-loader')
-      .end()
+      .loader('@intlify/vue-i18n-loader')
     config.plugin('html').tap((args) => {
       const tmp = args[0]
       tmp.template = 'src/index.html'

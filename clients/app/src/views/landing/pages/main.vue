@@ -32,10 +32,16 @@
       <p class="ml-2 text-sm">{{ t('vivaService') }}</p>
       <img
         v-if="$i18n.locale == 'en'"
+        alt="locale"
         class="w-64"
         src="@/assets/icons/svg/uio-english.svg"
       />
-      <img v-else class="w-64" src="@/assets/icons/svg/uio.svg" />
+      <img
+        v-else
+        alt="uio logo"
+        class="w-64"
+        src="@/assets/icons/svg/uio.svg"
+      />
     </div>
   </div>
 </template>
@@ -69,7 +75,7 @@ export default defineComponent({
         vivaService: 'VIVA is a service delivered by',
       },
     }
-    const { t } = useI18n({ messages })
+    const { t } = useI18n({ messages, useScope: 'global' })
     return {
       t,
       isLoggedIn: appGetters.isLoggedIn,

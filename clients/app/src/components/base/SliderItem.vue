@@ -46,7 +46,7 @@ export default defineComponent({
       if (!props.disabled) {
         itemSelected = true
         setTimeout(() => {
-          router.push(this.routePath)
+          router.push(props.routePath)
         }, 100)
       }
     }

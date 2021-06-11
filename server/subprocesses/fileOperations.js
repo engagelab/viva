@@ -30,18 +30,18 @@ const removeFile = (filename, subDir) => {
 // Move a file from one folder to another
 // source and destination folders are set by videoFolderNames
 const moveFile = (video, subDirSrc, subDirDest) => {
-  const fileExtension = video.fileType ? '.' + video.fileType : '';
+  const fileExtension = video.file.type ? '.' + video.file.type : '';
   return new Promise((resolve, reject) => {
     exec(
       `cd ${dirPath}/videos/${subDirSrc} && mv ${
-      video.filename
+      video.file.name
       }${fileExtension} ../${subDirDest}`,
       error => {
         if (error) {
           console.log(error)
           return reject(error);
         }
-        console.log(`Moved video ${video.filename} from '${subDirSrc}' to '${subDirDest}'`);
+        console.log(`Moved video ${video.file.name} from '${subDirSrc}' to '${subDirDest}'`);
         resolve();
       }
     );
@@ -50,12 +50,12 @@ const moveFile = (video, subDirSrc, subDirDest) => {
 
 // Copy a file from one folder to another
 // subDirSrc is the path of the file, subDirDest is the folder the video is getting copied to
-const copyFile = (video, subDirSrc, subDirDest,fileName) => {
+const copyFile = (video, subDirSrc, subDirDest, fileName) => {
   const regex = / /g
-  let videoFilename = video.filename.replace(regex, "")
+  let videoFilename = video.file.name.replace(regex, "")
   let destinationFilename = fileName.replace(regex,"")
   console.log(videoFilename)
-  const fileExtension = video.fileType ? '.' + video.fileType : '';
+  const fileExtension = video.file.type ? '.' + video.file.type : '';
   const newVideoPath = `${subDirDest}/${destinationFilename}${fileExtension}`;
   console.log(`cp  ${dirPath}/videos/${subDirSrc}/${
     videoFilename
@@ -93,14 +93,7 @@ const createName = (video, schoolname, addUsername, username) => {
     // eslint-disable-next-line no-useless-escape
     .replace(/[\/:]/gi, '')
     .split(', ');
-  const name =
-    // schoolname +
-    datetime[0] +
-    '-' +
-    datetime[1] +
-    (addUsername ? username : '') +
-    fileExtension;
-  return name;
+  return `${datetime[0]}-${datetime[1]}${(addUsername ? username : '')}${fileExtension}`
 };
 
 module.exports = {

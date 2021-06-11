@@ -31,7 +31,7 @@ const datasetSchema = new mongoose.Schema({
     lockedBy: { type: mongoose.Schema.ObjectId, ref: 'User' }  // Who has locked the datasett for editing
   },
   consent: {
-    type: {
+    kind: {
       type: String,
       enum: Object.values(consentTypes),
       default: consentTypes.manual,
@@ -57,30 +57,32 @@ const datasetSchema = new mongoose.Schema({
 // Choose what attributes will be returned with the setting object
 // ** These attributes should be matched in the front end model **
 datasetSchema.methods.redacted = function () {
+  const data = this.toObject()
   const d = {
     _id: this._id.toString(),
-    name: this.name,
-    description: this.description,
-    created: this.created,
-    formId: this.formId,
-    selectionPriority: this.selectionPriority,
-    selection: this.utvalg,
+    name: data.name,
+    description: data.description,
+    created: data.created,
+    formId: data.formId,
+    selectionPriority: data.selectionPriority,
+    selection: data.selection,
     status: {
-      lastUpdated: this.lastUpdated,
-      lockedBy: this.lock,
+      lastUpdated: data.status.lastUpdated,
+      lockedBy: data.status.lockedBy,
     },
-    consent: this.consent,
+    consent: {
+      kind: data.consent.kind
+    },
     users: {
-      dataManager: this.dataManager,
+      dataManager: data.users.dataManager,
     },
-    storages: this.storages.map((store) => {
+    storages: data.storages.map((store) => {
       const s = { ...store }
       delete s.file.path
       return s
     }),
   }
   delete d.users.dataManager.oauthId
-  delete d.storages.path
   return d
 }
 // Duplicate the ID field.

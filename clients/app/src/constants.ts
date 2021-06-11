@@ -16,6 +16,10 @@ const consentTypesString = process.env.VUE_APP_CONSENT_STATES || ''
 const consentTypes = consentTypesString.split(',')
 let appVersion: string =
   document.documentElement.getAttribute('data-appversion') || ''
+// The web-based app will always be the latest version, set the version directly from .env
+// If not built with Cordova, 'data-appversion' will === '%%VERSION%%'
+if (appVersion === '%%VERSION%%' && process.env.VUE_APP_VERSION)
+  appVersion = process.env.VUE_APP_VERSION
 
 const vivaServer = 'viva.uio.no'
 const engagelabServer = 'engagelab.uio.no'

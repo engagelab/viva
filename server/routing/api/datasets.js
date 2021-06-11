@@ -2,7 +2,7 @@
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
 const router = require('express').Router()
-const utilities = require('../utilities')
+const utilities = require('../../utilities')
 const Dataset = require('../../models/Dataset')
 const Video = require('../../models/Video')
 const User = require('../../models/User')
@@ -60,7 +60,7 @@ const fetchUsersWithDraftVideos = () => {
   })
 }
 
-// Get settings for the current user
+// Get datasets for the current user
 // If admin, also get Users with outstanding drafts, and video listing
 router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
   const u = response.locals.user

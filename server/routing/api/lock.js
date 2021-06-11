@@ -2,7 +2,7 @@
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
 const router = require('express').Router()
-const utilities = require('../utilities')
+const utilities = require('../../utilities')
 const Dataset = require('../../models/Dataset')
 const User = require('../../models/User')
 

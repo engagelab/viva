@@ -88,7 +88,7 @@
       <div
         v-if="
           selectedDataset &&
-          selectedDataset.consent.type == CONSENT_TYPES.samtykke
+          selectedDataset.consent.kind == CONSENT_TYPES.samtykke
         "
       >
         <p>{{ t('Link to consent Nettschema') }}</p>
@@ -102,7 +102,7 @@
       </div>
       <div v-else>
         <p v-if="selectedDataset" class="p-2">
-          {{ behandlings[selectedDataset.consent.type].description }}
+          {{ behandlings[selectedDataset.consent.kind].description }}
         </p>
       </div>
     </div>
@@ -127,7 +127,7 @@ import router from '@/router'
 import { useI18n } from 'vue-i18n'
 import { CONSENT_TYPES, behandlings } from '@/constants'
 import cordovaService from '@/api/cordovaService'
-import { Dataset, DatasetLock, DatasetSelection, User } from '@/types/main'
+import { Dataset, DatasetLock, DatasetSelection } from '@/types/main'
 import { useAppStore } from '@/store/useAppStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useVideoStore } from '@/store/useVideoStore'
@@ -145,7 +145,7 @@ interface ListData {
   title: string
   description?: string
   keyName: string
-  data: DatasetSelection
+  data: DatasetSelection | Dataset
 }
 
 export default defineComponent({
@@ -253,14 +253,11 @@ export default defineComponent({
       let items: ListData[] = []
       if (!selectedDataset.value) {
         items = datasets.value.map((d) => {
-          const data = {
-            title: d.name,
-          }
           return {
             title: d.name,
             description: d.description,
             keyName: '',
-            data,
+            data: d,
           }
         })
       } else if (

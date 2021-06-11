@@ -87,9 +87,6 @@ export interface LottieOptions {
 
 // ---------------  Models -----------------
 
-/* export interface Callback<T, U> {
-  (arg?: T): U
-} */
 export interface Callback {
   (...args: unknown[]): unknown
 }
@@ -422,7 +419,7 @@ interface DatasetStatus {
   lockedBy: string
 }
 interface DatasetConsent {
-  type: CONSENT_TYPES
+  kind: CONSENT_TYPES
 }
 interface DatasetUsers {
   dataManager: {
@@ -445,7 +442,7 @@ export interface DatasetLock {
   }
 }
 export class Dataset {
-  _id?: string
+  _id: string
   name: string
   description: string
   created: Date
@@ -458,34 +455,53 @@ export class Dataset {
   storages: DatasetStorage[]
 
   constructor(data?: Dataset) {
-    this._id = data?._id // undefined if a new dataset
-    this.name = data?.name || ''
-    this.description = data?.description || ''
-    this.created = data?.created || new Date()
-    this.formId = data?.formId || ''
+    this._id = '' // undefined if a new dataset
+    this.name = ''
+    this.description = ''
+    this.created = new Date()
+    this.formId = ''
     this.status = {
-      lastUpdated: data?.status.lastUpdated || new Date(),
-      lockedBy: data?.status.lockedBy || '',
+      lastUpdated: new Date(),
+      lockedBy: '',
     }
     this.consent = {
-      type: data?.consent
-        ? (data.consent.type as CONSENT_TYPES)
-        : CONSENT_TYPES.manuel,
+      kind: CONSENT_TYPES.manuel,
     }
     this.users = {
-      dataManager: data?.users.dataManager || { name: '' },
+      dataManager: { name: '' },
     }
-    this.selection = data?.selection || {}
-    this.selectionPriority = data?.selectionPriority || []
-    this.storages =
-      data?.storages.map((s: DatasetStorage) => {
-        return {
-          name: s.name || '',
-          groupId: s.groupId || '',
-          file: { name: s.file.name || [] },
-          category: s.category || [],
-        }
-      }) || []
+    this.selection = {}
+    this.selectionPriority = []
+    this.storages = []
+
+    if (data) {
+      this._id = data._id // undefined if a new dataset
+      this.name = data.name
+      this.description = data.description
+      this.created = new Date(data.created)
+      this.formId = data.formId
+      this.status = {
+        lastUpdated: new Date(data.status.lastUpdated),
+        lockedBy: data.status.lockedBy,
+      }
+      this.consent = {
+        kind: (data.consent.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
+      }
+      this.users = {
+        dataManager: data.users.dataManager,
+      }
+      this.selection = data.selection
+      this.selectionPriority = data.selectionPriority
+      this.storages =
+        data.storages.map((s: DatasetStorage) => {
+          return {
+            name: s.name || '',
+            groupId: s.groupId || '',
+            file: { name: s.file.name || [] },
+            category: s.category || [],
+          }
+        }) || []
+    }
   }
 
   /* get selection(): string[] {
@@ -531,12 +547,45 @@ export class User {
   datasetConfig: UserDatasetConfig
   videos: UserVideos
 
-  constructor(data: User) {
-    this._id = data._id
-    this.status = data.status
-    this.profile = data.profile
-    this.datasetConfig = data.datasetConfig
-    this.videos = data.videos
+  constructor(data?: User) {
+    this._id = ''
+    this.status = {
+      role: USER_ROLE.user,
+      created: new Date(),
+      provider: 'canvas', // Dataporten or Canvas ?
+      lastLogin: new Date(),
+      totalDrafts: 0,
+      totalUploads: 0,
+      totalTransfers: 0,
+    }
+    this.profile = {
+      username: 'initial user',
+      password: '',
+      fullName: 'initial user',
+      oauthId: '',
+      reference: '', // This should be sent to the client rather than _id
+      groups: [],
+    }
+    this.datasetConfig = {
+      id: '',
+      locks: {},
+      selection: [],
+    }
+    this.videos = {
+      draftIDs: [],
+      removedDraftIDs: [],
+    }
+    if (data) {
+      this._id = data._id
+      this.status = data.status
+      this.profile = data.profile
+      this.datasetConfig = {
+        id: data.datasetConfig.id || '',
+        selection: data.datasetConfig.selection || [],
+        locks: data.datasetConfig.locks || {},
+      }
+      this.videos = data.videos
+    }
   }
 }
 

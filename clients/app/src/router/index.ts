@@ -38,7 +38,9 @@ const routes: Array<RouteRecordRaw> = [
   // ---------- These routes manage server redirects ------------
   // -------- after login or after file transfer to 3rd party API -------
   {
-    path: '/settings',
+    path: '/postlogin',
+    name: 'afterlogin',
+    component: MyRecordings,
     beforeEnter: () => {
       appActions
         .redirectedLogin()
@@ -60,7 +62,6 @@ const routes: Array<RouteRecordRaw> = [
           console.log(error)
         })
     },
-    redirect: () => ({}),
   },
   // --------------------------------------------------------
   {
@@ -123,7 +124,7 @@ router.beforeEach((to, from, next) => {
     to.path != '/' &&
     to.path != '/login' &&
     to.path != '/privacy' &&
-    to.path != '/settings' &&
+    to.path != '/postlogin' &&
     to.path != '/logout' &&
     to.path != '/transferred'
 

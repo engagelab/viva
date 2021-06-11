@@ -4,6 +4,7 @@
   "private": true,
   "author": "Engagelab Team",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.8.0",
     "babel-eslint": "^10.0.3",
     "bcrypt": "^5.0.1",
     "cors": "^2.8.5",
@@ -20,7 +21,7 @@
     "openid-client": "^3.12.2",
     "qrcode": "^1.4.2",
     "tus-metadata": "^1.0.2",
-    "tus-node-server": "git+https://bitbucket.usit.uio.no/scm/engagelab/tus-node-server.git"
+    "tus-node-server": "git+ssh://git@bitbucket.usit.uio.no:7999/engagelab/tus-node-server.git"
   },
   "engines": {
     "node": ">=10.0.0",

@@ -2,8 +2,8 @@ const jwt = require('jsonwebtoken')
 const { userRoles } = require('../../constants')
 const { createReference, baseUrl } = require('../../utilities')
 const User = require('../../models/User')
-const dataporten = require('../services/dataporten')
-const canvas = require('../services/canvas')
+const dataporten = require('../../services/dataporten')
+const canvas = require('../../services/canvas')
 
 function signJWT(data) {
   return jwt.sign(
@@ -59,8 +59,8 @@ async function setUserGroups(user) {
 }
 
 function createOrUpdateUser(tokenSet, userIdentifier, profile) {
-  const query = {}
-  if (userIdentifier.sub) query.oauthId = userIdentifier.sub
+  const query = { }
+  if (userIdentifier.sub) query['profile.oauthId'] = userIdentifier.sub
   else if (userIdentifier.id) query._id = userIdentifier.id
   const userProfile = profile.data ? profile.data : profile
 
@@ -106,8 +106,8 @@ function completeCallback(request, response, user, device, remember) {
     // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
     redirectUrl =
       process.env.NODE_ENV === 'testing'
-        ? `${baseUrl}/#/login`
-        : `${baseUrl}/login`
+        ? `${baseUrl}/#/postlogin`
+        : `${baseUrl}/postlogin`
   }
   console.log(s)
   console.log(`Session: ${request.session.ref}`)

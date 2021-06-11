@@ -230,7 +230,7 @@ export default defineComponent({
       }
       if (
         selectedDataset.value &&
-        selectedDataset.value.consent.type === CONSENT_TYPES.samtykke
+        selectedDataset.value.consent.kind === CONSENT_TYPES.samtykke
       ) {
         datasetActions.fetchConsents(selectedVideo.value)
       }
@@ -260,7 +260,7 @@ export default defineComponent({
       if (selectedVideo.value && selectedVideo.value.dataset.selection) {
         const utvalg = selectedVideo.value.dataset.selection.reduce(
           (acc, curr) => {
-            const split = curr.split(':')
+            const split = curr.title.split(':')
             return `${acc} > ${split[1]}`
           },
           ''
@@ -324,7 +324,7 @@ export default defineComponent({
       appActions.setDialog({
         visible: false,
         data: {},
-        doneCallback: undefined,
+        doneCallback: () => ({}),
       })
       if (confirmed && selectedVideo.value) {
         videoActions.removeVideo(selectedVideo.value).then(() => {
@@ -522,7 +522,7 @@ export default defineComponent({
       appActions.setDialog({
         visible: false,
         data: {},
-        doneCallback: undefined,
+        doneCallback: () => ({}),
       })
       if (confirmed) {
         recordVideo()

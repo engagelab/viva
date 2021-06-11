@@ -21,8 +21,8 @@ const createFFMPEG = (video, subDirSrc, subDirDest) => {
     let audioBlur = ''
     let videoTrim = ''
     let audioTrim = ''
-    let blur = video.edl.blur || []
-    let trim = video.edl.trim || []
+    let blur = video.details.edl.blur || []
+    let trim = video.details.edl.trim || []
     let overlayArgs = '[1:v]overlay=5:5[out]'
     let videoArgs = '[0:v]'
     let audioArgs = ''
@@ -82,7 +82,6 @@ const createFFMPEG = (video, subDirSrc, subDirDest) => {
     }
     // No trim No blur
     if (blur.length == 0 && trim.length == 0) {
-      // args.splice(9, 4);
       audioOutput = '0:a'
     }
 
@@ -106,15 +105,10 @@ const createFFMPEG = (video, subDirSrc, subDirDest) => {
       '-2', // required to enable experimental features
       `${dirPath}/videos/${subDirDest}/${video.filename}.mp4` // Output file as MP4
     ]
-    // No trim No blur
-    /* if (blur.length == 0 && trim.length == 0) {
-      // args.splice(9, 4);
-      audioOutput = '0:a';
-    } */
 
     QRCode.toFile(
-      `${dirPath}/videos/${subDirSrc}/${video.filename}_qrcode.png`,
-      video.fileId,
+      `${dirPath}/videos/${subDirSrc}/${video.details.id}_qrcode.png`,
+      video.details.id,
       { scale: 2, margin: 2 }
     )
       // If successful, ffmpeg is executed with specified arguements for trimming/blurring/watermark
@@ -144,12 +138,12 @@ const createFFMPEG = (video, subDirSrc, subDirDest) => {
           if (code !== 0) {
             reject(err)
           } else {
-            video.mimeType = 'video/mp4'
-            video.fileType = 'mp4'
+            video.file.mimeType = 'video/mp4'
+            video.file.type = 'mp4'
             fileOperations // Remove the generated QR code image
-              .removeFile(`${video.filename}_qrcode.png`, subDirSrc)
+              .removeFile(`${video.details.id}_qrcode.png`, subDirSrc)
               .then(() => {
-                console.log(`Completed FFMPEG operations on ${video.filename}`)
+                console.log(`Completed FFMPEG operations on ${video.details.id}`)
                 resolve(video)
               })
               .catch(error => reject(error))

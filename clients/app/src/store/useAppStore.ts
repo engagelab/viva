@@ -21,7 +21,7 @@ import { appVersion } from '../constants'
 interface Dialog {
   visible: boolean
   data: Record<string, unknown>
-  doneCallback: Callback
+  doneCallback: (d: boolean) => void
 }
 interface ServerStatus {
   cpuload: Record<string, unknown>
@@ -33,7 +33,7 @@ interface Snackbar {
   callback?: Callback
 }
 export interface AppState {
-  selectedUser: User | undefined
+  selectedUser: User
   hostType: string
   isLoggedIn: boolean
   isAuthorised: boolean
@@ -47,7 +47,7 @@ export interface AppState {
 }
 // ------------  State (internal) --------------
 const _appState: Ref<AppState> = ref({
-  selectedUser: undefined,
+  selectedUser: new User(),
   hostType: 'tablet',
   isLoggedIn: false,
   isAuthorised: false,
@@ -88,7 +88,7 @@ interface Getters {
   snackbar: ComputedRef<Snackbar>
   deviceStatus: ComputedRef<DeviceStatus>
   serverStatus: ComputedRef<ServerStatus>
-  user: ComputedRef<User | undefined>
+  user: ComputedRef<User>
 }
 const getters = {
   get hostType(): ComputedRef<string> {
@@ -124,7 +124,7 @@ const getters = {
   get serverStatus(): ComputedRef<ServerStatus> {
     return computed(() => _appState.value.serverStatus)
   },
-  get user(): ComputedRef<User | undefined> {
+  get user(): ComputedRef<User> {
     return computed(() => _appState.value.selectedUser)
   },
 }
@@ -145,7 +145,6 @@ interface Actions {
   redirectedLogin: () => Promise<void>
   getLoginSession: () => Promise<void>
   tokenLogin: () => Promise<boolean>
-  detectOldApp: () => Promise<void>
   setCordovaPath: (path: string[]) => void
 }
 const actions = {
@@ -219,10 +218,9 @@ const actions = {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/api/appversion',
-      contentType: 'text/html',
     }
-    apiRequest<string>(payload).then((version: string) => {
-      if (appVersion !== version) {
+    apiRequest<{ version: string }>(payload).then((result) => {
+      if (appVersion !== result.version) {
         _appState.value.appIsOld = true
         this.setSnackbar({
           visibility: true,
@@ -234,7 +232,6 @@ const actions = {
     })
   },
   logout(): void {
-    _appState.value.selectedUser = undefined
     _appState.value.isLoggedIn = false
     _appState.value.isAuthorised = false
     videoActions.clearDataUponLogout()
@@ -318,24 +315,6 @@ const actions = {
     } else return Promise.resolve()
   },
 
-  // Call server for the current version of the app
-  detectOldApp: async function (): Promise<void> {
-    const payload: APIRequestPayload = {
-      method: XHR_REQUEST_TYPE.GET,
-      credentials: false,
-      route: '/api/appversion',
-      contentType: 'text/html',
-    }
-    let version = ''
-    try {
-      version = await apiRequest<string>(payload)
-    } catch (error) {
-      console.log(`Error getting server version: ${error.toString()}`)
-    }
-    if (appVersion !== version) {
-      _appState.value.appIsOld = true
-    }
-  },
   // Try to exchange token for a session if the token already exists
   tokenLogin: function (): Promise<boolean> {
     return apiRequest({

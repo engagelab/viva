@@ -2,7 +2,7 @@
   <Slider
     class="flex flex-col flex-grow min-h-0 h-full"
     :pages="pages"
-    :movePageTo="pageNumber"
+    :movePageTo="page"
   />
 </template>
 
@@ -26,10 +26,8 @@ export default defineComponent({
       default: '0',
     },
   },
-  data(props) {
-    const pageNumber = parseInt(props.page)
+  data() {
     return {
-      pageNumber,
       pages: [page0, page1, page2, page3],
     }
   },

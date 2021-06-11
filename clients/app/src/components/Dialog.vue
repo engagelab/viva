@@ -36,8 +36,13 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { useAppStore } from '@/store/useAppStore'
+import Button from '@/components/base/Button.vue'
 const { getters: appGetters } = useAppStore()
 export default defineComponent({
+  name: 'dialog-box',
+  components: {
+    Button,
+  },
   setup() {
     const dialog = appGetters.dialog
     return {

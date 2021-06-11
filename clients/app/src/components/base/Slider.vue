@@ -17,7 +17,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, watch, ref, PropType, Ref } from 'vue'
+import {
+  defineComponent,
+  onMounted,
+  watch,
+  ref,
+  PropType,
+  Ref,
+  toRefs,
+} from 'vue'
 import router from '@/router'
 export default defineComponent({
   props: {
@@ -26,8 +34,8 @@ export default defineComponent({
       required: true,
     },
     movePageTo: {
-      type: Number,
-      default: 0,
+      type: String,
+      default: '0',
     },
     stateToChildren: {
       type: Object,
@@ -36,17 +44,19 @@ export default defineComponent({
   },
   setup(props) {
     const selectedPage = ref(0)
+    const { movePageTo, pages } = toRefs(props)
     const previousPages: Ref<number[]> = ref([])
     const leaveToClass = ref('slide-fade-leave-to-right')
     const enterClass = ref('slide-fade-enter-right')
     onMounted(() => {
-      const page = props.movePageTo || 0
+      const page = parseInt(movePageTo.value) || 0
       selectedPage.value = props.pages.length > 0 ? props.pages[page] : 0
     })
     watch(
-      () => props.movePageTo,
-      (nextPageNumber) => {
-        const currentPageNumber = props.pages.indexOf(selectedPage.value)
+      () => movePageTo.value,
+      (nextPage) => {
+        const currentPageNumber = pages.value.indexOf(selectedPage.value)
+        const nextPageNumber = parseInt(nextPage)
         const direction = currentPageNumber < nextPageNumber ? 'left' : 'right'
         enterClass.value = `slide-fade-enter-${direction}`
         leaveToClass.value = `slide-fade-leave-to-${direction}`

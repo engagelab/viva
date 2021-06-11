@@ -31,6 +31,7 @@ window.addEventListener('message', function (event) {
 
 const i18n = createI18n({
   locale: navigator.language || 'nb_NO',
+  globalInjection: true,
   fallbackLocale: {
     'nb-NO': ['nb_NO'],
     nb: ['nb_NO'],
@@ -46,8 +47,7 @@ const i18n = createI18n({
 
 // Bootstrap the Vue app when called
 const initialiseApp = () => {
-  app.use(i18n)
-  app.use(router).mount('#app')
+  app.use(router).use(i18n).mount('#app')
 }
 
 // add cordova.js only if serving the app through file://

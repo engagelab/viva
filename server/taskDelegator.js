@@ -31,7 +31,7 @@ process.on('message', function (data) {
 
 const findVideosToProcess = () => {
   pipelineStates.forEach(state => {
-    Video.find({ status: state }, (error, foundVideos) => {
+    Video.find({ 'status.main': state }, (error, foundVideos) => {
       if (error) {
         console.log(error)
       } else if (foundVideos.length > 0) {
@@ -54,10 +54,10 @@ const errorProcessingVideo = (error, pStatus) => {
   if (pStatus) {
     const errorMessage = pipelineErrorMessages[pStatus]
     const nextVideo = activelyProcessing[pStatus]
-    nextVideo.pipelineInProgress = false
-    nextVideo.errorDebug = error
-    nextVideo.errorInfo = `${errorMessage}. Please contact support. Reference: ${nextVideo.filename}`
-    nextVideo.status = videoStatusTypes.error
+    nextVideo.status.pipelineInProgress = false
+    nextVideo.status.error.errorDebug = error
+    nextVideo.status.error.errorInfo = `${errorMessage}. Please contact support. Reference: ${nextVideo.filename}`
+    nextVideo.status.main = videoStatusTypes.error
     delete activelyProcessing[pStatus]
     nextVideo.save()
   }
@@ -68,13 +68,13 @@ const updateVideoStatus = (video, pStatus) => {
   const stateIndex = pipelineStates.indexOf(pStatus)
   // Increment video state (refer to constants.pipelineStates) and update pipeline progress
   if (stateIndex == pipelineStates.length - 1) {
-    video.status = videoStatusTypes.edited // Pipeline is finished
+    video.status.main = videoStatusTypes.edited // Pipeline is finished
   } else {
-    video.status = pipelineStates[stateIndex + 1]
+    video.status.main = pipelineStates[stateIndex + 1]
   }
-  video.pipelineInProgress = false
-  video.errorDebug = ''
-  video.errorInfo = ''
+  video.status.pipelineInProgress = false
+  video.status.error.errorDebug = ''
+  video.status.error.errorInfo = ''
   video.save(error => {
     if (error) {
       console.log(
@@ -89,18 +89,18 @@ const updateVideoStatus = (video, pStatus) => {
 const beginProcessingVideo = pStatus => {
   const nextVideo = activelyProcessing[pStatus]
   // Update pipeline in progress for this video
-  nextVideo.pipelineInProgress = true
+  nextVideo.status.pipelineInProgress = true
   nextVideo.save(error => {
     if (error) {
       return console.log(
-        `Error saving after complete processing. Video fileId: ${nextVideo.fileId}`
+        `Error saving after complete processing. Video fileId: ${nextVideo.details.id}`
       )
     }
 
     switch (pStatus) {
       case videoStatusTypes.uploaded: {
         // If status is 'UPLOADED', call decryption if needed, else move to the next queue
-        if (nextVideo.isEncrypted) {
+        if (nextVideo.status.isEncrypted) {
           fileOperations
             .moveFile(
               nextVideo,
@@ -134,7 +134,7 @@ const beginProcessingVideo = pStatus => {
           .then(video =>
             fileOperations
               // Delete the 'decrypted' video file, as we now have a new 'edited' video file
-              .removeFile(video.filename, videoFolderNames.decrypted)
+              .removeFile(video.file.name, videoFolderNames.decrypted)
               .then(() => {
                 updateVideoStatus(video, pStatus)
               }).catch(err => {

@@ -3,7 +3,7 @@
 */
 
 const router = require('express').Router()
-const utilities = require('../utilities')
+const utilities = require('../../utilities')
 const tsdConsent = require('../../services/tsdConsent')
 const User = require('../../models/User')
 
