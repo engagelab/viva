@@ -18,7 +18,7 @@ import { useDatasetStore } from '../store/useDatasetStore'
 import { useVideoStore } from '../store/useVideoStore'
 const { actions: datasetActions } = useDatasetStore()
 const { getters: appGetters, actions: appActions } = useAppStore()
-const { getters: videoGetters } = useVideoStore()
+const { getters: videoGetters, actions: videoActions } = useVideoStore()
 import { idleTimeout } from '../constants'
 
 const routes: Array<RouteRecordRaw> = [
@@ -27,13 +27,6 @@ const routes: Array<RouteRecordRaw> = [
     name: 'profile',
     component: Landing,
     props: (route) => ({ page: route.query.page }),
-  },
-  {
-    path: '/logout',
-    name: 'logout',
-    redirect: () => {
-      return { path: '/login?page=0' }
-    },
   },
   // ---------- These routes manage server redirects ------------
   // -------- after login or after file transfer to 3rd party API -------
@@ -48,6 +41,8 @@ const routes: Array<RouteRecordRaw> = [
           if (appGetters.isLoggedIn.value) {
             return datasetActions
               .fetchDatasets()
+              .then(() => videoActions.loadMetadata())
+              .then(() => videoActions.fetchMetadata())
               .then(() => {
                 return { path: '/videos/list' }
               })
@@ -61,6 +56,14 @@ const routes: Array<RouteRecordRaw> = [
         .catch((error) => {
           console.log(error)
         })
+    },
+  },
+  {
+    path: '/logout',
+    name: 'logout',
+    component: Landing,
+    beforeEnter: () => {
+      appActions.logout()
     },
   },
   // --------------------------------------------------------
@@ -103,7 +106,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const idleTime = Math.floor(
-    new Date().getTime() - appGetters.lastActive.value / 1000
+    (new Date().getTime() - appGetters.lastActive.value) / 1000
   )
   const isLoggedIn = appGetters.isLoggedIn.value
   const uploadingData = videoGetters.uploadingData.value

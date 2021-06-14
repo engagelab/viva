@@ -5,7 +5,8 @@
         type="checkbox"
         :id="`consentCheckbox-${consent.id}`"
         name="Check me!"
-        :checked="checked"
+        value="true"
+        v-model="checked"
         @change="inputChanged($event)"
       />
       <!--label :for="`consentCheckbox-${consent.id}`">&nbsp;godkjent</label-->
@@ -24,7 +25,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, PropType } from 'vue'
+import { defineComponent, computed, PropType, ref } from 'vue'
 import { Consent } from '@/types/main'
 import circle1 from '@/assets/icons/svg/circle1.svg'
 import circle2 from '@/assets/icons/svg/circle2.svg'
@@ -34,14 +35,10 @@ import circle5 from '@/assets/icons/svg/circle5.svg'
 import circleX from '@/assets/icons/svg/circleX.svg'
 
 export default defineComponent({
-  model: {
-    prop: 'checked',
-    event: 'change',
-  },
   props: {
-    checked: {
-      type: Boolean,
-      default: false,
+    modelValue: {
+      type: [Boolean],
+      required: true,
     },
     consent: {
       type: Object as PropType<Consent>,
@@ -52,7 +49,9 @@ export default defineComponent({
       default: 'false',
     },
   },
+  emits: ['change', 'update:modelValue'],
   setup(props, context) {
+    const checked = ref(false)
     const circles: { [index: number]: unknown } = {
       1: circle1,
       2: circle2,
@@ -73,7 +72,7 @@ export default defineComponent({
     const consentQuestions = computed(() => {
       const sortedAnswerKeys = Object.keys(props.consent.questions).sort()
       return sortedAnswerKeys.map((key, index) => {
-        const checked = props.consent.questions[key]
+        checked.value = props.consent.questions[key]
         const truthy = checked.toLowerCase() === 'true'
         const source = truthy ? circles[index + 1] : circleX
         return { checked, source, key: `question-circle-id-${index}` }
@@ -81,14 +80,16 @@ export default defineComponent({
     })
     function inputChanged($event: InputEvent) {
       const ie = $event.target as HTMLInputElement
-      if ($event) {
-        context.emit('input-change', {
-          checked: ie.value === 'true',
+      if (ie) {
+        context.emit('update:modelValue', checked.value) // If using v-model on this element, this is the updated value
+        context.emit('change', {
+          checked,
           id: props.consent.submission_id,
         })
       }
     }
     return {
+      checked,
       formattedName,
       consentQuestions,
       inputChanged,

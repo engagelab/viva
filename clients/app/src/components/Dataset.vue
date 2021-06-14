@@ -131,8 +131,10 @@ import { Dataset, DatasetLock, DatasetSelection } from '@/types/main'
 import { useAppStore } from '@/store/useAppStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useVideoStore } from '@/store/useVideoStore'
+import { useNotifyStore } from '@/store/useNotifyStore'
+const { actions: notifyActions } = useNotifyStore()
 const { actions: appActions, getters: appGetters } = useAppStore()
-const { actions: videoActions } = useVideoStore()
+const { getters: videoGetters, actions: videoActions } = useVideoStore()
 const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
 
 import clipboard from 'clipboard-polyfill'
@@ -155,12 +157,6 @@ export default defineComponent({
     NewItem,
     Button,
     SVGSymbol,
-  },
-  props: {
-    page: {
-      type: String,
-      default: 'first',
-    },
   },
   setup() {
     const messages = {
@@ -296,7 +292,16 @@ export default defineComponent({
             user: user.value,
             deviceStatus: appGetters.deviceStatus.value,
           })
-          .then(() => router.push('/videos/editor?page=0'))
+          .then(() => {
+            const v = videoGetters.selectedVideo.value
+            if (v) {
+              appActions.addDraftIdToUser(v.details.id)
+              return appActions
+                .updateUserAtServer(user.value)
+                .then(() => videoActions.saveMetadata())
+                .then(() => router.push('/videos/editor?page=0'))
+            }
+          })
       }
     }
 
@@ -405,7 +410,7 @@ export default defineComponent({
       console.log(getConsentUrl.value)
       console.log(mailtoURI.value)
       const copySuccess = () => {
-        appActions.setSnackbar({
+        notifyActions.setSnackbar({
           visibility: true,
           text: t('linkCopied'),
           type: 'message',
@@ -413,7 +418,7 @@ export default defineComponent({
         })
       }
       const copyError = () => {
-        appActions.setSnackbar({
+        notifyActions.setSnackbar({
           visibility: true,
           text: t('copyFailed'),
           type: 'error',

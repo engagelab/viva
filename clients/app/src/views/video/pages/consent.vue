@@ -39,7 +39,7 @@
           :consent="consent"
           v-model="consent.checked"
           checkboxes="true"
-          @input-change="dataChanged"
+          @change="dataChanged"
         ></ConsentItem>
       </div>
     </div>
@@ -53,7 +53,7 @@
         :key="standardConsent.id"
         :consent="standardConsent"
         v-model="standardConsent.checked"
-        @input-change="dataChanged"
+        @change="dataChanged"
         checkboxes="true"
       />
     </div>

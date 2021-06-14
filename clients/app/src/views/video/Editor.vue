@@ -47,7 +47,7 @@
         </div>
         <div
           class="flex flex-grow justify-center items-center"
-          v-if="pageNumber == 0"
+          v-if="page === '0'"
         >
           <SVGSymbol
             v-show="!recording"
@@ -62,7 +62,7 @@
           v-show="videoDataLoaded"
         >
           <SVGSymbol
-            v-show="!recording && !playing && videoDataLoaded"
+            v-show="!recording && !playing"
             class="pr-4 justify-center content-center"
             applyClasses="w-6 h-8 md:w-12"
             @click="startPlaying()"
@@ -126,12 +126,12 @@
             {{ selectedVideo.details.name }}
           </p>
         </div>
-        <img
+        <SVGSymbol
+          v-show="!recording && !playing"
           class="absolute top-0 right-0 w-8 m-4"
-          src="@/assets/icons/svg/list_white.svg"
           @click="backToList()"
-          alt="back to list"
-        />
+          symbol="list"
+        ></SVGSymbol>
         <!--SVGSymbol
         applyClasses="w-4 h-4 md:w-8 md:h-8"
         @click.native="toggleScreenMode()"
@@ -143,7 +143,7 @@
       <Slider
         class="flex flex-col flex-grow min-h-0"
         :pages="pages"
-        :movePageTo="pageNumber"
+        :movePageTo="page"
         :stateToChildren="stateToChildren"
         @edl-updated="edlUpdated"
       />
@@ -168,6 +168,8 @@ import { useAppStore } from '@/store/useAppStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useVideoStore } from '@/store/useVideoStore'
 import { useDeviceService } from '@/store/useDevice'
+import { useNotifyStore } from '@/store/useNotifyStore'
+const { actions: notifyActions } = useNotifyStore()
 const { actions: deviceActions } = useDeviceService()
 const { actions: appActions, getters: appGetters } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
@@ -193,9 +195,8 @@ export default defineComponent({
       default: '0',
     },
   },
-  setup(props) {
+  setup() {
     const pages = [main, consent, edit, metadata, upload]
-    const pageNumber = parseInt(props.page)
     const selectedVideo = videoGetters.selectedVideo
     const selectedDataset = datasetGetters.selectedDataset
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
@@ -321,21 +322,29 @@ export default defineComponent({
     }
 
     function confirmDeleteModalDone(confirmed: boolean) {
-      appActions.setDialog({
+      notifyActions.setDialog({
         visible: false,
         data: {},
         doneCallback: () => ({}),
       })
       if (confirmed && selectedVideo.value) {
-        videoActions.removeVideo(selectedVideo.value).then(() => {
-          router.push('/videos/list')
-        })
+        videoActions
+          .removeVideo(selectedVideo.value)
+          .then(() => {
+            appActions.removeDraftId(video.value.details.id)
+            return appActions.updateUserAtServer().then(() => {
+              console.log(`Removed a draft video: ${video.value.details.id}`)
+            })
+          })
+          .then(() => {
+            router.push('/videos/list')
+          })
       }
     }
 
     function deleteDraft(event: Event): void {
       event.stopPropagation()
-      appActions.setDialog({
+      notifyActions.setDialog({
         visible: true,
         data: {
           titleText: 'Advarsel',
@@ -502,7 +511,7 @@ export default defineComponent({
 
     function startRecording() {
       if (video.value.details.duration > 0) {
-        appActions.setDialog({
+        notifyActions.setDialog({
           visible: true,
           data: {
             titleText: 'Advarsel',
@@ -519,7 +528,7 @@ export default defineComponent({
     }
 
     function confirmRecordingModalDone(confirmed: boolean): void {
-      appActions.setDialog({
+      notifyActions.setDialog({
         visible: false,
         data: {},
         doneCallback: () => ({}),
@@ -563,7 +572,6 @@ export default defineComponent({
       backToList,
       toggleScreenMode,
       deleteDraft,
-      pageNumber,
       // data
       selectedVideo,
       datasetName,

@@ -13,12 +13,12 @@
 <script lang="ts">
 import { defineComponent, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAppStore } from '@/store/useAppStore'
-const { actions: appActions, getters: appGetters } = useAppStore()
+import { useNotifyStore } from '@/store/useNotifyStore'
+const { actions: notifyActions, getters: notifyGetters } = useNotifyStore()
 export default defineComponent({
   setup() {
     const { t } = useI18n()
-    const snackbar = appGetters.snackbar
+    const snackbar = notifyGetters.snackbar
     const snackbarClass = computed(() => {
       return {
         'snackbar-show': snackbar.value.visibility === true,
@@ -35,7 +35,7 @@ export default defineComponent({
         callback: undefined,
       }
       if (snackbar.value.callback) snackbar.value.callback()
-      appActions.setSnackbar(newSnackbar)
+      notifyActions.setSnackbar(newSnackbar)
     }
     return {
       t,

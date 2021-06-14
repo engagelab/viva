@@ -70,7 +70,7 @@ export default defineComponent({
   props: {
     video: {
       type: Object as PropType<Video>,
-      default: undefined,
+      required: true,
     },
   },
   setup(props, context) {
@@ -193,7 +193,7 @@ export default defineComponent({
     function clickItem(status: VideoStatus) {
       if (status.symbol == 'viva') {
         setTimeout(() => {
-          context.emit('select-video', { video: video.value })
+          context.emit('select-video', video.value)
         }, 100)
       }
     }
