@@ -4,7 +4,7 @@
   "private": true,
   "author": "Engagelab",
   "scripts": {
-    "postinstall": "(cd clients/app && yarn install); (cd clients/lti && yarn install); (cd server && yarn install);",
+    "postinstall": "(cd clients/app && yarn install); (cd clients/lti && yarn install); (cd clients/admin && yarn install); (cd server && yarn install);",
     "serve:admin": "env-cmd yarn --cwd clients/admin run serve",
     "build:admin": "env-cmd yarn --cwd clients/admin run build",
     "serve:lti": "env-cmd yarn --cwd clients/lti run serve",

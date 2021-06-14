@@ -1,0 +1,27 @@
+@tailwind base;
+@font-face {
+  font-family: "VAG Rounded Std Bold";
+  src: url("~@/assets/fonts/VAGRoundedStd-Bold.woff") format("woff");
+}
+@font-face {
+  font-family: "VAG Rounded Std Light";
+  src: url("~@/assets/fonts/VAGRoundedStd-Light.woff") format("woff");
+}
+body {
+  font-family: "VAG Rounded Std Light";
+}
+html, body {
+  overscroll-behavior-y: none; /* disable pull to refresh and glow effects */
+}
+hr {
+  border: none;
+  height: 2px;
+  /* Set the hr color */
+  color: #cccccc; /* old IE */
+  background-color: #cccccc; /* Modern Browsers */
+}
+button {
+  outline: none;
+}
+@tailwind components;
+@tailwind utilities;

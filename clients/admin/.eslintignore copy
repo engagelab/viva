@@ -1,0 +1,4 @@
+src/index.html
+src/api/cordovaRoutines.js
+src/api/cordovaService.js
+src/api/assetLoader.js

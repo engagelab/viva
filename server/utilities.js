@@ -15,6 +15,7 @@ const port = process.env.VUE_APP_SERVER_PORT
 const hotHost = process.env.VUE_APP_HOTRELOAD_SERVER_HOST
 const hotPortAPP = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_APP
 const hotPortLTI = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_LTI
+const hotPortADMIN = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_ADMIN
 
 const addZero = i => {
   return i < 10 ? '0' + i : i
@@ -55,6 +56,9 @@ if (process.env.NODE_ENV === 'development') {
       break
     case 'app':
       baseUrl = `https://${hotHost}:${hotPortAPP}`
+      break
+    case 'admin':
+      baseUrl = `https://${hotHost}:${hotPortADMIN}`
       break
     default:
       baseUrl = `${host}:${port}`
