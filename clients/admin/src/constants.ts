@@ -21,9 +21,6 @@ let appVersion: string =
 // If not built with Cordova, 'data-appversion' will === '%%VERSION%%'
 if (appVersion === '%%VERSION%%') appVersion = process.env.VUE_APP_VERSION || ''
 
-projectTypes.push('none')
-projectNames.push('none')
-
 const deviceType: string =
   window.location.protocol == 'file:' ? 'mobile' : 'web'
 

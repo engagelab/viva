@@ -413,16 +413,6 @@ export class User {
 
 // -------------- Other UI Types ---------------
 
-export interface AvatarLayout {
-  eyeShape: string
-  eyeColour: string
-  hairShape: string
-  hairColour: string
-  skinColour: string
-  noseShape: string
-  lipColour: string
-  accessories: string
-}
 // ---------------  API -----------------
 
 enum XHR_REQUEST_TYPE {
@@ -442,15 +432,7 @@ interface APIRequestPayload {
   method: XHR_REQUEST_TYPE
   route: string
   credentials?: boolean
-  body?:
-    | unknown
-    | string
-    | User
-    | Participant
-    | Project
-    | ParticipantData
-    | TrackingData
-    | FormData
+  body?: unknown | string | User | Project | FormData
   headers?: Record<string, string>
   query?: Record<string, string>
   contentType?: string
