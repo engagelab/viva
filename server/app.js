@@ -27,7 +27,7 @@ setup.createVideoDirectories()
 
 const uploadRoutes = require('./routing/tusUpload')
 
-db.connect('VIVA Sever')
+db.connect('VIVA Server')
 const app = express()
 app.locals.pretty = true
 

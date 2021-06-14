@@ -12,6 +12,10 @@ import MyRecordings from '@/views/video/MyRecordings.vue'
 import Editor from '@/views/video/Editor.vue'
 import Privacy from '@/views/Privacy.vue'
 import ErrorDisplay from '@/views/video/ErrorDisplay.vue'
+import Monitor from '@/views/admin/Monitor.vue'
+import MonitorRecordingLog from '@/views/admin/MonitorRecordingLog.vue'
+import MonitorYourDatasets from '@/views/admin/MonitorYourDatasets.vue'
+import MonitorRecordingsInProcess from '@/views/admin/MonitorRecordingsInProcess.vue'
 
 import { useAppStore } from '../store/useAppStore'
 import { useDatasetStore } from '../store/useDatasetStore'
@@ -64,6 +68,36 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   // --------------------------------------------------------
+  {
+    path: '/monitor',
+    redirect: '/monitor/recordingLog',
+    name: 'Monitor',
+    component: Monitor,
+    props: (route) => ({ page: route.query.page }),
+    children: [
+      {
+        // Ward Table will be rendered inside User's <router-view>
+        // when /monitor/wards is matched
+        path: 'recordingLog',
+        name: 'MonitorRecordingLog',
+        component: MonitorRecordingLog,
+      },
+      {
+        // User Table will be rendered inside User's <router-view>
+        // when /monitor/users is matched
+        path: 'yourDatasets',
+        name: 'MonitorYourDatasets',
+        component: MonitorYourDatasets,
+      },
+      {
+        // Participant Table will be rendered inside User's <router-view>
+        // when /monitor/participants is matched
+        path: 'recordingsInProcess',
+        name: 'MonitorRecordingInProcess',
+        component: MonitorRecordingsInProcess,
+      },
+    ],
+  },
   {
     path: '/dataset',
     name: 'datasett',
@@ -126,7 +160,10 @@ router.beforeEach((to, from, next) => {
     to.path != '/privacy' &&
     to.path != '/postlogin' &&
     to.path != '/logout' &&
-    to.path != '/transferred'
+    to.path != '/transferred' &&
+    to.path != '/monitor/recordingLog' &&
+    to.path != '/monitor/yourDatasets' &&
+    to.path != '/monitor/recordingsInProcess'
 
   // Log out if the user has been idle for too long before making this request
   // Force to login screen if not logged in and not already there and not redirecting from oAuth
