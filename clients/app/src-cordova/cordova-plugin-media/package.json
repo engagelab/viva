@@ -1,0 +1,79 @@
+{
+  "_from": "git+https://github.com/vandres/cordova-plugin-media.git#patch-1",
+  "_id": "cordova-plugin-media@5.0.4-dev",
+  "_inBundle": false,
+  "_integrity": "",
+  "_location": "/cordova-plugin-media",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "git",
+    "raw": "https://github.com/vandres/cordova-plugin-media.git#patch-1",
+    "rawSpec": "https://github.com/vandres/cordova-plugin-media.git#patch-1",
+    "saveSpec": "git+https://github.com/vandres/cordova-plugin-media.git#patch-1",
+    "fetchSpec": "https://github.com/vandres/cordova-plugin-media.git",
+    "gitCommittish": "patch-1"
+  },
+  "_requiredBy": [
+    "#DEV:/",
+    "#USER"
+  ],
+  "_resolved": "git+https://github.com/vandres/cordova-plugin-media.git#0448b56a5126102caca59087ca5d13eac7976b26",
+  "_spec": "https://github.com/vandres/cordova-plugin-media.git#patch-1",
+  "_where": "/Users/richarne/Documents/code/slplus/client/src-cordova",
+  "author": {
+    "name": "Apache Software Foundation"
+  },
+  "bugs": {
+    "url": "https://github.com/apache/cordova-plugin-media/issues"
+  },
+  "bundleDependencies": false,
+  "cordova": {
+    "id": "cordova-plugin-media",
+    "platforms": [
+      "android",
+      "browser",
+      "ios",
+      "windows"
+    ]
+  },
+  "deprecated": false,
+  "description": "Cordova Media Plugin",
+  "devDependencies": {
+    "jshint": "^2.6.0"
+  },
+  "engines": {
+    "cordovaDependencies": {
+      "3.0.0": {
+        "cordova-android": ">=6.1.0"
+      },
+      "4.0.0": {
+        "cordova-android": ">=6.3.0"
+      },
+      "6.0.0": {
+        "cordova": ">100"
+      }
+    }
+  },
+  "homepage": "https://github.com/apache/cordova-plugin-media#readme",
+  "keywords": [
+    "cordova",
+    "media",
+    "ecosystem:cordova",
+    "cordova-android",
+    "cordova-browser",
+    "cordova-ios",
+    "cordova-windows"
+  ],
+  "license": "Apache-2.0",
+  "name": "cordova-plugin-media",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apache/cordova-plugin-media.git"
+  },
+  "scripts": {
+    "jshint": "jshint www && jshint src && jshint tests",
+    "test": "npm run jshint"
+  },
+  "types": "./types/index.d.ts",
+  "version": "5.0.4-dev"
+}
