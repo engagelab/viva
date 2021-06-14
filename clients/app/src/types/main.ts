@@ -504,9 +504,9 @@ export class Dataset {
     }
   }
 
-  /* get selection(): string[] {
+  get selection(): string[] {
     return this.selection.map((s) => `${s.keyName}:${s.title}`)
-  } */
+  }
 }
 
 // ---------------  User -----------------

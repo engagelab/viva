@@ -148,6 +148,11 @@ enum VIDEO_STATUS_TYPES {
   error = 'error', // Something went wrong. Videos in this state will not move further in the pipeline until attended to
 }
 
+enum CONSENT_SELECTION {
+  samtykke = 'samtykke',
+  manuel = 'manuel',
+  article6 = 'article6',
+}
 export {
   deviceType,
   baseUrl,
@@ -158,6 +163,7 @@ export {
   CONSENT_TYPES,
   VIDEO_STORAGE_TYPES,
   VIDEO_STATUS_TYPES,
+  CONSENT_SELECTION,
   appVersion,
   taskColours,
   vivaServer,

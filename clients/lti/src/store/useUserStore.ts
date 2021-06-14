@@ -6,7 +6,6 @@ import {
   User,
   UserData,
   LocalUser,
-  Project,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
 } from '../types/main'
@@ -68,7 +67,7 @@ interface Getters {
   myUser: ComputedRef<User>
   selectedUser: ComputedRef<User>
   allUsers: ComputedRef<User[]>
-  selectedUserProject: ComputedRef<Project>
+
 }
 const getters = {
   get myUser(): ComputedRef<User> {
@@ -80,17 +79,7 @@ const getters = {
   get allUsers(): ComputedRef<User[]> {
     return computed(() => state.value.allUsers) // Unlikely to change during app usage, but ok as long as the array itself is not overwitten
   },
-  get selectedUserProject(): ComputedRef<Project> {
-    return computed(() => {
-      const currentPID = state.value.selectedUser.currentProjectId
-      const p = state.value.selectedUser.projects.find(
-        (pr) => pr._id === currentPID
-      )
-      return p ? p : new Project()
-    })
-  },
-}
-
+ 
 // ------------  Actions --------------
 interface Actions {
   hasMinimumRole: (user: User, role: USER_ROLE) => boolean
