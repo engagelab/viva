@@ -84,31 +84,27 @@ function onOffline() {
 function onOnline() {
   _cordovaState.value.deviceOnline = true
 }
-function moveFile(filename: string, mediaFile: MediaFile): Promise<void> {
+function moveFile(mediaFile: MediaFile, filename?: string): Promise<void> {
   // The returned file is in the temp directory
-  if (mediaFile) {
-    const fileId = filename || uuid()
-    const cordovaData: CordovaData = new CordovaData({
-      fileName: fileId,
-      fileToMove: mediaFile,
-      path: _cordovaState.value.cordovaPath,
+  const fileId = filename || uuid()
+  const cordovaData: CordovaData = new CordovaData({
+    fileName: fileId,
+    fileToMove: mediaFile,
+    path: _cordovaState.value.cordovaPath,
+  })
+  // This will move a file from a temp directory to our app storage
+  return cordovaService
+    .moveMediaFromTemp(cordovaData)
+    .then((fileEntry: FileEntry | void) => {
+      if (fileEntry) {
+        // What was a MediaFile will now be a FileEntry
+        _cordovaState.value.currentVideoFilename =
+          cordovaData.fileName || 'videoFilenameNotFound'
+        _cordovaState.value.currentVideo = fileEntry
+        _cordovaState.value.recordingNow = false
+        return Promise.resolve()
+      }
     })
-    // This will move a file from a temp directory to our app storage
-    cordovaService
-      .moveMediaFromTemp(cordovaData)
-      .then((fileEntry: FileEntry | void) => {
-        if (fileEntry) {
-          // What was a MediaFile will now be a FileEntry
-          _cordovaState.value.currentVideoFilename =
-            cordovaData.fileName || 'videoFilenameNotFound'
-          _cordovaState.value.currentVideo = fileEntry
-          _cordovaState.value.recordingNow = false
-        }
-      })
-  } else {
-    // 'cancel' was pressed in the iOS video recorder..
-    _cordovaState.value.recordingNow = false
-  }
 }
 
 // ------------  Getters (Read only) --------------
@@ -205,10 +201,7 @@ const actions: Actions = {
   },
   // Begin a video recording session - this will call the OS Camera module and resolve when that module returns with a finished video
   // Then the video is moved from the temp folder to a more suitable location
-  recordVideo: function (
-    filename?: string,
-    recordingCompleted?: () => void
-  ): Promise<void> {
+  recordVideo: function (filename?: string): Promise<void> {
     if (!_cordovaState.value.deviceReady) {
       const e = new Error('Cordova not ready calling recordVideo')
       e.name = 'Warning'
@@ -224,9 +217,10 @@ const actions: Actions = {
     _cordovaState.value.recordingNow = true
     return cordovaService
       .captureVideo()
-      .then((mediaFile: MediaFile | void) =>
-        moveFile(filename, mediaFile, recordingCompleted)
-      )
+      .then((mediaFile: MediaFile | undefined) => {
+        if (mediaFile) return moveFile(mediaFile, filename)
+        else _cordovaState.value.recordingNow = false
+      })
       .catch((error: Error) => console.log(error))
   },
 

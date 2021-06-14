@@ -1,6 +1,6 @@
 // Resumable upload
 const router = require('express').Router()
-const utilities = require('./utilities')
+const utilities = require('../utilities')
 const Video = require('../models/Video')
 const User = require('../models/User')
 const tus = require('tus-node-server')

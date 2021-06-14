@@ -20,7 +20,8 @@
 
 <script lang="ts">
 import { defineComponent, computed } from 'vue'
-import SVGSymbol from './SVGSymbol'
+import router from '@/router'
+import SVGSymbol from './SVGSymbol.vue'
 
 export default defineComponent({
   components: {
@@ -36,15 +37,16 @@ export default defineComponent({
       default: false,
     },
   },
-  setup() {
+  setup(props) {
+    let itemSelected = false
     const backgroundColour = computed(() => {
-      return this.itemSelected ? 'bg-white' : ''
+      return itemSelected ? 'bg-white' : ''
     })
-    function clickItem() {
-      if (!this.disabled) {
-        this.itemSelected = true
+    function clickItem(): void {
+      if (!props.disabled) {
+        itemSelected = true
         setTimeout(() => {
-          this.$router.push(this.routePath)
+          router.push(props.routePath)
         }, 100)
       }
     }

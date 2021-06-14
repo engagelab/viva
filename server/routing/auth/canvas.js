@@ -3,7 +3,7 @@ const router = require('express').Router()
 const { generators } = require('openid-client')
 const jwt = require('jsonwebtoken')
 const jwksClient = require('jwks-rsa')
-const utilities = require('../utilities')
+const utilities = require('../../utilities')
 const { createOrUpdateUser, completeCallback } = require('./helpers')
 
 const openidClient = require('../../services/openid')

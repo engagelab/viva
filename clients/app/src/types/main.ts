@@ -5,7 +5,7 @@ import {
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
 } from '../constants'
-import { ui8arr2str, str2ab, uuid } from '../utilities'
+import { uuid } from '../utilities'
 
 // ---------------  Utility -----------------
 declare global {
@@ -88,8 +88,8 @@ export interface LottieOptions {
 
 // ---------------  Models -----------------
 
-export interface Callback<T, U> {
-  (arg?: T): U
+export interface Callback {
+  (...args: unknown[]): unknown
 }
 
 export interface LocalUser extends Record<string, unknown> {
@@ -132,6 +132,16 @@ interface EditDecriptionList {
   trim: number[]
   blur: number[][]
 }
+interface VideoDetailsData {
+  id?: string // Used instead of video._id front end, and for QR Code.
+  name?: string // A human-readable string for naming this video
+  category?: string // green, yellow, red
+  created?: Date
+  description?: string
+  duration?: number // Seconds  created: { type: Date },
+  edl?: EditDecriptionList
+  encryptionKey?: string
+}
 interface VideoDetails {
   id: string // Used instead of video._id front end, and for QR Code.
   name: string // A human-readable string for naming this video
@@ -141,6 +151,25 @@ interface VideoDetails {
   duration: number // Seconds  created: { type: Date },
   edl: EditDecriptionList
   encryptionKey: string
+}
+interface VideoStatusData {
+  main?: VIDEO_STATUS_TYPES
+  errorInfo?: string
+  inPipeline?: boolean // true if a pipeline is currently working on this file
+  isEncrypted?: boolean // true if this video is encrypted
+  isEdited?: boolean // true if this video has edits to perform
+  isConsented?: boolean
+  isClassified?: boolean // true if a sensitivity colour has been assigned
+
+  // Front end only (not saved at server)
+  recordingExists?: boolean // true if a recording data file has been assigned to this video
+  encryptionInProgress?: boolean
+  decryptionInProgress?: boolean
+  uploadInProgress?: boolean
+  isUploaded?: boolean
+  uploadProgress?: number
+  hasUnsavedChanges?: boolean
+  hasNewDataAvailable?: boolean
 }
 interface VideoStatus {
   main: VIDEO_STATUS_TYPES
@@ -169,20 +198,30 @@ interface VideoSharing {
   description: string
   edl: EditDecriptionList
 }
+interface VideoUsersData {
+  owner?: string
+  sharedWith?: string[]
+  sharing?: VideoSharing[]
+}
 interface VideoUsers {
   owner: string
   sharedWith: string[] // Users who can see this video. Used for easier searching
   sharing: VideoSharing[] // Each entry is a share for a particular set of users, and particular EDL of this video
 }
+interface VideoDatasetData {
+  id?: string
+  name?: string
+  selection?: UserDatasetSelection[] // 'utvalg' setting
+}
 interface VideoDataset {
   id: string
   name: string
-  selection: string[] // 'utvalg' setting
+  selection: UserDatasetSelection[] // 'utvalg' setting
 }
 
 export interface VideoSpec {
   dataset: Dataset
-  selection: string[] // 'selection' as string array from PresetDataset
+  selection: UserDatasetSelection[] // 'selection' as string array from PresetDataset
   user: User
   deviceStatus: DeviceStatus
 }
@@ -199,8 +238,9 @@ export class Video {
   storages: string[]
 
   constructor(data?: Video | VideoSpec) {
+    const id = uuid()
     this.details = {
-      id: uuid(),
+      id,
       name: id.substring(0, 7),
       category: '',
       created: new Date(),
@@ -211,7 +251,7 @@ export class Video {
         blur: [],
       },
       encryptionKey: '', // This key is used to encrypt the video data
-      encryptionIV: [], // This initial value is required for AES-GCM. The IV should never be reused
+      // encryptionIV: [], // This initial value is required for AES-GCM. The IV should never be reused
     }
     this.status = {
       main: VIDEO_STATUS_TYPES.draft,
@@ -229,7 +269,7 @@ export class Video {
       encryptionInProgress: false,
       decryptionInProgress: false,
       uploadInProgress: false,
-      isUploaded: VIDEO_STATUS_TYPES.premeta,
+      isUploaded: false,
       uploadProgress: 0,
       hasUnsavedChanges: false,
       hasNewDataAvailable: false,
@@ -246,44 +286,74 @@ export class Video {
     }
     this.consents = []
     this.storages = []
-    this.file.mimeType = 'video/mp4'
+    this.file = { mimeType: 'video/mp4' }
 
     // Create a Video using the current App state
-    if (data && data instanceof VideoSpec) {
-      data = data as VideoSpec
+    if (data && !(data instanceof Video)) {
       this.updateDataset({
-        id: data.dataset._id,
+        id: data.dataset._id || '',
         name: data.dataset.name,
         selection: data.selection,
       })
-      this.updateUsers({ owner: data.user._id })
-      this.storages = data.dataset.storages.map(storage => storage.name)
-      this.file.mimeType =
-        data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4'
+      this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
+      this.storages = data.dataset.storages.map((storage) => storage.name)
+      this.file = {
+        mimeType:
+          data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
+      }
     } else if (data) {
       // Create a video based on a given Video
-      this.updateAll(data as Video)
+      this.updateAll(data)
     }
   }
 
-  updateDetails(details: VideoDetails): void {
-    Object.keys(details).forEach(key => (this.details[key] = details[key]))
+  // Update sections by given keys only
+  updateDetails(details: VideoDetailsData): void {
+    if (details.category) this.details.category = details.category
+    if (details.created) this.details.created = details.created
+    if (details.description) this.details.description = details.description
+    if (details.duration) this.details.duration = details.duration
+    if (details.edl) this.details.edl = details.edl
+    if (details.encryptionKey)
+      this.details.encryptionKey = details.encryptionKey
+    if (details.id) this.details.id = details.id
+    if (details.name) this.details.name = details.name
   }
-  updateStatus(status: VideoStatus): void {
-    Object.keys(status).forEach(key => (this.status[key] = status[key]))
+  updateStatus(status: VideoStatusData): void {
+    if (status.decryptionInProgress)
+      this.status.decryptionInProgress = status.decryptionInProgress
+    if (status.errorInfo) this.status.error.errorInfo = status.errorInfo
+    if (status.encryptionInProgress)
+      this.status.encryptionInProgress = status.encryptionInProgress
+    if (status.hasNewDataAvailable)
+      this.status.hasNewDataAvailable = status.hasNewDataAvailable
+    if (status.hasUnsavedChanges)
+      this.status.hasUnsavedChanges = status.hasUnsavedChanges
+    if (status.inPipeline) this.status.inPipeline = status.inPipeline
+    if (status.isClassified) this.status.isClassified = status.isClassified
+    if (status.isConsented) this.status.isConsented = status.isConsented
+    if (status.isEdited) this.status.isEdited = status.isEdited
+    if (status.isEncrypted) this.status.isEncrypted = status.isEncrypted
+    if (status.isUploaded) this.status.isUploaded = status.isUploaded
+    if (status.main) this.status.main = status.main
   }
-  updateUsers(users: VideoUsers): void {
-    Object.keys(users).forEach(key => (this.users[key] = users[key]))
+  updateUsers(users: VideoUsersData): void {
+    if (users.owner) this.users.owner = users.owner
+    if (users.sharedWith) this.users.sharedWith = users.sharedWith
+    if (users.sharing) this.users.sharing = users.sharing
   }
-  updateDataset(dataset: VideoDataset): void {
-    Object.keys(dataset).forEach(key => (this.dataset[key] = dataset[key]))
+  updateDataset(dataset: VideoDatasetData): void {
+    if (dataset.id) this.dataset.id = dataset.id
+    if (dataset.name) this.dataset.name = dataset.name
+    if (dataset.selection) this.dataset.selection = dataset.selection
   }
 
+  // Upate from another Video class
   updateAll(data: Video): void {
-    this.updateDetails(data.details)
-    this.updateStatus(data.status)
-    this.updateUsers(data.users)
-    this.updateDataset(data.dataset)
+    this.details = data.details
+    this.status = data.status
+    this.users = data.users
+    this.dataset = data.dataset
     this.consents = data.consents
     this.storages = data.storages
     this.file.mimeType = data.file.mimeType
@@ -291,11 +361,11 @@ export class Video {
 
   // Convert this class to string representation
   // Note: the encryptionIV does not convert directly using JSON.stringify
-  getAsString(): string {
+  /* getAsString(): string {
     const v = { ...this }
-    v.encryptionIV = ui8arr2str(this.details.encryptionIV)
+    v.details.encryptionIV = ui8arr2str(this.details.encryptionIV)
     return JSON.stringify(v)
-  }
+  } */
 
   // Convert this to a Plain Old Javascript Object
   get asPOJO(): unknown {
@@ -311,13 +381,13 @@ export class Video {
   }
 
   // Convert this class to a buffer suitable for encryption
-  getAsBuffer(): ArrayBuffer {
+  /* getAsBuffer(): ArrayBuffer {
     return str2ab(this.getAsString())
-  }
+  } */
 
   // Set this video's data from a buffer value, used for decryption
   // Ensure that the encryptionIV is correctly converted
-  setFromBuffer(buffer: ArrayBuffer): void {
+  /*   setFromBuffer(buffer: ArrayBuffer): void {
     const videoString = ab2str(buffer)
     const videoObject: VideoData = JSON.parse(videoString)
     if (videoObject.details.encryptionIV.length > 0) {
@@ -327,7 +397,7 @@ export class Video {
     }
     this.update(videoObject)
     this.details.created = new Date(this.created)
-  }
+  } */
   // Create a copy of this video metadata
   /* clone() {
     const newVideo = new VideoMetadata({ video: this });
@@ -335,43 +405,22 @@ export class Video {
   } */
   // Set all local monitor booleans to false; Should be set after initial load from indexedDB
   falsifyAllMonitors(): void {
-    this.encryptionInProgress = false
-    this.decryptionInProgress = false
-    this.uploadInProgress = false
-    this.hasUnsavedChanges = false
-  }
-
-  // Compare a given EDL to ours to check for changes
-  edlEquals(anotherEdl: EditDecriptionList): boolean {
-    let i = this.edl.length
-    const j = anotherEdl.length
-    // Arays are the same length
-    if (i >= 0 && i === j) {
-      while (i > -1) {
-        if (
-          this.edl[i][0] !== anotherEdl[i][0] ||
-          this.edl[i][1] !== anotherEdl[i][1]
-        ) {
-          return false
-        }
-        i--
-      }
-      return true
-    } else {
-      return false
-    }
+    this.status.encryptionInProgress = false
+    this.status.decryptionInProgress = false
+    this.status.uploadInProgress = false
+    this.status.hasUnsavedChanges = false
   }
 }
-interface DatasetSelection {
+export interface DatasetSelection {
   title: string
-  [key: string]: DatasetSelection
+  selection?: { [key: string]: DatasetSelection[] }
 }
 interface DatasetStatus {
   lastUpdated: Date
   lockedBy: string
 }
 interface DatasetConsent {
-  type: CONSENT_TYPES
+  kind: CONSENT_TYPES
 }
 interface DatasetUsers {
   dataManager: {
@@ -386,25 +435,12 @@ interface DatasetStorage {
   }
   category: string[]
 }
-interface DatasetLock {
+export interface DatasetLock {
   date: Date
   selection: {
     keyName: string
     title: string
   }
-}
-export interface DatasetData {
-  _id: string
-  name: string
-  description: string
-  created: Date
-  formId: string
-  status: DatasetStatus
-  consent: DatasetConsent
-  users: DatasetUsers
-  selection: { [key: string]: DatasetSelection }
-  selectionPriority: string[]
-  storages: DatasetStorage
 }
 export class Dataset {
   _id: string
@@ -415,37 +451,63 @@ export class Dataset {
   status: DatasetStatus
   consent: DatasetConsent
   users: DatasetUsers
-  selection: { [key: string]: DatasetSelection }
+  selection: { [key: string]: DatasetSelection[] }
   selectionPriority: string[]
   storages: DatasetStorage[]
 
-  constructor(data?: DatasetData) {
-    this._id = data?._id // undefined if a new dataset
-    this.name = data?.name || ''
-    this.description = data?.description || ''
-    this.created = data?.created || new Date()
-    this.formId = data?.formId || ''
-    this.status.lastUpdated = data?.status.lastUpdated || new Date()
-    this.status.lockedBy = data?.status.lockedBy || ''
-    this.consent.type = data?.consent
-      ? (data.consent.type as CONSENT_SELECTION)
-      : CONSENT_TYPES.manuel
-    this.users.dataManager = data?.users.dataManager || ''
-    this.selection = (data?.selection as DatasetSelection) || {}
-    this.selectionPriority = data?.selectionPriority || []
-    this.storages = data?.storages.map((s: DatasetStorage) => {
-      return {
-        name: s.name || '',
-        groupId: s.groupId || '',
-        file: { name: s.file.name || [] },
-        category: s.category || [],
+  constructor(data?: Dataset) {
+    this._id = '' // undefined if a new dataset
+    this.name = ''
+    this.description = ''
+    this.created = new Date()
+    this.formId = ''
+    this.status = {
+      lastUpdated: new Date(),
+      lockedBy: '',
+    }
+    this.consent = {
+      kind: CONSENT_TYPES.manuel,
+    }
+    this.users = {
+      dataManager: { name: '' },
+    }
+    this.selection = {}
+    this.selectionPriority = []
+    this.storages = []
+
+    if (data) {
+      this._id = data._id // undefined if a new dataset
+      this.name = data.name
+      this.description = data.description
+      this.created = new Date(data.created)
+      this.formId = data.formId
+      this.status = {
+        lastUpdated: new Date(data.status.lastUpdated),
+        lockedBy: data.status.lockedBy,
       }
-    })
+      this.consent = {
+        kind: (data.consent.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
+      }
+      this.users = {
+        dataManager: data.users.dataManager,
+      }
+      this.selection = data.selection
+      this.selectionPriority = data.selectionPriority
+      this.storages =
+        data.storages.map((s: DatasetStorage) => {
+          return {
+            name: s.name || '',
+            groupId: s.groupId || '',
+            file: { name: s.file.name || [] },
+            category: s.category || [],
+          }
+        }) || []
+    }
   }
 
-  get selection(): string[] {
-    return this.selection.map(s => `${s.keyName}:${s.title}`)
-  }
+  /* get selection(): string[] {
+    return this.selection.map((s) => `${s.keyName}:${s.title}`)
+  } */
 }
 
 // ---------------  User -----------------
@@ -466,21 +528,18 @@ interface UserProfile {
   reference: string // This should be sent to the client rather than _id
   groups: string[] // Groups this user is a member of
 }
+export interface UserDatasetSelection {
+  title: string
+  keyName: string
+}
 export interface UserDatasetConfig {
   id: string
-  selection: string[]
+  selection: UserDatasetSelection[]
   locks: Record<string, DatasetLock>
 }
 interface UserVideos {
   draftIDs: string[]
   removedDraftIDs: string[]
-}
-export interface UserData {
-  _id: string
-  status: UserStatus
-  profile: UserProfile
-  datasetConfig: UserDatasetConfig
-  videos: UserVideos
 }
 export class User {
   _id: string
@@ -489,12 +548,45 @@ export class User {
   datasetConfig: UserDatasetConfig
   videos: UserVideos
 
-  constructor(data?: UserData | User) {
-    this._id = data?._id
-    this.status = data?.status
-    this.profile = data?.profile
-    this.datasett = data?.datasett
-    this.videos = data?.videos
+  constructor(data?: User) {
+    this._id = ''
+    this.status = {
+      role: USER_ROLE.user,
+      created: new Date(),
+      provider: 'canvas', // Dataporten or Canvas ?
+      lastLogin: new Date(),
+      totalDrafts: 0,
+      totalUploads: 0,
+      totalTransfers: 0,
+    }
+    this.profile = {
+      username: 'initial user',
+      password: '',
+      fullName: 'initial user',
+      oauthId: '',
+      reference: '', // This should be sent to the client rather than _id
+      groups: [],
+    }
+    this.datasetConfig = {
+      id: '',
+      locks: {},
+      selection: [],
+    }
+    this.videos = {
+      draftIDs: [],
+      removedDraftIDs: [],
+    }
+    if (data) {
+      this._id = data._id
+      this.status = data.status
+      this.profile = data.profile
+      this.datasetConfig = {
+        id: data.datasetConfig.id || '',
+        selection: data.datasetConfig.selection || [],
+        locks: data.datasetConfig.locks || {},
+      }
+      this.videos = data.videos
+    }
   }
 }
 
@@ -519,7 +611,7 @@ interface APIRequestPayload {
   credentials?: boolean
   body?: unknown | string | User | FormData
   headers?: Record<string, string>
-  query?: Record<string, string>
+  query?: Record<string, string | string[] | number>
   contentType?: string
   baseURL?: string
 }

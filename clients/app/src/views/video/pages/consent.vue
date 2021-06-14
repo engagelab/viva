@@ -10,7 +10,8 @@
       ></SVGSymbol>
       <Button
         v-if="
-          selectedDataset.consent.type == CONSENT_TYPES.samtykke &&
+          selectedDataset &&
+          selectedDataset.consent.kind == CONSENT_TYPES.samtykke &&
           consentList.length > 1
         "
         @click="checkAll()"
@@ -20,7 +21,10 @@
       </Button>
     </div>
     <div
-      v-if="selectedDataset.consent.type == CONSENT_TYPES.samtykke"
+      v-if="
+        selectedDataset &&
+        selectedDataset.consent.kind == CONSENT_TYPES.samtykke
+      "
       class="flex flex-col flex-1 overflow-y-auto scrolling-touch p-4"
     >
       <p class="text-xs">{{ t('consentDelayNote') }}</p>
@@ -139,12 +143,13 @@ export default defineComponent({
         video.value.updateStatus(selectedVideo.value.status)
         standardConsent.value.checked = video.value.status.isConsented
         video.value.consents = selectedVideo.value.consents
-        const datasettId = selectedVideo.value.dataset.id
+        const datasetId = selectedVideo.value.dataset.id
         const presetConfig = datasetGetters.presetDatasetConfig.value
-        if (presetConfig && !presetConfig.locks[datasettId]) {
-          const split = selectedVideo.value.dataset.selection[0].split(':')
+        if (presetConfig && !presetConfig.locks[datasetId]) {
+          const split =
+            selectedVideo.value.dataset.selection[0].title.split(':')
           datasetActions.lockSelection({
-            datasettId,
+            datasetId,
             lock: {
               date: new Date(),
               selection: {

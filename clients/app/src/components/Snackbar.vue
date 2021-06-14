@@ -5,17 +5,19 @@
     </div>
 
     <button class="snackbar-button" @click="closeSnackbar">
-      {{ $t('close') }}
+      {{ t('close') }}
     </button>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/store/useAppStore'
 const { actions: appActions, getters: appGetters } = useAppStore()
 export default defineComponent({
   setup() {
+    const { t } = useI18n()
     const snackbar = appGetters.snackbar
     const snackbarClass = computed(() => {
       return {
@@ -36,6 +38,7 @@ export default defineComponent({
       appActions.setSnackbar(newSnackbar)
     }
     return {
+      t,
       snackbar,
       snackbarClass,
       closeSnackbar,
@@ -44,7 +47,7 @@ export default defineComponent({
 })
 </script>
 
-<style scoped>
+<style scoped lang="postcss">
 /* The snackbar - position it at the bottom and in the middle of the screen */
 .snackbar {
   display: flex;

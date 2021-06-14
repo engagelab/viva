@@ -3,15 +3,15 @@
 */
 
 const router = require('express').Router()
-const utilities = require('../utilities')
-const tsd = require('../../services/tsdConsent')
+const utilities = require('../../utilities')
+const tsdConsent = require('../../services/tsdConsent')
 const User = require('../../models/User')
 
 router.get('/consents', utilities.authoriseUser, (request, response, next) => {
   User.findById(request.session.ref, (err, user) => {
     if (!err) {
       if (request.query.datasetId && request.query.formId && request.query.formId !== '')  {
-        tsd.exportConsent(
+        tsdConsent.exportConsent(
           {
             user,
             datasetId: request.query.datasetId,
@@ -36,7 +36,7 @@ router.post('/consent', utilities.authoriseUser, (request, response, next) => {
   let groups = JSON.parse(datasett.dataportenGroupsId)
   console.log(groups)
   if (request.query.utvalg) {
-    tsd.createConsent(
+    tsdConsent.createConsent(
       { user: request.body, datasett: request.query },
       error => next(error),
       clientID => response.send(clientID)

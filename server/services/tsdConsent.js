@@ -1,6 +1,6 @@
 const tsdAPI_key = process.env.TSD_API_KEY
 const fs = require('fs');
-const utilities = require('../routing/utilities');
+const utilities = require('../utilities');
 
 
 const tsdAuth = tsd => {

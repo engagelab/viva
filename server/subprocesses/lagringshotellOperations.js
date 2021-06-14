@@ -9,27 +9,15 @@ require('dotenv').config({ silent: process.env.NODE_ENV === 'production' })
 /* Need to create path based on Dataset.storagePath */
 const createFolder = folderPath => {
   return new Promise((resolve, reject) => {
-
-
     const removedPath = folderPath.replace(path, '')
-
-    //const folder = removedPath.slice(0, removedPath.lastIndexOf('/'))
     const folder = removedPath;
-    if (path) {
-      exec(`cd ${path} && mkdir -p ${folder}`, error => {
-        if (error) return reject(error)
-        console.log(`Created folder ${folder} in ${path} successfully`)
-        resolve()
-      })
+    const completed = (error) => {
+      if (error) return reject(error)
+      console.log(`Created folder ${folder} in ${path} successfully`)
+      resolve()
     }
-    else {
-      exec(`cd ${__dirname}/videos/edited && mkdir -p ${folder}`, error => {
-        if (error) return reject(error)
-        console.log(`Created folder ${folder} in ${path} successfully`)
-        resolve()
-      })
-    }
-
+    if (path) exec(`cd ${path} && mkdir -p ${folder}`, completed)
+    else exec(`cd ${__dirname}/videos/edited && mkdir -p ${folder}`, completed)
   })
 }
 const checkMount = () => {
@@ -58,7 +46,7 @@ function createVideoAtLagringshotell({ video, store, subDirSrc }) {
     return createFolder(store.path).then(() => {
 
       return fileOperations.copyFile(video, subDirSrc, store.path, store.fileName)
-        .then(newVideoPath => video.storagePath.push(newVideoPath))
+        .then(newVideoPath => video.storages.push({ path: newVideoPath, type: 'lagringshotell'}))
     })
   })
 }

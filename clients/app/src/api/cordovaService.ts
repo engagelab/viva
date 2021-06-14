@@ -9,7 +9,7 @@ import { cordovaConstants } from '../constants'
 // CordovaService should call emitError with these Error objects, and then resolve(<void>) to continue operation
 // Callers should assume
 import { emitError, wait, uuid } from '../utilities'
-import { CordovaData } from '@/store/useDevice'
+import { CordovaData } from '../store/useDevice'
 
 declare global {
   interface Window {
@@ -31,7 +31,7 @@ let mediaCache: Record<string, string> = {}
 //    a directory
 //    the root directory if no path given
 //    or <void> + emit error if dir doesn't exist or there was an unexpected result
-const getPath = (path: string[]): Promise<DirectoryEntry> => {
+const getPath = (path: string[]): Promise<DirectoryEntry | undefined> => {
   return new Promise((resolve) => {
     const thePath = [...path]
     cordovaRoutines
@@ -55,7 +55,7 @@ const getPath = (path: string[]): Promise<DirectoryEntry> => {
       })
       .catch((error: Error) => {
         emitError(error)
-        resolve()
+        resolve(undefined)
       })
   })
 }
@@ -68,44 +68,29 @@ const loadFromStorage = <T>(cordovaData: CordovaData): Promise<T | void> => {
   return new Promise((resolve) => {
     const filename = cordovaData.fileName || ''
     getPath(cordovaData.path).then((storeDirectory) => {
-      return cordovaRoutines
-        .getFileByName(storeDirectory, filename, false)
-        .then((fileEntry) => {
-          if (cordovaData.readFile) {
-            cordovaRoutines
-              .readFile(fileEntry, cordovaData.asText, cordovaData.asJSON)
-              .then((filecontents) => resolve(filecontents as T))
-              .catch((readFileError) => {
-                emitError(readFileError)
-                resolve()
-              })
-          } else {
-            console.log('Got FileEntry. Not asked to read file.')
-            resolve(fileEntry as unknown as T)
-          }
-        })
-        .catch((getFileByNameError) => {
-          emitError(getFileByNameError)
-          resolve()
-        })
+      if (storeDirectory) {
+        return cordovaRoutines
+          .getFileByName(storeDirectory, filename, false)
+          .then((fileEntry) => {
+            if (cordovaData.readFile) {
+              cordovaRoutines
+                .readFile(fileEntry, cordovaData.asText, cordovaData.asJSON)
+                .then((filecontents) => resolve(filecontents as T))
+                .catch((readFileError) => {
+                  emitError(readFileError)
+                  resolve()
+                })
+            } else {
+              console.log('Got FileEntry. Not asked to read file.')
+              resolve(fileEntry as unknown as T)
+            }
+          })
+          .catch((getFileByNameError) => {
+            emitError(getFileByNameError)
+            resolve()
+          })
+      } else resolve(undefined)
     })
-  })
-}
-
-// Fetch all file items in a directory
-// Returns FileEntry
-const getFileListFromStorage = (cordovaData: CordovaData): Promise<Entry[]> => {
-  return getPath(cordovaData.path).then((storeDirectory) => {
-    const dirReader = storeDirectory.createReader()
-    dirReader.readEntries(
-      (results) => {
-        if (results.length) {
-          const files = results.filter((r) => r.isFile)
-          resolve(files)
-        }
-      },
-      (error) => reject(error)
-    )
   })
 }
 
@@ -116,33 +101,35 @@ const getFileListFromStorage = (cordovaData: CordovaData): Promise<Entry[]> => {
 //     or <void> + emit an error if there was an unexpected result
 const saveToStorage = (cordovaData: CordovaData): Promise<void> => {
   // getPath() will create directory if not found
-  return getPath(cordovaData.path).then((storeDirectory) =>
-    cordovaRoutines
-      // getFileByName() will create file if not found
-      .getFileByName(
-        storeDirectory,
-        cordovaData.fileName,
-        cordovaData.overwrite
-      )
-      .then((fileEntry) => {
-        return cordovaRoutines
-          .writeFile(
-            fileEntry,
-            cordovaData.data,
-            cordovaData.asText,
-            cordovaData.asJSON,
-            cordovaData.append
-          )
-          .catch((error) => {
-            emitError(error)
-            return Promise.resolve()
-          })
-      })
-      .catch((error) => {
-        emitError(error)
-        return Promise.resolve()
-      })
-  )
+  return getPath(cordovaData.path).then((storeDirectory) => {
+    if (storeDirectory) {
+      cordovaRoutines
+        // getFileByName() will create file if not found
+        .getFileByName(
+          storeDirectory,
+          cordovaData.fileName,
+          cordovaData.overwrite
+        )
+        .then((fileEntry) => {
+          return cordovaRoutines
+            .writeFile(
+              fileEntry,
+              cordovaData.data,
+              cordovaData.asText,
+              cordovaData.asJSON,
+              cordovaData.append
+            )
+            .catch((error) => {
+              emitError(error)
+              return Promise.resolve()
+            })
+        })
+        .catch((error) => {
+          emitError(error)
+          return Promise.resolve()
+        })
+    } else return Promise.resolve()
+  })
 }
 
 /**
@@ -170,15 +157,22 @@ const moveMediaFromTemp = (
     window.resolveLocalFileSystemURL(
       mediaPath,
       (fileEntry) => {
-        getPath(cordovaData.path).then((storeDirEntry) =>
-          cordovaRoutines
-            .transferFile(fileEntry, storeDirEntry, false, cordovaData.fileName)
-            .then((movedFile) => resolve(movedFile))
-            .catch((error) => {
-              emitError(error)
-              resolve()
-            })
-        )
+        getPath(cordovaData.path).then((storeDirEntry) => {
+          if (storeDirEntry) {
+            return cordovaRoutines
+              .transferFile(
+                fileEntry,
+                storeDirEntry,
+                false,
+                cordovaData.fileName
+              )
+              .then((movedFile) => resolve(movedFile))
+              .catch((error) => {
+                emitError(error)
+                resolve()
+              })
+          } else resolve()
+        })
       },
       (error) => {
         emitError(
@@ -233,15 +227,17 @@ const copyFileToTemp = (
 //     <void>
 //     or <void> + emit an error if there was an unexpected result
 const removeFromStorage = (cordovaData: CordovaData): Promise<void> => {
-  return getPath(cordovaData.path).then((storeDirectory) =>
-    cordovaRoutines
-      .getFileByName(storeDirectory, cordovaData.fileName, false)
-      .then((fileEntry) => cordovaRoutines.deleteFile(fileEntry))
-      .catch((error) => {
-        emitError(error)
-        return Promise.resolve()
-      })
-  )
+  return getPath(cordovaData.path).then((storeDirectory) => {
+    if (storeDirectory) {
+      return cordovaRoutines
+        .getFileByName(storeDirectory, cordovaData.fileName, false)
+        .then((fileEntry) => cordovaRoutines.deleteFile(fileEntry))
+        .catch((error) => {
+          emitError(error)
+          return Promise.resolve()
+        })
+    } else return Promise.resolve()
+  })
 }
 
 // Remove all files from temp folder
@@ -298,7 +294,7 @@ const getStorageEstimate = (
 
 // -----------------  Media Services ----------------
 
-const captureVideo = (): Promise<void | MediaFile> => {
+const captureVideo = (): Promise<MediaFile | undefined> => {
   return new Promise((resolve) => {
     const options = {
       duration: cordovaConstants.videoRecordingMaxDuration,
@@ -312,7 +308,7 @@ const captureVideo = (): Promise<void | MediaFile> => {
 
     const captureError = (error: CaptureError) => {
       emitError(new Error(`Video capture error: ${error.code}`))
-      resolve()
+      resolve(undefined)
     }
 
     navigator.device.capture.captureVideo(captureSuccess, captureError, options)
@@ -326,7 +322,7 @@ const createAudio = (
   return new Promise((resolve) => {
     if (mediaIsRecording) {
       emitError(new Error('createAudio: called when recording is active'))
-      resolve()
+      resolve(undefined)
     }
     window.resolveLocalFileSystemURL(
       window.cordova.file.tempDirectory,
@@ -367,7 +363,7 @@ const createAudio = (
                   `Audio capture error: ${statusInfo}: ${error.message}`
                 )
               )
-              resolve()
+              resolve(undefined)
             }
 
             const mediaStatus = (statusCode: number) => {
@@ -399,13 +395,13 @@ const createAudio = (
       },
       function (error: FileError) {
         emitError(new Error(`Resolve local URI error: ${error.code}`))
-        resolve()
+        resolve(undefined)
       }
     )
   })
 }
 
-const stopRecordingAudio = (): Promise<number> => {
+const stopRecordingAudio = (): Promise<void> => {
   return new Promise((resolve) => {
     if (media) {
       media.stopRecord()
@@ -561,26 +557,36 @@ const checkPermissionList = async (): Promise<void> => {
 // Write to a log file at the top level
 const saveLog = (errorText: string): Promise<void> => {
   const dateStamp = new Date().toISOString()
-  return getPath([]).then((storeDirectory) =>
-    cordovaRoutines
-      .getFileByName(storeDirectory, 'logfile.txt', false)
-      .then((fileEntry: FileEntry) =>
-        cordovaRoutines.writeFile(
-          fileEntry,
-          `${dateStamp}: ${errorText}`,
-          true,
-          false,
-          true
+  return getPath([]).then((storeDirectory) => {
+    if (storeDirectory) {
+      return cordovaRoutines
+        .getFileByName(storeDirectory, 'logfile.txt', false)
+        .then((fileEntry: FileEntry) =>
+          cordovaRoutines.writeFile(
+            fileEntry,
+            `${dateStamp}: ${errorText}`,
+            true,
+            false,
+            true
+          )
         )
-      )
-      .catch(() => console.log('Write to logfile.txt failed!'))
-  )
+        .catch(() => console.log('Write to logfile.txt failed!'))
+    } else return Promise.resolve()
+  })
+}
+
+const copyToClipboard = (
+  text: string,
+  success: () => void,
+  error: () => void
+): void => {
+  window.cordova.plugins.clipboard.copy(text, success, error)
 }
 
 export default {
   // File storage
   getPath,
-  getFileListFromStorage,
+  //getFileListFromStorage,
   loadFromStorage,
   //readFile,
   saveToStorage,
@@ -606,4 +612,7 @@ export default {
 
   // Other
   saveLog,
+
+  // Clipboard
+  copyToClipboard,
 }

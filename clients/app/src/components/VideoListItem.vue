@@ -95,7 +95,7 @@ export default defineComponent({
     const datasetName = computed(() => {
       if (video.value.dataset && video.value.dataset.selection) {
         const selection = video.value.dataset.selection.reduce((acc, curr) => {
-          const split = curr.split(':')
+          const split = curr.title.split(':')
           return `${acc} > ${split[1]}`
         }, '')
         return `${video.value.dataset.name} ${selection}`

@@ -14,9 +14,9 @@
         {{ selectedVideo ? selectedVideo.status.uploadProgress : '' }}%
       </p>
       <label v-if="!uploadComplete" for="checkbox"
-        >{{ $t('opptakSendes') }}&nbsp;</label
+        >{{ t('opptakSendes') }}&nbsp;</label
       >
-      <label v-else for="checkbox">{{ $t('opptakSendt') }}&nbsp;</label>
+      <label v-else for="checkbox">{{ t('opptakSendt') }}&nbsp;</label>
       <Button
         class="mt-4"
         v-show="selectedVideo && !selectedVideo.status.uploadInProgress"
@@ -28,7 +28,7 @@
           )
         "
         @click="startUpload()"
-        >{{ $t('send') }}</Button
+        >{{ t('send') }}</Button
       >
       <Button
         class="mt-4"
@@ -41,32 +41,16 @@
           )
         "
         @click="stopUpload()"
-        >{{ $t('cancel') }}</Button
+        >{{ t('cancel') }}</Button
       >
     </div>
   </div>
 </template>
 
-<i18n>
-{
-  "no": {
-    "opptakSendes": "Opptaket kan nå sendes fra din enhet til behandling i UiOs VIVA tjeneste",
-    "opptakSendt": "Opptaket blir nå behandlet. Når dette er ferdig, kan du sende opptaket til din Google Drive lagringskonto. Dette gjøres under 'Mine opptak'",
-    "send": "Send",
-    "cancel": "Avbryt"
-  },
-  "en": {
-    "opptakSendes": "The recording may now be transferred from your device to processing by the VIVA service",
-    "opptakSendt": "The recording is now processed. When that is completed, you can transfer the recording to your Google Drive. Do that under 'My recordings'",
-    "send": "Transfer",
-    "cancel": "Cancel"
-  }
-}
-</i18n>
-
 <script lang="ts">
 import { defineComponent, computed } from 'vue'
 import router from '@/router'
+import { useI18n } from 'vue-i18n'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
@@ -78,6 +62,25 @@ export default defineComponent({
     SVGSymbol,
   },
   setup() {
+    const messages = {
+      nb_NO: {
+        opptakSendes:
+          'Opptaket kan nå sendes fra din enhet til behandling i UiOs VIVA tjeneste',
+        opptakSendt:
+          "Opptaket blir nå behandlet. Når dette er ferdig, kan du sende opptaket til din Google Drive lagringskonto. Dette gjøres under 'Mine opptak'",
+        send: 'Send',
+        cancel: 'Avbryt',
+      },
+      en: {
+        opptakSendes:
+          'The recording may now be transferred from your device to processing by the VIVA service',
+        opptakSendt:
+          "The recording is now processed. When that is completed, you can transfer the recording to your Google Drive. Do that under 'My recordings'",
+        send: 'Transfer',
+        cancel: 'Cancel',
+      },
+    }
+    const { t } = useI18n({ messages })
     const selectedVideo = videoGetters.selectedVideo
     const uploadComplete = computed(() => {
       return (
@@ -102,6 +105,7 @@ export default defineComponent({
       }
     }
     return {
+      t,
       startUpload,
       stopUpload,
       back,

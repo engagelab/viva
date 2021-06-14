@@ -78,7 +78,8 @@ const hasMinimumRole = (user: User, requestedRole: USER_ROLE): boolean => {
     case USER_ROLE.user:
       return true
     case USER_ROLE.monitor:
-      return user.status.role === USER_ROLE.monitor || user.status.role === USER_ROLE.admin
+      return user.status.role === USER_ROLE.monitor ||
+        user.status.role === USER_ROLE.admin
         ? true
         : false
     case USER_ROLE.admin:
@@ -107,7 +108,7 @@ const wait = (ms: number): Promise<void> => {
 /*
   Taken from: https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
 */
-function ab2str(buf: ArrayBuffer): string {
+/* function ab2str(buf: ArrayBuffer): string {
   return String.fromCharCode.apply(null, new Uint16Array(buf))
 }
 
@@ -125,9 +126,9 @@ function ui8arr2str(uint8array: Uint8Array): string {
 }
 
 function str2ui8arr(myString: string): Uint8Array {
-  const array = myString.split(',')
+  const array = myString.split(',').map((s) => Number.parseInt(s))
   return Uint8Array.from(array)
-}
+} */
 
 export {
   uuid,
@@ -138,9 +139,8 @@ export {
   hasMinimumRole,
   shuffleItems,
   emitError,
-  blob2ArrayBuffer,
-  ab2str,
+  /* ab2str,
   str2ab,
   ui8arr2str,
-  str2ui8arr,
+  str2ui8arr, */
 }

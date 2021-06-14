@@ -2,7 +2,7 @@
   <Slider
     class="flex flex-col flex-grow min-h-0 h-full"
     :pages="pages"
-    :movePageTo="pageNumber"
+    :movePageTo="page"
   />
 </template>
 
@@ -21,9 +21,9 @@ export default defineComponent({
     Slider,
   },
   props: {
-    pageNumber: {
-      type: Number,
-      default: 0,
+    page: {
+      type: String,
+      default: '0',
     },
   },
   data() {

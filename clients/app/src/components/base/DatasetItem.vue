@@ -23,7 +23,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed } from 'vue'
 
-import SVGSymbol from './SVGSymbol'
+import SVGSymbol from './SVGSymbol.vue'
 import { baseUrl } from '@/constants'
 
 export default defineComponent({
@@ -48,15 +48,18 @@ export default defineComponent({
       default: undefined,
     },
   },
-  setup() {
+  setup(props, context) {
     const itemSelected = ref(false)
     const backgroundColour = computed(() => {
       return itemSelected.value ? 'bg-white' : ''
     })
     function clickItem() {
-      this.itemSelected = true
+      itemSelected.value = true
       setTimeout(() => {
-        this.$emit('slider-change', { data: this.data, keyName: this.keyName })
+        context.emit('slider-change', {
+          data: props.data,
+          keyName: props.keyName,
+        })
       }, 100)
     }
     return {

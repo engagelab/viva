@@ -16,6 +16,10 @@ const consentTypesString = process.env.VUE_APP_CONSENT_STATES || ''
 const consentTypes = consentTypesString.split(',')
 let appVersion: string =
   document.documentElement.getAttribute('data-appversion') || ''
+// The web-based app will always be the latest version, set the version directly from .env
+// If not built with Cordova, 'data-appversion' will === '%%VERSION%%'
+if (appVersion === '%%VERSION%%' && process.env.VUE_APP_VERSION)
+  appVersion = process.env.VUE_APP_VERSION
 
 const vivaServer = 'viva.uio.no'
 const engagelabServer = 'engagelab.uio.no'
@@ -27,7 +31,7 @@ const videoExpiryTime = 1209600000 // milliseconds (1209600000 = 2 weeks)
 const cryptoAlgorithm = 'AES-GCM'
 const videoProgressCheckInterval = 20 // seconds
 const dbVersion = 1
-const device = useCordova ? 'mobile' : 'web'
+const device = 'mobile'
 const videoStorageTypes = ['none', 'google', 'onedrive', 'lagringshotell']
 const utvalger = ['Feltsted', 'Klasse', 'Fag', 'Lærer']
 
@@ -176,7 +180,6 @@ export {
   device,
   videoStorageTypes,
   utvalger,
-  samtykke,
   behandlings,
   stores,
   datasettAttributes,

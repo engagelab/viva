@@ -2,7 +2,7 @@
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
 const router = require('express').Router()
-const utilities = require('../utilities')
+const utilities = require('../../utilities')
 const Dataset = require('../../models/Dataset')
 const Video = require('../../models/Video')
 const User = require('../../models/User')
@@ -11,17 +11,17 @@ const { userRoles, consentTypes } = require('../../constants')
 /* ---------------- Setting activities ---------------- */
 
 // Modifies the given utvalg setup in place
-const updateUtvalg = ({ path, newName, utvalgKeys, utvalg }) => {
-  let selectedUtvalg = utvalg
+const updateSelection = ({ path, newName, selectionKeys, selection }) => {
+  let selectedUtvalg = selection
 
   // Find the correct level to insert
-  let currentUtvalgKey = utvalgKeys[0]
+  let currentUtvalgKey = selectionKeys[0]
   if (!currentUtvalgKey) return
   path.forEach((title, index) => {
     selectedUtvalg = selectedUtvalg[currentUtvalgKey].find(
       (u) => u.title == title
     )
-    currentUtvalgKey = utvalgKeys[index + 1]
+    currentUtvalgKey = selectionKeys[index + 1]
   })
 
   // Add an empty array for the new Utvalg if it is missing
@@ -29,8 +29,8 @@ const updateUtvalg = ({ path, newName, utvalgKeys, utvalg }) => {
 
   // Add an empty placeholder array for the next utvalg below, if needed
   const newItem = { title: newName }
-  if (path.length + 1 < utvalgKeys.length) {
-    const nextKeyDown = utvalgKeys[path.length + 1]
+  if (path.length + 1 < selectionKeys.length) {
+    const nextKeyDown = selectionKeys[path.length + 1]
     newItem[nextKeyDown] = []
   }
   selectedUtvalg[currentUtvalgKey].push(newItem)
@@ -60,7 +60,7 @@ const fetchUsersWithDraftVideos = () => {
   })
 }
 
-// Get settings for the current user
+// Get datasets for the current user
 // If admin, also get Users with outstanding drafts, and video listing
 router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
   const u = response.locals.user
@@ -116,11 +116,11 @@ router.put(
         next(error || new Error({ status: 400, message: 'datasett not found' }))
       else {
         const d = foundDataset
-        updateUtvalg({
-          utvalg: d.utvalg,
+        updateSelection({
+          selection: d.selection,
           path: request.body.path,
           name: request.body.name,
-          utvalgKey: d.utvalgtPriority,
+          selectionKey: d.selectionPriority,
         })
         d.lastUpdated = Date.now()
         d.markModified('selection')

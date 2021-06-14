@@ -32,7 +32,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/store/useAppStore'
 const { actions: appActions, getters: appGetters } = useAppStore()
 
-import SVGSymbol from '@/components/base/SVGSymbol'
+import SVGSymbol from '@/components/base/SVGSymbol.vue'
 
 export default defineComponent({
   components: {

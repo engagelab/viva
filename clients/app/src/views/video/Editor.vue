@@ -188,13 +188,14 @@ export default defineComponent({
     SVGSymbol,
   },
   props: {
-    pageNumber: {
-      type: Number,
-      default: 0,
+    page: {
+      type: String,
+      default: '0',
     },
   },
-  setup() {
+  setup(props) {
     const pages = [main, consent, edit, metadata, upload]
+    const pageNumber = parseInt(props.page)
     const selectedVideo = videoGetters.selectedVideo
     const selectedDataset = datasetGetters.selectedDataset
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
@@ -227,7 +228,10 @@ export default defineComponent({
       if (!selectedVideo.value) {
         return router.push('/videos/list')
       }
-      if (selectedDataset.value.consent.type === CONSENT_TYPES.samtykke) {
+      if (
+        selectedDataset.value &&
+        selectedDataset.value.consent.kind === CONSENT_TYPES.samtykke
+      ) {
         datasetActions.fetchConsents(selectedVideo.value)
       }
       setupVideo(selectedVideo.value)
@@ -253,10 +257,10 @@ export default defineComponent({
     // Computed values
 
     const datasetName = computed(() => {
-      if (selectedVideo.value?.dataset.selection) {
+      if (selectedVideo.value && selectedVideo.value.dataset.selection) {
         const utvalg = selectedVideo.value.dataset.selection.reduce(
           (acc, curr) => {
-            const split = curr.split(':')
+            const split = curr.title.split(':')
             return `${acc} > ${split[1]}`
           },
           ''
@@ -320,7 +324,7 @@ export default defineComponent({
       appActions.setDialog({
         visible: false,
         data: {},
-        doneCallback: undefined,
+        doneCallback: () => ({}),
       })
       if (confirmed && selectedVideo.value) {
         videoActions.removeVideo(selectedVideo.value).then(() => {
@@ -518,7 +522,7 @@ export default defineComponent({
       appActions.setDialog({
         visible: false,
         data: {},
-        doneCallback: undefined,
+        doneCallback: () => ({}),
       })
       if (confirmed) {
         recordVideo()
@@ -559,6 +563,7 @@ export default defineComponent({
       backToList,
       toggleScreenMode,
       deleteDraft,
+      pageNumber,
       // data
       selectedVideo,
       datasetName,

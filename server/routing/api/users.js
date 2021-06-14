@@ -3,9 +3,9 @@
 */
 
 const router = require('express').Router()
-const { authoriseUser } = require('../utilities')
-const dataporten = require('../services/dataporten')
-const canvas = require('../services/canvas')
+const { authoriseUser } = require('../../utilities')
+const dataporten = require('../../services/dataporten')
+const canvas = require('../../services/canvas')
 const User = require('../../models/User')
 
 /* ---------------- User activities ---------------- */
@@ -63,7 +63,7 @@ if (process.env.NODE_ENV === 'development') {
 
 // Get the current User model
 router.get('/user', authoriseUser, async (request, response) => {
-  response.send(response.locals.user)
+  response.send(response.locals.user.redacted())
 })
 
 router.get('/groups', authoriseUser, async (request, response, next) => {
@@ -88,7 +88,7 @@ router.get('/groups', authoriseUser, async (request, response, next) => {
 })
 
 router.get('/appversion', (request, response) => {
-  response.send(process.env.VUE_APP_VERSION).end()
+  response.send({ version: process.env.VUE_APP_VERSION }).end()
 })
 
 module.exports = router

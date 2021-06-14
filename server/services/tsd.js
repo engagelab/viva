@@ -3,7 +3,7 @@ These instances are created in TSD . */
 /* TSD Credentials, the group name and instanceID will be set from FrontEnd
  */
 const fs = require('fs');
-const utilities = require('../routing/utilities');
+const utilities = require('../utilities');
 const FormData = require('form-data')
 const https= require('https')
 const TSDCredentials={

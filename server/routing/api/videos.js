@@ -3,7 +3,7 @@
 */
 
 const router = require('express').Router()
-const utilities = require('../utilities')
+const utilities = require('../../utilities')
 const videoStatusTypes = require('../../constants').videoStatusTypes;
 const Video = require('../../models/Video')
 

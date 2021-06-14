@@ -1,30 +1,18 @@
-import {
-  VIDEO_STATUS_TYPES,
-  videoExpiryTime,
-  baseUrl,
-  stores,
-} from '../constants'
+import { VIDEO_STATUS_TYPES, videoExpiryTime, baseUrl } from '../constants'
 import { ref, Ref, computed, ComputedRef } from 'vue'
 import orderBy from 'lodash/orderBy'
 import {
   Video,
-  Dataset,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
   VideoSpec,
 } from '../types/main'
-import {
-  useDeviceService,
-  CordovaData,
-  CordovaPathTopLevelName,
-} from './useDevice'
-import { Upload } from 'tus-js-client'
+import { useDeviceService, CordovaData } from './useDevice'
+import { Upload, HttpRequest } from 'tus-js-client'
 import { apiRequest } from '../api/apiRequest'
 import cordovaService from '../api/cordovaService'
-import { useDatasetStore } from './useDatasetStore'
 import { useAppStore } from './useAppStore'
-const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
-const { getters: appGetters, actions: appActions } = useAppStore()
+const { actions: appActions } = useAppStore()
 const { actions: deviceActions } = useDeviceService()
 interface State {
   selectedVideo: Video | undefined
@@ -63,12 +51,12 @@ interface Getters {
   selectedVideo: ComputedRef<Video | undefined>
   allDraftVideos: ComputedRef<Video[]>
   recordingNow: ComputedRef<boolean>
+  uploadingData: ComputedRef<boolean>
   estimatedStorageRemaining: ComputedRef<string>
   videoByID: (fileId: string) => Video | undefined
   draftVideos: (datasetId: string) => ComputedRef<Video[]>
-  videoDataFile: (fileId: string) => ComputedRef<FileEntry>
+  videoDataFile: (fileId: string) => ComputedRef<FileEntry | undefined>
   hasUnsavedChanges: (fileId: string) => ComputedRef<boolean>
-  uploadingData: (fileId) => ComputedRef<boolean>
   hasTUSUploadReady: (video: Video) => ComputedRef<boolean>
 }
 const getters = {
@@ -86,7 +74,7 @@ const getters = {
     return computed(() => orderBy(vs, 'details.created', 'desc'))
   },
   get recordingNow(): ComputedRef<boolean> {
-    return state.value.recordingNow
+    return computed(() => state.value.recordingNow)
   },
   get estimatedStorageRemaining(): ComputedRef<string> {
     return computed(() => state.value.estimatedStorageRemaining)
@@ -97,26 +85,30 @@ const getters = {
     else return state.value.videos.get(fileId)
   },
   draftVideos: (datasetId: string): ComputedRef<Video[]> => {
-    const filteredVids = Array.from(state.value.videos.values()).filter(
-      (v: Video) => v.dataset.id == datasetId
-    )
-    return orderBy(filteredVids, 'details.created', 'desc')
+    return computed(() => {
+      const filteredVids = Array.from(state.value.videos.values()).filter(
+        (v: Video) => v.dataset.id == datasetId
+      )
+      return orderBy(filteredVids, 'details.created', 'desc')
+    })
   },
-  videoDataFile: (fileId: string): ComputedRef<FileEntry> => {
-    return computed(() => state.value.videoDataFiles[fileId])
+  videoDataFile: (fileId: string): ComputedRef<FileEntry | undefined> => {
+    return computed(() => state.value.videoDataFiles.get(fileId))
   },
   hasUnsavedChanges: (fileId: string): ComputedRef<boolean> => {
     return computed(
       () => !!state.value.draftVideos.get(fileId)?.status.hasUnsavedChanges
     )
   },
-  uploadingData: (fileId: string): ComputedRef<boolean> => {
-    return computed(
-      () => !!state.value.draftVideos.get(fileId)?.status.uploadInProgress
+  get uploadingData(): ComputedRef<boolean> {
+    return computed(() =>
+      Object.values(state.value.draftVideos).some(
+        (v) => v.status.uploadInProgress
+      )
     )
   },
   hasTUSUploadReady: (video: Video): ComputedRef<boolean> => {
-    return state.value.tusUploadInstances.has(video.details.id)
+    return computed(() => state.value.tusUploadInstances.has(video.details.id))
   },
 }
 
@@ -125,7 +117,6 @@ interface Actions {
   setCordovaPath: (path: string[]) => void
   setRecordingNow: (value: boolean) => void
   addMetadata: (video: Video) => void
-  removeDraftVideo: (fileId: string) => void
   clearVideoDataFile: (videoId: string) => void
   setDecryptedVideoData: (d: { fileId: string; data: FileEntry }) => void
   setTUSUpload: (d: { fileId: string; upload: Upload }) => void
@@ -136,8 +127,10 @@ interface Actions {
   setUnsavedChanges: (fileId: string) => void
 
   controlUpload: (control: string, video: Video) => void
+  generateUpload(video: Video): Promise<void | Upload>
   fetchVideoStatus(video: Video): Promise<void>
 
+  createMetadata: (d: VideoSpec) => Promise<void>
   loadMetadata: () => Promise<void>
   fetchMetadata: () => Promise<void>
   updateMetadata: (video: Video) => Promise<void>
@@ -145,6 +138,7 @@ interface Actions {
 
   loadVideo(video: Video): Promise<boolean>
   removeVideo: (video: Video) => Promise<void>
+  removeVideoFile: (videoId: string) => Promise<void>
   replaceDraftVideo: (videoId: string) => Promise<void>
 }
 
@@ -164,7 +158,7 @@ const actions = {
     state.value.videoDataFiles.set(d.fileId, d.data)
   },
   setTUSUpload: (d: { fileId: string; upload: Upload }): void => {
-    state.value.tusUploadInstances.set(d.fileId, d.data)
+    state.value.tusUploadInstances.set(d.fileId, d.upload)
   },
   removeTUSUpload: (videoId: string): void => {
     if (state.value.tusUploadInstances.has(videoId))
@@ -212,7 +206,10 @@ const actions = {
 
     const up = state.value.tusUploadInstances.get(video.details.id)
     if (up) toggleUpload(up)
-    else actions.generateUpload(video).then((upload) => toggleUpload(upload))
+    else
+      actions.generateUpload(video).then((upload) => {
+        if (upload) toggleUpload(upload)
+      })
   },
   // Given a video, fetch it from server (used for status update)
   // This will cause an update to the video status in store, and also return the update
@@ -221,18 +218,17 @@ const actions = {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/api/video',
-      params: { videoref: video.details.id },
+      query: { videoref: video.details.id },
       credentials: true,
     }
-    return apiRequest(payload)
+    return apiRequest<Video>(payload)
       .then((v: Video) => {
         if (
-          v.status.main !== video.status.main ||
-          v.status.inPipeline !== video.status.inPipeline
+          (v && v.status.main !== video.status.main) ||
+          (v && v.status.inPipeline !== video.status.inPipeline)
         ) {
           actions.updateMetadata(v)
         }
-        return v
       })
       .catch((error) => {
         return Promise.reject(error)
@@ -240,12 +236,9 @@ const actions = {
   },
   // Create or continue a TUS upload for the encrypted video to the server
   // * Returns a promise *
-  generateUpload(video: Video): void {
+  generateUpload(video: Video): Promise<void | Upload> {
     return new Promise((resolve) => {
-      const deviceStatus = appGetters.deviceStatus
       const token = localStorage.getItem('jwt') || ''
-      const dataset = datasetGetters.selectedDataset
-      const user = appGetters.user
       const fileId = video.details.id
 
       const onSuccess = () => {
@@ -253,52 +246,31 @@ const actions = {
           method: XHR_REQUEST_TYPE.POST,
           route: '/api/video',
           credentials: true,
-          body: video.getAsString(),
+          body: video.asPOJO,
         }
+        // Send the rest of the video metadata to match with the uploaded file
         return apiRequest(payload)
           .then(() => {
             actions.removeTUSUpload(fileId)
             actions.clearVideoDataFile(fileId)
-            actions.removeVideoFile(video)
-          })
-          .catch((error) => {
-            return Promise.reject(error)
-          })
-        // Send the rest of the video metadata to match with the uploaded file
-        return serverService
-          .request({
-            route: '/api/video',
-            method: 'POST',
-            credentials: true,
-            body: video.getAsString(),
-          })
-          .then(() => {
-            // Clear all information relating to this draft video from the client
-            commit('removeTUSUpload', fileId)
-            commit('clearVideoDataFiles', fileId)
-            dispatch('removeLocalVideoData', fileId)
-            dispatch('removeLocalMetadata', state.value.selectedVideo)
-              .then(() => {
-                // After IndexedDB data removal is confirmed, also remove in-memory copies
-                // then reload fresh from server
-                commit('removeDraftVideo', fileId)
-                return dispatch('fetchVideoMetadata', {
-                  user,
-                  setting,
-                }).then(() => {
-                  const uploadedVideo = state.value.videos[fileId]
-                  commit('selectVideo', uploadedVideo)
-                })
+            actions.removeVideoFile(fileId).then(() => {
+              // After IndexedDB data removal is confirmed, also remove in-memory copies
+              // then reload fresh from server
+              state.value.draftVideos.delete(video.details.id)
+              actions.fetchMetadata().then(() => {
+                const uploadedVideo: Video | undefined = state.value.videos.get(
+                  video.details.id
+                )
+                if (uploadedVideo) actions.selectVideo(uploadedVideo)
               })
-              .catch((error) => dispatch('errorMessage', error))
+            })
           })
           .catch((error) => {
-            dispatch('errorMessage', 'Send metadata to server')
             return Promise.reject(error)
           })
       }
 
-      const onProgress = (bytesUploaded, bytesTotal) => {
+      const onProgress = (bytesUploaded: number, bytesTotal: number) => {
         let uploadProgress = Math.round((bytesUploaded / bytesTotal) * 100)
         uploadProgress = uploadProgress > 100 ? 100 : uploadProgress
         video.status.uploadProgress = uploadProgress
@@ -309,25 +281,29 @@ const actions = {
         endpoint: `${baseUrl}/upload`,
         retryDelays: [0, 1000, 3000, 5000],
         chunkSize: 512 * 1024, // 512kB
-        onBeforeRequestSend: (req) => {
+        onBeforeRequestSend: (req: HttpRequest) => {
           const xhr = req.getUnderlyingObject()
           xhr.withCredentials = true
         },
         headers: {
           Authorization: `jwt ${token}`,
         },
-        metadata: { video: state.value.selectedVideo.getFileUploadInfo() },
+        metadata: {
+          video: state.value.selectedVideo
+            ? state.value.selectedVideo.getFileUploadInfo()
+            : '',
+        },
         resume: false, //! state.useCordova, // TUS resume ability requires indexedDB
         // onChunkComplete,
         onProgress,
         onSuccess,
-        onError: (error) => appActions.errorMessage(error.toString()),
+        onError: (error: Error) => appActions.errorMessage(error.toString()),
       }
 
       const createTusUpload = (fileObject: File) => {
         // Establish a TUS upload instance for this item
         const upload: Upload = new Upload(fileObject, options)
-        commit('setTUSUpload', { upload, fileId })
+        actions.setTUSUpload({ upload, fileId })
         resolve(upload)
       }
 
@@ -353,7 +329,7 @@ const actions = {
 
   // -------  Video METADATA functions (.json file) ------------
 
-  // Create a new draft metadata for the given User and Dataset
+  // Create a new draft metadata
   createMetadata: (d: VideoSpec): Promise<void> => {
     const newVideo = new Video({
       dataset: d.dataset,
@@ -364,7 +340,9 @@ const actions = {
     actions.addMetadata(newVideo)
     actions.selectVideo(newVideo)
     appActions.addDraftIdToUser(newVideo.details.id)
-    return appActions.updateUserAtServer(user).then(() => saveMetadata())
+    return appActions
+      .updateUserAtServer(d.user)
+      .then(() => actions.saveMetadata())
   },
   addMetadata: (video: Video): void => {
     if (video.status.main === VIDEO_STATUS_TYPES.draft) {
@@ -378,7 +356,7 @@ const actions = {
   updateMetadata: (video: Video): Promise<void> => {
     video.status.hasUnsavedChanges = false
     video.status.hasNewDataAvailable = false
-    let videoToUpdate: Video
+    let videoToUpdate: Video | undefined = undefined
     if (state.value.draftVideos.has(video.details.id))
       videoToUpdate = state.value.draftVideos.get(video.details.id)
     else if (state.value.videos.has(video.details.id))
@@ -418,8 +396,8 @@ const actions = {
       asJSON: true,
       path: state.value.cordovaPath,
     })
-    deviceActions.loadFromStorage<Video[]>(cd).then((videoList) => {
-      if (videoList.length) {
+    return deviceActions.loadFromStorage<Video[]>(cd).then((videoList) => {
+      if (videoList && videoList.length) {
         videoList = videoList as Video[]
         videoList.forEach((video) => {
           const v = new Video(video)
@@ -440,14 +418,14 @@ const actions = {
       route: '/api/videos',
       credentials: true,
     }
-    return apiRequest(payload)
+    return apiRequest<Video[]>(payload)
       .then((videos: Video[]) => {
         state.value.videos.clear()
         state.value.draftVideos.clear()
         videos.forEach((v) => actions.addMetadata(new Video(v)))
       })
       .catch((error) => {
-        dispatch('errorMessage', 'Fetch server videos')
+        appActions.errorMessage('Fetch server videos')
         return Promise.reject(error)
       })
   },
@@ -456,19 +434,17 @@ const actions = {
 
   // Remove a video (data and metadata)
   removeVideo: (video: Video): Promise<void> => {
-    return appActions.removeVideoFile(video.details.id).then(() => {
+    return actions.removeVideoFile(video.details.id).then(() => {
       actions.clearVideoDataFile(video.details.id)
       return actions
         .removeMetadata(video)
         .then(() => {
-          appActions.removeDraftId(d.video.details.video.fileId)
+          appActions.removeDraftId(video.details.id)
           return appActions.updateUserAtServer().then(() => {
-            console.log(
-              `Removed a draft video: ${d.video.details.video.fileId}`
-            )
+            console.log(`Removed a draft video: ${video.details.id}`)
           })
         })
-        .catch(() => dispatch('errorMessage', 'Remove video'))
+        .catch(() => appActions.errorMessage('Remove video'))
     })
   },
 
@@ -476,8 +452,8 @@ const actions = {
   replaceDraftVideo: (videoId: string): Promise<void> => {
     actions.clearVideoDataFile(videoId)
     actions.removeTUSUpload(videoId)
-    actions.removeVideoFile(videoId).then(() => {
-      const video = state.value.draftVideos.get(videoid)
+    return actions.removeVideoFile(videoId).then(() => {
+      const video = state.value.draftVideos.get(videoId)
       if (video) {
         video.details.duration = 0
         video.details.edl = { trim: [], blur: [] }
@@ -505,16 +481,15 @@ const actions = {
   loadCordovaMedia: (fileEntry: FileEntry): Promise<void | FileEntry> => {
     // iOS WKWebkit can only load video from the <app_id>/tmp folder!
     // 'device' comes from cordova-plugin-device
-    const device: Device = device.platform
+    const device: Device = window.device
     if (device.platform === 'iOS') {
       return cordovaService
         .clearTempFolder()
         .then(() => {
-          return cordovaService.copyFileToTemp({
-            cordovaData: {
-              fileEntry,
-            },
+          const cd: CordovaData = new CordovaData({
+            file: fileEntry,
           })
+          return cordovaService.copyFileToTemp(cd)
         })
         .catch((error) => appActions.errorMessage(error))
     } else {
@@ -528,7 +503,7 @@ const actions = {
     return new Promise((resolve) => {
       // Get a video DATA item from store based on fileId, then begin decryption
       const cd: CordovaData = new CordovaData({
-        fileName: video.fileId,
+        fileName: video.details.id,
         readFile: false,
         path: state.value.cordovaPath,
       })

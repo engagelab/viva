@@ -13,6 +13,7 @@ import {
   DatasetLock,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
+  DatasetSelection,
 } from '../types/main'
 import { apiRequest } from '../api/apiRequest'
 import { useAppStore } from './useAppStore'
@@ -25,15 +26,10 @@ interface DatasetState {
   selectedDatasetConsents: Consent[]
 }
 
-interface DatasetSelection {
-  _id: string
-  name: string
-  path: string[]
-}
 interface SelectionOptions {
   path: string[]
   newSelectionName: string
-  datasett: Dataset
+  dataset: Dataset
 }
 
 const state: Ref<DatasetState> = ref({
@@ -46,7 +42,7 @@ const state: Ref<DatasetState> = ref({
 //Getters
 interface Getters {
   datasets: ComputedRef<Dataset[]>
-  selectedDataset: ComputedRef<Dataset>
+  selectedDataset: ComputedRef<Dataset | undefined>
   presetDatasetConfig: ComputedRef<UserDatasetConfig | undefined>
   consents: ComputedRef<Consent[]>
 }
@@ -61,41 +57,40 @@ const getters = {
     return computed(() => state.value.presetDatasetConfig)
   },
   get consents(): ComputedRef<Consent[]> {
-    return computed(() => state.value.selectedDatasettConsents)
+    return computed(() => state.value.selectedDatasetConsents)
   },
 }
 //Actions
 interface Actions {
-  datasetById: (id: string) => ComputedRef<Dataset>
+  datasetById: (id: string) => ComputedRef<Dataset | undefined>
   errorMessage: (error: Error) => void
-  selectDataset: (dataset: Dataset) => void
+  selectDataset: (dataset: Dataset | undefined) => void
   selectDatasetById: (datasetId: string) => void
-  lockSelection: (d: { datasettId: string; lock: DatasetLock }) => void
-  unlockSelection: (datasettId) => void
+  lockSelection: (d: { datasetId: string; lock: DatasetLock }) => void
+  unlockSelection: (datasetId: string) => void
   fetchDatasets: () => Promise<void>
-  setDatasetConfig: (config: UserDatasetConfig) => void
+  setPresetDatasetConfig: (config: UserDatasetConfig) => void
   addSelectionToDataset: (data: SelectionOptions) => void
   fetchConsents: (video: Video) => void
 }
 
 const actions = {
-  datasetById(id: string): ComputedRef<Dataset> {
+  datasetById(id: string): ComputedRef<Dataset | undefined> {
     return computed(() =>
       state.value.datasets.find((d: Dataset) => id === d._id)
     )
   },
   errorMessage(error: Error): void {
-    let errorMessage = error.message || error
-    errorMessage += error.code ? ` Code: ${error.code}` : ''
+    const errorMessage = error.message || error
     console.log(`Error: ${errorMessage}`)
     appActions.setSnackbar({
       visibility: true,
-      text: errorMessage,
+      text: errorMessage.toString(),
       type: 'error',
       callback: undefined,
     })
   },
-  selectDataset(dataset: Dataset): void {
+  selectDataset(dataset: Dataset | undefined): void {
     state.value.selectedDataset = dataset
   },
   selectDatasetById(datasetId: string): void {
@@ -103,11 +98,13 @@ const actions = {
     if (dataset) state.value.selectedDataset = dataset
     else state.value.selectedDataset = undefined
   },
-  lockSelection(d: { datasettId: string; lock: DatasetLock }): void {
-    state.value.presetDatasetConfig.locks[d.datasettId] = d.lock
+  lockSelection(d: { datasetId: string; lock: DatasetLock }): void {
+    const pc = state.value.presetDatasetConfig
+    if (pc && pc.locks[d.datasetId]) pc.locks[d.datasetId] = d.lock
   },
-  unlockSelection(datasettId): void {
-    delete state.value.presetDatasetConfig.locks[datasettId]
+  unlockSelection(datasetId: string): void {
+    const pc = state.value.presetDatasetConfig
+    if (pc && pc.locks[datasetId]) delete pc.locks[datasetId]
   },
   fetchDatasets(): Promise<void> {
     const payload: APIRequestPayload = {
@@ -115,83 +112,96 @@ const actions = {
       route: '/api/datasets',
       credentials: true,
     }
-    return apiRequest(payload)
+    return apiRequest<Dataset[]>(payload)
       .then((datasets) => {
         state.value.datasets = []
         datasets.forEach((s) => {
-          const newDataset = new Datasett(s)
+          const newDataset = new Dataset(s)
           state.value.datasets.push(newDataset)
           if (
             state.value.presetDatasetConfig &&
-            state.value.presetDatasetConfig.id == newDataset.id
+            state.value.presetDatasetConfig.id == newDataset._id
           ) {
             state.value.selectedDataset = newDataset
           }
         })
       })
-      .catch((error) => {
-        dispatch('errorMessage', error)
+      .catch((error: Error) => {
+        appActions.errorMessage(error)
       })
   },
-  setDatasetConfig(config: UserDatasetConfig): void {
+  setPresetDatasetConfig(config: UserDatasetConfig): void {
     state.value.presetDatasetConfig = config
     const d = state.value.datasets.find((ds) => ds._id === config.id)
     if (d) state.value.selectedDataset = d
   },
   addSelectionToDataset(data: SelectionOptions): void {
-    const newDataset = new Datasett(data.datasett)
+    const newDataset = new Dataset(data.dataset)
     let subSetToAddTo = newDataset.selection
-    let key
+    let key: string
     data.path.forEach((p, index) => {
       key = newDataset.selectionPriority[index]
-      subSetToAddTo = subSetToAddTo[key].find((item) => item.title == p)
+      const subset = subSetToAddTo[key].find((item) => item.title == p)
+      if (subset && subset.selection) subSetToAddTo = subset.selection
     })
     key = newDataset.selectionPriority[data.path.length]
     if (!subSetToAddTo[key]) {
       subSetToAddTo[key] = []
     }
-    const newItem = { title: data.newSelectionName }
+    const newItem: DatasetSelection = {
+      title: data.newSelectionName,
+      selection: {},
+    }
     if (data.path.length + 1 < newDataset.selectionPriority.length) {
-      const nextKeyDown = newDataset.selectionPriority[path.length + 1]
-      newItem[nextKeyDown] = []
+      const nextKeyDown = newDataset.selectionPriority[data.path.length + 1]
+      if (newItem.selection) newItem.selection[nextKeyDown] = []
     }
     subSetToAddTo[key].push(newItem)
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.PUT,
       credentials: true,
       route: '/api/dataset/selection',
-      body: { _id: datasett.id, path, name: data.newSelectionName },
+      body: {
+        _id: data.dataset._id,
+        path: data.path,
+        name: data.newSelectionName,
+      },
     }
-    apiRequest<DatasetSelection>(payload).then(() => {
-      state.value.selectedDataset.selection = newDataset.selection
+    apiRequest(payload).then(() => {
+      if (state.value.selectedDataset) {
+        state.value.selectedDataset.selection = newDataset.selection
+      }
     })
   },
   fetchConsents(video: Video): void {
     // Relies on a setting being already selected
-    const datasetForVideo: Dataset = state.value.datasets.find(
+    const datasetForVideo: Dataset | undefined = state.value.datasets.find(
       (d) => d._id == video.dataset.id
     )
-    const payload: APIRequestPayload = {
-      method: XHR_REQUEST_TYPE.GET,
-      route: '/api/consents',
-      params: {
-        datasetId: video.dataset.id,
-        utvalg: video.dataset.selection,
-        formId: datasetForVideo.formId,
-      },
-      credentials: true,
-      body: undefined,
+    const utvalg = video.dataset.selection.map((i) => `${i.keyName}:${i.title}`)
+    if (datasetForVideo) {
+      const payload: APIRequestPayload = {
+        method: XHR_REQUEST_TYPE.GET,
+        route: '/api/consents',
+        query: {
+          datasetId: video.dataset.id,
+          utvalg,
+          formId: datasetForVideo.formId,
+        },
+        credentials: true,
+        body: undefined,
+      }
+      apiRequest<Consent[]>(payload)
+        .then((consents: Consent[]) => {
+          state.value.selectedDatasetConsents = consents.map((c) => ({
+            ...c,
+            checked: false,
+          }))
+        })
+        .catch((error: Error) => {
+          this.errorMessage(error)
+        })
     }
-    apiRequest(payload)
-      .then((consents: Consent[]) => {
-        state.value.selectedDatasetConsents = consents.map((c) => ({
-          ...c,
-          checked: false,
-        }))
-      })
-      .catch((error: Error) => {
-        this.errorMessage(error)
-      })
   },
 }
 
