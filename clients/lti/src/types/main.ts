@@ -211,6 +211,7 @@ export class Video {
   storages: string[]
 
   constructor(data?: Video | VideoSpec) {
+    this.file.mimeType = 'video/mp4'
     this.details = {
       id: utilities.uuid(),
       name: id.substring(0, 7),
@@ -258,7 +259,6 @@ export class Video {
     }
     this.consents = []
     this.storages = []
-    this.file.mimeType = 'video/mp4'
 
     // Create a Video using the current App state
     if (data && data instanceof VideoSpec) {
@@ -564,17 +564,17 @@ export interface UserData {
 }
 export class User {
   _id: string
-  status: UserStatus
-  profile: UserProfile
-  datasett: UserDataset
-  videos: UserVideos
+  status?: UserStatus
+  profile?: UserProfile
+  datasett?: UserDataset
+  videos?: UserVideos
 
   constructor(data?: UserData | User) {
-    this._id = data?._id
-    this.status = data?.status
-    this.profile = data?.profile
-    this.datasett = data?.datasett
-    this.videos = data?.videos
+    this._id = data?._id ? data._id : ''
+    // this.status = data?.status
+    // this.profile = data?.profile ? data.profile :
+    // this.datasett = data?.datasett
+    // this.videos = data?.videos ? data.videos : ''
   }
 }
 

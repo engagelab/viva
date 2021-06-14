@@ -5,7 +5,7 @@ import {
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
 } from '../constants'
-import { ui8arr2str, str2ab } from '../utilities'
+import { ui8arr2str, str2ab, uuid } from '../utilities'
 
 // ---------------  Utility -----------------
 declare global {
@@ -200,7 +200,7 @@ export class Video {
 
   constructor(data?: Video | VideoSpec) {
     this.details = {
-      id: utilities.uuid(),
+      id: uuid(),
       name: id.substring(0, 7),
       category: '',
       created: new Date(),

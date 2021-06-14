@@ -78,11 +78,11 @@ const hasMinimumRole = (user: User, requestedRole: USER_ROLE): boolean => {
     case USER_ROLE.user:
       return true
     case USER_ROLE.monitor:
-      return user.role === USER_ROLE.monitor || user.role === USER_ROLE.admin
+      return user.status.role === USER_ROLE.monitor || user.status.role === USER_ROLE.admin
         ? true
         : false
     case USER_ROLE.admin:
-      return user.role === USER_ROLE.admin ? true : false
+      return user.status.role === USER_ROLE.admin ? true : false
     default:
       return false
   }

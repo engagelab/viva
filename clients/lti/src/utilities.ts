@@ -34,7 +34,7 @@ const shuffleItems = <T>(itemsArray: Array<T>): Array<T> => {
 }
 
 // https://stackoverflow.com/questions/3552461/how-to-format-a-javascript-date
-const dateToFormattedString = (date: Date): string => {
+const formatDate = (date: Date): string => {
   const monthNames = [
     'January',
     'February',
@@ -78,11 +78,12 @@ const hasMinimumRole = (user: User, requestedRole: USER_ROLE): boolean => {
     case USER_ROLE.user:
       return true
     case USER_ROLE.monitor:
-      return user.role === USER_ROLE.monitor || user.role === USER_ROLE.admin
+      return user.status.role === USER_ROLE.monitor ||
+        user.status.role === USER_ROLE.admin
         ? true
         : false
     case USER_ROLE.admin:
-      return user.role === USER_ROLE.admin ? true : false
+      return user.status.role === USER_ROLE.admin ? true : false
     default:
       return false
   }
@@ -104,51 +105,43 @@ const wait = (ms: number): Promise<void> => {
   })
 }
 
-enum WINDOW_SIZES {
-  OLD_HEIGHT = 768,
-  OLD_WIDTH = 1024,
-  /*  NEW_HEIGHT = window.innerHeight,
-  NEW_WIDTH = window.innerWidth, */
-  NEW_HEIGHT = 768,
-  NEW_WIDTH = 1024,
-  SCALE = Math.min(NEW_WIDTH / OLD_WIDTH, NEW_HEIGHT / OLD_HEIGHT),
-  SCALE_Y = NEW_HEIGHT / OLD_HEIGHT,
-  SCALE_X = NEW_WIDTH / OLD_WIDTH,
+/*
+  Taken from: https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
+*/
+function ab2str(buf: ArrayBuffer): string {
+  return String.fromCharCode.apply(null, new Uint16Array(buf))
 }
 
-const scaleContent = (): number => {
-  return Math.min(
-    WINDOW_SIZES.NEW_WIDTH / WINDOW_SIZES.OLD_WIDTH,
-    WINDOW_SIZES.NEW_HEIGHT / WINDOW_SIZES.OLD_HEIGHT
-  )
-}
-
-interface Coordinates {
-  h: number
-  w: number
-  x: number
-  y: number
-}
-const getCoordinates = (coordinates: Coordinates): Coordinates => {
-  const scaledCoordinates = {
-    h: coordinates.h * WINDOW_SIZES.SCALE_Y,
-    w: coordinates.w * WINDOW_SIZES.SCALE_X,
-    x: coordinates.x * WINDOW_SIZES.SCALE_X,
-    y: coordinates.y * WINDOW_SIZES.SCALE_Y,
+function str2ab(str: string): ArrayBuffer {
+  const buf = new ArrayBuffer(str.length * 2) // 2 bytes for each char
+  const bufView = new Uint16Array(buf)
+  for (let i = 0, strLen = str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i)
   }
-  return scaledCoordinates
+  return buf
+}
+
+function ui8arr2str(uint8array: Uint8Array): string {
+  return uint8array.toString()
+}
+
+function str2ui8arr(myString: string): Uint8Array {
+  const array = myString.split(',')
+  return Uint8Array.from(array)
 }
 
 export {
   uuid,
-  dateToFormattedString,
+  formatDate,
   wrap,
   convertFilePath,
   wait,
   hasMinimumRole,
   shuffleItems,
   emitError,
-  getCoordinates,
-  scaleContent,
-  WINDOW_SIZES,
+  //blob2ArrayBuffer,
+  ab2str,
+  str2ab,
+  ui8arr2str,
+  str2ui8arr,
 }
