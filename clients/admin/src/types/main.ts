@@ -618,6 +618,10 @@ export class User {
       this.videos = data.videos
     }
   }
+
+  public static columnDefs(): string[] {
+    return ['Datainnsamler', 'Antall opptakk']
+  }
 }
 
 // ---------------  API -----------------
