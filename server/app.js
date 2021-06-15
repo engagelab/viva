@@ -6,9 +6,7 @@ require('dotenv').config({ silent: process.env.NODE_ENV !== 'development' })
 
 const express = require('express')
 
-
 //const MemoryStore = require('memorystore')(session)
-
 
 const session = require('express-session')
 const MemoryStore = require('memorystore')(session)
@@ -27,7 +25,7 @@ setup.createVideoDirectories()
 
 const uploadRoutes = require('./routing/tusUpload')
 
-db.connect('VIVA Sever')
+db.connect('VIVA Server')
 const app = express()
 app.locals.pretty = true
 
@@ -40,6 +38,7 @@ app.locals.pretty = true
 // Send the whole build folder to the user or anyone connected to the server
 app.use(express.static(path.join(__dirname, '../clients/app/www')))
 app.use('/lti', express.static(path.join(__dirname, '../clients/lti/www')))
+app.use('/admin', express.static(path.join(__dirname, '../clients/admin/www')))
 app.use(express.static(path.join(__dirname, '../server/public')))
 app.use(express.json({ limit: '25mb', extended: true }))
 app.use(express.urlencoded({ limit: '25mb', extended: true }))
@@ -51,6 +50,8 @@ if (process.env.NODE_ENV === 'development') {
     // res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
     const allowedOrigins = [
       `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}`,
+      `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_HOTRELOAD_SERVER_PORT_ADMIN}`,
+      `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_HOTRELOAD_SERVER_PORT_LTI}`,
     ]
     const host = `${req.protocol}://${req.get('Host')}`
     const i = allowedOrigins.indexOf(host)
@@ -59,6 +60,7 @@ if (process.env.NODE_ENV === 'development') {
       origin = allowedOrigins[i]
     }
     // add details of what is allowed in HTTP request headers to the response headers
+    //res.header('Access-Control-Allow-Origin', origin)
     res.header('Access-Control-Allow-Origin', origin)
     res.header(
       'Access-Control-Allow-Methods',
