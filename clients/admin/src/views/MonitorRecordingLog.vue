@@ -12,8 +12,8 @@
           @input="onWardTableSearchTextChanged"
         />
         <div>{{ 'MonitorRecordingLog' }}</div>
-        {{ videos }}
       </div>
+
       <AgGridVue
         style="width: 100%; height: 50vh"
         class="ag-theme-alpine"
@@ -50,18 +50,22 @@ export default defineComponent({
       /*  suppressScrollOnNewData: true, */
     }
 
-    const videos = computed(() => videoGetters.allVideos.value)
     onMounted(() => {
       videoActions.selectVideo(undefined)
-      videoActions.loadMetadata().then(() => videoActions.fetchMetadata())
+      videoActions.loadMetadata().then(() =>
+        videoActions.fetchMetadata().then(() => {
+          /* console.log(rowData) */
+        })
+      )
     })
+
     const searchField = ref('')
     const selectedRow = ref()
 
-    // Translate the headerNames
-    const columnDefs = Video.columnDefs()
+    // Convert video when fetched
 
-    const rowData = ['1', '2', '3']
+    const columnDefs = Video.columnDefs()
+    const rowData = computed(() => videoGetters.allVideos.value)
 
     // Filter all columns based on the text
     // If one of the columns contain the text, the table will show them
@@ -76,12 +80,11 @@ export default defineComponent({
 
     return {
       columnDefs,
-      rowData,
       gridOptions,
       searchField,
 
       // computed
-      videos,
+      rowData,
 
       // Table events
       cellClicked,
