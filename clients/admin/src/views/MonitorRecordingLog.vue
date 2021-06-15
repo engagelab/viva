@@ -11,7 +11,7 @@
           v-model="searchField"
           @input="onWardTableSearchTextChanged"
         />
-        <div>{{ 'MonitorRecordingLog' }}</div>
+        <div>{{ t('MonitorRecordingLog') }}</div>
       </div>
 
       <AgGridVue
@@ -40,12 +40,32 @@ import { Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
+// i18n
+import { useI18n } from 'vue-i18n'
+const messages = {
+  nb_NO: {
+    MonitorRecordingLog: 'Logger',
+    Opptak: 'Opptak',
+    Dato: 'Dato',
+    Datainnsamler: 'Datainnsamler',
+    Datasett: 'Datasett',
+  },
+  en: {
+    MonitorRecordingLog: 'Recording Log',
+    Opptak: 'Recording',
+    Dato: 'Date',
+    Datainnsamler: 'Person',
+    Datasett: 'Dataset',
+  },
+}
+
 export default defineComponent({
   name: 'MonitorRecordingsInProcess',
   components: {
     AgGridVue,
   },
   setup() {
+    const { t } = useI18n({ messages })
     const gridOptions: GridOptions = {
       /*  suppressScrollOnNewData: true, */
     }
@@ -82,7 +102,7 @@ export default defineComponent({
       columnDefs,
       gridOptions,
       searchField,
-
+      t,
       // computed
       rowData,
 

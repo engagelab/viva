@@ -1,85 +1,93 @@
 <template>
-  <div class="flex flex-row">
-    <!-- Table Content -->
-    <div class="w-full">
-      <div class="w-1/2 flex justify-center relative">
-        <input
-          type="text"
-          id="wardtable-filter-text-box"
-          placeholder="Filter..."
-          class="border-2 absolute left-0"
-          v-model="searchField"
-          @input="onWardTableSearchTextChanged"
-        />
-        <div>{{ 'MonitorYourDatasets' }}</div>
-      </div>
-
-      <AgGridVue
-        style="width: 100%; height: 50vh"
-        class="ag-theme-alpine"
-        :gridOptions="gridOptions"
-        :columnDefs="columnDefs"
-        :rowData="rowData"
-        :defaultColDef="{ editable: true, sortable: true }"
-        @cellClicked="cellClicked"
-      >
-      </AgGridVue>
-    </div>
+  <div class="flex flex-row flex-wrap">
+    <div class="w-full flex justify-center">{{ t('Your datasets') }}</div>
+    <!-- Sidebar -->
+    <div class="border-2 h-full w-1/6"></div>
+    <!-- Table -->
+    <div></div>
+    <table class="w-5/6">
+      <!-- Headers -->
+      <tr>
+        <th v-for="(header, headerIndex) in headers" :key="headerIndex">
+          {{ header.headerName }}
+        </th>
+      </tr>
+      <tr v-for="(dataset, datasetIndex) in datasets" :key="datasetIndex">
+        <td>{{ dataset.name }}</td>
+        <td>{{ dataset.created }}</td>
+        <td>{{ dataset }}</td>
+        <td>{{ dataset.users.dataManager }}</td>
+      </tr>
+    </table>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
-import { AgGridVue } from 'ag-grid-vue3'
-import { GridOptions, CellEvent } from '@ag-grid-community/all-modules'
+import { computed, ComputedRef, defineComponent, onMounted, ref } from 'vue'
+import { Dataset } from '@/types/main'
+import { useDatasetStore } from '../store/useDatasetStore'
+const { actions: datasetActions, getters: datasetGetters } = useDatasetStore()
+
+// i18n
+import { useI18n } from 'vue-i18n'
+const messages = {
+  nb_NO: {
+    'Your datasets': 'Din datasetter',
+    Datasett: 'Opptak',
+    Opprettet: 'Dato',
+    'Antall opptak': 'Datainnsamler',
+    Behandlingsansvarlig: 'Datasett',
+  },
+  en: {
+    'Your datasets': 'Din datasetter',
+    Datasett: 'Dataset',
+    Opprettet: 'Created',
+    'Antall opptak': 'Total recordings',
+    Behandlingsansvarlig: 'Responsible',
+  },
+}
 
 export default defineComponent({
   name: 'MonitorYourDatasets',
-  components: {
-    AgGridVue,
-  },
+  components: {},
   setup() {
-    const gridOptions: GridOptions = {
-      suppressScrollOnNewData: true,
-    }
+    const { t } = useI18n({ messages })
+    const showDatasets = ref(false)
 
-    const searchField = ref('')
-    const selectedRow = ref()
+    const datasets: ComputedRef<Dataset[]> = computed(
+      () => datasetGetters.datasets.value
+    )
 
-    // Translate the headerNames
-    const columnDefs = [
-      { headerName: 'Hello' },
-      { headerName: 'Hello' },
-      { headerName: 'Hello' },
-    ]
+    const headers = Dataset.columnDefs()
 
-    const rowData = ['1', '2', '3']
-
-    // Filter all columns based on the text
-    // If one of the columns contain the text, the table will show them
-    const onWardTableSearchTextChanged = () => {
-      gridOptions.api?.setQuickFilter(searchField.value)
-    }
-
-    // Handle Table Events
-    const cellClicked = (event: CellEvent) => {
-      selectedRow.value = event
-    }
-
-    return {
-      columnDefs,
-      rowData,
-      gridOptions,
-      searchField,
-
-      // Table events
-      cellClicked,
-
-      // View
-      onWardTableSearchTextChanged,
-    }
+    // Fetch datasets
+    onMounted(() => {
+      datasetActions
+        .fetchDatasets()
+        .then(() => {
+          showDatasets.value = true
+        })
+        .catch((error) => console.log(error))
+    })
+    return { t, datasets, headers }
   },
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+}
+
+td,
+th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+</style>

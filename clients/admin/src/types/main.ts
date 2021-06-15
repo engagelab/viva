@@ -525,6 +525,14 @@ export class Dataset {
     }
   }
 
+  public static columnDefs(): ColumnDef[] {
+    return [
+      { headerName: 'Datasett', field: 'dataset' },
+      { headerName: 'Opprettet', field: 'created' },
+      { headerName: 'Antall opptak', field: 'total recordings' },
+      { headerName: 'Behandlingsansvarlig', field: 'responsible' },
+    ]
+  }
   // get selection(): string[] {
   //   return this.selection.map((s) => `${s.keyName}:${s.title}`)
   // }
