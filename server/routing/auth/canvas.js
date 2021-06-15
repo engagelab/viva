@@ -182,7 +182,7 @@ router.post('/canvas/callback', function (request, response) {
 // OPTIONAL
 // Authenticate a specific user by "authentication_flow" and retrieve a JWT API access_token
 // Use this procedure in addition to /login/initiate for specific user access to the Canvas API
-router.post('/canvas/login/user', function (request, response) {
+router.get('/canvas/login/user', function (request, response) {
   const { device, remember, client } = request.query
   request.session.device = device
   request.session.client = client

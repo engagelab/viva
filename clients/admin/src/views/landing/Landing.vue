@@ -24,16 +24,22 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { useAppStore } from '../../store/useAppStore'
+import { baseUrl } from '@/constants'
+// import { useAppStore } from '../../store/useAppStore'
 export default defineComponent({
   name: 'Landing',
   setup() {
-    const { actions: appActions } = useAppStore()
+    // const { actions: appActions } = useAppStore()
     const login = (mode: string) => {
       if (mode == 'canvas') {
-        appActions.canvasLogin()
+        let canvasLoginUrl = `${baseUrl}/auth/canvas/login/user`
+        canvasLoginUrl += '?device=webApp&intent=client'
+        window.location.href = canvasLoginUrl
+        // appActions.canvasLogin()
       } else if (mode == 'feide') {
-        console.log('Feide Login')
+        let feideLoginUrl = `${baseUrl}/auth/dataporten/login`
+        feideLoginUrl += '?device=webApp&intent=client'
+        window.location.href = feideLoginUrl
       }
     }
 
