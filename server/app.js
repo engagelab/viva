@@ -26,9 +26,9 @@ const app = express()
 app.locals.pretty = true
 
 // Send the whole build folder to the user or anyone connected to the server
-app.use('/', express.static(path.join(__dirname, '../clients/app/www')))
+app.use('/', express.static(path.join(__dirname, '../clients/admin/www')))
 app.use('/lti', express.static(path.join(__dirname, '../clients/lti/www')))
-app.use('/admin', express.static(path.join(__dirname, '../clients/admin/www')))
+app.use('/app', express.static(path.join(__dirname, '../clients/app/www')))
 app.use(express.static(path.join(__dirname, '../server/public')))
 app.use(express.json({ limit: '25mb', extended: true }))
 app.use(express.urlencoded({ limit: '25mb', extended: true }))
@@ -36,16 +36,20 @@ app.use(express.urlencoded({ limit: '25mb', extended: true }))
 // We encounter CORS issues if the server is serving the webpage locally
 // CORS (Cross-Origin Resource Sharing) headers to support Cross-site HTTP requests
 if (process.env.NODE_ENV === 'development') {
+  let origin = ''
   app.use((req, res, next) => {
     const allowedOrigins = [
       `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}`,
       `${process.env.VUE_APP_SERVER_HOST}:8080`,
       `${process.env.VUE_APP_SERVER_HOST}:8081`,
       `${process.env.VUE_APP_SERVER_HOST}:8082`,
+      'https://auth.dataporten.no'
     ]
-    let origin = req.headers.Origin || req.headers.origin
-    const i = allowedOrigins.indexOf(origin)
+    let referer = req.headers.referer || req.headers.Referer
+    if (referer.charAt(referer.length - 1) === '/') referer = referer.slice(0, -1)
+    const i = allowedOrigins.indexOf(referer)
     if (i > -1) {
+      origin = referer
       res.header('Access-Control-Allow-Origin', origin)
     }
     // add details of what is allowed in HTTP request headers to the response headers
@@ -65,8 +69,9 @@ if (process.env.NODE_ENV === 'development') {
     res.header('Access-Control-Allow-Credentials', true)
     return next()
   })
+  app.use(cors({ credentials: true, origin }))
 }
-app.use(cors({ credentials: true, origin: process.env.VUE_APP_SERVER_HOST }))
+else app.use(cors({ credentials: true, origin: process.env.VUE_APP_SERVER_HOST }))
 
 const sessionOptions = {
   secret: process.env.SESSION_SECRET,

@@ -29,6 +29,7 @@
     "src/**/*.json",
   ],
   "exclude": [
+    "vue.config.js",
     "tailwind.config.js",
     "src-cordova/**/*",
     "www/**/*",

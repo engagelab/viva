@@ -92,16 +92,12 @@ function completeCallback(request, response, user) {
   let redirectUrl
   let s = ''
   const { client, remember, device } = request.session
-  const hostPortSplit = request.get('Host').split(':')
-  const host = hostPortSplit[0]
-  let port = hostPortSplit[1] ? hostPortSplit[1] : ''
+  const host = process.env.VUE_APP_SERVER_HOST
 
   if (client === 'lti') {
-    port = process.env.NODE_ENV === 'development' ? ':8080' : port
-    redirectUrl = `${request.protocol}://${host}${port}`
+    redirectUrl = process.env.NODE_ENV === 'development' ? `${host}:8080` : `${host}/lti`
   } else if (client === 'admin') {
-    port = process.env.NODE_ENV === 'development' ? ':8081' : port
-    redirectUrl = `${request.protocol}://${host}${port}`
+    redirectUrl = process.env.NODE_ENV === 'development' ? `${host}:8081` : `${host}`
   }
   // Mobile app will be passed a token via Apple's ASWebAuthenticationSession / Google Custom Tabs
   // which must then be passed back to the /token route obtain a Session
@@ -110,8 +106,7 @@ function completeCallback(request, response, user) {
       redirectUrl = `${process.env.APP_BUNDLE_ID}://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
       s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
     } else {
-      port = process.env.NODE_ENV === 'development' ? ':8082' : port
-      redirectUrl = `${request.protocol}://${host}${port}`
+      redirectUrl = process.env.NODE_ENV === 'development' ? `${host}:8082` : `${host}/app`
     }
   }
 

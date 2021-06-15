@@ -121,7 +121,6 @@ export interface Consent {
     user_fullname?: string
     child_fullname?: string
     dataset?: string // '5e5512f17ec2ce3bd9025d22'
-    username?: string
     user_mail?: string // 'abc@uio.no',
     username?: string // 'abc@uio.no'
   }
