@@ -10,12 +10,6 @@ const User = require('./models/User')
 const { userRoles } = require('./constants')
 
 let TEST_MODE = false
-const host = process.env.VUE_APP_SERVER_HOST
-const port = process.env.VUE_APP_SERVER_PORT
-const hotHost = process.env.VUE_APP_HOTRELOAD_SERVER_HOST
-const hotPortAPP = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_APP
-const hotPortLTI = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_LTI
-const hotPortADMIN = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_ADMIN
 
 const addZero = i => {
   return i < 10 ? '0' + i : i
@@ -47,24 +41,6 @@ const hash = (password) => bcrypt.hash(password, 10)
 const hashCompare = (password, hashedPassword) => bcrypt.compare(password, hashedPassword)
 
 const tempUserStore = {}
-//TODO: Base url needs to be updated based on affliatiaon
-let baseUrl = `${host}`
-if (process.env.NODE_ENV === 'development') {
-  switch (process.env.VUE_APP_DEV_SERVER) {
-    case 'lti':
-      baseUrl = `https://${hotHost}:${hotPortLTI}`
-      break
-    case 'app':
-      baseUrl = `https://${hotHost}:${hotPortAPP}`
-      break
-    case 'admin':
-      baseUrl = `https://${hotHost}:${hotPortADMIN}`
-      break
-    default:
-      baseUrl = `${host}:${port}`
-      break
-  }
-}
 
 const shuffleArray = (array) => {
   const a = array.slice()
@@ -224,7 +200,6 @@ module.exports = {
   hasMinimumUserRole,
   setTestMode,
   getTestMode,
-  baseUrl,
   httpRequest,
   isValidObjectId,
 }

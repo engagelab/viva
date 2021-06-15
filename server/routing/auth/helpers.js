@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const { userRoles } = require('../../constants')
-const { createReference, baseUrl } = require('../../utilities')
+const { createReference } = require('../../utilities')
 const User = require('../../models/User')
 const dataporten = require('../../services/dataporten')
 const canvas = require('../../services/canvas')
@@ -88,27 +88,43 @@ function createOrUpdateUser(tokenSet, userIdentifier, profile) {
 }
 
 // Return to the client with the correct data to continue login
-function completeCallback(request, response, user, device, remember) {
+function completeCallback(request, response, user) {
   let redirectUrl
   let s = ''
-  const mobileApp = typeof device === 'string' && device == 'mobileApp'
+  const { client, remember, device } = request.session
+  const hostPortSplit = request.get('Host').split(':')
+  const host = hostPortSplit[0]
+  let port = hostPortSplit[1] ? hostPortSplit[1] : ''
 
+  if (client === 'lti') {
+    port = process.env.NODE_ENV === 'development' ? ':8080' : port
+    redirectUrl = `${request.protocol}://${host}${port}`
+  } else if (client === 'admin') {
+    port = process.env.NODE_ENV === 'development' ? ':8081' : port
+    redirectUrl = `${request.protocol}://${host}${port}`
+  }
   // Mobile app will be passed a token via Apple's ASWebAuthenticationSession / Google Custom Tabs
   // which must then be passed back to the /token route obtain a Session
-  if (mobileApp) {
-    redirectUrl = `${process.env.APP_BUNDLE_ID}://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
-    s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
-  } else {
-    // Set the session here at last!
-    // Web app receives a Session immediately, does not need to pass a token
-    request.session.ref = user.id
-    s = `${new Date().toLocaleString()}: Web App Login: ${user.fullName}`
-    // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
-    redirectUrl =
-      process.env.NODE_ENV === 'testing'
-        ? `${baseUrl}/#/postlogin`
-        : `${baseUrl}/postlogin`
+  else if (client === 'mobileApp') {
+    if (device == 'mobileApp') {
+      redirectUrl = `${process.env.APP_BUNDLE_ID}://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
+      s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
+    } else {
+      port = process.env.NODE_ENV === 'development' ? ':8082' : port
+      redirectUrl = `${request.protocol}://${host}${port}`
+    }
   }
+
+  // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
+  if (process.env.NODE_ENV === 'testing') {
+    redirectUrl = redirectUrl + '/#/postlogin'
+  }
+  else redirectUrl = redirectUrl + '/postlogin'
+
+  // Set the session here at last!
+  // Web app receives a Session immediately, does not need to pass a token
+  request.session.ref = user.id
+  s = `${new Date().toLocaleString()}: Web App Login: ${user.fullName}`
   console.log(s)
   console.log(`Session: ${request.session.ref}`)
   return response.redirect(redirectUrl)

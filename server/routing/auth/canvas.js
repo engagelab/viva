@@ -20,7 +20,7 @@ openidClient
 // --------------- For Canvas Login  -----------------
 
 // STEP 1
-// Authentication called from Canvas
+// Authentication called from Canvas for LTI
 // Uses OpenID to retrieve an id_token, and an "LTI Advantage Services" access_token
 // NOTE: This does *NOT* give Canvas API access
 // Use this procedure to initiate the LTI
@@ -30,6 +30,7 @@ router.post('/canvas/login', function (request, response) {
   request.session.nonce = generators.nonce()
   request.session.state = generators.state()
   request.session.device = device
+  request.session.client = 'lti'
   request.session.remember = remember
 
   let redirectUrl = CanvasLTIClient.authorizationUrl({
@@ -47,7 +48,6 @@ router.post('/canvas/login', function (request, response) {
 // STEP 2
 // POST Callback from Canvas contains the id_token for an OpenID LTI authentication
 router.post('/canvas/callback', function (request, response) {
-  const { device, remember } = request.session
   const idToken = request.body.id_token
   const decodedToken = jwt.decode(idToken, { complete: true })
 
@@ -82,7 +82,7 @@ router.post('/canvas/callback', function (request, response) {
             { sub: verified_decoded_id_token.sub },
             myUser || {}
           ).then((user) => {
-            return completeCallback(request, response, user, device, remember)
+            return completeCallback(request, response, user)
           })
         }
       })
@@ -170,9 +170,10 @@ router.post('/canvas/callback', function (request, response) {
 // Authenticate a specific user by "authentication_flow" and retrieve a JWT API access_token
 // Use this procedure in addition to /login/initiate for specific user access to the Canvas API
 router.post('/canvas/login/user', function (request, response) {
-  const { device, remember } = request.query
+  const { device, remember, client } = request.query
   const body = response.req.body
   request.session.device = device
+  request.session.client = client
   request.session.remember = remember
   request.session.state = generators.state()
 
@@ -199,7 +200,7 @@ router.post('/canvas/login/user', function (request, response) {
 // Callback for "authentication_flow" specific-user authorisation
 // GET Callback contains 'code' to exchange for a specific user's access_token
 router.get('/canvas/callback', function (request, response) {
-  const { device, remember, userProfile } = request.session
+  const { userProfile } = request.session
   const { code } = request.query
   const params = CanvasAPIClient.callbackParams(request)
 
@@ -239,7 +240,7 @@ router.get('/canvas/callback', function (request, response) {
         profile
       ).then((user) => {
         console.log(user)
-        completeCallback(request, response, user, device, remember)
+        completeCallback(request, response, user)
         /* request.session.ref = user.id
         let s = `${new Date().toLocaleString()}: Web App Login: ${
           user.username

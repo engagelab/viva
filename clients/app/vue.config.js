@@ -1,7 +1,5 @@
 // vue.config.js
 const fs = require('fs')
-const hotHost = process.env.VUE_APP_HOTRELOAD_SERVER_HOST
-const hotPort = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_APP
 const host = process.env.VUE_APP_SERVER_HOST
 const port = process.env.VUE_APP_SERVER_PORT
 const https_key = fs.readFileSync(process.env.SSL_KEY_FILE)
@@ -63,8 +61,8 @@ module.exports = {
       cert: https_cert,
     },
     index: 'index.html',
-    host: hotHost,
-    port: hotPort,
+    host: 'localhost',
+    port: '8082',
     overlay: {
       warnings: true,
       errors: true,
