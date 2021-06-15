@@ -30,15 +30,12 @@ router.put('/user', authoriseUser, (request, response, next) => {
       let dbDrafts = u.videos.draftIDs.filter((r) => !removedDrafts.includes(r))
 
       // Record statistics
-      if (!u.stats.totalDrafts) u.stats.totalDrafts = 0
+      if (!u.status.totalDrafts) u.status.totalDrafts = 0
       u.status.totalDrafts += newDrafts.length
       u.status.totalDrafts -= u.videos.draftIDs.length - dbDrafts.length
 
       // Add new drafts
       u.videos.draftIDs = [...dbDrafts, ...newDrafts]
-    }
-    if (!u.tokens.encryptionKey && update.tokens.encryptionKey) {
-      u.tokens.encryptionKey = update.tokens.encryptionKey
     }
     if (update.datasetConfig) u.datasetConfig = update.datasetConfig
     u.save((error2, savedUser) => {

@@ -16,8 +16,8 @@ import {
   DatasetSelection,
 } from '../types/main'
 import { apiRequest } from '../api/apiRequest'
-import { useAppStore } from './useAppStore'
-const { actions: appActions } = useAppStore()
+import { useNotifyStore } from './useNotifyStore'
+const { actions: notifyActions } = useNotifyStore()
 //State
 interface DatasetState {
   datasets: Dataset[]
@@ -63,7 +63,6 @@ const getters = {
 //Actions
 interface Actions {
   datasetById: (id: string) => ComputedRef<Dataset | undefined>
-  errorMessage: (error: Error) => void
   selectDataset: (dataset: Dataset | undefined) => void
   selectDatasetById: (datasetId: string) => void
   lockSelection: (d: { datasetId: string; lock: DatasetLock }) => void
@@ -79,16 +78,6 @@ const actions = {
     return computed(() =>
       state.value.datasets.find((d: Dataset) => id === d._id)
     )
-  },
-  errorMessage(error: Error): void {
-    const errorMessage = error.message || error
-    console.log(`Error: ${errorMessage}`)
-    appActions.setSnackbar({
-      visibility: true,
-      text: errorMessage.toString(),
-      type: 'error',
-      callback: undefined,
-    })
   },
   selectDataset(dataset: Dataset | undefined): void {
     state.value.selectedDataset = dataset
@@ -127,7 +116,7 @@ const actions = {
         })
       })
       .catch((error: Error) => {
-        appActions.errorMessage(error)
+        notifyActions.errorMessage(error)
       })
   },
   setPresetDatasetConfig(config: UserDatasetConfig): void {
@@ -199,7 +188,7 @@ const actions = {
           }))
         })
         .catch((error: Error) => {
-          this.errorMessage(error)
+          notifyActions.errorMessage(error)
         })
     }
   },

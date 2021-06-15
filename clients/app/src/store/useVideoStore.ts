@@ -11,8 +11,8 @@ import { useDeviceService, CordovaData } from './useDevice'
 import { Upload, HttpRequest } from 'tus-js-client'
 import { apiRequest } from '../api/apiRequest'
 import cordovaService from '../api/cordovaService'
-import { useAppStore } from './useAppStore'
-const { actions: appActions } = useAppStore()
+import { useNotifyStore } from './useNotifyStore'
+const { actions: notifyActions } = useNotifyStore()
 const { actions: deviceActions } = useDeviceService()
 interface State {
   selectedVideo: Video | undefined
@@ -132,6 +132,7 @@ interface Actions {
 
   createMetadata: (d: VideoSpec) => Promise<void>
   loadMetadata: () => Promise<void>
+  saveMetadata: () => Promise<void>
   fetchMetadata: () => Promise<void>
   updateMetadata: (video: Video) => Promise<void>
   loadCordovaMedia: (fileEntry: FileEntry) => Promise<void | FileEntry>
@@ -179,7 +180,11 @@ const actions = {
   // -------- ACTIONS --------
 
   selectVideo: (video: Video | undefined): void => {
-    state.value.selectedVideo = video
+    if (!video) state.value.selectedVideo = undefined
+    else if (state.value.draftVideos.has(video.details.id))
+      state.value.selectedVideo = state.value.draftVideos.get(video.details.id)
+    else if (state.value.videos.has(video.details.id))
+      state.value.selectedVideo = state.value.videos.get(video.details.id)
   },
   // This is a tracker to notify the rest of the app that something chas changed in the Editor
   // which needs to be saved after 'samtykker'
@@ -297,7 +302,7 @@ const actions = {
         // onChunkComplete,
         onProgress,
         onSuccess,
-        onError: (error: Error) => appActions.errorMessage(error.toString()),
+        onError: (error: Error) => notifyActions.errorMessage(error.toString()),
       }
 
       const createTusUpload = (fileObject: File) => {
@@ -320,7 +325,7 @@ const actions = {
               createTusUpload(fileObject)
             })
           } else {
-            appActions.errorMessage('Create upload: No video data file')
+            notifyActions.errorMessage('Create upload: No video data file')
             resolve()
           }
         })
@@ -339,10 +344,7 @@ const actions = {
     })
     actions.addMetadata(newVideo)
     actions.selectVideo(newVideo)
-    appActions.addDraftIdToUser(newVideo.details.id)
-    return appActions
-      .updateUserAtServer(d.user)
-      .then(() => actions.saveMetadata())
+    return Promise.resolve()
   },
   addMetadata: (video: Video): void => {
     if (video.status.main === VIDEO_STATUS_TYPES.draft) {
@@ -425,7 +427,7 @@ const actions = {
         videos.forEach((v) => actions.addMetadata(new Video(v)))
       })
       .catch((error) => {
-        appActions.errorMessage('Fetch server videos')
+        notifyActions.errorMessage('Fetch server videos')
         return Promise.reject(error)
       })
   },
@@ -438,13 +440,7 @@ const actions = {
       actions.clearVideoDataFile(video.details.id)
       return actions
         .removeMetadata(video)
-        .then(() => {
-          appActions.removeDraftId(video.details.id)
-          return appActions.updateUserAtServer().then(() => {
-            console.log(`Removed a draft video: ${video.details.id}`)
-          })
-        })
-        .catch(() => appActions.errorMessage('Remove video'))
+        .catch(() => notifyActions.errorMessage('Remove video'))
     })
   },
 
@@ -461,7 +457,7 @@ const actions = {
       }
       return actions
         .saveMetadata()
-        .catch(() => appActions.errorMessage('Replace draft video error'))
+        .catch(() => notifyActions.errorMessage('Replace draft video error'))
     })
   },
 
@@ -475,7 +471,9 @@ const actions = {
     })
     return cordovaService
       .removeFromStorage(cd)
-      .catch(() => appActions.errorMessage('Error removing local video file'))
+      .catch(() =>
+        notifyActions.errorMessage('Error removing local video file')
+      )
   },
   // This gets video data as MediaFile required for iOS
   loadCordovaMedia: (fileEntry: FileEntry): Promise<void | FileEntry> => {
@@ -491,7 +489,7 @@ const actions = {
           })
           return cordovaService.copyFileToTemp(cd)
         })
-        .catch((error) => appActions.errorMessage(error))
+        .catch((error) => notifyActions.errorMessage(error))
     } else {
       return Promise.resolve(fileEntry)
     }
@@ -519,7 +517,7 @@ const actions = {
           }
         })
         .catch(() => {
-          appActions.errorMessage('Storage video load')
+          notifyActions.errorMessage('Storage video load')
           resolve(false)
         })
     })

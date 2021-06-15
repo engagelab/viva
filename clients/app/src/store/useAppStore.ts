@@ -6,31 +6,21 @@ import {
   DeviceStatus,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
-  Callback,
 } from '../types/main'
 import { useDeviceService, CordovaPathName } from './useDevice'
 
 import { useVideoStore } from './useVideoStore'
 import { useDatasetStore } from './useDatasetStore'
+import { useNotifyStore } from './useNotifyStore'
+const { actions: notifyActions } = useNotifyStore()
 const { actions: deviceActions } = useDeviceService()
 const { actions: videoActions } = useVideoStore()
 const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
 import { appVersion } from '../constants'
 
 // ------------  Types --------------
-interface Dialog {
-  visible: boolean
-  data: Record<string, unknown>
-  doneCallback: (d: boolean) => void
-}
 interface ServerStatus {
   cpuload: Record<string, unknown>
-}
-interface Snackbar {
-  type: string
-  visibility: boolean // A toggle for showing error messages to the user
-  text: string
-  callback?: Callback
 }
 export interface AppState {
   selectedUser: User
@@ -39,10 +29,8 @@ export interface AppState {
   isAuthorised: boolean
   useCordova: boolean
   appIsOld: boolean
-  dialog: Dialog
   deviceStatus: DeviceStatus
   serverStatus: ServerStatus
-  snackbar: Snackbar
   cordovaPath: string[]
 }
 // ------------  State (internal) --------------
@@ -54,11 +42,6 @@ const _appState: Ref<AppState> = ref({
   useCordova: false,
   cordovaPath: [],
   appIsOld: false,
-  dialog: {
-    visible: false,
-    data: {}, // Data object to pass to the child dialog
-    doneCallback: () => ({}), // Callback function from the originating component
-  },
   deviceStatus: {
     mobile: false,
     browser: '',
@@ -67,11 +50,6 @@ const _appState: Ref<AppState> = ref({
   },
   serverStatus: {
     cpuload: {},
-  },
-  snackbar: {
-    visibility: false, // A toggle for showing error messages to the user
-    type: 'none',
-    text: '',
   },
 })
 
@@ -84,8 +62,6 @@ interface Getters {
   useCordova: ComputedRef<boolean>
   appIsOld: ComputedRef<boolean>
   isFullScreen: ComputedRef<boolean>
-  dialog: ComputedRef<Dialog>
-  snackbar: ComputedRef<Snackbar>
   deviceStatus: ComputedRef<DeviceStatus>
   serverStatus: ComputedRef<ServerStatus>
   user: ComputedRef<User>
@@ -112,12 +88,6 @@ const getters = {
   get isFullScreen(): ComputedRef<boolean> {
     return computed(() => _appState.value.deviceStatus.isFullScreen)
   },
-  get dialog(): ComputedRef<Dialog> {
-    return computed(() => _appState.value.dialog)
-  },
-  get snackbar(): ComputedRef<Snackbar> {
-    return computed(() => _appState.value.snackbar)
-  },
   get deviceStatus(): ComputedRef<DeviceStatus> {
     return computed(() => _appState.value.deviceStatus)
   },
@@ -135,9 +105,6 @@ interface Actions {
   activeNow: () => void
   addDraftIdToUser: (fileID: string) => void
   removeDraftId: (fileID: string) => void
-  setDialog: (dialog: Dialog) => void
-  setSnackbar: (newSnackbar: Snackbar) => void
-  errorMessage: (message: Error | string) => void
   detectDevice: () => void
   detectAppVersion: () => void
   logout: () => void
@@ -172,35 +139,6 @@ const actions = {
       }
     }
   },
-  setDialog(dialog: Dialog): void {
-    _appState.value.dialog = dialog
-  },
-  setSnackbar(newSnackbar: Snackbar): void {
-    _appState.value.snackbar = newSnackbar
-  },
-  errorMessage(error: Error | string): void {
-    let errorMessage = ''
-    if (typeof error === 'string') errorMessage = error
-    else errorMessage = error.message
-    console.log(`Error: ${errorMessage}`)
-    if (errorMessage == 'Invalid login') {
-      this.logout()
-      window.setTimeout(() => {
-        this.setSnackbar({
-          visibility: true,
-          text: errorMessage + '. Vennligst logg inn igjen',
-          type: 'error',
-          callback: undefined,
-        })
-      }, 2000)
-    }
-    this.setSnackbar({
-      visibility: true,
-      text: errorMessage,
-      type: 'error',
-      callback: undefined,
-    })
-  },
   detectDevice(): void {
     const ua = navigator.userAgent
     console.log(ua)
@@ -222,7 +160,7 @@ const actions = {
     apiRequest<{ version: string }>(payload).then((result) => {
       if (appVersion !== result.version) {
         _appState.value.appIsOld = true
-        this.setSnackbar({
+        notifyActions.setSnackbar({
           visibility: true,
           text: 'Viva appen er en eldre versjon, og du må laste ned en ny versjon fra Appstore',
           callback: undefined,
@@ -243,7 +181,7 @@ const actions = {
     apiRequest(payload)
       .then(() => {
         localStorage.removeItem('jwt')
-        router.push('/logout')
+        router.push('/login?page=0')
       })
       .catch((error: Error) => console.log(error))
   },
@@ -283,12 +221,12 @@ const actions = {
             videoActions.setCordovaPath([CordovaPathName.users, user._id])
             datasetActions.setPresetDatasetConfig(user.datasetConfig)
           } else {
-            actions.errorMessage('User not found')
+            notifyActions.errorMessage('User not found')
             actions.logout()
           }
         })
         .catch((error: Error) => {
-          return actions.errorMessage(error)
+          return notifyActions.errorMessage(error)
         })
     }
     return completeLogin()
@@ -310,7 +248,7 @@ const actions = {
           return Promise.resolve()
         })
         .catch((error: Error) => {
-          actions.errorMessage(error)
+          notifyActions.errorMessage(error)
         })
     } else return Promise.resolve()
   },

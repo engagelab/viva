@@ -12,11 +12,12 @@
         md:h-20
       "
     >
-      <img
+      <SVGSymbol
+        alt="home"
         class="absolute top-0 right-0 w-8 mr-2 mt-2 p-1 md:m-4 cursor-pointer"
-        src="@/assets/icons/svg/home_white.svg"
         @click="clickIcon('/login?page=3')"
-      />
+        symbol="home"
+      ></SVGSymbol>
       <p class="absolute leading-tight bottom-0 pb-2 text-2xl">
         {{ t('lagringSamtykke') }}
       </p>
@@ -165,7 +166,6 @@ export default defineComponent({
     // Lifecycle Hooks
     onMounted(() => {
       videoActions.selectVideo(undefined)
-      videoActions.loadMetadata().then(() => videoActions.fetchMetadata())
 
       // Dataset locks
       const presetConfig = datasetGetters.presetDatasetConfig.value
