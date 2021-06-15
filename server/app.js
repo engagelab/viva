@@ -48,7 +48,8 @@ app.use(express.urlencoded({ limit: '25mb', extended: true }))
 if (process.env.NODE_ENV === 'development') {
   app.use((req, res, next) => {
     // res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
-    const allowedOrigins = [
+    const allowedOrigins =
+    [
       `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}`,
       `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_HOTRELOAD_SERVER_PORT_ADMIN}`,
       `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_HOTRELOAD_SERVER_PORT_LTI}`,
