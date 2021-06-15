@@ -12,6 +12,23 @@
         md:h-20
       "
     >
+      <button
+        class="
+          absolute
+          top-0
+          right-0
+          w-32
+          text-sm
+          h-8
+          mr-14
+          mt-4
+          cursor-pointer
+          border-2
+        "
+        @click="clickIcon('/monitor')"
+      >
+        Monitor
+      </button>
       <img
         class="absolute top-0 right-0 w-8 mr-2 mt-2 p-1 md:m-4 cursor-pointer"
         src="@/assets/icons/svg/home_white.svg"

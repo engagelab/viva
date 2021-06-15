@@ -12,15 +12,15 @@
           @input="onWardTableSearchTextChanged"
         />
         <div>{{ 'MonitorRecordingLog' }}</div>
+        {{ videos }}
       </div>
-
       <AgGridVue
         style="width: 100%; height: 50vh"
         class="ag-theme-alpine"
         :gridOptions="gridOptions"
         :columnDefs="columnDefs"
         :rowData="rowData"
-        :defaultColDef="{ editable: true, sortable: true }"
+        :defaultColDef="{ editable: false, sortable: true }"
         @cellClicked="cellClicked"
       >
       </AgGridVue>
@@ -29,9 +29,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, onMounted, computed } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import { GridOptions, CellEvent } from '@ag-grid-community/all-modules'
+
+// Class and Interface
+import { Video } from '@/types/main'
+
+// Stores
+import { useVideoStore } from '@/store/useVideoStore'
+const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
 export default defineComponent({
   name: 'MonitorRecordingsInProcess',
@@ -40,18 +47,19 @@ export default defineComponent({
   },
   setup() {
     const gridOptions: GridOptions = {
-      suppressScrollOnNewData: true,
+      /*  suppressScrollOnNewData: true, */
     }
 
+    const videos = computed(() => videoGetters.allVideos.value)
+    onMounted(() => {
+      videoActions.selectVideo(undefined)
+      videoActions.loadMetadata().then(() => videoActions.fetchMetadata())
+    })
     const searchField = ref('')
     const selectedRow = ref()
 
     // Translate the headerNames
-    const columnDefs = [
-      { headerName: 'Hello' },
-      { headerName: 'Hello' },
-      { headerName: 'Hello' },
-    ]
+    const columnDefs = Video.columnDefs()
 
     const rowData = ['1', '2', '3']
 
@@ -71,6 +79,9 @@ export default defineComponent({
       rowData,
       gridOptions,
       searchField,
+
+      // computed
+      videos,
 
       // Table events
       cellClicked,

@@ -12,10 +12,10 @@ import MyRecordings from '@/views/video/MyRecordings.vue'
 import Editor from '@/views/video/Editor.vue'
 import Privacy from '@/views/Privacy.vue'
 import ErrorDisplay from '@/views/video/ErrorDisplay.vue'
-import Monitor from '@/views/admin/Monitor.vue'
-import MonitorRecordingLog from '@/views/admin/MonitorRecordingLog.vue'
-import MonitorYourDatasets from '@/views/admin/MonitorYourDatasets.vue'
-import MonitorRecordingsInProcess from '@/views/admin/MonitorRecordingsInProcess.vue'
+import Monitor from '@/views/Monitor.vue'
+import MonitorRecordingLog from '@/views/MonitorRecordingLog.vue'
+import MonitorYourDatasets from '@/views/MonitorYourDatasets.vue'
+import MonitorRecordingsInProcess from '@/views/MonitorRecordingsInProcess.vue'
 
 import { useAppStore } from '../store/useAppStore'
 import { useDatasetStore } from '../store/useDatasetStore'
@@ -45,6 +45,7 @@ const routes: Array<RouteRecordRaw> = [
     path: '/postlogin',
     name: 'afterlogin',
     component: MyRecordings,
+    redirect: '/monitor',
     beforeEnter: () => {
       appActions
         .redirectedLogin()
@@ -97,6 +98,27 @@ const routes: Array<RouteRecordRaw> = [
         component: MonitorRecordingsInProcess,
       },
     ],
+    beforeEnter: () => {
+      appActions
+        .redirectedLogin()
+        .then(() => {
+          if (appGetters.isLoggedIn.value) {
+            return datasetActions
+              .fetchDatasets()
+              .then(() => {
+                return { path: '/videos/list' }
+              })
+              .catch((error) => {
+                console.log(error)
+              })
+          } else {
+            return { path: '/login?page=0' }
+          }
+        })
+        .catch((error) => {
+          console.log(error)
+        })
+    },
   },
   {
     path: '/dataset',
@@ -161,6 +183,7 @@ router.beforeEach((to, from, next) => {
     to.path != '/postlogin' &&
     to.path != '/logout' &&
     to.path != '/transferred' &&
+    to.path != '/monitor' &&
     to.path != '/monitor/recordingLog' &&
     to.path != '/monitor/yourDatasets' &&
     to.path != '/monitor/recordingsInProcess'

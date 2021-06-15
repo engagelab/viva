@@ -225,6 +225,12 @@ export interface VideoSpec {
   deviceStatus: DeviceStatus
 }
 
+export interface ColumnDef {
+  headerName: string
+  field: string
+  editable?: boolean
+}
+
 export class Video {
   file: {
     mimeType: string
@@ -365,6 +371,15 @@ export class Video {
     v.details.encryptionIV = ui8arr2str(this.details.encryptionIV)
     return JSON.stringify(v)
   } */
+
+  public static columnDefs(): ColumnDef[] {
+    return [
+      { headerName: 'Opptak', field: 'recording' },
+      { headerName: 'Dato', field: 'date' },
+      { headerName: 'Datainnsamler', field: 'name' },
+      { headerName: 'Datasett', field: 'dataset' },
+    ]
+  }
 
   // Convert this to a Plain Old Javascript Object
   get asPOJO(): unknown {
