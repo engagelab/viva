@@ -8,7 +8,7 @@ import {
 
 import Landing from '@/views/landing/Landing.vue'
 import Dataset from '@/components/Dataset.vue'
-import MyRecordings from '@/views/video/MyRecordings.vue'
+import Monitor from '@/views/Monitor.vue'
 import Editor from '@/views/video/Editor.vue'
 import Privacy from '@/views/Privacy.vue'
 import ErrorDisplay from '@/views/video/ErrorDisplay.vue'
@@ -40,7 +40,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/postlogin',
     name: 'afterlogin',
-    component: MyRecordings,
+    component: Monitor,
     beforeEnter: () => {
       appActions
         .redirectedLogin()
@@ -73,7 +73,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/videos/list',
     name: 'video',
-    component: MyRecordings,
+    component: Monitor,
   },
   {
     path: '/videos/editor',
