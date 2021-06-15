@@ -33,12 +33,12 @@ export default defineComponent({
     const login = (mode: string) => {
       if (mode == 'canvas') {
         let canvasLoginUrl = `${baseUrl}/auth/canvas/login/user`
-        canvasLoginUrl += '?device=webApp&intent=client'
+        canvasLoginUrl += '?device=webApp&client=admin'
         window.location.href = canvasLoginUrl
         // appActions.canvasLogin()
       } else if (mode == 'feide') {
         let feideLoginUrl = `${baseUrl}/auth/dataporten/login`
-        feideLoginUrl += '?device=webApp&intent=client'
+        feideLoginUrl += '?device=webApp&client=admin'
         window.location.href = feideLoginUrl
       }
     }

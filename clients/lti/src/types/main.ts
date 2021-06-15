@@ -1,7 +1,6 @@
 import {
   USER_ROLE,
   CONSENT_TYPES,
-  CONSENT_SELECTION,
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
 } from '../constants'
@@ -23,14 +22,14 @@ declare global {
   }
 }
 
-String.prototype.toPascalCase = function  () {
+String.prototype.toPascalCase = function () {
   const text = this.valueOf().replace(/[-_\s.]+(.)?/g, (_, c) =>
     c ? c.toUpperCase() : ''
   )
   return text.substr(0, 1).toUpperCase() + text.substr(1)
 }
 
-String.prototype.toCamelCase = function  () {
+String.prototype.toCamelCase = function () {
   const text = this.valueOf().replace(/[-_\s.]+(.)?/g, (_, c) =>
     c ? c.toUpperCase() : ''
   )
