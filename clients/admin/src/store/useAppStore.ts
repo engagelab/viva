@@ -146,22 +146,8 @@ interface Actions {
   getLoginSession: () => Promise<void>
   tokenLogin: () => Promise<boolean>
   setCordovaPath: (path: string[]) => void
-  canvasLogin: () => void
-  //feideLogin: () => void
 }
 const actions = {
-  canvasLogin(): void {
-    const payload: APIRequestPayload = {
-      method: XHR_REQUEST_TYPE.POST,
-      route: '/auth/canvas/login/user',
-    }
-    apiRequest(payload)
-      .then(() => {
-        console.log('hi')
-      })
-      .catch((error: Error) => console.log(error))
-  },
-
   setFullScreen(value: boolean): void {
     _appState.value.deviceStatus.isFullScreen = value
   },

@@ -29,13 +29,11 @@ import { baseUrl } from '@/constants'
 export default defineComponent({
   name: 'Landing',
   setup() {
-    // const { actions: appActions } = useAppStore()
     const login = (mode: string) => {
       if (mode == 'canvas') {
         let canvasLoginUrl = `${baseUrl}/auth/canvas/login/user`
         canvasLoginUrl += '?device=webApp&client=admin'
         window.location.href = canvasLoginUrl
-        // appActions.canvasLogin()
       } else if (mode == 'feide') {
         let feideLoginUrl = `${baseUrl}/auth/dataporten/login`
         feideLoginUrl += '?device=webApp&client=admin'
