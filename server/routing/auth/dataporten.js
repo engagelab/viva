@@ -83,6 +83,7 @@ router.get('/dataporten/callback', function (request, response) {
           console.log(
             `\nGot DP user; logging in ${profile.name} : ${profile.email} ...`
           )
+          profile.provider = 'dataporten'
 
           // Configure the user profile in our DB, and finally respond to the client
           createOrUpdateUser(

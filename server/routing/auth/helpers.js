@@ -14,10 +14,11 @@ function signJWT(data) {
 }
 
 async function setUserAttributes(user, userProfile, userIdentifier, tokenSet) {
-  user.profile.oauthId = userIdentifier.sub || userIdentifier.id
+  user.profile.oauthId = userIdentifier.sub || userIdentifier.id || ''
   user.profile.reference = createReference(user.profile.oauthId)
   user.profile.fullName = userProfile.name
   user.profile.username = user.profile.fullName.replace(/[^\d\s\wæøå&@]/gi, '')
+  user.profile.email = userProfile.email || userProfile.primary_email || ''
   if (userProfile.email) {
     const lastIndex = userProfile.email.lastIndexOf('@')
     user.profile.username = userProfile.email.substring(0, lastIndex)
@@ -32,12 +33,7 @@ async function setUserAttributes(user, userProfile, userIdentifier, tokenSet) {
   user.tokens.csrf_token = require('crypto').randomBytes(20).toString('hex')
   // Token for API requests to VIVA
   user.tokens.local_token = signJWT(user.id)
-  user.status.provider = Object.keys(userProfile).includes(
-    'lis_person_sourcedid'
-  )
-    ? 'canvas'
-    : 'dataporten'
-
+  user.status.provider = userProfile.provider
   if (userProfile.roles) {
     user.status.role = userProfile.roles.some((role) => role.includes('Admin'))
       ? userRoles.admin
@@ -45,44 +41,40 @@ async function setUserAttributes(user, userProfile, userIdentifier, tokenSet) {
   }
 }
 
-async function setUserGroups(user) {
-  switch (user.status.provider) {
-    case 'dataporten':
-      user.profile.groups = await dataporten.groupsForUser(user)
-      break
-    case 'canvas':
-      user.profile.groups = await canvas.groupsForUser(user)
-      break
-    default:
-      break
+function setUserGroups(user) {
+  if (user.status.provider === 'dataporten') {
+       return dataporten.groupsForUser(user.tokens.access_token).then((groups) => {
+        user.profile.groups = groups.map((g) => ({ id: g.id, name: g.displayName }))
+       })
+  } else if (user.status.provider === 'canvas') {
+      return canvas.coursesForUser(user.tokens.access_token).then((courses) => {
+        user.profile.groups = courses.map((c) => ({ id: c.id, name: c.course_code }))
+      })
+  } else {
+    return Promise.resolve()
   }
 }
 
 function createOrUpdateUser(tokenSet, userIdentifier, profile) {
   const query = { }
   if (userIdentifier.sub) query['profile.oauthId'] = userIdentifier.sub
+  else if (userIdentifier.email) query['profile.email'] = userIdentifier.email
   else if (userIdentifier.id) query._id = userIdentifier.id
   const userProfile = profile.data ? profile.data : profile
 
   return new Promise((resolve, reject) => {
-    User.findOne(query, (err, usr) => {
+    User.findOne(query, async (err, usr) => {
       let user
       if (err) return reject(`Error checking user ${err}`)
       user = usr || new User()
       setUserAttributes(user, userProfile, userIdentifier, tokenSet)
+      await setUserGroups(user)
       try {
-        setUserGroups(user)
-      } catch (error) {
-        reject(error)
+        const savedUser = await user.save()
+        resolve(savedUser)
+      } catch (e) {
+        console.error(e);
       }
-      user
-        .save()
-        .then((savedUser) => {
-          return resolve(savedUser)
-        })
-        .catch((error) => {
-          return reject(error)
-        })
     })
   })
 }

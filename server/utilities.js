@@ -163,17 +163,23 @@ function httpRequest(params, postData) {
           )
         )
       }
-      let body = []
+      let data = []
       res.on('data', function (chunk) {
-        body.push(chunk)
+        data.push(chunk)
       })
       res.on('end', function () {
-        try {
-          body = JSON.parse(Buffer.concat(body).toString())
-        } catch (error) {
-          return reject(error)
+        if(data.join("") === "") {
+          // You are being throttled - handle it
+          return reject(new Error('Remote server throttling'))
+        } else if (data.join("").startsWith("<!DOCTYPE html>")) {
+          // The user is invalid - handle it
+          return reject(new Error('Invalid response'))
+        } else {
+          // Everything is OK
+          // json = JSON.parse(Buffer.concat(data).toString())
+          const json = JSON.parse(data.join(''));
+          resolve(json)
         }
-        resolve(body)
       })
     })
     req.on('error', function (error) {

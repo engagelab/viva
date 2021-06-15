@@ -529,6 +529,7 @@ interface UserProfile {
   username: string
   password: string
   fullName: string
+  email: string
   oauthId: string
   reference: string // This should be sent to the client rather than _id
   groups: string[] // Groups this user is a member of
@@ -568,6 +569,7 @@ export class User {
       username: 'initial user',
       password: '',
       fullName: 'initial user',
+      email: '',
       oauthId: '',
       reference: '', // This should be sent to the client rather than _id
       groups: [],

@@ -7,6 +7,7 @@ const utilities = require('../../utilities')
 const { createOrUpdateUser, completeCallback } = require('./helpers')
 
 const openidClient = require('../../services/openid')
+const { userDetails } = require('../../services/canvas')
 
 // Activate the Dataporten Clients
 let CanvasLTIClient, CanvasLTIIssuer, CanvasAPIClient
@@ -84,10 +85,12 @@ router.post('/canvas/callback', function (request, response) {
         if (namesAndRoles) {
           const myUser = namesAndRoles.members.find(
             (n) => n.user_id === user_id
-          )
+          ) || {}
+          myUser.provider = 'canvas'
+
           createOrUpdateUser(
             { id_token: idToken },
-            { sub: verified_decoded_id_token.sub },
+            { email: myUser.email },
             myUser || {}
           ).then((user) => {
             return completeCallback(request, response, user)
@@ -189,22 +192,9 @@ router.get('/canvas/login/user', function (request, response) {
   request.session.remember = remember
   request.session.state = generators.state()
 
-  // request.session.userProfile = {
-  //   user_id: body.user_id,
-  //   email: body.custom_canvas_user_login_id,
-  //   username: body.custom_canvas_user_login_id.substring(
-  //     0,
-  //     body.custom_canvas_user_login_id.lastIndexOf('@')
-  //   )
-  // }
-
   let redirectUrl = CanvasAPIClient.authorizationUrl({
     state: request.session.state,
-    // scope: '/auth/userinfo',
   })
-
-  console.log(redirectUrl, 'redirectUrl')
-  console.log(response.req.body, 'first response')
   response.redirect(redirectUrl)
 })
 
@@ -214,8 +204,6 @@ router.get('/canvas/login/user', function (request, response) {
 router.get('/canvas/callback', function (request, response) {
   const { code } = request.query
   const params = CanvasAPIClient.callbackParams(request)
-
-  console.log(response.req.query, 'second reponse')
 
   if (!code) {
     console.error(
@@ -228,61 +216,16 @@ router.get('/canvas/callback', function (request, response) {
       code,
     }
     CanvasAPIClient.grant(body).then((tokenSet) => {
-      console.log(tokenSet)
-      // const tokenInfo = tokenSet.claims()
-      // if (tokenInfo.iss !== CanvasAPIClient.metadata.issuer) {
-      //   const e = 'Invalid Canvas token at login'
-      //   const error = new Error(e)
-      //   console.error(`Invalid token at login. Tokeninfo: `)
-      //   console.dir(tokenInfo)
-      //   return response.status(403).send(error)
-      // }
-      //const { device, remember } = request.session
-
-      request.session.access_token = tokenSet.access_token
-      let profile = tokenSet.user
-
-      if (tokenSet.user) {
-        profile.user_id = tokenSet.user.id
-        profile.username = tokenSet.user.name
-        profile.email = tokenSet.name
-      }
-      console.log(profile, 'userProfile')
-      createOrUpdateUser(
-        tokenSet,
-        { username: profile.username },
-        profile
-      ).then((user) => {
-        console.log(user)
-        completeCallback(request, response, user)
-        /* request.session.ref = user.id
-        let s = `${new Date().toLocaleString()}: Web App Login: ${
-          user.username
-        }`
-        // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
-        let redirectUrl =
-          process.env.NODE_ENV === 'testing'
-            ? `${utilities.baseUrl}/#/login`
-            : `${utilities.baseUrl}/login`
-        console.log(s)
-        return response.redirect(redirectUrl) */
+      userDetails(tokenSet.access_token, tokenSet.user.id).then((profile) => {
+        profile.provider = 'canvas'
+        createOrUpdateUser(
+          tokenSet,
+          { email: profile.primary_email },
+          profile
+        ).then((user) => {
+          completeCallback(request, response, user)
+        })
       })
-      // Now use the access_token to retrieve user profile information
-      // DPClient.userinfo(tokenSet.access_token) // => Promise
-      //   .then((profile) => {
-      //     console.log(
-      //       `\nGot Canvas user; logging in ${profile.name} : ${profile.email} ...`
-      //     )
-      //     // Save the access_token to the User profile
-      //     // Also update any extra user information
-      //     // We assume the user has already been logged in at /canvas/login
-      //     // There therefore should already be a session set for the user
-      //     console.log(profile)
-      //     // createOrUpdateUser(tokenSet, { sub: decoded.sub }, request.body.user || {}).then(() => response.status(200).end())
-      //   })
-      //   .catch((err) => {
-      //     console.error('Error caught at DPClient userinfo: ' + err)
-      //   })
     })
   }
 })
