@@ -109,14 +109,14 @@ export default defineComponent({
     function login() {
       let feideLoginUrl = `${baseUrl}/auth/dataporten/login`
       if (useCordova) {
-        feideLoginUrl += '?device=mobileApp'
+        feideLoginUrl += '?device=mobileApp&client=mobileApp'
         window.OAuth(
           feideLoginUrl,
           'oauth:dataporten',
           'allowInlineMediaPlayback=yes,toolbar=no'
         )
       } else {
-        feideLoginUrl += '?device=webApp&intent=client'
+        feideLoginUrl += '?device=webApp&client=mobileApp'
         window.location.href = feideLoginUrl
       }
     }

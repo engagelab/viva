@@ -1,7 +1,6 @@
 import {
   USER_ROLE,
   CONSENT_TYPES,
-  CONSENT_SELECTION,
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
 } from '../constants'
@@ -23,14 +22,14 @@ declare global {
   }
 }
 
-String.prototype.toPascalCase = function  () {
+String.prototype.toPascalCase = function () {
   const text = this.valueOf().replace(/[-_\s.]+(.)?/g, (_, c) =>
     c ? c.toUpperCase() : ''
   )
   return text.substr(0, 1).toUpperCase() + text.substr(1)
 }
 
-String.prototype.toCamelCase = function  () {
+String.prototype.toCamelCase = function () {
   const text = this.valueOf().replace(/[-_\s.]+(.)?/g, (_, c) =>
     c ? c.toUpperCase() : ''
   )
@@ -106,18 +105,24 @@ export interface PersistedAppState extends Record<string, unknown> {
 }
 
 export interface Consent {
-  id: string
-  name: string
-  checked: boolean
-  current: boolean
-  submission_id: string
-  questions: Record<string, string>
+  id: string // LOCAL VARIABLE
+  name: string // LOCAL VARIABLE
+  checked: boolean // LOCAL VARIABLE
+
+  current?: boolean
+  delivered_on?: string // 'Tue, 25 Feb 2020 13:29:00 GMT'
+  form_id?: string // '140649'
+  source?: string // '140649'
+  submission_id?: string // '6256984'
+  questions: Record<string, string> // { consent_question_1: 'True', consent_question_2: 'True' }
   reference: {
-    subset?: string
+    subset?: string // 'skole-Hauk.'
     user_identifier?: string
     user_fullname?: string
     child_fullname?: string
-    username?: string
+    dataset?: string // '5e5512f17ec2ce3bd9025d22'
+    user_mail?: string // 'abc@uio.no',
+    username?: string // 'abc@uio.no'
   }
 }
 export interface DeviceStatus {
@@ -524,6 +529,7 @@ interface UserProfile {
   username: string
   password: string
   fullName: string
+  email: string
   oauthId: string
   reference: string // This should be sent to the client rather than _id
   groups: string[] // Groups this user is a member of
@@ -563,6 +569,7 @@ export class User {
       username: 'initial user',
       password: '',
       fullName: 'initial user',
+      email: '',
       oauthId: '',
       reference: '', // This should be sent to the client rather than _id
       groups: [],

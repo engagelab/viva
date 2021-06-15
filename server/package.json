@@ -16,7 +16,7 @@
     "jwks-rsa": "^2.0.1",
     "memorystore": "1.6.2",
     "moment": "^2.24.0",
-    "mongoose": "^5.12.3",
+    "mongoose": "^5.12.13",
     "node-cleanup": "^2.1.2",
     "openid-client": "^3.12.2",
     "qrcode": "^1.4.2",

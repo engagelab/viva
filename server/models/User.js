@@ -24,8 +24,13 @@ const userSchema = new mongoose.Schema({
     password: { type: String },
     fullName: { type: String, default: '' },
     oauthId: { type: String },
-    reference: { type: String, index: { unique: true } }, // This should be sent to the client rather than _id
-    groups: { type: Array }, // Groups this user is a member of
+    email: { type: String },
+    reference: { type: String }, // This should be sent to the client rather than _id
+    groups: [{
+      _id: false,
+      id: { type: String },
+      name: { type: String },
+     }], // Groups this user is a member of ('courses' for Canvas)
   },
   tokens: {
     access_token: { type: String },

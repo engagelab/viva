@@ -8,7 +8,7 @@ import {
 
 import Landing from '@/views/landing/Landing.vue'
 import Dataset from '@/components/Dataset.vue'
-import MyRecordings from '@/views/video/MyRecordings.vue'
+
 import Editor from '@/views/video/Editor.vue'
 import Privacy from '@/views/Privacy.vue'
 import ErrorDisplay from '@/views/video/ErrorDisplay.vue'
@@ -18,9 +18,9 @@ import MonitorYourDatasets from '@/views/MonitorYourDatasets.vue'
 import MonitorRecordingsInProcess from '@/views/MonitorRecordingsInProcess.vue'
 
 import { useAppStore } from '../store/useAppStore'
-import { useDatasetStore } from '../store/useDatasetStore'
+/* import { useDatasetStore } from '../store/useDatasetStore' */
 import { useVideoStore } from '../store/useVideoStore'
-const { actions: datasetActions } = useDatasetStore()
+/* const { actions: datasetActions } = useDatasetStore() */
 const { getters: appGetters, actions: appActions } = useAppStore()
 const { getters: videoGetters } = useVideoStore()
 import { idleTimeout } from '../constants'
@@ -44,9 +44,9 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/postlogin',
     name: 'afterlogin',
-    component: MyRecordings,
+    /*    component: MyRecordings, */
     redirect: '/monitor',
-    beforeEnter: () => {
+    /*  beforeEnter: () => {
       appActions
         .redirectedLogin()
         .then(() => {
@@ -66,7 +66,7 @@ const routes: Array<RouteRecordRaw> = [
         .catch((error) => {
           console.log(error)
         })
-    },
+    }, */
   },
   // --------------------------------------------------------
   {
@@ -77,48 +77,21 @@ const routes: Array<RouteRecordRaw> = [
     props: (route) => ({ page: route.query.page }),
     children: [
       {
-        // Ward Table will be rendered inside User's <router-view>
-        // when /monitor/wards is matched
         path: 'recordingLog',
         name: 'MonitorRecordingLog',
         component: MonitorRecordingLog,
       },
       {
-        // User Table will be rendered inside User's <router-view>
-        // when /monitor/users is matched
         path: 'yourDatasets',
         name: 'MonitorYourDatasets',
         component: MonitorYourDatasets,
       },
       {
-        // Participant Table will be rendered inside User's <router-view>
-        // when /monitor/participants is matched
         path: 'recordingsInProcess',
         name: 'MonitorRecordingInProcess',
         component: MonitorRecordingsInProcess,
       },
     ],
-    beforeEnter: () => {
-      appActions
-        .redirectedLogin()
-        .then(() => {
-          if (appGetters.isLoggedIn.value) {
-            return datasetActions
-              .fetchDatasets()
-              .then(() => {
-                return { path: '/videos/list' }
-              })
-              .catch((error) => {
-                console.log(error)
-              })
-          } else {
-            return { path: '/login?page=0' }
-          }
-        })
-        .catch((error) => {
-          console.log(error)
-        })
-    },
   },
   {
     path: '/dataset',
@@ -129,7 +102,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/videos/list',
     name: 'video',
-    component: MyRecordings,
+    component: Monitor,
   },
   {
     path: '/videos/editor',

@@ -1,11 +1,11 @@
 // vue.config.js
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const fs = require('fs')
-const hotHost = process.env.VUE_APP_HOTRELOAD_SERVER_HOST
-const hotPort = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_APP
 const host = process.env.VUE_APP_SERVER_HOST
 const port = process.env.VUE_APP_SERVER_PORT
 const https_key = fs.readFileSync(process.env.SSL_KEY_FILE)
 const https_cert = fs.readFileSync(process.env.SSL_CERT_FILE)
+const baseUrl = process.env.NODE_ENV === 'development' ? '' : '/app'
 
 module.exports = {
   pluginOptions: {
@@ -17,7 +17,7 @@ module.exports = {
     },
     cordovaPath: 'src-cordova',
   },
-  publicPath: process.env.BASE_URL || '',
+  publicPath: baseUrl,
   outputDir: 'www',
   configureWebpack: {
     devtool: 'source-map',
@@ -63,8 +63,8 @@ module.exports = {
       cert: https_cert,
     },
     index: 'index.html',
-    host: hotHost,
-    port: hotPort,
+    host: 'localhost',
+    port: '8082',
     overlay: {
       warnings: true,
       errors: true,

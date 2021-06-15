@@ -1,7 +1,6 @@
 const router = require('express').Router()
 const { generators } = require('openid-client')
 const jwt = require('jsonwebtoken')
-const utilities = require('../../utilities')
 const User = require('../../models/User')
 const { createOrUpdateUser, completeCallback } = require('./helpers')
 const openidClient = require('../../services/openid')
@@ -13,8 +12,9 @@ openidClient.createClient('dataporten').then((struct) => (DPClient = struct.clie
 // --------------- For Dataporten Login -----------------
 
 router.get('/dataporten/login', (req, res) => {
-  const { device, remember, testing } = req.query
+  const { device, remember, testing, client } = req.query
   req.session.device = device
+  req.session.client = client
   req.session.remember = remember
   req.session.testing = testing || ''
 
@@ -31,14 +31,14 @@ router.get('/dataporten/login', (req, res) => {
     code_challenge_method: 'S256',
   })
   if (process.env.NODE_ENV !== 'production' && testing) {
-    redirectUrl = `${utilities.baseUrl}/auth/dataporten/callback`
+    redirectUrl = `${process.env.VUE_APP_SERVER_HOST}/auth/dataporten/callback`
   }
   res.redirect(redirectUrl)
 })
 
 router.get('/dataporten/callback', function (request, response) {
   const params = DPClient.callbackParams(request)
-  const { device, code_verifier, testing, remember } = request.session
+  const { code_verifier, testing } = request.session
 
   // FOR AUTOMATED TESTS ONLY
   if (process.env.NODE_ENV !== 'production' && testing) {
@@ -58,7 +58,7 @@ router.get('/dataporten/callback', function (request, response) {
       { sub: tokenInfo.sub },
       profile
     ).then((user) =>
-      completeCallback(request, response, user, device, remember)
+      completeCallback(request, response, user)
     )
   }
 
@@ -83,6 +83,7 @@ router.get('/dataporten/callback', function (request, response) {
           console.log(
             `\nGot DP user; logging in ${profile.name} : ${profile.email} ...`
           )
+          profile.provider = 'dataporten'
 
           // Configure the user profile in our DB, and finally respond to the client
           createOrUpdateUser(
@@ -90,7 +91,7 @@ router.get('/dataporten/callback', function (request, response) {
             { sub: tokenInfo.sub },
             profile
           ).then((user) =>
-            completeCallback(request, response, user, device, remember)
+            completeCallback(request, response, user)
           )
         })
         .catch((err) => {

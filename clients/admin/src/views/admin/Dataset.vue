@@ -1,10 +1,10 @@
 <template>
   <div>
     Display all datasets
-
+    <!--
     <SlButton class="m-4" @click="showDatasetItem = !showDatasetItem"
       >Add dataset</SlButton
-    >
+    > -->
     <div v-if="showDatasetItem">
       <dataset-item></dataset-item>
     </div>

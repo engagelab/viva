@@ -108,44 +108,26 @@ export default defineComponent({
 
     function login() {
       let feideLoginUrl = `${baseUrl}/auth/dataporten/login`
-      if (useCordova) {
-        feideLoginUrl += '?device=mobileApp'
-        window.OAuth(
-          feideLoginUrl,
-          'oauth:dataporten',
-          'allowInlineMediaPlayback=yes,toolbar=no'
-        )
-      } else {
-        feideLoginUrl += '?device=webApp&intent=client'
-        window.location.href = feideLoginUrl
-      }
+      feideLoginUrl += '?device=webApp&client=admin'
+      window.location.href = feideLoginUrl
     }
     function listView() {
       router.push('/videos/list')
     }
     function giSamtykke() {
-      // Calling OAuth without 'oauth:' name will open the system browser
-      if (useCordova) {
-        window.OAuth(
-          'https://www.uio.no/tjenester/it/lagring-samarbeid/gsuite/',
-          '_system',
-          'location=yes'
-        )
-      } else {
-        const a = document.createElement('a')
-        a.setAttribute('target', '_blank')
-        a.setAttribute(
-          'href',
-          'https://www.uio.no/tjenester/it/lagring-samarbeid/gsuite/'
-        )
-        a.dispatchEvent(
-          new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true,
-          })
-        )
-      }
+      const a = document.createElement('a')
+      a.setAttribute('target', '_blank')
+      a.setAttribute(
+        'href',
+        'https://www.uio.no/tjenester/it/lagring-samarbeid/gsuite/'
+      )
+      a.dispatchEvent(
+        new MouseEvent('click', {
+          view: window,
+          bubbles: true,
+          cancelable: true,
+        })
+      )
     }
     return {
       t,

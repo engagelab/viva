@@ -6,8 +6,8 @@
         :id="`consentCheckbox-${consent.id}`"
         name="Check me!"
         value="true"
-        v-model="checked"
-        @change="inputChanged($event)"
+        v-model="checkedBox"
+        @change="inputChanged"
       />
       <!--label :for="`consentCheckbox-${consent.id}`">&nbsp;godkjent</label-->
     </div>
@@ -25,7 +25,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, PropType, ref } from 'vue'
+import { defineComponent, computed, PropType, ref, toRefs } from 'vue'
 import { Consent } from '@/types/main'
 import circle1 from '@/assets/icons/svg/circle1.svg'
 import circle2 from '@/assets/icons/svg/circle2.svg'
@@ -36,10 +36,6 @@ import circleX from '@/assets/icons/svg/circleX.svg'
 
 export default defineComponent({
   props: {
-    modelValue: {
-      type: [Boolean],
-      required: true,
-    },
     consent: {
       type: Object as PropType<Consent>,
       required: true,
@@ -51,7 +47,8 @@ export default defineComponent({
   },
   emits: ['change', 'update:modelValue'],
   setup(props, context) {
-    const checked = ref(false)
+    const checkedBox = ref(false)
+    const { consent } = toRefs(props)
     const circles: { [index: number]: unknown } = {
       1: circle1,
       2: circle2,
@@ -60,36 +57,33 @@ export default defineComponent({
       5: circle5,
     }
     const formattedName = computed(() => {
-      const ref = props.consent.reference
-      if (ref.user_identifier == 'child') {
-        return ref.user_fullname
-      } else if (ref.user_identifier == 'parent') {
-        return ref.child_fullname
+      const reference = consent.value.reference
+      if (reference.user_identifier == 'child') {
+        return reference.user_fullname
+      } else if (reference.user_identifier == 'parent') {
+        return reference.child_fullname
       } else {
-        return ref.username
+        return reference.username
       }
     })
     const consentQuestions = computed(() => {
-      const sortedAnswerKeys = Object.keys(props.consent.questions).sort()
+      const sortedAnswerKeys = Object.keys(consent.value.questions).sort()
       return sortedAnswerKeys.map((key, index) => {
-        checked.value = props.consent.questions[key]
+        const checked = consent.value.questions[key]
         const truthy = checked.toLowerCase() === 'true'
         const source = truthy ? circles[index + 1] : circleX
         return { checked, source, key: `question-circle-id-${index}` }
       })
     })
-    function inputChanged($event: InputEvent) {
-      const ie = $event.target as HTMLInputElement
-      if (ie) {
-        context.emit('update:modelValue', checked.value) // If using v-model on this element, this is the updated value
-        context.emit('change', {
-          checked,
-          id: props.consent.submission_id,
-        })
-      }
+    function inputChanged() {
+      consent.value.checked = checkedBox.value
+      context.emit('change', {
+        checked: checkedBox.value,
+        id: consent.value.submission_id,
+      })
     }
     return {
-      checked,
+      checkedBox,
       formattedName,
       consentQuestions,
       inputChanged,

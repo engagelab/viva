@@ -1,34 +1,48 @@
 <template>
-  <Slider
-    class="flex flex-col flex-grow min-h-0 h-full"
-    :pages="pages"
-    :movePageTo="page"
-  />
+  <div class="mt-4 bg-blue-400 h-screen">
+    <div
+      class="flex flex-col mt-36 text-xl grid grid-rows-1 justify-items-center"
+    >
+      Viva Admin
+      <div class="flex m-4 space-x-4">
+        <div
+          class="mx-2 text-l bg-blue-400 hover:bg-blue-500 rounded-lg"
+          @click="login('canvas')"
+        >
+          <p class="mx-2">Canvas Login</p>
+        </div>
+        <div
+          class="mx-2 text-l bg-blue-400 hover:bg-blue-500 rounded-lg"
+          @click="login('feide')"
+        >
+          <p class="mx-2">Feide Login</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import Slider from '@/components/base/Slider.vue'
-
-import page0 from './pages/main.vue'
-import page1 from './pages/detteErViva.vue'
-import page2 from './pages/personvernIOpptak.vue'
-import page3 from './pages/loggInn.vue'
-
+import { baseUrl } from '@/constants'
+// import { useAppStore } from '../../store/useAppStore'
 export default defineComponent({
   name: 'Landing',
-  components: {
-    Slider,
-  },
-  props: {
-    page: {
-      type: String,
-      default: '0',
-    },
-  },
-  data() {
+  setup() {
+    const login = (mode: string) => {
+      if (mode == 'canvas') {
+        let canvasLoginUrl = `${baseUrl}/auth/canvas/login/user`
+        canvasLoginUrl += '?device=webApp&client=admin'
+        window.location.href = canvasLoginUrl
+      } else if (mode == 'feide') {
+        let feideLoginUrl = `${baseUrl}/auth/dataporten/login`
+        feideLoginUrl += '?device=webApp&client=admin'
+        window.location.href = feideLoginUrl
+      }
+    }
+
     return {
-      pages: [page0, page1, page2, page3],
+      login,
     }
   },
 })

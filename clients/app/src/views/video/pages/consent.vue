@@ -37,7 +37,6 @@
           v-for="consent in consentList"
           :key="consent.submission_id"
           :consent="consent"
-          v-model="consent.checked"
           checkboxes="true"
           @change="dataChanged"
         ></ConsentItem>
@@ -52,7 +51,6 @@
         class="flex flex-row pt-4"
         :key="standardConsent.id"
         :consent="standardConsent"
-        v-model="standardConsent.checked"
         @change="dataChanged"
         checkboxes="true"
       />
@@ -77,15 +75,6 @@ import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import Button from '@/components/base/Button.vue'
 import ConsentItem from '@/components/base/ConsentItem.vue'
 
-interface StandardConsent {
-  id: string
-  name: string
-  checked: boolean
-  reference: {
-    consenter_name: string
-  }
-  questions: Record<string, unknown>
-}
 interface DataChangedEvent {
   checked: boolean
   id: string
@@ -121,12 +110,12 @@ export default defineComponent({
     const selectedDataset = datasetGetters.selectedDataset
     const video = ref(new Video(selectedVideo.value))
     const consentList: Ref<Consent[]> = ref([])
-    const standardConsent: Ref<StandardConsent> = ref({
+    const standardConsent: Ref<Consent> = ref({
       id: 'standardConsent-id',
       name: 'Bekreft',
       checked: false,
       reference: {
-        consenter_name: t('understood'),
+        username: t('understood'),
       },
       questions: {},
     })
