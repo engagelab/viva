@@ -4,7 +4,17 @@
       <ul class="flex border-b">
         <router-link to="/monitor/dataset">
           <li
-            class="-mb-px mr-1 bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold"
+            class="
+              -mb-px
+              mr-1
+              bg-white
+              inline-block
+              py-2
+              px-4
+              text-blue-500
+              hover:text-blue-800
+              font-semibold
+            "
             @click="selectTab('users', 'profile')"
           >
             <!-- :class="{ tabSelected: selectedTab === 'users' }" -->
@@ -13,7 +23,17 @@
         </router-link>
         <router-link to="/monitor/videologs">
           <li
-            class="-mb-px mr-1 bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold"
+            class="
+              -mb-px
+              mr-1
+              bg-white
+              inline-block
+              py-2
+              px-4
+              text-blue-500
+              hover:text-blue-800
+              font-semibold
+            "
             @click="selectTab('projects', 'projects')"
           >
             <!-- :class="{ tabSelected: selectedTab === 'projects' }" -->
@@ -28,7 +48,16 @@
     </div>
     <div class="absolute top-0 right-0 m-4">
       <a
-        class="bg-white inline-block py-2 px-4 text-green-600 hover:text-blue-800 font-semibold cursor-pointer"
+        class="
+          bg-white
+          inline-block
+          py-2
+          px-4
+          text-green-600
+          hover:text-blue-800
+          font-semibold
+          cursor-pointer
+        "
         id="button-return"
         @click="restart()"
         >Return</a
