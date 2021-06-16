@@ -17,7 +17,8 @@ const userSchema = new mongoose.Schema({
     lastLogin: { type: Date, default: Date.now },
     totalDrafts: { type: Number, default: 0 },
     totalUploads: { type: Number, default: 0 },
-    totalTransfers: { type: Number, default: 0 }
+    totalTransfers: { type: Number, default: 0 },
+    ethicsCompleted: { type: Boolean, default: false }
   },
   profile: {
     username: { type: String, default: '' },
@@ -30,7 +31,8 @@ const userSchema = new mongoose.Schema({
       _id: false,
       id: { type: String },
       name: { type: String },
-     }], // Groups this user is a member of ('courses' for Canvas)
+      isAdmin: { type: Boolean, default: false }
+     }], // Groups that this user is a member of ('courses' for Canvas)
   },
   tokens: {
     access_token: { type: String },
