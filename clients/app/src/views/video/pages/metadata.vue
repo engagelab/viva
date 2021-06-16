@@ -29,13 +29,15 @@
       </div>
 
       <div class="flex-1 rounded mt-4">
-        <Input
+        <AnswerInput
+          class="m-2"
+          mode="textarea"
+          :border="false"
+          :rows="5"
+          :placeholder="t('placeholder')"
           v-model="video.details.description"
           @change="dataChanged()"
-          type="textarea"
-          rows="5"
-          :placeholder="t('placeholder')"
-        />
+        ></AnswerInput>
       </div>
     </div>
   </div>
@@ -49,12 +51,12 @@ import { Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
-import Input from '@/components/base/Input.vue'
+import AnswerInput from '@/components/base/AnswerInput.vue'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 
 export default defineComponent({
   components: {
-    Input,
+    AnswerInput,
     SVGSymbol,
   },
   setup() {
@@ -80,7 +82,7 @@ export default defineComponent({
     }
     const { t } = useI18n({ messages })
     const selectedVideo = videoGetters.selectedVideo
-    const video = ref(new Video())
+    const video = ref(selectedVideo.value || new Video())
     const categoryLists = [
       { label: 'Åpen (grønn)', value: 'green' },
       { label: 'Begrenset (gul)', value: 'yellow' },

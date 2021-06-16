@@ -29,14 +29,21 @@ Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
           oauthId: 'testDataManagerID',
           name: 'test username',
         },
-        adminGroup: 'test',
-        dataportenGroups: ['testgroup'],
-        canvasGroups: [], // Canvas course IDs
-      },
-      selectionPriority: [], // Order of appearance of the utvalg categories
-      selection: {}, //  'utvalg' selection
-      storages: [
-        {
+        consent: {
+          kind: consentTypes.manual,
+        },
+        users: {
+          dataManager: {
+            oauthId: 'testDataManagerID',
+            name: 'test username',
+          },
+          adminGroup: 'test',
+          dataportenGroups: ['23222'],
+          canvasGroups: []  // Canvas course IDs
+        },
+        selectionPriority: [], // Order of appearance of the utvalg categories
+        selection: {}, //  'utvalg' selection
+        storages: [{
           name: videoStorageTypes.educloud,
           groupId: 'testGroupID',
           file: {

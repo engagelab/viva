@@ -128,15 +128,19 @@ export default defineComponent({
     )
 
     onMounted(() => {
-      if (selectedVideo.value) {
-        video.value.updateStatus(selectedVideo.value.status)
+      const v = selectedVideo.value
+      if (v) {
+        video.value.updateStatus(v.status)
         standardConsent.value.checked = video.value.status.isConsented
-        video.value.consents = selectedVideo.value.consents
-        const datasetId = selectedVideo.value.dataset.id
+        video.value.consents = v.consents
+        const datasetId = v.dataset.id
         const presetConfig = datasetGetters.presetDatasetConfig.value
-        if (presetConfig && !presetConfig.locks[datasetId]) {
-          const split =
-            selectedVideo.value.dataset.selection[0].title.split(':')
+        if (
+          presetConfig &&
+          !presetConfig.locks[datasetId] &&
+          v.dataset.selection.length
+        ) {
+          const split = v.dataset.selection[0].title.split(':')
           datasetActions.lockSelection({
             datasetId,
             lock: {

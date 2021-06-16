@@ -72,7 +72,7 @@ function createToken(req, res, next) {
 function tokenAuth(req, res, next, googleMobileAppTransfer) {
   // This is needed to compensate for an Android issue where session cookie is not being set in the webview.
   // So we attempt to use the token for verification instead..
-  const token = createToken(req, res)
+  const token = createToken(req, res, next)
   if (token && token.ref && tempUserStore[token.ref]) {
     // Avoid a DB lookup if possible
     req.session.ref = tempUserStore[token.ref]

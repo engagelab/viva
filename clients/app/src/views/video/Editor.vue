@@ -538,7 +538,7 @@ export default defineComponent({
       }
     }
 
-    // Begin recording a video using MediaRecorder or Input method depending on device
+    // Begin recording
     async function recordVideo() {
       // Make sure EDL is cleared if it is
       video.value.details.edl = {
