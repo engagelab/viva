@@ -525,6 +525,14 @@ export class Dataset {
     }
   }
 
+  public static columnDefs(): ColumnDef[] {
+    return [
+      { headerName: 'Datasett', field: 'dataset' },
+      { headerName: 'Opprettet', field: 'created' },
+      { headerName: 'Antall opptak', field: 'total recordings' },
+      { headerName: 'Behandlingsansvarlig', field: 'responsible' },
+    ]
+  }
   // get selection(): string[] {
   //   return this.selection.map((s) => `${s.keyName}:${s.title}`)
   // }
@@ -609,6 +617,19 @@ export class User {
       }
       this.videos = data.videos
     }
+  }
+
+  /*
+  public static columnDefs(): ColumnDef[] {
+    return [
+      { headerName: 'Datainnsamler', field: 'Datainnsamler' },
+      { headerName: 'Antall opptakk', field: 'Antall opptakk' }
+    ]
+  }
+  */
+
+  public static columnDefs(): string[] {
+    return ['Datainnsamler', 'Antall opptakk']
   }
 }
 

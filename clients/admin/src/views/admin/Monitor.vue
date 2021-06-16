@@ -87,7 +87,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
-import router from '../router'
+import router from '../../router'
 
 export default defineComponent({
   name: 'Monitor',
@@ -121,6 +121,6 @@ export default defineComponent({
   @apply border-l border-t border-r border-b-0 rounded-t text-blue-800;
 }
 
-@import '../../node_modules/ag-grid-community/dist/styles/ag-grid.css';
-@import '../../node_modules/ag-grid-community/dist/styles/ag-theme-alpine.css';
+@import '../../../node_modules/ag-grid-community/dist/styles/ag-grid.css';
+@import '../../../node_modules/ag-grid-community/dist/styles/ag-theme-alpine.css';
 </style>
