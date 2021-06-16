@@ -4,24 +4,36 @@
 
 const router = require('express').Router()
 const utilities = require('../../utilities')
-const videoStatusTypes = require('../../constants').videoStatusTypes;
+const { userRoles } = require('../../constants')
+const videoStatusTypes = require('../../constants').videoStatusTypes
 const Video = require('../../models/Video')
 
 /* ---------------- Video activities ---------------- */
 
-// Get the calling User's videos
+/**
+ * Get the calling User's videos
+ * If User is admin, get all videos
+ * Else get User's videos only
+ */
 router.get('/videos', utilities.authoriseUser, (request, response) => {
-  Video.find({ userId: response.locals.user._id }, (error, videos) => {
+  const u = response.locals.user
+  const isAdmin = utilities.hasMinimumUserRole(u, userRoles.admin)
+
+  let query = {}
+  if (isAdmin) {
+    query = {}
+  } else {
+    query = { userId: response.locals.user._id }
+  }
+
+  Video.find(query, (error, videos) => {
     let videosToReturn = []
     if (error) {
       console.error(error)
       return response.status(400).end()
     } else {
-      videosToReturn = videos.map(v => v.redacted())
-      response
-        .send(videosToReturn)
-        .status(200)
-        .end()
+      videosToReturn = videos.map((v) => v.redacted())
+      response.send(videosToReturn).status(200).end()
     }
   })
 })
@@ -34,10 +46,7 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
     } else if (!v) {
       return response.status(200).end()
     } else {
-      response
-        .send(v.redacted())
-        .status(200)
-        .end()
+      response.send(v.redacted()).status(200).end()
     }
   })
 })
