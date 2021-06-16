@@ -11,7 +11,7 @@ Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
   if (err) {
     return console.log(err)
   } else if (!dataSett) {
-    dataSett = {
+    ;(dataSett = {
       name: 'test',
       description: 'test description',
       created: new Date(),
@@ -21,43 +21,31 @@ Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
         active: true, // Only active datasetts who will be fetched
         lockedBy: undefined, // Who has locked the datasett for editing
       },
+
       consent: {
         kind: consentTypes.manual,
       },
       users: {
-        dataManager: {
-          oauthId: 'testDataManagerID',
-          name: 'test username',
-        },
-        consent: {
-          kind: consentTypes.manual,
-        },
-        users: {
-          dataManager: {
-            oauthId: 'testDataManagerID',
-            name: 'test username',
-          },
-          adminGroup: 'test',
-          dataportenGroups: ['23222'],
-          canvasGroups: [], // Canvas course IDs
-        },
-        selectionPriority: [], // Order of appearance of the utvalg categories
-        selection: {}, //  'utvalg' selection
-        storages: [
-          {
-            name: videoStorageTypes.educloud,
-            groupId: 'testGroupID',
-            file: {
-              // Path and name will be constructed from attributes from Video and Dataset based on these array entries
-              path: ['folder1', 'folder2'],
-              name: ['filename1', 'filename2'],
-            },
-            category: [],
-          },
-        ],
+        adminGroup: 'test',
+        dataportenGroups: ['23222'],
+        canvasGroups: [], // Canvas course IDs
       },
-    }
-    Dataset.create(dataSett)
+      selectionPriority: [], // Order of appearance of the utvalg categories
+      selection: {}, //  'utvalg' selection
+      storages: [
+        {
+          name: videoStorageTypes.educloud,
+          groupId: 'testGroupID',
+          file: {
+            // Path and name will be constructed from attributes from Video and Dataset based on these array entries
+            path: ['folder1', 'folder2'],
+            name: ['filename1', 'filename2'],
+          },
+          category: [],
+        },
+      ],
+    }),
+      Dataset.create(dataSett)
     console.log('Created a test Setting')
   }
 })
@@ -161,7 +149,7 @@ const createPilotSchoolList = () => {
             },
           navn: dataSett,
           created: Date.now(),
-          dataManager: 'engagelab',
+          owner: 'engagelab',
           elementer: 23
         }
         Dataset.create(setting)

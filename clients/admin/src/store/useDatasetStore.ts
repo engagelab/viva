@@ -5,7 +5,12 @@
 3. Fetch consents either using feide token or canvas token  */
 
 import { ref, Ref, computed, ComputedRef } from 'vue'
-import { Dataset, APIRequestPayload, XHR_REQUEST_TYPE } from '../types/main'
+import {
+  Dataset,
+  Video,
+  APIRequestPayload,
+  XHR_REQUEST_TYPE,
+} from '../types/main'
 import { apiRequest } from '../api/apiRequest'
 import { useAppStore } from './useAppStore'
 const { actions: appActions } = useAppStore()
@@ -18,6 +23,12 @@ const state: Ref<DatasetState> = ref({
   selectedDataset: undefined,
   datasets: new Map(),
 })
+
+interface ResponseData {
+  datasets: Dataset[] | undefined
+  videos: Video[] | undefined
+  draftUsers: string[] | undefined
+}
 
 //----------------- Server side functions----------------//
 
@@ -68,12 +79,14 @@ const actions = {
       route: '/api/datasets',
       credentials: true,
     }
-    return apiRequest<Dataset[]>(payload)
-      .then((datasets) => {
-        datasets.forEach((s) => {
-          const newDataset = s as Dataset
-          state.value.datasets.set(newDataset._id, newDataset)
-        })
+    return apiRequest<ResponseData>(payload)
+      .then((data) => {
+        if (data.datasets && data.datasets.length !== 0) {
+          data.datasets.forEach((s) => {
+            const newDataset = s as Dataset
+            state.value.datasets.set(newDataset._id, newDataset)
+          })
+        }
       })
       .catch((error: Error) => {
         appActions.errorMessage(error)

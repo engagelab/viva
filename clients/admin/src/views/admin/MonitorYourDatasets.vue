@@ -16,7 +16,7 @@
         <td>{{ dataset.name }}</td>
         <td>{{ dataset.created }}</td>
         <td>{{ dataset }}</td>
-        <td>{{ dataset.users.dataManager }}</td>
+        <td>{{ dataset.users.owner }}</td>
       </tr>
     </table>
   </div>
