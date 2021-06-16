@@ -25,7 +25,7 @@
 <script lang="ts">
 import { computed, ComputedRef, defineComponent, onMounted, ref } from 'vue'
 import { Dataset } from '@/types/main'
-import { useDatasetStore } from '../store/useDatasetStore'
+import { useDatasetStore } from '../../store/useDatasetStore'
 const { actions: datasetActions, getters: datasetGetters } = useDatasetStore()
 
 // i18n
