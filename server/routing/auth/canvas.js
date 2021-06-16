@@ -62,46 +62,6 @@ router.post('/canvas/callback', function (request, response) {
     return response.status(401).end()
   }
 
-  // STEP 4: Using the LTI access_token, get user details using "Names & roles" LTI service
-  // Save the details to the User's profile including id_token
-  const requestUserInformation = (LTItokenSet, verified_decoded_id_token) => {
-    const user_id = verified_decoded_id_token.sub
-    const parsedUrl = new URL(
-      verified_decoded_id_token[
-        'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice'
-      ].context_memberships_url
-    )
-    const options = {
-      hostname: parsedUrl.host,
-      path: parsedUrl.pathname,
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${LTItokenSet.access_token}`,
-      },
-    }
-    utilities
-      .httpRequest(options)
-      .then((namesAndRoles) => {
-        if (namesAndRoles) {
-          const myUser = namesAndRoles.members.find(
-            (n) => n.user_id === user_id
-          ) || {}
-          myUser.provider = 'canvas'
-
-          createOrUpdateUser(
-            { id_token: idToken },
-            { email: myUser.email },
-            myUser || {}
-          ).then((user) => {
-            return completeCallback(request, response, user)
-          })
-        }
-      })
-      .catch((e) => {
-        console.error(e)
-      })
-  }
-
   // STEP 3: Authenticate using 'client_credentials' for a 'non-specific-user' LTI access_token
   // Applies to certain LTI Advantage services
   // Calls the 'names and roles' LTI service to obtain user info
@@ -142,6 +102,48 @@ router.post('/canvas/callback', function (request, response) {
         requestUserInformation(LTItokenSet, verified_decoded_id_token)
       })
       .catch((error) => console.log(`Error granting access_token: ${error}`))
+  }
+
+  // STEP 4: Using the LTI access_token, get user details using "Names & roles" LTI service
+  // Save the details to the User's profile including id_token
+  // LTI must be configured with the "variable substitute" in 'Custom Fields' with:  `user_id=$Canvas.user.id`
+  const requestUserInformation = (LTItokenSet, verified_decoded_id_token) => {
+    const user_id = verified_decoded_id_token.sub
+    const custom_vars = verified_decoded_id_token['https://purl.imsglobal.org/spec/lti/claim/custom']
+    const parsedUrl = new URL(
+      verified_decoded_id_token[
+        'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice'
+      ].context_memberships_url
+    )
+    const options = {
+      hostname: parsedUrl.host,
+      path: parsedUrl.pathname,
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${LTItokenSet.access_token}`,
+      },
+    }
+    utilities
+      .httpRequest(options)
+      .then((namesAndRoles) => {
+        if (namesAndRoles) {
+          const myUser = namesAndRoles.members.find(
+            (n) => n.user_id === user_id
+          ) || {}
+          myUser.provider = 'canvas'
+
+          createOrUpdateUser(
+            { id_token: idToken },
+            { sub: custom_vars.user_id },
+            myUser || {}
+          ).then((user) => {
+            return completeCallback(request, response, user)
+          })
+        }
+      })
+      .catch((e) => {
+        console.error(e)
+      })
   }
 
   // Verify the token using a JWK specified by 'kid' in the decoded token's header
@@ -220,7 +222,7 @@ router.get('/canvas/callback', function (request, response) {
         profile.provider = 'canvas'
         createOrUpdateUser(
           tokenSet,
-          { email: profile.primary_email },
+          { sub: profile.id },
           profile
         ).then((user) => {
           completeCallback(request, response, user)
