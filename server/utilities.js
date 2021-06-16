@@ -11,10 +11,10 @@ const { userRoles } = require('./constants')
 
 let TEST_MODE = false
 
-const addZero = i => {
+const addZero = (i) => {
   return i < 10 ? '0' + i : i
 }
-const asFormattedDateString = date => {
+const asFormattedDateString = (date) => {
   return (
     date.getDate() +
     '-' +
@@ -29,16 +29,14 @@ const asFormattedDateString = date => {
 }
 
 function createReference(data) {
-  return crypto
-    .createHash('sha256')
-    .update(data)
-    .digest('base64');
+  return crypto.createHash('sha256').update(data).digest('base64')
 }
 
 // Returns a Promise(hashed version of the password)
 const hash = (password) => bcrypt.hash(password, 10)
 // Returns a Promise(true) if password matches the hashed password
-const hashCompare = (password, hashedPassword) => bcrypt.compare(password, hashedPassword)
+const hashCompare = (password, hashedPassword) =>
+  bcrypt.compare(password, hashedPassword)
 
 const tempUserStore = {}
 
@@ -139,12 +137,12 @@ const hasMinimumUserRole = (user, requestedRole) => {
     case userRoles.user:
       return true
     case userRoles.monitor:
-      return user.profile.role === userRoles.monitor ||
-        user.profile.role === userRoles.admin
+      return user.status.role === userRoles.monitor ||
+        user.status.role === userRoles.admin
         ? true
         : false
     case userRoles.admin:
-      return user.profile.role === userRoles.admin ? true : false
+      return user.status.role === userRoles.admin ? true : false
     default:
       return false
   }
@@ -168,16 +166,16 @@ function httpRequest(params, postData) {
         data.push(chunk)
       })
       res.on('end', function () {
-        if(data.join("") === "") {
+        if (data.join('') === '') {
           // You are being throttled - handle it
           return reject(new Error('Remote server throttling'))
-        } else if (data.join("").startsWith("<!DOCTYPE html>")) {
+        } else if (data.join('').startsWith('<!DOCTYPE html>')) {
           // The user is invalid - handle it
           return reject(new Error('Invalid response'))
         } else {
           // Everything is OK
           // json = JSON.parse(Buffer.concat(data).toString())
-          const json = JSON.parse(data.join(''));
+          const json = JSON.parse(data.join(''))
           resolve(json)
         }
       })

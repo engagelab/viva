@@ -74,7 +74,7 @@ export default defineComponent({
       videoActions.selectVideo(undefined)
       videoActions.loadMetadata().then(() =>
         videoActions.fetchMetadata().then(() => {
-          /* console.log(rowData) */
+          console.log(rowData)
         })
       )
     })
