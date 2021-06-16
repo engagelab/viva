@@ -524,6 +524,12 @@ interface UserStatus {
   totalDrafts: number
   totalUploads: number
   totalTransfers: number
+  ethicsCompleted: boolean
+}
+interface UserProfileGroup {
+  id: string
+  name: string
+  isAdmin: boolean
 }
 interface UserProfile {
   username: string
@@ -532,7 +538,7 @@ interface UserProfile {
   email: string
   oauthId: string
   reference: string // This should be sent to the client rather than _id
-  groups: string[] // Groups this user is a member of
+  groups: UserProfileGroup[] // Groups this user is a member of
 }
 export interface UserDatasetSelection {
   title: string
@@ -564,6 +570,7 @@ export class User {
       totalDrafts: 0,
       totalUploads: 0,
       totalTransfers: 0,
+      ethicsCompleted: false,
     }
     this.profile = {
       username: 'initial user',

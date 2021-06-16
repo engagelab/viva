@@ -41,6 +41,12 @@ async function setUserAttributes(user, userProfile, userIdentifier, tokenSet) {
   }
 }
 
+function getCanvasEthicsCourseProgress(user) {
+  return canvas.courseProgress(user.tokens.access_token, user.profile.oauthId, process.env.CANVAS_ETHICS_COURSE_ID).then((progress) => {
+    user.status.ethicsCompleted = progress.requirement_count == progress.requirement_completed_count
+  })
+}
+
 function setUserGroups(user) {
   if (user.status.provider === 'dataporten') {
        return dataporten.groupsForUser(user.tokens.access_token).then((groups) => {
@@ -48,7 +54,11 @@ function setUserGroups(user) {
        })
   } else if (user.status.provider === 'canvas') {
       return canvas.coursesForUser(user.tokens.access_token).then((courses) => {
-        user.profile.groups = courses.map((c) => ({ id: c.id, name: c.course_code }))
+        user.profile.groups = courses.map((c) => {
+          let isAdmin = c.enrollments.length && c.enrollments.some((e) => e.role === process.env.CANVAS_ADMIN_ROLE)
+          return { id: c.id, name: c.course_code, isAdmin }
+        })
+        return getCanvasEthicsCourseProgress(user)
       })
   } else {
     return Promise.resolve()
