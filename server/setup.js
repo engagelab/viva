@@ -39,21 +39,23 @@ Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
           },
           adminGroup: 'test',
           dataportenGroups: ['23222'],
-          canvasGroups: []  // Canvas course IDs
+          canvasGroups: [], // Canvas course IDs
         },
         selectionPriority: [], // Order of appearance of the utvalg categories
         selection: {}, //  'utvalg' selection
-        storages: [{
-          name: videoStorageTypes.educloud,
-          groupId: 'testGroupID',
-          file: {
-            // Path and name will be constructed from attributes from Video and Dataset based on these array entries
-            path: ['folder1', 'folder2'],
-            name: ['filename1', 'filename2'],
+        storages: [
+          {
+            name: videoStorageTypes.educloud,
+            groupId: 'testGroupID',
+            file: {
+              // Path and name will be constructed from attributes from Video and Dataset based on these array entries
+              path: ['folder1', 'folder2'],
+              name: ['filename1', 'filename2'],
+            },
+            category: [],
           },
-          category: [],
-        },
-      ],
+        ],
+      },
     }
     Dataset.create(dataSett)
     console.log('Created a test Setting')
