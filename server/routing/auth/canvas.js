@@ -196,6 +196,7 @@ router.get('/canvas/login/user', function (request, response) {
 
   let redirectUrl = CanvasAPIClient.authorizationUrl({
     state: request.session.state,
+    // prompt: 'none'
   })
   response.redirect(redirectUrl)
 })

@@ -64,6 +64,7 @@ const fetchUsersWithDraftVideos = () => {
 // If admin, also get Users with outstanding drafts, and video listing
 router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
   const u = response.locals.user
+  const groupIds = u.profile.groups.map(g => g.id)
   const isAdmin = utilities.hasMinimumUserRole(
     response.locals.user,
     userRoles.admin
@@ -76,7 +77,7 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
     ]
   } else {
     query.$and = [
-      { 'users.dataportenGroups': { $in: u.profile.groups } },
+      { $or: [ { 'users.dataportenGroups': { $in: groupIds } }, { 'users.canvasGroups': { $in: groupIds } } ] },
       { 'status.active': true },
     ]
   }

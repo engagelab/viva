@@ -31,7 +31,7 @@ Dataset.findOne(
             name: 'test username',
           },
           adminGroup: 'test',
-          dataportenGroups: ['testgroup'],
+          dataportenGroups: ['23222'],
           canvasGroups: []  // Canvas course IDs
         },
         selectionPriority: [], // Order of appearance of the utvalg categories
