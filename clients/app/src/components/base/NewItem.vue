@@ -20,7 +20,13 @@
       </div>
     </div>
     <div v-else class="flex">
-      <Input @input="(newValue) => (name = newValue)" v-model="name" />
+      <AnswerInput
+        class="m-2"
+        mode="text"
+        label="Reference"
+        :border="false"
+        v-model="name"
+      ></AnswerInput>
       <div class="pl-4" @click="removeNewitem()">
         <SVGSymbol
           class="p-2 text-viva-korall fill-current cursor-pointer"
@@ -44,12 +50,12 @@
 <script lang="ts">
 import { defineComponent, ref, toRefs } from 'vue'
 import SVGSymbol from './SVGSymbol.vue'
-import Input from './Input.vue'
+import AnswerInput from './AnswerInput.vue'
 
 export default defineComponent({
   components: {
     SVGSymbol,
-    Input,
+    AnswerInput,
   },
   props: {
     initialName: {

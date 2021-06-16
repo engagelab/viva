@@ -68,7 +68,7 @@ function createOrUpdateUser(tokenSet, userIdentifier, profile) {
       if (err) return reject(`Error checking user ${err}`)
       user = usr || new User()
       setUserAttributes(user, userProfile, userIdentifier, tokenSet)
-      await setUserGroups(user)
+      if (user.tokens.access_token) await setUserGroups(user)
       try {
         const savedUser = await user.save()
         resolve(savedUser)

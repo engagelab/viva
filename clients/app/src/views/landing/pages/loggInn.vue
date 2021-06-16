@@ -9,7 +9,13 @@
           v-if="!isLoggedIn && browserOk && !appIsOld"
           logo="feide"
           class="m-4 focus:outline-none"
-          @click="login()"
+          @click="login('dataporten')"
+        />
+        <Button
+          v-if="!isLoggedIn && browserOk && !appIsOld"
+          logo="canvas"
+          class="m-4 focus:outline-none"
+          @click="login('canvas')"
         />
         <p class="m-2 text-red-600 font-bold" v-if="!browserOk">
           {{ t('browserNotOk') }}
@@ -106,8 +112,9 @@ export default defineComponent({
       return !browserNotOk || useCordova
     })
 
-    function login() {
-      let feideLoginUrl = `${baseUrl}/auth/dataporten/login`
+    function login(serviceName: string): void {
+      let feideLoginUrl = `${baseUrl}/auth/${serviceName}/login`
+      if (serviceName === 'canvas') feideLoginUrl += '/user'
       if (useCordova) {
         feideLoginUrl += '?device=mobileApp&client=mobileApp'
         window.OAuth(

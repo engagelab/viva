@@ -43,8 +43,8 @@ const datasetSchema = new mongoose.Schema({
       name: { type: String },
     },
     adminGroup: { type: String },
-    dataportenGroups: { type: Array },
-    canvasGroups: { type: Array }  // Canvas course IDs
+    dataportenGroups: { type: Array, of: String },
+    canvasGroups: { type: Array, of: String }  // Canvas course IDs
   },
   selectionPriority: { type: Array, default: [] }, // Order of appearance of the utvalg categories
   selection: { type: Object, default: {}}, //  'utvalg' selection
