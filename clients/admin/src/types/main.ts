@@ -231,10 +231,22 @@ export interface VideoSpec {
   deviceStatus: DeviceStatus
 }
 
+// eslint-disable-next-line
+const instanceOfVideo = (object: any): object is Video => {
+  return 'status' in object
+}
+
 export interface ColumnDef {
   headerName: string
   field: string
   editable?: boolean
+}
+
+interface VideoTableLayout {
+  record: string
+  date: Date
+  owner: string
+  dataset: string
 }
 
 export class Video {
@@ -298,20 +310,18 @@ export class Video {
     this.consents = []
     this.storages = []
     this.file = { mimeType: 'video/mp4' }
-    console.log(typeof data)
+
     // Create a Video using the current App state
-    if (data && !(data instanceof Video)) {
+    /* if (data && !(data instanceof Video)) { */
+    if (data && !instanceOfVideo(data)) {
       this.updateDataset({
         id: data.dataset._id || '',
         name: data.dataset.name,
         selection: data.selection,
       })
 
-      if (data.user)
-        this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
-      if (data.dataset && data.dataset.storages) {
-        this.storages = data.dataset.storages.map((storage) => storage.name)
-      }
+      this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
+      this.storages = data.dataset.storages.map((storage) => storage.name)
       this.file = {
         mimeType:
           data.deviceStatus?.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
@@ -371,7 +381,7 @@ export class Video {
     this.dataset = data.dataset
     this.consents = data.consents
     this.storages = data.storages
-    this.file.mimeType = data.file.mimeType
+    this.file = data.file
   }
 
   // Convert this class to string representation
@@ -384,11 +394,21 @@ export class Video {
 
   public static columnDefs(): ColumnDef[] {
     return [
-      { headerName: 'Opptak', field: 'recording' },
+      { headerName: 'Opptak', field: 'record' },
       { headerName: 'Dato', field: 'date' },
-      { headerName: 'Datainnsamler', field: 'name' },
+      { headerName: 'Datainnsamler', field: 'owner' },
       { headerName: 'Datasett', field: 'dataset' },
     ]
+  }
+
+  // Use to get data for a Table
+  public get asTableData(): VideoTableLayout {
+    return {
+      record: this.details.name,
+      date: this.details.created,
+      owner: this.users.owner,
+      dataset: this.dataset.name,
+    }
   }
 
   // Convert this to a Plain Old Javascript Object

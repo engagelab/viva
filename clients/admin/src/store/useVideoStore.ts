@@ -346,13 +346,11 @@ const actions = {
       .then(() => actions.saveMetadata())
   },
   addMetadata: (video: Video): void => {
-    console.log(video.status.main, VIDEO_STATUS_TYPES.draft)
     if (video.status.main === VIDEO_STATUS_TYPES.draft) {
       state.value.draftVideos.set(video.details.id, video)
       state.value.videoDataFiles.delete(video.details.id)
     } else {
       state.value.videos.set(video.details.id, video)
-      console.log(state.value.videos)
     }
   },
   // Update the video in store with the given video (by fileId) and save to local disk

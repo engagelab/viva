@@ -12,7 +12,6 @@
           @input="onWardTableSearchTextChanged"
         />
         <div>{{ t('MonitorRecordingLog') }}</div>
-        {{ rowData }}
       </div>
 
       <AgGridVue
@@ -83,7 +82,9 @@ export default defineComponent({
     // Convert video when fetched
 
     const columnDefs = Video.columnDefs()
-    const rowData = computed(() => videoGetters.allVideos.value)
+    const rowData = computed(() =>
+      videoGetters.allVideos.value.map((v) => v.asTableData)
+    )
 
     // Filter all columns based on the text
     // If one of the columns contain the text, the table will show them
