@@ -65,8 +65,8 @@ const formPath = (path, datasett, video) => {
         case 'timeStamp':
           folder = folder + '/' + moment(video.created).format('DD-MMM-YYYY-hh-mm-ss')
           break
-        case 'dataManager':
-          folder = folder + '/' + datasett.dataManager.name
+        case 'owner':
+          folder = folder + '/' + datasett.owner
           break
         case 'UserID':
           folder = folder + '/' + video.userId
@@ -93,8 +93,8 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
           return video.details.id.substring(0, 7)
         case 'timeStamp':
           return moment(video.details.created).format('dd-mmm-YYYY-h-mm-ss')
-        case 'dataManager':
-          return dataset.users.dataManager.name.replace(whitespace, "")
+        case 'owner':
+          return dataset.users.owner.replace(whitespace, "")
         case 'UserID':
           return video.users.owner
         default:

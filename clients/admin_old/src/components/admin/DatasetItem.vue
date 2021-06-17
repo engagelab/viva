@@ -40,7 +40,7 @@
             <div>
               <p class="smallLabels">
                 {{ $t('data-manager') }}:
-                <input v-model="datasett.dataManager.name" :disabled="true" />
+                <input v-model="datasett.owner.name" :disabled="true" />
               </p>
               <div class="smallLabels">
                 {{ $t('admin-group') }}:

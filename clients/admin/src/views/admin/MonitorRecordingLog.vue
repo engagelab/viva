@@ -71,12 +71,9 @@ export default defineComponent({
     }
 
     onMounted(() => {
-      videoActions.selectVideo(undefined)
-      videoActions.loadMetadata().then(() =>
-        videoActions.fetchMetadata().then(() => {
-          console.log(rowData)
-        })
-      )
+      videoActions.fetchMetadata().then(() => {
+        console.log(rowData)
+      })
     })
 
     const searchField = ref('')
@@ -85,7 +82,9 @@ export default defineComponent({
     // Convert video when fetched
 
     const columnDefs = Video.columnDefs()
-    const rowData = computed(() => videoGetters.allVideos.value)
+    const rowData = computed(() =>
+      videoGetters.allVideos.value.map((v) => v.asTableData)
+    )
 
     // Filter all columns based on the text
     // If one of the columns contain the text, the table will show them

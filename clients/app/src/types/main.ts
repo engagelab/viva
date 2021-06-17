@@ -435,9 +435,7 @@ interface DatasetConsent {
   kind: CONSENT_TYPES
 }
 interface DatasetUsers {
-  dataManager: {
-    name: string
-  }
+  owner: string
 }
 interface DatasetStorage {
   kind: VIDEO_STORAGE_TYPES
@@ -481,7 +479,7 @@ export class Dataset {
       kind: CONSENT_TYPES.manuel,
     }
     this.users = {
-      dataManager: { name: '' },
+      owner: '',
     }
     this.selection = {}
     this.selectionPriority = []
@@ -501,7 +499,7 @@ export class Dataset {
         kind: (data.consent.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
       }
       this.users = {
-        dataManager: data.users.dataManager,
+        owner: data.users.owner,
       }
       this.selection = data.selection
       this.selectionPriority = data.selectionPriority

@@ -235,10 +235,22 @@ export interface VideoSpec {
   deviceStatus: DeviceStatus
 }
 
+// eslint-disable-next-line
+const instanceOfVideo = (object: any): object is Video => {
+  return 'status' in object
+}
+
 export interface ColumnDef {
   headerName: string
   field: string
   editable?: boolean
+}
+
+interface VideoTableLayout {
+  record: string
+  date: Date
+  owner: string
+  dataset: string
 }
 
 export class Video {
@@ -304,12 +316,14 @@ export class Video {
     this.file = { mimeType: 'video/mp4' }
 
     // Create a Video using the current App state
-    if (data && !(data instanceof Video)) {
+    /* if (data && !(data instanceof Video)) { */
+    if (data && !instanceOfVideo(data)) {
       this.updateDataset({
         id: data.dataset._id || '',
         name: data.dataset.name,
         selection: data.selection,
       })
+
       this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
       this.storages = data.dataset.storages.map((storage) => ({
         kind: storage.kind,
@@ -317,7 +331,7 @@ export class Video {
       }))
       this.file = {
         mimeType:
-          data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
+          data.deviceStatus?.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
       }
     } else if (data) {
       // Create a video based on a given Video
@@ -374,7 +388,7 @@ export class Video {
     this.dataset = data.dataset
     this.consents = data.consents
     this.storages = data.storages
-    this.file.mimeType = data.file.mimeType
+    this.file = data.file
   }
 
   // Convert this class to string representation
@@ -387,11 +401,21 @@ export class Video {
 
   public static columnDefs(): ColumnDef[] {
     return [
-      { headerName: 'Opptak', field: 'recording' },
+      { headerName: 'Opptak', field: 'record' },
       { headerName: 'Dato', field: 'date' },
-      { headerName: 'Datainnsamler', field: 'name' },
+      { headerName: 'Datainnsamler', field: 'owner' },
       { headerName: 'Datasett', field: 'dataset' },
     ]
+  }
+
+  // Use to get data for a Table
+  public get asTableData(): VideoTableLayout {
+    return {
+      record: this.details.name,
+      date: this.details.created,
+      owner: this.users.owner,
+      dataset: this.dataset.name,
+    }
   }
 
   // Convert this to a Plain Old Javascript Object
@@ -450,9 +474,7 @@ interface DatasetConsent {
   kind: CONSENT_TYPES
 }
 interface DatasetUsers {
-  dataManager: {
-    name: string
-  }
+  owner: string
 }
 interface DatasetStorage {
   kind: VIDEO_STORAGE_TYPES
@@ -496,7 +518,7 @@ export class Dataset {
       kind: CONSENT_TYPES.manuel,
     }
     this.users = {
-      dataManager: { name: '' },
+      owner: '',
     }
     this.selection = {}
     this.selectionPriority = []
@@ -516,7 +538,7 @@ export class Dataset {
         kind: (data.consent.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
       }
       this.users = {
-        dataManager: data.users.dataManager,
+        owner: data.users.owner,
       }
       this.selection = data.selection
       this.selectionPriority = data.selectionPriority

@@ -28,7 +28,7 @@ const datasetSchema = new mongoose.Schema({
   status: {
     lastUpdated: { type: Date, default: Date.now }, // Last time this Dataset was changed
     active: { type: Boolean }, // Only active datasetts who will be fetched
-    lockedBy: { type: mongoose.Schema.ObjectId, ref: 'User' }  // Who has locked the datasett for editing
+    lockedBy: { type: mongoose.Schema.ObjectId, ref: 'User' }, // Who has locked the datasett for editing
   },
   consent: {
     kind: {
@@ -37,17 +37,15 @@ const datasetSchema = new mongoose.Schema({
       default: consentTypes.manual,
     },
   },
+
   users: {
-    dataManager: {
-      oauthId: { type: String },
-      name: { type: String },
-    },
+    owner: { type: mongoose.Schema.ObjectId, ref: 'User' },
     adminGroup: { type: String },
     dataportenGroups: { type: Array, of: String },
-    canvasGroups: { type: Array, of: String }  // Canvas course IDs
+    canvasGroups: { type: Array, of: String }, // Canvas course IDs
   },
   selectionPriority: { type: Array, default: [] }, // Order of appearance of the utvalg categories
-  selection: { type: Object, default: {}}, //  'utvalg' selection
+  selection: { type: Object, default: {} }, //  'utvalg' selection
   storages: {
     type: Array,
     of: storageSchema,
@@ -74,7 +72,7 @@ datasetSchema.methods.redacted = function () {
       kind: data.consent.kind
     },
     users: {
-      dataManager: data.users.dataManager,
+      owner: data.users.owner,
     },
     storages: data.storages.map((store) => {
       const s = { ...store }
@@ -82,7 +80,7 @@ datasetSchema.methods.redacted = function () {
       return s
     }),
   }
-  delete d.users.dataManager.oauthId
+
   return d
 }
 // Duplicate the ID field.

@@ -14,6 +14,7 @@ import cordovaService from '../api/cordovaService'
 import { useAppStore } from './useAppStore'
 const { actions: appActions } = useAppStore()
 const { actions: deviceActions } = useDeviceService()
+
 interface State {
   selectedVideo: Video | undefined
   videos: Map<string, Video>
@@ -422,10 +423,12 @@ const actions = {
       .then((videos: Video[]) => {
         state.value.videos.clear()
         state.value.draftVideos.clear()
-        videos.forEach((v) => actions.addMetadata(new Video(v)))
+        videos.forEach((v: Video) => {
+          actions.addMetadata(new Video(v))
+        })
       })
       .catch((error) => {
-        appActions.errorMessage('Fetch server videos')
+        if (appActions) appActions.errorMessage('Fetch server videos')
         return Promise.reject(error)
       })
   },
