@@ -64,23 +64,27 @@ const fetchUsersWithDraftVideos = () => {
 // If admin, also get Users with outstanding drafts, and video listing
 router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
   const u = response.locals.user
-  const groupIds = u.profile.groups.map(g => g.id)
-  const isAdmin = utilities.hasMinimumUserRole(
+  const groupIds = u.profile.groups.map((g) => g.id)
+  /* const isAdmin = utilities.hasMinimumUserRole(
     response.locals.user,
     userRoles.admin
-  )
-  const query = {}
+  )*/
+  const isAdmin = true
+  let query = {}
   if (isAdmin) {
-    query.$or = [
-      { 'users.adminGroup': { $in: u.profile.groups } },
-      { 'users.dataManager.oauthId': { $in: u.profile.oauthId } },
-    ]
+    query = { 'users.owner': u._id }
   } else {
     query.$and = [
-      { $or: [ { 'users.dataportenGroups': { $in: groupIds } }, { 'users.canvasGroups': { $in: groupIds } } ] },
+      {
+        $or: [
+          { 'users.dataportenGroups': { $in: groupIds } },
+          { 'users.canvasGroups': { $in: groupIds } },
+        ],
+      },
       { 'status.active': true },
     ]
   }
+
   Dataset.find(query, async (error, ds) => {
     if (error) return next(error)
     const datasets = ds.map((d) => d.redacted())
@@ -100,8 +104,7 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
 router.post('/dataset', utilities.authoriseUser, (request, response, next) => {
   let dataset = request.body
   const u = response.locals.user
-  dataset.dataManager.name = u.profile.username
-  dataset.dataManager.oauthId = u.profile.oauthId
+  dataset.users.owner = u.profile.username
   Dataset.create(dataset)
     .then((newDataset) => response.send(newDataset))
     .catch((error) => next(error))
@@ -144,7 +147,8 @@ router.put('/dataset', utilities.authoriseUser, (request, response, next) => {
   )
   if (!isAdmin) return next(new Error('Unauthorised'))
   Dataset.findById(updatedDataset._id, async (error, d) => {
-    if (error || !d) next(error || new Error({ status: 400, message: 'datasett not found' }))
+    if (error || !d)
+      next(error || new Error({ status: 400, message: 'datasett not found' }))
     const updateIsNewer = Date(updatedDataset.lastUpdated) > d.lastUpdated
     if (updateIsNewer) {
       d.name = updatedDataset.name

@@ -11,10 +11,10 @@ import {
 import { useDeviceService, CordovaPathName } from './useDevice'
 
 import { useVideoStore } from './useVideoStore'
-import { useDatasetStore } from './useDatasetStore'
+// import { useDatasetStore } from './useDatasetStore'
 const { actions: deviceActions } = useDeviceService()
 const { actions: videoActions } = useVideoStore()
-const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
+// const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
 import { appVersion } from '../constants'
 
 // ------------  Types --------------
@@ -281,7 +281,7 @@ const actions = {
             actions.setCordovaPath([CordovaPathName.users, user._id])
             deviceActions.setCordovaPath([CordovaPathName.users, user._id])
             videoActions.setCordovaPath([CordovaPathName.users, user._id])
-            datasetActions.setPresetDatasetConfig(user.datasetConfig)
+            //datasetActions.setPresetDatasetConfig(user.datasetConfig)
           } else {
             actions.errorMessage('User not found')
             actions.logout()
@@ -302,8 +302,8 @@ const actions = {
         credentials: true,
         body: u,
       }
-      if (datasetGetters.presetDatasetConfig.value)
-        u.datasetConfig = datasetGetters.presetDatasetConfig.value
+      // if (datasetGetters.presetDatasetConfig.value)
+      //   u.datasetConfig = datasetGetters.presetDatasetConfig.value
       return apiRequest<User>(payload)
         .then((su: User) => {
           _appState.value.selectedUser = su
