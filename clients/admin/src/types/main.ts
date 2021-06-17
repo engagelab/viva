@@ -298,7 +298,7 @@ export class Video {
     this.consents = []
     this.storages = []
     this.file = { mimeType: 'video/mp4' }
-    data
+    console.log(typeof data)
     // Create a Video using the current App state
     if (data && !(data instanceof Video)) {
       this.updateDataset({
@@ -306,6 +306,7 @@ export class Video {
         name: data.dataset.name,
         selection: data.selection,
       })
+
       if (data.user)
         this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
       if (data.dataset && data.dataset.storages) {
@@ -313,7 +314,7 @@ export class Video {
       }
       this.file = {
         mimeType:
-          data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
+          data.deviceStatus?.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
       }
     } else if (data) {
       // Create a video based on a given Video

@@ -2,11 +2,21 @@
   <div class="flex flex-row flex-wrap">
     <div class="w-full flex justify-center">{{ t('Your datasets') }}</div>
     <!-- Sidebar -->
-    <div class="border-2 h-full w-1/6"></div>
+    <div class="border-2 h-full w-1/6">
+      <ul style="list-style-type: none">
+        <li
+          v-for="(dataset, datasetIndex) in datasets"
+          :key="datasetIndex"
+          class="cursor-pointer"
+          @click="selectedDataset = dataset"
+        >
+          {{ dataset.name }}
+        </li>
+      </ul>
+    </div>
     <!-- Table -->
-    <div></div>
-    <table class="w-5/6">
-      <!-- Headers -->
+    <div class="w-5/6">{{ selectedDataset }}</div>
+    <!-- <table class="w-5/6">
       <tr>
         <th v-for="(header, headerIndex) in headers" :key="headerIndex">
           {{ header.headerName }}
@@ -18,7 +28,7 @@
         <td>{{ dataset }}</td>
         <td>{{ dataset.users.owner }}</td>
       </tr>
-    </table>
+    </table> -->
   </div>
 </template>
 
@@ -60,7 +70,7 @@ export default defineComponent({
   setup() {
     const { t } = useI18n({ messages })
     const showDatasets = ref(false)
-    const selectedDatasets: Ref<Dataset | undefined> = ref(undefined)
+    const selectedDataset: Ref<Dataset | undefined> = ref(undefined)
 
     const datasets: ComputedRef<Dataset[]> = computed(
       () => datasetGetters.datasets.value
@@ -74,10 +84,11 @@ export default defineComponent({
         .fetchDatasets()
         .then(() => {
           showDatasets.value = true
+          console.log(datasets)
         })
         .catch((error) => console.log(error))
     })
-    return { t, datasets, headers, selectedDatasets }
+    return { t, datasets, headers, selectedDataset }
   },
 })
 </script>

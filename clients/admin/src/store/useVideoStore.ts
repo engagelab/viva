@@ -14,6 +14,7 @@ import cordovaService from '../api/cordovaService'
 import { useAppStore } from './useAppStore'
 const { actions: appActions } = useAppStore()
 const { actions: deviceActions } = useDeviceService()
+
 interface State {
   selectedVideo: Video | undefined
   videos: Map<string, Video>
@@ -345,11 +346,13 @@ const actions = {
       .then(() => actions.saveMetadata())
   },
   addMetadata: (video: Video): void => {
+    console.log(video.status.main, VIDEO_STATUS_TYPES.draft)
     if (video.status.main === VIDEO_STATUS_TYPES.draft) {
       state.value.draftVideos.set(video.details.id, video)
       state.value.videoDataFiles.delete(video.details.id)
     } else {
       state.value.videos.set(video.details.id, video)
+      console.log(state.value.videos)
     }
   },
   // Update the video in store with the given video (by fileId) and save to local disk
@@ -422,12 +425,12 @@ const actions = {
       .then((videos: Video[]) => {
         state.value.videos.clear()
         state.value.draftVideos.clear()
-        videos.forEach((v) => {
+        videos.forEach((v: Video) => {
           actions.addMetadata(new Video(v))
         })
       })
       .catch((error) => {
-        appActions.errorMessage('Fetch server videos')
+        if (appActions) appActions.errorMessage('Fetch server videos')
         return Promise.reject(error)
       })
   },

@@ -12,6 +12,7 @@
           @input="onWardTableSearchTextChanged"
         />
         <div>{{ t('MonitorRecordingLog') }}</div>
+        {{ rowData }}
       </div>
 
       <AgGridVue
