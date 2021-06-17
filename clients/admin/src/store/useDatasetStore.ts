@@ -67,7 +67,7 @@ interface Actions {
   // addSelectionToDataset: (data: SelectionOptions) => void
   // fetchConsents: (video: Video) => void
   fetchDatasets: () => Promise<void>
-  addDataset: () => Promise<void>
+  addDataset: (datasetName: string) => Promise<void>
   updateDataset: (dataset: Dataset) => Promise<void>
 }
 
@@ -93,12 +93,12 @@ const actions = {
       })
   },
   //To create a new dataset
-  addDataset(): Promise<void> {
+  addDataset(datasetName: string): Promise<void> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.POST,
       credentials: true,
       route: '/api/dataset',
-      body: {},
+      body: { name: datasetName },
     }
     return apiRequest<Dataset>(payload)
       .then((dataset) => {

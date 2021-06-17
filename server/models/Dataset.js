@@ -69,10 +69,10 @@ datasetSchema.methods.redacted = function () {
       lockedBy: data.status.lockedBy,
     },
     consent: {
-      kind: data.consent.kind
+      kind: data.consent.kind,
     },
     users: {
-      owner: data.users.owner,
+      owner: data.users.owner.profile.username
     },
     storages: data.storages.map((store) => {
       const s = { ...store }
@@ -80,7 +80,7 @@ datasetSchema.methods.redacted = function () {
       return s
     }),
   }
-
+console.log(d)
   return d
 }
 // Duplicate the ID field.
