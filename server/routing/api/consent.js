@@ -4,7 +4,7 @@
 
 const router = require('express').Router()
 const utilities = require('../../utilities')
-const tsdConsent = require('../../services/tsdConsent')
+const tsdConsent = require('../../services/tsd')
 const User = require('../../models/User')
 
 router.get('/consents', utilities.authoriseUser, (request, response, next) => {

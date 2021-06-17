@@ -1,123 +1,80 @@
-/* Upload trackings to TSD using instances
-These instances are created in TSD . */
-/* TSD Credentials, the group name and instanceID will be set from FrontEnd
- */
-const fs = require('fs');
-const utilities = require('../utilities');
-const FormData = require('form-data')
-const https= require('https')
-const TSDCredentials={
- tsdAPI_key: process.env.TSD_API_KEY,
-  projectNo:process.env.TSD_PROJECT_NO,
-  group :process.env.TSD_PROJECT_GROUP,
-instanceID:process.env.TSD_INSTANCE_ID
-}
+const tsdAPI_key = process.env.TSD_API_KEY
+const fs = require('fs')
+const utilities = require('../utilities')
 
+let sampleConsentsRaw = fs.readFileSync('./sampleConsents.json');
+let sampleConsents = JSON.parse(sampleConsentsRaw);
 
-
-
-const readStream = fs.createReadStream('./image.jpg');
-
-const form = new FormData();
-form.append('image', readStream);
-form.append('firstName', 'Marcin');
-form.append('lastName', 'Wanago');
-
-
-
-
-
-
-/* TSD authentication using the API key, instance ID and group  */
-const gettoken = () => {
-    const data = JSON.stringify({
-        id: TSDCredentials.instanceID,
-    })
-return new Promise((resolve , reject)=>{
-    const options = {
-        hostname: 'api.tsd.usit.no',
-        path: `/v1/all/auth/instances/token?type=import`,
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${TSDCredentials.tsdAPI_key}`,
-            'Content-Type': 'application/json',
-            'Content-Length': data.length
-        }
-    }
-   utilities.httpRequest(options, data).
-    then(res=>resolve (res.token)).
-    catch(e=> reject(e))
-  })
-}
-const TSDImportData = (instanceToken) => {
-    return new Promise((resolve) => {
-      const readable = fs.createReadStream('/Users/sharanya/Projects/slplus/server/services/image.jpg');
-
-        const options = {
-            hostname: 'api.tsd.usit.no',
-            path: `/v1/${TSDCredentials.projectNo}/files/stream/trackings?group=${TSDCredentials.group}`,
-            method: 'PUT',
-            headers: {
-                Authorization: `Bearer ${instanceToken}`
-              //  'Content-Type' : 'multipart/form-data'
-            },
-          //   formData: {
-          //     api_password: "abc123",
-          //     file: readable,
-          //     contentType: 'image/jpeg',
-          // }
-          }
-
-        //  // fs.readFile('/Users/sharanya/Projects/slplus/server/services/image.jpg', { encoding: 'utf8' }, function (err, data) {
-        //       // Use the 'data' string here.
-        //  //     if (err) console.log(err)
-        //       utilities.httpRequest(options).
-        //       then(res => resolve(res)).
-        //       catch(e =>    reject(e));
-        //     })
-https.request(options)
-    .pipe(readable)
-    .on('finish', function() {
-      console.log('Done downloading, encrypting, and saving!');
-      resolve();
-
-});
-
-})
-}
-
-/* Iterate over the formData.entries to post the audio and video file to TSD*/
-// const jsonToFile = () => {
-//   return new Promise ((resolve ,reject )=>{
-//     const testString='test'
-//     fs.writeFile('./testData.json', testString, err => {
-//       if (err) {
-//           console.log('Error writing file', err)
-//           reject(err)
-//       } else {
-//          resolve('Successfully wrote file')
-//       }
-//   })
-// })
-// }
-
-//  TSD Authentication and post Data into TSD
-const importToTSD  =  () => {
-return new Promise ((resolve,reject) =>{
-  gettoken().then ((token )=>{
-    console.log(token);
-    TSDImportData(token).then((response)=>{
-      console.log(response)
-      resolve(response)
-    })
-  }).catch((error)=>{
-    console.log(error)
-    reject (error)
-  })
-})
+// Use the User's id_token to get a "short lived" TSD token
+function tsdAuthoriseConsent(idtoken) {
+  if (process.env.NODE_ENV === 'development') {
+    return Promise.resolve(sampleConsents)
   }
+  const data = JSON.stringify({
+    idtoken,
+  })
+  const options = {
+    hostname: 'api.tsd.usit.no',
+    path: `/v1/p01/auth/dataporten/token?type=consquery`,
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${tsdAPI_key}`,
+      'Content-Type': 'application/json',
+      'Content-Length': data.length,
+    },
+  }
+  return utilities.httpRequest(options, data)
+}
 
+const fetchConsents = ({ datasetId, formId, token }) => {
+  const data = JSON.stringify({
+    reference: { dataset: datasetId },
+  })
+  const options = {
+    hostname: 'api.tsd.usit.no',
+    path: `/v1/p01/consent/external/${formId}/verify`,
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Content-Length': data.length,
+    },
+  }
+  return utilities.httpRequest(options, data)
+}
 
+function filterConsents(consents, utvalg) {
+  return consents.filter((consent) => {
+    if (consent.reference.subset.slice(-1) != '.')
+      consent.reference.subset += '.'
+    return consent.reference.subset == utvalg && consent.current
+  })
+}
+
+// Method to export consents from TSD
+function exportConsent(
+  { user, datasetId, formId, utvalg },
+  error,
+  successCallback
+) {
+  tsdAuthoriseConsent(user.tokens.id_token)
+    .then((token) => {
+      fetchConsents({ datasetId, utvalg, formId, token }).then((consents) => {
+        const regexComma = /,/gi
+        const regexColon = /:/gi
+        let filteredConsents = []
+        utvalg = decodeURIComponent(utvalg)
+          .replace(regexComma, '.')
+          .replace(regexColon, '-')
+        if (utvalg.length > 0 && utvalg.slice(-1) != '.') utvalg += '.'
+        if (consents.length > 0) filteredConsents = filterConsents(consents, utvalg)
+        successCallback(filteredConsents ? filteredConsents : [])
+      })
+    })
+    .catch((err) => {
+      error(err)
+    })
+}
 module.exports = {
-  importToTSD,
+  exportConsent,
 }

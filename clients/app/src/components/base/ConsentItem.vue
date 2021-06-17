@@ -6,7 +6,7 @@
         :id="`consentCheckbox-${consent.id}`"
         name="Check me!"
         value="true"
-        v-model="checkedBox"
+        v-model="checked"
         @change="inputChanged"
       />
       <!--label :for="`consentCheckbox-${consent.id}`">&nbsp;godkjent</label-->
@@ -25,7 +25,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, PropType, ref, toRefs } from 'vue'
+import { defineComponent, computed, ref, PropType, toRefs, watch } from 'vue'
 import { Consent } from '@/types/main'
 import circle1 from '@/assets/icons/svg/circle1.svg'
 import circle2 from '@/assets/icons/svg/circle2.svg'
@@ -47,8 +47,14 @@ export default defineComponent({
   },
   emits: ['change', 'update:modelValue'],
   setup(props, context) {
-    const checkedBox = ref(false)
     const { consent } = toRefs(props)
+    const checked = ref(consent.value.checked)
+    watch(
+      () => consent.value.checked,
+      (newValue) => {
+        checked.value = newValue
+      }
+    )
     const circles: { [index: number]: unknown } = {
       1: circle1,
       2: circle2,
@@ -69,21 +75,20 @@ export default defineComponent({
     const consentQuestions = computed(() => {
       const sortedAnswerKeys = Object.keys(consent.value.questions).sort()
       return sortedAnswerKeys.map((key, index) => {
-        const checked = consent.value.questions[key]
-        const truthy = checked.toLowerCase() === 'true'
+        const check = consent.value.questions[key]
+        const truthy = check.toLowerCase() === 'true'
         const source = truthy ? circles[index + 1] : circleX
-        return { checked, source, key: `question-circle-id-${index}` }
+        return { source, key: `question-circle-id-${index}` }
       })
     })
     function inputChanged() {
-      consent.value.checked = checkedBox.value
       context.emit('change', {
-        checked: checkedBox.value,
+        checked: checked.value,
         id: consent.value.submission_id,
       })
     }
     return {
-      checkedBox,
+      checked,
       formattedName,
       consentQuestions,
       inputChanged,

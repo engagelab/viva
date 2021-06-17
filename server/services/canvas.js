@@ -39,7 +39,7 @@ const userDetails = (canvasAccessToken, canvasUserId) => {
   let options = {
     host: 'uio.instructure.com',
     port: 443,
-    path: `/api/v1/users/${canvasUserId}/profile`,
+    path: `/api/v1/users/${canvasUserId}/profile?include[]=account`,
     method: 'GET',
     headers: {
       Authorization: `Bearer ${canvasAccessToken}`,

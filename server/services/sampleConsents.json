@@ -1,0 +1,104 @@
+[
+  {
+    "current": false,
+    "delivered_on": "Tue, 25 Feb 2020 13:29:00 GMT",
+    "form_id": "140649",
+    "questions": { "consent_question_1": "True", "consent_question_2": "True" },
+    "reference": {
+      "child_fullname": "",
+      "dataset": "5e5512f17ec2ce3bd9025d22",
+      "subset": "skole-Hauk.",
+      "user_fullname": "Hoang Bao Ngo",
+      "user_identifier": "child",
+      "user_mail": "hoangbn@uio.no",
+      "username": "hoangbn@uio.no"
+    },
+    "source": "140649",
+    "submission_id": "6256984"
+  },
+  {
+    "current": false,
+    "delivered_on": "Wed, 26 Feb 2020 10:08:00 GMT",
+    "form_id": "140649",
+    "questions": { "consent_question_1": "True", "consent_question_2": "True" },
+    "reference": {
+      "child_fullname": "",
+      "dataset": "5e5512f17ec2ce3bd9025d22",
+      "subset": "skole-Hauk.",
+      "user_fullname": "Richard Nesnass",
+      "user_identifier": "child",
+      "user_mail": "richarne@uio.no",
+      "username": "richarne@uio.no"
+    },
+    "source": "140649",
+    "submission_id": "6262376"
+  },
+  {
+    "current": false,
+    "delivered_on": "Wed, 26 Feb 2020 11:25:00 GMT",
+    "form_id": "140649",
+    "questions": { "consent_question_1": "True", "consent_question_2": "False" },
+    "reference": {
+      "child_fullname": "",
+      "dataset": "5e5512f17ec2ce3bd9025d22",
+      "subset": "skole-Hauk.",
+      "user_fullname": "Hoang Bao Ngo",
+      "user_identifier": "child",
+      "user_mail": "hoangbn@uio.no",
+      "username": "hoangbn@uio.no"
+    },
+    "source": "140649",
+    "submission_id": "6262954"
+  },
+  {
+    "current": true,
+    "delivered_on": "Wed, 26 Feb 2020 12:09:00 GMT",
+    "form_id": "140649",
+    "questions": { "consent_question_1": "True", "consent_question_2": "True" },
+    "reference": {
+      "child_fullname": "",
+      "dataset": "5e5512f17ec2ce3bd9025d22",
+      "subset": "skole-Hauk.",
+      "user_fullname": "Richard Nesnass",
+      "user_identifier": "child",
+      "user_mail": "richarne@uio.no",
+      "username": "richarne@uio.no"
+    },
+    "source": "140649",
+    "submission_id": "6263303"
+  },
+  {
+    "current": true,
+    "delivered_on": "Wed, 26 Feb 2020 16:32:00 GMT",
+    "form_id": "140649",
+    "questions": { "consent_question_1": "False", "consent_question_2": "False" },
+    "reference": {
+      "child_fullname": "",
+      "dataset": "5e5512f17ec2ce3bd9025d22",
+      "subset": "skole-Hauk.",
+      "user_fullname": "Hoang Bao Ngo",
+      "user_identifier": "child",
+      "user_mail": "hoangbn@uio.no",
+      "username": "hoangbn@uio.no"
+    },
+    "source": "140649",
+    "submission_id": "6266215"
+  },
+  {
+    "current": true,
+    "delivered_on": "Wed, 26 Feb 2020 16:33:00 GMT",
+    "form_id": "140649",
+    "questions": { "consent_question_1": "False", "consent_question_2": "False" },
+    "reference": {
+      "child_fullname": "Hoang Bao Ngo",
+      "dataset": "5e5512f17ec2ce3bd9025d22",
+      "subset": "skole-Hauk.",
+      "user_fullname": "Hoang Bao Ngo",
+      "user_identifier": "parent",
+      "user_mail": "hoangbn@uio.no",
+      "username": "hoangbn@uio.no"
+    },
+    "source": "140649",
+    "submission_id": "6266222"
+  }
+]

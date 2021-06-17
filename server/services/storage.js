@@ -114,13 +114,13 @@ const fetchStorage = (video) => {
         let path = generatePath({ list: storage.file.path, dataset, video }, '/')
         const fileName = generatePath({ list: storage.file.name, dataset, video }, '-')
         // TODO: Can 'groupId' be integrated into storage.file.path ?
-        if (storage.name === videoStorageTypes.lagringshotell) {
+        if (storage.kind === videoStorageTypes.lagringshotell) {
           const basePath = process.env.LAGRINGSHOTELL || '/tmp'
           if (storage.groupId) path = storage.groupId + '/' + path
           path = basePath + path
         }
         stores.push({
-          name: storage.name,
+          kind: storage.kind,
           path,
           fileName,
         })
@@ -188,5 +188,6 @@ module.exports = {
   downloadS3File,
   fetchStorage,
   fetchStorageOLD,
-  formPath
+  formPath,
+  generatePath
 }

@@ -1,5 +1,6 @@
 const fileOperations = require('./fileOperations')
 const { exec } = require('child_process')
+const { videoStorageTypes } = require('../constants')
 
 const path = process.env.LAGRINGSHOTELL
 /* Import env file */
@@ -46,7 +47,7 @@ function createVideoAtLagringshotell({ video, store, subDirSrc }) {
     return createFolder(store.path).then(() => {
 
       return fileOperations.copyFile(video, subDirSrc, store.path, store.fileName)
-        .then(newVideoPath => video.storages.push({ path: newVideoPath, type: 'lagringshotell'}))
+        .then(newVideoPath => video.storages.push({ path: newVideoPath, kind: videoStorageTypes.lagringshotell }))
     })
   })
 }

@@ -42,6 +42,10 @@ async function setUserAttributes(user, userProfile, userIdentifier, tokenSet) {
 }
 
 function getCanvasEthicsCourseProgress(user) {
+  if (process.env.CANVAS_ETHICS_COURSE_ID === 'none') {
+    user.status.ethicsCompleted = true
+    return Promise.resolve()
+  }
   return canvas.courseProgress(user.tokens.access_token, user.profile.oauthId, process.env.CANVAS_ETHICS_COURSE_ID).then((progress) => {
     user.status.ethicsCompleted = progress.requirement_count == progress.requirement_completed_count
   })

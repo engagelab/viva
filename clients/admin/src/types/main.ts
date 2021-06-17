@@ -223,6 +223,10 @@ interface VideoDataset {
   name: string
   selection: UserDatasetSelection[] // 'utvalg' setting
 }
+interface VideoStorages {
+  kind: string
+  path: string
+}
 
 export interface VideoSpec {
   dataset: Dataset
@@ -246,7 +250,7 @@ export class Video {
   users: VideoUsers
   dataset: VideoDataset
   consents: string[]
-  storages: string[]
+  storages: VideoStorages[]
 
   constructor(data?: Video | VideoSpec) {
     const id = uuid()
@@ -307,7 +311,10 @@ export class Video {
         selection: data.selection,
       })
       this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
-      this.storages = data.dataset.storages.map((storage) => storage.name)
+      this.storages = data.dataset.storages.map((storage) => ({
+        kind: storage.kind,
+        path: '',
+      }))
       this.file = {
         mimeType:
           data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
@@ -448,7 +455,7 @@ interface DatasetUsers {
   }
 }
 interface DatasetStorage {
-  name: VIDEO_STORAGE_TYPES
+  kind: VIDEO_STORAGE_TYPES
   groupId: string
   file: {
     name: string[]
@@ -516,7 +523,7 @@ export class Dataset {
       this.storages =
         data.storages.map((s: DatasetStorage) => {
           return {
-            name: s.name || '',
+            kind: s.kind || '',
             groupId: s.groupId || '',
             file: { name: s.file.name || [] },
             category: s.category || [],

@@ -204,7 +204,7 @@ router.get('/canvas/login/user', function (request, response) {
 // OPTIONAL
 // Callback for "authentication_flow" specific-user authorisation
 // GET Callback contains 'code' to exchange for a specific user's access_token
-router.get('/canvas/callback', function (request, response) {
+router.get('/canvas/callback', function (request, response, next) {
   const { code } = request.query
   const params = CanvasAPIClient.callbackParams(request)
 
@@ -228,7 +228,7 @@ router.get('/canvas/callback', function (request, response) {
         ).then((user) => {
           completeCallback(request, response, user)
         })
-      })
+      }).catch((error) => next(error))
     })
   }
 })

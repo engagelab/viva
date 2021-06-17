@@ -30,7 +30,7 @@ const removeFile = (filename, subDir) => {
 // Move a file from one folder to another
 // source and destination folders are set by videoFolderNames
 const moveFile = (video, subDirSrc, subDirDest) => {
-  const fileExtension = video.file.type ? '.' + video.file.type : '';
+  const fileExtension = video.file.extension ? '.' + video.file.extension : '';
   return new Promise((resolve, reject) => {
     exec(
       `cd ${dirPath}/videos/${subDirSrc} && mv ${
@@ -55,7 +55,7 @@ const copyFile = (video, subDirSrc, subDirDest, fileName) => {
   let videoFilename = video.file.name.replace(regex, "")
   let destinationFilename = fileName.replace(regex,"")
   console.log(videoFilename)
-  const fileExtension = video.file.type ? '.' + video.file.type : '';
+  const fileExtension = video.file.extension ? '.' + video.file.extension : '';
   const newVideoPath = `${subDirDest}/${destinationFilename}${fileExtension}`;
   console.log(`cp  ${dirPath}/videos/${subDirSrc}/${
     videoFilename
@@ -87,7 +87,7 @@ const copyFile = (video, subDirSrc, subDirDest, fileName) => {
  * @returns {String} name - a newly created filename based on the parameters above
  */
 const createName = (video, schoolname, addUsername, username) => {
-  const fileExtension = video.fileType ? '.' + video.fileType : '';
+  const fileExtension = video.file.extension ? '.' + video.file.extension : '';
   const datetime = new Date()
     .toLocaleString()
     // eslint-disable-next-line no-useless-escape

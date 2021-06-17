@@ -167,8 +167,8 @@ router.get('/authenticated_google_transfer', (request, response) => {
             (error4, video) => {
               if (error4) {
                 return console.error(error4);
-              } else if (video && !video.pipelineInProgress) {
-                video.pipelineInProgress = true;
+              } else if (video && !video.status.inPipeline) {
+                video.status.inPipeline = true;
                 video.save();
                 console.log(
                   `${new Date().toUTCString()} Attained a token and initiated video transfer for userid: ${
@@ -187,14 +187,14 @@ router.get('/authenticated_google_transfer', (request, response) => {
                   })
                   .catch(error5 => {
                     console.log(error5);
-                    video.pipelineInProgress = false;
+                    video.status.inPipeline = false;
                     video.status = 'error';
                     video.errorDebug = error5.toString();
                     video.save();
                     completedTransfer(error5.message);
                   });
               } else {
-                if (video && video.pipelineInProgress) {
+                if (video && video.status.inPipeline) {
                   const message =
                     'Attempted to transfer a video already in transfer';
                   console.log(message);

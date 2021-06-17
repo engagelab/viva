@@ -12,7 +12,7 @@ const editDecriptionList = {
 
 const videoSchema = new mongoose.Schema({
   file: { // For Back-End use only
-    type: { type: String, default: '' }, // File extension to use e.g. mp4  Assigned by FFMPEG, back end only.
+    extension: { type: String, default: '' }, // File extension to use e.g. mp4  Assigned by FFMPEG, back end only.
     name: { type: String }, // The name of the file stored server-side by TUS
     mimeType: { type: String }, // mime type e.g. video/mp4  Assigned by recorder at front end.
   },
@@ -62,8 +62,8 @@ const videoSchema = new mongoose.Schema({
   },
   consents: { type: Array }, // These are the consents confirmed by the teacher in this recording
   storages: [{
-    type: { type: String }, // 'lagringshotell', 'educloud', etc..
-    path: { type: Array },
+    kind: { type: String }, // 'lagringshotell', 'educloud', etc..
+    path: { type: String },
   }],
 })
 
@@ -80,7 +80,7 @@ videoSchema.methods.redacted = function () {
     users: this.users,
     dataset: this.dataset,
     consents: this.consents,
-    storages: this.storages.map((s) => s.type)
+    storages: this.storages.map((s) => s.kind)
   }
   delete v.status.error.errorDebug
   return v

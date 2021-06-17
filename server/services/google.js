@@ -4,9 +4,9 @@
 
 const fs = require('fs');
 const { google } = require('googleapis');
-const fileOperations = require('./fileOperations');
+const fileOperations = require('../subprocesses/fileOperations');
 const { videoStatusTypes, videoStorageTypes } = require('../constants');
-const { generatePath } = require('../services/storage');
+const { generatePath } = require('./storage');
 
 /* --------------    UiO Google Suite ----------------- */
 
@@ -75,7 +75,7 @@ function metadataObject(name, folderStructure) {
   return {
     name,
     mimeType: 'application/vnd.google-apps.folder',
-    appProperties: { appID: 'viva-app-university-of-oslo', folderStructure },
+    appProperties: { appID: 'viva-app-google-drive', folderStructure },
     parents: [],
   };
 }
@@ -90,9 +90,9 @@ async function createFolders(drive, folders, rootID) {
     }
 
     /* Create needed new folders sequentially, async on GDrive */
-    for (let i = 0; i < folders.length; i++) {
-      const meta = folders[i].metadata
-      let parentID = subFolder ? subFolder.id : rootID
+    for (const f of folders) {
+      const meta = f.metadata
+      const parentID = subFolder ? subFolder.id : rootID
       meta.parents.push(parentID)
       try {
         subFolder = await createGFile(drive, meta)
@@ -112,10 +112,10 @@ function createFolderStructures(drive, rootID, folderPath) {
 
   // Create metadata items for GDrive for creation of new folders
   let path = ''
-  for (let i = 0; i < paths.length; i++) {
-    path += `${paths[i]}/`
-    const metadata = metadataObject(paths[i], path);
-    foldersChecked.push(checkFolderExists(drive, metadata));
+  for (const p of paths) {
+    path += `${p}/`
+    const metadata = metadataObject(p, path)
+    foldersChecked.push(checkFolderExists(drive, metadata))
   }
 
   // When all folders have been checked, create the ones that don't exist
@@ -128,7 +128,7 @@ function initializeStructure(video, drive, rootID, path, filename) {
   return new Promise((resolve, reject) => {
 
     const videoReject = (error, msg) => {
-      video.errorInfo = msg
+      video.status.error.errorInfo = msg
       reject(error);
     }
 
@@ -137,41 +137,36 @@ function initializeStructure(video, drive, rootID, path, filename) {
         return videoReject(error, 'Error creating folder structure')
       }
       const dirPath = process.cwd();
-      const localVideoPath = `${dirPath}/videos/edited/${video.filename}.${video.fileType}`;
+      const localVideoPath = `${dirPath}/videos/edited/${video.file.name}.${video.file.extension}`
       const metaData = {
         name: filename,
         parents: [subFolder.file.id],
       };
       const media = {
-        mimeType: video.mimeType,
+        mimeType: video.file.mimeType,
         body: fs.createReadStream(localVideoPath),
       };
 
       createGFile(drive, metaData, media).then(() => {
-        console.log(`${new Date().toUTCString()} Folders OK, video transferred. SubFolder name: ${subFolder.file.name} Video name: ${filename}`);
+        console.log(`${new Date().toUTCString()} Folders OK, video transferred. SubFolder name: ${subFolder.file.name} Video name: ${filename}`)
         fileOperations.moveFile(video, videoStatusTypes.edited, videoStatusTypes.complete).then(() => {
-          video.status = videoStatusTypes.complete;
-          video.pipelineInProgress = false;
-          video.storagePath.push(localVideoPath);
+          video.status.main = videoStatusTypes.complete
+          video.status.inPipeline = false
+          video.storages.push({ kind: videoStorageTypes.google, path: localVideoPath })
           video.save()
-          resolve();
+          resolve()
         }).catch(err => videoReject(err, 'Error moving file to complete'))
-      }).catch(err => videoReject(err, 'File creation error for Google Drive. Transfer not completed'));
-    }).catch(err => videoReject(err, 'Folder setup error for Google Drive. Transfer not completed'));
+      }).catch(err => videoReject(err, 'File creation error for Google Drive. Transfer not completed'))
+    }).catch(err => videoReject(err, 'Folder setup error for Google Drive. Transfer not completed'))
   });
 }
 
 // Upload a video file to the user's Google Drive space
 function createVideoAtGoogle(video, dataset, auth) {
   return new Promise((resolve, reject) => {
-    const drive = google.drive({ version: 'v3', auth });
-    const vivaMetadata = {
-      name: 'VIVA',
-      mimeType: 'application/vnd.google-apps.folder',
-      appProperties: { appID: 'viva-app-university-of-oslo', folderStructure: 'VIVA' },
-    };
-
-    const storage = dataset.storages.find(element => element.name === videoStorageTypes.google);
+    const drive = google.drive({ version: 'v3', auth })
+    const vivaMetadata = metadataObject('VIVA', 'VIVA')
+    const storage = dataset.storages.find((element) => element.kind === videoStorageTypes.google)
     const formedPath = generatePath({ list: storage.file.path, dataset, video }, '/')
     const formedName = generatePath({ list: storage.file.name, dataset, video }, '-')
 
@@ -181,7 +176,7 @@ function createVideoAtGoogle(video, dataset, auth) {
           const rootID = rootFolder.file.id;
           return initializeStructure(video, drive, rootID, formedPath, formedName.substring(1)).then(() => resolve())
         } else {
-          console.log('VIVA folder not found ... \nCreating VIVA folder ...');
+          console.log('VIVA folder not found ... \nCreating VIVA folder ...')
           return createGFile(drive, vivaMetadata).then(vivaFolder => {
             return initializeStructure(video, drive, vivaFolder.id, formedPath, formedName.substring(1)).then(() => resolve())
           });
