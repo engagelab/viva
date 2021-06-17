@@ -598,6 +598,12 @@ interface UserVideos {
   draftIDs: string[]
   removedDraftIDs: string[]
 }
+
+export interface UserRecordingInProcess {
+  name: string
+  videos: Array<string>
+}
+
 export class User {
   _id: string
   status: UserStatus

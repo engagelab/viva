@@ -7,6 +7,7 @@ import {
   APIRequestPayload,
   XHR_REQUEST_TYPE,
   Callback,
+  UserRecordingInProcess,
 } from '../types/main'
 import { useDeviceService, CordovaPathName } from './useDevice'
 
@@ -44,6 +45,7 @@ export interface AppState {
   serverStatus: ServerStatus
   snackbar: Snackbar
   cordovaPath: string[]
+  userRecordingsInProcess: UserRecordingInProcess[]
 }
 // ------------  State (internal) --------------
 const _appState: Ref<AppState> = ref({
@@ -73,6 +75,7 @@ const _appState: Ref<AppState> = ref({
     type: 'none',
     text: '',
   },
+  userRecordingsInProcess: new Array<UserRecordingInProcess>(),
 })
 
 // ------------  Getters (Read only) --------------
@@ -89,6 +92,7 @@ interface Getters {
   deviceStatus: ComputedRef<DeviceStatus>
   serverStatus: ComputedRef<ServerStatus>
   user: ComputedRef<User>
+  users: ComputedRef<UserRecordingInProcess[]>
 }
 const getters = {
   get hostType(): ComputedRef<string> {
@@ -127,6 +131,9 @@ const getters = {
   get user(): ComputedRef<User> {
     return computed(() => _appState.value.selectedUser)
   },
+  get users(): ComputedRef<UserRecordingInProcess[]> {
+    return computed(() => _appState.value.userRecordingsInProcess)
+  },
 }
 // ------------  Actions --------------
 interface Actions {
@@ -146,6 +153,7 @@ interface Actions {
   getLoginSession: () => Promise<void>
   tokenLogin: () => Promise<boolean>
   setCordovaPath: (path: string[]) => void
+  getUsers: () => Promise<void>
 }
 const actions = {
   setFullScreen(value: boolean): void {
@@ -313,6 +321,22 @@ const actions = {
           actions.errorMessage(error)
         })
     } else return Promise.resolve()
+  },
+  getUsers(): Promise<void> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.GET,
+      route: '/api/users',
+      credentials: true,
+    }
+    return apiRequest<UserRecordingInProcess[]>(payload)
+      .then((userRecordings) => {
+        _appState.value.userRecordingsInProcess = userRecordings
+        return Promise.resolve()
+      })
+      .catch((error: Error) => {
+        actions.errorMessage(error)
+        return Promise.reject(error)
+      })
   },
 
   // Try to exchange token for a session if the token already exists
