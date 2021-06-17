@@ -23,7 +23,14 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, ref } from 'vue'
+import {
+  computed,
+  ComputedRef,
+  defineComponent,
+  onMounted,
+  ref,
+  Ref,
+} from 'vue'
 import { Dataset } from '@/types/main'
 import { useDatasetStore } from '../../store/useDatasetStore'
 const { actions: datasetActions, getters: datasetGetters } = useDatasetStore()
@@ -53,6 +60,7 @@ export default defineComponent({
   setup() {
     const { t } = useI18n({ messages })
     const showDatasets = ref(false)
+    const selectedDatasets: Ref<Dataset | undefined> = ref(undefined)
 
     const datasets: ComputedRef<Dataset[]> = computed(
       () => datasetGetters.datasets.value
@@ -69,7 +77,7 @@ export default defineComponent({
         })
         .catch((error) => console.log(error))
     })
-    return { t, datasets, headers }
+    return { t, datasets, headers, selectedDatasets }
   },
 })
 </script>

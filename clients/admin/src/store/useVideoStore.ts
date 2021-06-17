@@ -422,7 +422,9 @@ const actions = {
       .then((videos: Video[]) => {
         state.value.videos.clear()
         state.value.draftVideos.clear()
-        videos.forEach((v) => actions.addMetadata(new Video(v)))
+        videos.forEach((v) => {
+          actions.addMetadata(new Video(v))
+        })
       })
       .catch((error) => {
         appActions.errorMessage('Fetch server videos')

@@ -90,10 +90,6 @@ Video.findOne({ 'file.name': 'VideoTest' }, (error, v) => {
         sharedWith: [], // Users who can see this video. Used for easier searching
         sharing: [],
       },
-      dataset: {
-        name: 'Data sett test',
-        selection: { type: Array }, // 'utvalg' setting
-      },
       consents: [], // These are the consents confirmed by the teacher in this recording
       storages: [],
     }

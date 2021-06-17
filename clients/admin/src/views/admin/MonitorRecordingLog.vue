@@ -71,12 +71,9 @@ export default defineComponent({
     }
 
     onMounted(() => {
-      videoActions.selectVideo(undefined)
-      videoActions.loadMetadata().then(() =>
-        videoActions.fetchMetadata().then(() => {
-          console.log(rowData)
-        })
-      )
+      videoActions.fetchMetadata().then(() => {
+        console.log(rowData)
+      })
     })
 
     const searchField = ref('')
