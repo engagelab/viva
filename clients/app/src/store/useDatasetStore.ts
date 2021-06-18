@@ -104,16 +104,20 @@ const actions = {
     return apiRequest<Dataset[]>(payload)
       .then((datasets) => {
         state.value.datasets = []
-        datasets.forEach((s) => {
-          const newDataset = new Dataset(s)
-          state.value.datasets.push(newDataset)
-          if (
-            state.value.presetDatasetConfig &&
-            state.value.presetDatasetConfig.id == newDataset._id
-          ) {
-            state.value.selectedDataset = newDataset
-          }
-        })
+        if (datasets.length > 0) {
+          datasets.forEach((s) => {
+            const newDataset = new Dataset(s)
+            state.value.datasets.push(newDataset)
+            if (
+              state.value.presetDatasetConfig &&
+              state.value.presetDatasetConfig.id == newDataset._id
+            ) {
+              state.value.selectedDataset = newDataset
+            }
+          })
+        } else {
+          notifyActions.errorMessage(new Error('No datasets found'))
+        }
       })
       .catch((error: Error) => {
         notifyActions.errorMessage(error)
@@ -182,10 +186,14 @@ const actions = {
       }
       apiRequest<Consent[]>(payload)
         .then((consents: Consent[]) => {
-          state.value.selectedDatasetConsents = consents.map((c) => ({
-            ...c,
-            checked: false,
-          }))
+          if (consents.length > 0) {
+            state.value.selectedDatasetConsents = consents.map((c) => ({
+              ...c,
+              checked: false,
+            }))
+          } else {
+            notifyActions.errorMessage(new Error('No consents found'))
+          }
         })
         .catch((error: Error) => {
           notifyActions.errorMessage(error)

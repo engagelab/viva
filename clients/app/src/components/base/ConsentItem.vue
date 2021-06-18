@@ -14,7 +14,7 @@
     <div class="ml-4 flex flex-row">
       <img
         class="w-6"
-        alt="consent question"
+        alt="consent question icon"
         v-for="question in consentQuestions"
         :key="question.key"
         :src="question.source"
@@ -33,6 +33,8 @@ import circle3 from '@/assets/icons/svg/circle3.svg'
 import circle4 from '@/assets/icons/svg/circle4.svg'
 import circle5 from '@/assets/icons/svg/circle5.svg'
 import circleX from '@/assets/icons/svg/circleX.svg'
+
+const circles = [circle1, circle2, circle3, circle4, circle5, circleX]
 
 export default defineComponent({
   props: {
@@ -55,13 +57,6 @@ export default defineComponent({
         checked.value = newValue
       }
     )
-    const circles: { [index: number]: unknown } = {
-      1: circle1,
-      2: circle2,
-      3: circle3,
-      4: circle4,
-      5: circle5,
-    }
     const formattedName = computed(() => {
       const reference = consent.value.reference
       if (reference.user_identifier == 'child') {
@@ -77,8 +72,11 @@ export default defineComponent({
       return sortedAnswerKeys.map((key, index) => {
         const check = consent.value.questions[key]
         const truthy = check.toLowerCase() === 'true'
-        const source = truthy ? circles[index + 1] : circleX
-        return { source, key: `question-circle-id-${index}` }
+        const source = truthy ? circles[index] : circles[5]
+        return {
+          source: `/${source}`,
+          key: `question-circle-id-${index}`,
+        }
       })
     })
     function inputChanged() {
@@ -92,12 +90,6 @@ export default defineComponent({
       formattedName,
       consentQuestions,
       inputChanged,
-      circle1,
-      circle2,
-      circle3,
-      circle4,
-      circle5,
-      circleX,
     }
   },
 })

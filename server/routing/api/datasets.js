@@ -65,11 +65,10 @@ const fetchUsersWithDraftVideos = () => {
 router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
   const u = response.locals.user
   const groupIds = u.profile.groups.map((g) => g.id)
-  /* const isAdmin = utilities.hasMinimumUserRole(
+  const isAdmin = utilities.hasMinimumUserRole(
     response.locals.user,
     userRoles.admin
-  )*/
-  const isAdmin = true
+  )
   let query = {}
   if (isAdmin) {
     query = { 'users.owner': u._id }

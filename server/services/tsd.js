@@ -1,15 +1,8 @@
 const tsdAPI_key = process.env.TSD_API_KEY
-const fs = require('fs')
 const utilities = require('../utilities')
-
-let sampleConsentsRaw = fs.readFileSync('./sampleConsents.json');
-let sampleConsents = JSON.parse(sampleConsentsRaw);
 
 // Use the User's id_token to get a "short lived" TSD token
 function tsdAuthoriseConsent(idtoken) {
-  if (process.env.NODE_ENV === 'development') {
-    return Promise.resolve(sampleConsents)
-  }
   const data = JSON.stringify({
     idtoken,
   })
