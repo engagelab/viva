@@ -98,7 +98,7 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
         fetchUsersWithDraftVideos().then((dus) => {
           const draftUsers = dus.map((du) => du.redacted())
           Promise.all(datasets).then((datasets) => {
-            console.log(datasets)
+            
             response.send({ datasets, videos, draftUsers })
           })
         })

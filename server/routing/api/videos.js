@@ -40,7 +40,7 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
 
 // Get a single video by fileId to determine changing status
 router.get('/video', utilities.authoriseUser, (request, response) => {
-  Video.findOne({ fileId: request.query.videoref }, (error, v) => {
+  Video.findOne({ 'details.id': request.query.videoref }, (error, v) => {
     if (error) {
       return response.status(403).end()
     } else if (!v) {
@@ -53,7 +53,7 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 
 // Upload a single video metadata to be combined with an uploaded video file
 router.post('/video', utilities.authoriseUser, async (request, response) => {
-  const query = { fileId: request.body.fileId }
+  const query = { 'details.id': request.body.videoref }
   const update = { ...request.body }
   update.status = videoStatusTypes.uploaded
   // https://mongoosejs.com/docs/api.html#model_Model.update

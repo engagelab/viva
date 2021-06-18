@@ -3,14 +3,27 @@
     <h2>{{ t('dataset') }}</h2>
 
     <p>{{ theDataset }}</p>
-    <AnswerInput
+
+    <div class="flex flex-col ...">
+      <div>
+        <div class="flex justify-between ...">
+          <div><p>Name</p></div>
+          <div>2</div>
+          <div>3</div>
+        </div>
+      </div>
+      <div>2</div>
+      <div>3</div>
+    </div>
+
+    <!-- <AnswerInput
       class="m-2 w-32"
       mode="text"
       :border="false"
       :label="t('Name')"
       :required="true"
       v-model="theDataset.name"
-    ></AnswerInput>
+    ></AnswerInput> -->
     <AnswerInput
       class="m-2 w-32"
       mode="text"
