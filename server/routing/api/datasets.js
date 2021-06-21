@@ -4,8 +4,8 @@
 const router = require('express').Router()
 const utilities = require('../../utilities')
 const Dataset = require('../../models/Dataset')
-const Video = require('../../models/Video')
-const User = require('../../models/User')
+/* const Video = require('../../models/Video')
+const User = require('../../models/User') */
 const { userRoles, consentTypes } = require('../../constants')
 
 /* ---------------- Setting activities ---------------- */
@@ -36,7 +36,7 @@ const updateSelection = ({ path, newName, selectionKeys, selection }) => {
   selectedUtvalg[currentUtvalgKey].push(newItem)
 }
 
-const fetchVideosForDatasets = (datasets) => {
+/* const fetchVideosForDatasets = (datasets) => {
   const datasetIds = datasets.map((d) => d._id)
   const query = { datasetId: { $in: datasetIds } }
   const populateUser = [{ path: 'userId', select: ['profile.username'] }]
@@ -58,7 +58,7 @@ const fetchUsersWithDraftVideos = () => {
       resolve(users)
     })
   })
-}
+} */
 
 // Get datasets for the current user
 // If admin, also get Users with outstanding drafts, and video listing
@@ -84,24 +84,17 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
     ]
   }
 
+  function populateDatasets(datasets) {
+    const opts = [{ path: 'users.owner', select: 'profile.username' }];
+    return Dataset.populate(datasets, opts);
+  }
+
   Dataset.find(query, async (error, ds) => {
     if (error) return next(error)
-
-    const datasets = await ds.map(async (d) => {
-      d = await d.populate('users.owner').execPopulate()
-      return d.redacted()
-    })
+    const datasets = ds.map((d) => d.redacted())
     if (isAdmin) {
-      fetchVideosForDatasets(ds).then((vs) => {
-        const videos = vs.map((v) => v.redacted())
-        fetchUsersWithDraftVideos().then((dus) => {
-          const draftUsers = dus.map((du) => du.redacted())
-          Promise.all(datasets).then((datasets) => {
-            
-            response.send({ datasets, videos, draftUsers })
-          })
-        })
-      })
+      const populatedDatasets = await populateDatasets(ds)
+      return response.send(populatedDatasets)
     } else response.send(datasets)
   })
 })

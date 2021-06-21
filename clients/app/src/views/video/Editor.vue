@@ -22,11 +22,14 @@
           ref="playbackVideo"
           id="playbackVideo"
           oncontextmenu="return false;"
+          :src="sampleMovie ? 'https://localhost:8000/sampleClip.mp4' : ''"
           playsinline
           webkit-playsinline
           preload="metadata"
           :type="videoMimeType"
-        ></video>
+        >
+          <track kind="subtitles" />
+        </video>
       </div>
       <!--/div>
           <div v-show="selectedVideo.decryptionInProgress">
@@ -201,6 +204,7 @@ export default defineComponent({
     const selectedDataset = datasetGetters.selectedDataset
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
     const video = ref(new Video())
+    const sampleMovie = ref(false)
     const fullScreenMode = ref(false)
     const stateToChildren = ref({
       playerCurrentTime: '0',
@@ -212,7 +216,7 @@ export default defineComponent({
     let playerLowerBound = 0 // Time >= 0 when video should start playing, when using the scrubber
     let playerUpperBound = 0 // Time <= player end time when video should stop playing, when using the scrubber
     let currentVolume = 0
-    let playerCurrentTime = '0'
+    let playerCurrentTime = ref('0')
     let videoWasReplaced = false
     let reloadVideo = false
 
@@ -276,7 +280,7 @@ export default defineComponent({
       if (recording.value) {
         return '--:--.-'
       } else {
-        const timeAsInt = parseInt(playerCurrentTime)
+        const timeAsInt = parseInt(playerCurrentTime.value)
         let minutes = Math.floor(timeAsInt / 60)
         // prettier-ignore
         let seconds = minutes > 0 ? timeAsInt % (60 * minutes) : timeAsInt;
@@ -372,14 +376,19 @@ export default defineComponent({
         } else if (d.type == 'move' && player.duration >= d.newValue[0]) {
           player.currentTime = d.newValue[0]
         }
-        playerCurrentTime = player.currentTime.toString()
+        playerCurrentTime.value = player.currentTime.toString()
       }
     }
 
     // Called on initialisation of this view to create placeholder for edited data
     function setupVideo(chosenVideo: Video): void {
       // Create a video placeholder that can be modifed by the user
+      video.value = new Video(chosenVideo)
       if (chosenVideo) {
+        if (process.env.NODE_ENV === 'development') {
+          sampleMovie.value = true
+          video.value.status.recordingExists = true
+        }
         video.value.updateAll(chosenVideo)
         setPlayerBounds()
       }
@@ -413,8 +422,8 @@ export default defineComponent({
       let trim = video.value.details.edl.trim.length > 0
       let mask = video.value.details.edl.blur.length > 0
       if (player) {
-        playerCurrentTime = player.currentTime.toString()
-        stateToChildren.value.playerCurrentTime = playerCurrentTime
+        playerCurrentTime.value = player.currentTime.toString()
+        stateToChildren.value.playerCurrentTime = playerCurrentTime.value
         if (
           player.currentTime >= playerUpperBound ||
           (trim && player.currentTime >= video.value.details.edl.trim[1])
@@ -456,8 +465,8 @@ export default defineComponent({
         player.volume = currentVolume
         playing.value = false
         player.currentTime = playerLowerBound
-        playerCurrentTime = player.currentTime.toString()
-        stateToChildren.value.playerCurrentTime = playerCurrentTime
+        playerCurrentTime.value = player.currentTime.toString()
+        stateToChildren.value.playerCurrentTime = playerCurrentTime.value
         if (timeIsMasked(player.currentTime)) {
           player.style.filter = 'blur(15px)'
         } else {
@@ -580,6 +589,8 @@ export default defineComponent({
       edlUpdated,
       stateToChildren,
       pages,
+      sampleMovie,
+      playbackVideo,
       // booleans
       videoDataLoaded,
       recording,

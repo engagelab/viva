@@ -47,7 +47,7 @@ export default defineComponent({
       default: 'false',
     },
   },
-  emits: ['change', 'update:modelValue'],
+  emits: ['change'],
   setup(props, context) {
     const { consent } = toRefs(props)
     const checked = ref(consent.value.checked)

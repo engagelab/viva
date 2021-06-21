@@ -72,7 +72,7 @@ datasetSchema.methods.redacted = function () {
       kind: data.consent.kind,
     },
     users: {
-      owner: data.users.owner.profile.username,
+      owner: data.users.owner,
     },
     storages: data.storages.map((store) => {
       const s = { ...store }

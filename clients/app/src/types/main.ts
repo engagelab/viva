@@ -113,7 +113,7 @@ export interface Consent {
   delivered_on?: string // 'Tue, 25 Feb 2020 13:29:00 GMT'
   form_id?: string // '140649'
   source?: string // '140649'
-  submission_id?: string // '6256984'
+  submission_id: string // '6256984'
   questions: Record<string, string> // { consent_question_1: 'True', consent_question_2: 'True' }
   reference: {
     subset?: string // 'skole-Hauk.'

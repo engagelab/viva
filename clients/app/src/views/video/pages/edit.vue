@@ -231,7 +231,15 @@ const messages = {
     blur: 'Blur',
   },
 }
-import { defineComponent, ref, computed, onMounted, watch, PropType } from 'vue'
+import {
+  defineComponent,
+  ref,
+  computed,
+  onMounted,
+  watch,
+  PropType,
+  toRefs,
+} from 'vue'
 import router from '@/router'
 import { useI18n } from 'vue-i18n'
 import { Video } from '@/types/main'
@@ -257,6 +265,7 @@ export default defineComponent({
     },
   },
   setup(props, context) {
+    const { stateFromParent } = toRefs(props)
     const { t } = useI18n({ messages })
     const selectedVideo = videoGetters.selectedVideo
     const moveScrubber = ref('0')
@@ -275,7 +284,7 @@ export default defineComponent({
     })
 
     watch(
-      () => props.stateFromParent.playerCurrentTime,
+      () => stateFromParent.value.playerCurrentTime,
       (newValue) => {
         moveScrubber.value = newValue
       }

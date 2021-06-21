@@ -3,22 +3,22 @@
     class="w-full custom"
     type="range"
     :id="name"
-    :value="value"
+    v-model="currentValue"
     :min="min"
     :max="max"
     :step="step"
-    @change="$emit('change', $event.target.value)"
-    @input="$emit('input', $event.target.value)"
+    @change="emitUpdate($event.target.value)"
+    @input="emitUpdate($event.target.value)"
   />
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, toRefs, watch, ref } from 'vue'
 export default defineComponent({
   props: {
-    value: {
-      type: String,
-      default: '0',
+    modelValue: {
+      type: [String],
+      required: true,
     },
     min: {
       type: Number,
@@ -33,10 +33,26 @@ export default defineComponent({
       default: 1,
     },
   },
-  setup() {
+  emits: ['change', 'input', 'update:modelValue'],
+  setup(props, context) {
+    const { modelValue } = toRefs(props)
+    const currentValue = ref('0')
     const name = Math.random()
+
+    watch(modelValue, (newValue) => {
+      currentValue.value = String(newValue)
+    })
+
+    function emitUpdate(value: string) {
+      const parsedValue = parseFloat(value)
+      context.emit('update:modelValue', parsedValue)
+      context.emit('input', parsedValue)
+      context.emit('change', parsedValue)
+    }
     return {
       name,
+      currentValue,
+      emitUpdate,
     }
   },
 })
