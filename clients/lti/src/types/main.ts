@@ -430,7 +430,6 @@ interface DatasetConsent {
 interface DatasetUsers {
   owner: string
 }
-}
 interface DatasetStorage {
   name: VIDEO_STORAGE_TYPES
   groupId: string
@@ -472,10 +471,7 @@ export class Dataset {
     this.consent = {
       kind: CONSENT_TYPES.manuel,
     }
-    this.users =
-      { owner:''},
-
-    this.selection = {}
+    ;(this.users = { owner: '' }), (this.selection = {})
     this.selectionPriority = []
     this.storages = []
 
