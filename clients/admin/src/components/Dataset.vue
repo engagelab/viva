@@ -136,7 +136,7 @@ const { actions: videoActions } = useVideoStore()
 const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
 
 import clipboard from 'clipboard-polyfill'
-import DatasetItem from './base/DatasetItem.vue'
+
 import Button from './base/Button.vue'
 import NewItem from './base/NewItem.vue'
 import SVGSymbol from './base/SVGSymbol.vue'
@@ -151,7 +151,6 @@ interface ListData {
 export default defineComponent({
   name: 'datasett',
   components: {
-    DatasetItem,
     NewItem,
     Button,
     SVGSymbol,

@@ -1,11 +1,22 @@
 <template>
-  <div class="flex flex-col max-w-sm">
+  <div class="flex flex-col max-w-sm m-2">
     <p class="uppercase text-gray-700 text-xs font-bold pb-2">
       {{ label }}
     </p>
 
     <select
-      class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+      class="
+        block
+        w-full
+        py-2
+        px-3
+        border border-gray-300
+        bg-white
+        rounded-md
+        shadow-sm
+        focus:outline-none focus:ring-indigo-500 focus:border-indigo-500
+        sm:text-sm
+      "
       :id="elementId"
       :value="displayValue.itemName"
       @change="updateSelection"
@@ -33,7 +44,7 @@ export default defineComponent({
     },
     modelValue: {
       type: Object as PropType<OptionItem>,
-      default: () => ({}),
+      // default: {},
       required: true,
     },
     id: {
@@ -42,7 +53,7 @@ export default defineComponent({
     options: {
       // SelectionBox should take options as: [{ item: any, itemName: string }]
       type: Object as PropType<OptionItem[]>,
-      default: () => ({}),
+      // default: () => [],
     },
     resetOnChoose: {
       type: Boolean,

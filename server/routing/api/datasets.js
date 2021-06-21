@@ -86,13 +86,20 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
 
   Dataset.find(query, async (error, ds) => {
     if (error) return next(error)
-    const datasets = ds.map((d) => d.redacted())
+
+    const datasets = await ds.map(async (d) => {
+      d = await d.populate('users.owner').execPopulate()
+      return d.redacted()
+    })
     if (isAdmin) {
       fetchVideosForDatasets(ds).then((vs) => {
         const videos = vs.map((v) => v.redacted())
         fetchUsersWithDraftVideos().then((dus) => {
           const draftUsers = dus.map((du) => du.redacted())
-          response.send({ datasets, videos, draftUsers })
+          Promise.all(datasets).then((datasets) => {
+            
+            response.send({ datasets, videos, draftUsers })
+          })
         })
       })
     } else response.send(datasets)
@@ -101,12 +108,24 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
 
 // CREATE a dataset
 router.post('/dataset', utilities.authoriseUser, (request, response, next) => {
-  let dataset = request.body
-  const u = response.locals.user
-  dataset.users.owner = u.profile.username
-  Dataset.create(dataset)
-    .then((newDataset) => response.send(newDataset))
-    .catch((error) => next(error))
+  if (request.body.name && response.locals.user) {
+    let datasetName = request.body.name
+    const u = response.locals.user
+
+    Dataset.create({ name: datasetName, 'users.owner': u._id })
+      .then((newDataset) => {
+        newDataset
+          .populate('users.owner')
+          .execPopulate()
+          .then((newDataset) => {
+            newDataset = newDataset.redacted()
+            response.send(newDataset)
+          })
+      })
+      .catch((error) => next(error))
+  } else {
+    return next(new Error('Empty name '))
+  }
 })
 
 // UPDATE dataset selection (for all users)

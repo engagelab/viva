@@ -59,7 +59,7 @@ const videoStorageTypes = {
 
 const consentTypes = {
   samtykke: 'samtykke',
-  manuel: 'manuel',
+  manual: 'manual',
   article6: 'article6',
 }
 

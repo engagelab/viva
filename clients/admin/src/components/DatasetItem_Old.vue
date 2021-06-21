@@ -40,7 +40,7 @@
             <div>
               <p class="smallLabels">
                 {{ $t('data-manager') }}:
-                <input v-model="datasett.users.owner" :disabled="true" />
+                <input v-model="datasett.dataManager.name" :disabled="true" />
               </p>
               <div class="smallLabels">
                 {{ $t('admin-group') }}:
@@ -785,8 +785,8 @@
           </div>
         </div>
 
-       <div style="margin-bottom: 10px">
-
+        <div style="margin-bottom: 10px">
+          <!-- :disabled="(datasett.lock.active==false) && !(datasett.user==datasett.dataManager.name)" -->
           <button
             v-show="false"
             @click="editDatasett()"

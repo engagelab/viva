@@ -1,6 +1,18 @@
 <template>
   <button
-    class="flex justify-center items-center select-none font-semibold py-2 px-4 focus:outline-none rounded-full h-12 max-w-xs"
+    class="
+      flex
+      justify-center
+      items-center
+      select-none
+      font-semibold
+      py-2
+      px-4
+      focus:outline-none
+      rounded-full
+      h-12
+      max-w-xs
+    "
     :class="[
       textClass,
       extraClasses,
