@@ -24,6 +24,11 @@
         @cellClicked="cellClicked"
       >
       </AgGridVue>
+
+      <!-- Row details -->
+      <div>
+        {{ selectedRow }}
+      </div>
     </div>
   </div>
 </template>
@@ -94,13 +99,15 @@ export default defineComponent({
 
     // Handle Table Events
     const cellClicked = (event: CellEvent) => {
-      selectedRow.value = event
+      selectedRow.value = event.data
+      console.log(selectedRow.value)
     }
 
     return {
       columnDefs,
       gridOptions,
       searchField,
+      selectedRow,
       t,
       // computed
       rowData,

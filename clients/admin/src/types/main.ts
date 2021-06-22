@@ -231,6 +231,7 @@ export interface VideoSpec {
   deviceStatus: DeviceStatus
 }
 
+// Only Video class has 'status' in object
 // eslint-disable-next-line
 const instanceOfVideo = (object: any): object is Video => {
   return 'status' in object
@@ -247,6 +248,8 @@ interface VideoTableLayout {
   date: Date
   owner: string
   dataset: string
+  shared: VideoUsers
+  details: VideoDetails
 }
 
 export class Video {
@@ -408,6 +411,8 @@ export class Video {
       date: this.details.created,
       owner: this.users.owner,
       dataset: this.dataset.name,
+      shared: this.users,
+      details: this.details,
     }
   }
 
