@@ -34,11 +34,6 @@ async function setUserAttributes(user, userProfile, userIdentifier, tokenSet) {
   // Token for API requests to VIVA
   user.tokens.local_token = signJWT(user.id)
   user.status.provider = userProfile.provider
-  if (userProfile.roles) {
-    user.status.role = userProfile.roles.some((role) => role.includes('Admin'))
-      ? userRoles.admin
-      : userRoles.user
-  }
 }
 
 function getCanvasEthicsCourseProgress(user) {
@@ -69,6 +64,13 @@ function setUserGroups(user) {
   }
 }
 
+function setUserRole(user) {
+  return canvas.groupsForSelf(user.tokens.access_token).then((groups) => {
+    if (groups.some((g) => g.id === process.env.CANVAS_ADMIN_GROUP_ID)) user.status.role = userRoles.admin
+    else user.status.role = userRoles.user
+  })
+}
+
 function createOrUpdateUser(tokenSet, userIdentifier, profile) {
   const query = { }
   if (userIdentifier.sub) query['profile.oauthId'] = userIdentifier.sub
@@ -82,7 +84,10 @@ function createOrUpdateUser(tokenSet, userIdentifier, profile) {
       if (err) return reject(`Error checking user ${err}`)
       user = usr || new User()
       setUserAttributes(user, userProfile, userIdentifier, tokenSet)
-      if (user.tokens.access_token) await setUserGroups(user)
+      if (user.tokens.access_token) {
+        await setUserGroups(user)
+        await setUserRole(user)
+      }
       try {
         const savedUser = await user.save()
         resolve(savedUser)

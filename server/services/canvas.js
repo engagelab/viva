@@ -1,14 +1,31 @@
 
 const { httpRequest } = require('../utilities')
+const host = `${process.env.CANVAS_ENDPOINT_DOMAIN}`
 
 // Get list of user's Courses (including enrolment roles) from Canvas
 // https://canvas.instructure.com/doc/api/courses.html#method.courses.index
 // Returns a Promise
 const coursesForUser = (canvasAccessToken) => {
   let options = {
-    host: 'uio.instructure.com',
+    host,
     port: 443,
     path: '/api/v1/courses',
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${canvasAccessToken}`,
+    },
+  }
+  return httpRequest(options, '')
+}
+
+// Get list of the current user's Groups from Canvas
+// https://canvas.instructure.com/doc/api/groups.html#method.groups.index
+// Returns a Promise
+const groupsForSelf = (canvasAccessToken) => {
+  let options = {
+    host,
+    port: 443,
+    path: '/api/v1/users/self/groups',
     method: 'GET',
     headers: {
       Authorization: `Bearer ${canvasAccessToken}`,
@@ -22,7 +39,7 @@ const coursesForUser = (canvasAccessToken) => {
 // Returns a Promise
 const courseProgress = (canvasAccessToken, canvasUserId, canvasCourseId) => {
   let options = {
-    host: 'uio.instructure.com',
+    host,
     port: 443,
     path: `/api/v1/courses/${canvasCourseId}/users/${canvasUserId}/progress`,
     method: 'GET',
@@ -37,7 +54,7 @@ const courseProgress = (canvasAccessToken, canvasUserId, canvasCourseId) => {
 // https://canvas.instructure.com/doc/api/users.html#method.profile.settings
 const userDetails = (canvasAccessToken, canvasUserId) => {
   let options = {
-    host: 'uio.instructure.com',
+    host,
     port: 443,
     path: `/api/v1/users/${canvasUserId}/profile?include[]=account`,
     method: 'GET',
@@ -48,4 +65,4 @@ const userDetails = (canvasAccessToken, canvasUserId) => {
   return httpRequest(options, '')
 }
 
-module.exports = { coursesForUser, userDetails, courseProgress }
+module.exports = { coursesForUser, userDetails, courseProgress, groupsForSelf }

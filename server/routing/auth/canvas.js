@@ -76,11 +76,11 @@ router.post('/canvas/callback', function (request, response) {
 
     const jwtContent = {
       sub: process.env.CANVAS_LTI_CLIENT_ID,
-      iss: 'https://canvas.instructure.com',
+      iss: `https://${process.env.CANVAS_ISSUER_DOMAIN}`,
       jti: '1234567890987654321', // Do we really need this?
       exp: expiryInSeconds,
       iat: issuedAtDate,
-      aud: 'https://uio.instructure.com/login/oauth2/token',
+      aud: `https://${process.env.CANVAS_ENDPOINT_DOMAIN}/login/oauth2/token`,
     }
     const signedTokenPayload = jwt.sign(jwtContent, privateKey, {
       algorithm: 'RS256',

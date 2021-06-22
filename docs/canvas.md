@@ -10,7 +10,16 @@ Public JWK URL:   https://engagelab.uio.no/.well-known/testing/jwks.json (must b
 
 ##### LTI Variable Substitution
 Viva requires a custom variable to match a user login via API with a user login via LTI
-The LTI settings has a section called 'custom fields' enter the following: `user_id=$Canvas.user.id`
+The LTI settings has a section called 'custom fields' enter the following:
+
+    user_username=$User.username
+    user_id=$Canvas.user.id
+    login_id=$Canvas.user.loginId
+    account_id=$Canvas.account.id
+    user_email=$Person.email.primary
+    person_name=$Person.name.full
+    api_domain=$Canvas.api.domain
+
 
 ##### Administrator Role
 Viva for Canvas requires a special "course enrolment" type role to recognise which User(s) in a Course is the Administrator
