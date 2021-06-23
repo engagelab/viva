@@ -7,16 +7,16 @@
       <div class="flex flex-row justify-right">
         <Button
           v-if="!isLoggedIn && browserOk && !appIsOld"
-          logo="feide"
           class="m-4 focus:outline-none"
-          @click="login('dataporten')"
-        />
-        <Button
+          @click="login('uio')"
+          >{{ t('loggedOut') }}</Button
+        >
+        <!--Button
           v-if="!isLoggedIn && browserOk && !appIsOld"
           logo="canvas"
           class="m-4 focus:outline-none"
-          @click="login('canvas')"
-        />
+          @click="login('canvas', 'canvas')"
+        /-->
         <p class="m-2 text-red-600 font-bold" v-if="!browserOk">
           {{ t('browserNotOk') }}
         </p>
@@ -112,18 +112,15 @@ export default defineComponent({
       return !browserNotOk || useCordova
     })
 
-    function login(serviceName: string): void {
-      let feideLoginUrl = `${baseUrl}/auth/${serviceName}/login`
-      if (serviceName === 'canvas') feideLoginUrl += '/user'
+    function login(organization: string): void {
+      let feideLoginUrl = `${baseUrl}/auth/dataporten/login?organization=${organization}&client=mobileApp`
       if (useCordova) {
-        feideLoginUrl += '?device=mobileApp&client=mobileApp'
         window.OAuth(
           feideLoginUrl,
           'oauth:dataporten',
           'allowInlineMediaPlayback=yes,toolbar=no'
         )
       } else {
-        feideLoginUrl += '?device=webApp&client=mobileApp'
         window.location.href = feideLoginUrl
       }
     }

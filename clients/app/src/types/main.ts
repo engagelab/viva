@@ -216,12 +216,12 @@ interface VideoUsers {
 interface VideoDatasetData {
   id?: string
   name?: string
-  selection?: UserDatasetSelection[] // 'utvalg' setting
+  selection?: Selection[] // 'utvalg' setting
 }
 interface VideoDataset {
   id: string
   name: string
-  selection: UserDatasetSelection[] // 'utvalg' setting
+  selection: Selection[] // 'utvalg' setting
 }
 interface VideoStorages {
   kind: string
@@ -230,7 +230,7 @@ interface VideoStorages {
 
 export interface VideoSpec {
   dataset: Dataset
-  selection: UserDatasetSelection[] // 'selection' as string array from PresetDataset
+  selection: Selection[] // 'selection' as string array from PresetDataset
   user: User
   deviceStatus: DeviceStatus
 }
@@ -445,12 +445,13 @@ interface DatasetStorage {
   }
   category: string[]
 }
+export interface Selection {
+  title: string
+  keyName: string
+}
 export interface DatasetLock {
   date: Date
-  selection: {
-    keyName: string
-    title: string
-  }
+  selection: Selection
 }
 export class Dataset {
   _id: string
@@ -529,7 +530,7 @@ interface UserStatus {
   totalDrafts: number
   totalUploads: number
   totalTransfers: number
-  ethicsCompleted: boolean
+  prerequisiteCompleted: boolean
 }
 interface UserProfileGroup {
   id: string
@@ -545,13 +546,9 @@ interface UserProfile {
   reference: string // This should be sent to the client rather than _id
   groups: UserProfileGroup[] // Groups this user is a member of
 }
-export interface UserDatasetSelection {
-  title: string
-  keyName: string
-}
 export interface UserDatasetConfig {
   id: string
-  selection: UserDatasetSelection[]
+  currentSelection: Selection[]
   locks: Record<string, DatasetLock>
 }
 interface UserVideos {
@@ -575,7 +572,7 @@ export class User {
       totalDrafts: 0,
       totalUploads: 0,
       totalTransfers: 0,
-      ethicsCompleted: false,
+      prerequisiteCompleted: false,
     }
     this.profile = {
       username: 'initial user',
@@ -589,7 +586,7 @@ export class User {
     this.datasetConfig = {
       id: '',
       locks: {},
-      selection: [],
+      currentSelection: [],
     }
     this.videos = {
       draftIDs: [],
@@ -601,7 +598,7 @@ export class User {
       this.profile = data.profile
       this.datasetConfig = {
         id: data.datasetConfig.id || '',
-        selection: data.datasetConfig.selection || [],
+        currentSelection: data.datasetConfig.currentSelection || [],
         locks: data.datasetConfig.locks || {},
       }
       this.videos = {

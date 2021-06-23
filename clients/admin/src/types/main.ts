@@ -316,7 +316,6 @@ export class Video {
     this.file = { mimeType: 'video/mp4' }
 
     // Create a Video using the current App state
-    /* if (data && !(data instanceof Video)) { */
     if (data && !instanceOfVideo(data)) {
       this.updateDataset({
         id: data.dataset._id || '',
@@ -484,12 +483,13 @@ interface DatasetStorage {
   }
   category: string[]
 }
+export interface Selection {
+  title: string
+  keyName: string
+}
 export interface DatasetLock {
   date: Date
-  selection: {
-    keyName: string
-    title: string
-  }
+  selection: Selection
 }
 export class Dataset {
   _id: string
@@ -576,7 +576,7 @@ interface UserStatus {
   totalDrafts: number
   totalUploads: number
   totalTransfers: number
-  ethicsCompleted: boolean
+  prerequisiteCompleted: boolean
 }
 interface UserProfileGroup {
   id: string
@@ -598,7 +598,7 @@ export interface UserDatasetSelection {
 }
 export interface UserDatasetConfig {
   id: string
-  selection: UserDatasetSelection[]
+  currentSelection: Selection[]
   locks: Record<string, DatasetLock>
 }
 interface UserVideos {
@@ -622,7 +622,7 @@ export class User {
       totalDrafts: 0,
       totalUploads: 0,
       totalTransfers: 0,
-      ethicsCompleted: false,
+      prerequisiteCompleted: false,
     }
     this.profile = {
       username: 'initial user',
@@ -636,7 +636,7 @@ export class User {
     this.datasetConfig = {
       id: '',
       locks: {},
-      selection: [],
+      currentSelection: [],
     }
     this.videos = {
       draftIDs: [],
@@ -648,7 +648,7 @@ export class User {
       this.profile = data.profile
       this.datasetConfig = {
         id: data.datasetConfig.id || '',
-        selection: data.datasetConfig.selection || [],
+        currentSelection: data.datasetConfig.currentSelection || [],
         locks: data.datasetConfig.locks || {},
       }
       this.videos = data.videos

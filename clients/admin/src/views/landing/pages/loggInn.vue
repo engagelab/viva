@@ -9,7 +9,7 @@
           v-if="!isLoggedIn && browserOk && !appIsOld"
           logo="feide"
           class="m-4 focus:outline-none"
-          @click="login()"
+          @click="login('uio')"
         />
         <p class="m-2 text-red-600 font-bold" v-if="!browserOk">
           {{ t('browserNotOk') }}
@@ -106,9 +106,9 @@ export default defineComponent({
       return !browserNotOk || useCordova
     })
 
-    function login() {
+    function login(organization: string) {
       let feideLoginUrl = `${baseUrl}/auth/dataporten/login`
-      feideLoginUrl += '?device=webApp&client=admin'
+      feideLoginUrl += `?organization=${organization}&client=admin`
       window.location.href = feideLoginUrl
     }
     function listView() {

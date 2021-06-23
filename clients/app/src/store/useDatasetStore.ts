@@ -89,7 +89,7 @@ const actions = {
   },
   lockSelection(d: { datasetId: string; lock: DatasetLock }): void {
     const pc = state.value.presetDatasetConfig
-    if (pc && pc.locks[d.datasetId]) pc.locks[d.datasetId] = d.lock
+    if (pc) pc.locks[d.datasetId] = d.lock
   },
   unlockSelection(datasetId: string): void {
     const pc = state.value.presetDatasetConfig

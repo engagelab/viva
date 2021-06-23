@@ -288,7 +288,7 @@ export default defineComponent({
         videoActions
           .createMetadata({
             dataset: selectedDataset.value,
-            selection: presetConfig.value.selection,
+            selection: presetConfig.value.currentSelection,
             user: user.value,
             deviceStatus: appGetters.deviceStatus.value,
           })
@@ -311,18 +311,16 @@ export default defineComponent({
     }): void {
       if (!selectedDataset.value && d.data instanceof Dataset) {
         datasetActions.selectDataset(d.data)
-        if (presetConfig.value) {
+        if (presetConfig.value && presetConfig.value.locks[d.data._id]) {
           // If this dataset has already viewed consents, the first utvalg level may be locked
           // This mean we should recover the same utvalg as was previously set
           const lock: DatasetLock = presetConfig.value.locks[d.data._id]
-          if (lock) {
-            const u = lock.selection
-            const list = d.data.selection[u.keyName]
-            const data = list.find((item) => item.title == u.title)
-            if (data) {
-              const su: ListData = { data, keyName: u.keyName, title: u.title }
-              currentSelection.value = [su]
-            }
+          const u = lock.selection
+          const list = d.data.selection[u.keyName]
+          const data = list.find((item) => item.title == u.title)
+          if (data) {
+            const su: ListData = { data, keyName: u.keyName, title: u.title }
+            currentSelection.value = [su]
           }
         }
       } else if (
@@ -330,10 +328,14 @@ export default defineComponent({
         currentSelection.value.length <
           selectedDataset.value.selectionPriority.length
       ) {
-        const data = d.data as DatasetSelection
+        const theData = d.data as DatasetSelection
         const level = selectedDataset.value.selectionPriority.indexOf(d.keyName)
         if (level === currentSelection.value.length) {
-          const su: ListData = { data, keyName: d.keyName, title: data.title }
+          const su: ListData = {
+            data: theData,
+            keyName: d.keyName,
+            title: theData.title,
+          }
           currentSelection.value.push(su)
         }
         if (
@@ -360,7 +362,7 @@ export default defineComponent({
       if (dataset && presetConfig.value) {
         datasetActions.selectDataset(dataset)
         const tempSelection: ListData[] = []
-        presetConfig.value.selection.forEach((u, depth) => {
+        presetConfig.value.currentSelection.forEach((u, depth) => {
           let list: DatasetSelection[] = []
           if (depth === 0) list = dataset.selection[u.keyName]
           else {
@@ -383,14 +385,15 @@ export default defineComponent({
         presetConfig.value &&
         currentSelection.value
       ) {
-        datasetActions.setPresetDatasetConfig({
+        const newPresetConfig = {
           id: selectedDataset.value._id,
           locks: presetConfig.value.locks, // A dictionary of Dates referenced by dataset ID
-          selection: currentSelection.value.map((l) => ({
+          currentSelection: currentSelection.value.map((l) => ({
             title: l.title,
             keyName: l.keyName,
           })),
-        })
+        }
+        datasetActions.setPresetDatasetConfig(newPresetConfig)
         appActions.updateUserAtServer(user.value)
       }
     }

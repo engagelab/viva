@@ -265,8 +265,7 @@ export default defineComponent({
       if (selectedVideo.value && selectedVideo.value.dataset.selection) {
         const utvalg = selectedVideo.value.dataset.selection.reduce(
           (acc, curr) => {
-            const split = curr.title.split(':')
-            return `${acc} > ${split[1]}`
+            return `${acc} > ${curr.title}`
           },
           ''
         )

@@ -77,6 +77,29 @@ const adminUsers = [
   'olesm'
 ]
 
+const platforms = {
+  canvas: 'canvas',
+  dataporten: 'dataporten',
+}
+const organizations = {
+  uio: {
+    name: 'uio',
+    platform: platforms.canvas,
+  },
+  usn: {
+    name: 'usn',
+    platform: platforms.canvas,
+  },
+  ntnu: {
+    name: 'ntnu',
+    platform: platforms.canvas,
+  },
+  other: {
+    name: 'other',
+    platform: platforms.dataporten,
+  }
+}
+
 const pilotDataset = []
 
 const pilotUsers = [
@@ -130,5 +153,7 @@ module.exports = {
   pilotDataset,
   pilotUsers,
   consentTypes,
-  userRoles
+  userRoles,
+  platforms,
+  organizations
 }

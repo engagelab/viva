@@ -128,14 +128,14 @@ export default defineComponent({
           !presetConfig.locks[datasetId] &&
           v.dataset.selection.length
         ) {
-          const split = v.dataset.selection[0].title.split(':')
+          const s = v.dataset.selection[0]
           datasetActions.lockSelection({
             datasetId,
             lock: {
               date: new Date(),
               selection: {
-                keyName: split[0],
-                title: split[1],
+                keyName: s.keyName,
+                title: s.title,
               },
             },
           })

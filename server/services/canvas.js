@@ -1,6 +1,7 @@
 
 const { httpRequest } = require('../utilities')
-const host = `${process.env.CANVAS_ENDPOINT_DOMAIN}`
+const host = process.env.CANVAS_ENDPOINT_DOMAIN
+const superToken = process.env.CANVAS_VIVA_ACCESS_TOKEN
 
 // Get list of user's Courses (including enrolment roles) from Canvas
 // https://canvas.instructure.com/doc/api/courses.html#method.courses.index
@@ -9,10 +10,10 @@ const coursesForUser = (canvasAccessToken) => {
   let options = {
     host,
     port: 443,
-    path: '/api/v1/courses',
+    path: `/api/v1/users/:user_id/courses`,
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${canvasAccessToken}`,
+      Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
   return httpRequest(options, '')
@@ -21,14 +22,14 @@ const coursesForUser = (canvasAccessToken) => {
 // Get list of the current user's Groups from Canvas
 // https://canvas.instructure.com/doc/api/groups.html#method.groups.index
 // Returns a Promise
-const groupsForSelf = (canvasAccessToken) => {
+const usersForGroup = (groupId, canvasAccessToken) => {
   let options = {
     host,
     port: 443,
-    path: '/api/v1/users/self/groups',
+    path: `/api/v1/groups/${groupId}/users`,
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${canvasAccessToken}`,
+      Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
   return httpRequest(options, '')
@@ -44,7 +45,7 @@ const courseProgress = (canvasAccessToken, canvasUserId, canvasCourseId) => {
     path: `/api/v1/courses/${canvasCourseId}/users/${canvasUserId}/progress`,
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${canvasAccessToken}`,
+      Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
   return httpRequest(options, '')
@@ -59,10 +60,10 @@ const userDetails = (canvasAccessToken, canvasUserId) => {
     path: `/api/v1/users/${canvasUserId}/profile?include[]=account`,
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${canvasAccessToken}`,
+      Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
   return httpRequest(options, '')
 }
 
-module.exports = { coursesForUser, userDetails, courseProgress, groupsForSelf }
+module.exports = { coursesForUser, userDetails, courseProgress, usersForGroup }
