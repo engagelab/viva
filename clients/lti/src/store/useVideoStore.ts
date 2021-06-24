@@ -10,14 +10,13 @@
  6. Action function to retrive access to sharing
  7. Route call to mongoDB to update video metadata
  */
-import { PROJECT_NAME } from '@/constants'
+
+enum PROJECT_NAME {
+  viva = 'viva',
+}
+
 import { ref, Ref, computed, ComputedRef } from 'vue'
-import {
-  VideoData,
-  Video,
-  APIRequestPayload,
-  XHR_REQUEST_TYPE,
-} from '@/types/main'
+import { Video, APIRequestPayload, XHR_REQUEST_TYPE } from '../types/main'
 import { apiRequest } from '../api/apiRequest'
 //State
 interface State {
@@ -35,13 +34,13 @@ const state: Ref<State> = ref({
 
 //----------------- Server side functions----------------//
 
-async function fetchVideoMetadata(): Promise<VideoData> {
+async function fetchVideoMetadata(): Promise<Video> {
   const payload: APIRequestPayload = {
     method: XHR_REQUEST_TYPE.GET,
     credentials: true,
     route: '/api/videos',
   }
-  return apiRequest<VideoData>(payload)
+  return apiRequest<Video>(payload)
 }
 
 //Getters

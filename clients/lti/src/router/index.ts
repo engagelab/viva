@@ -6,6 +6,9 @@ import {
   RouteRecordRaw,
 } from 'vue-router'
 
+import { useAppStore } from '../store/useAppStore'
+const { actions: appActions } = useAppStore()
+
 import Dashboard from '../views/Dashboard.vue'
 
 const routes: Array<RouteRecordRaw> = [
@@ -18,9 +21,18 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/dashboard',
   },
   {
+    path: '/postLogin',
+    redirect: '/dashboard',
+  },
+  {
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
+    beforeEnter: () => {
+      appActions.redirectedLogin().catch((error) => {
+        console.log(error)
+      })
+    },
   },
   { path: '/index.html', redirect: '/' },
 ]
