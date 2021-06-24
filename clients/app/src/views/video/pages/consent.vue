@@ -20,40 +20,22 @@
         <p class="text-sm">{{ t('SjekkAlt') }}</p>
       </Button>
     </div>
-    <div
-      v-if="
-        selectedDataset &&
-        selectedDataset.consent.kind == CONSENT_TYPES.samtykke
-      "
-      class="flex flex-col flex-1 overflow-y-auto scrolling-touch p-4"
-    >
+    <div class="flex flex-col flex-1 overflow-y-auto scrolling-touch p-4">
       <p class="text-xs">{{ t('consentDelayNote') }}</p>
       <p class="pl-4" v-if="selectedVideo && consentList.length === 0">
         {{ `${t('noConsentsFound')} ${selectedVideo.dataset.name}` }}
       </p>
+      <p v-if="manualConsent">{{ t('ManualHandling') }}</p>
       <div v-if="consentList.length > 0">
         <ConsentItem
           class="flex flex-row pt-4"
           v-for="consent in consentList"
-          :key="consent.submission_id"
+          :key="consent.value.submission_id"
           :consent="consent"
           checkboxes="true"
           @change="dataChanged"
         ></ConsentItem>
       </div>
-    </div>
-    <div
-      v-else
-      class="flex flex-col flex-1 overflow-y-auto scrolling-touch p-4"
-    >
-      <p>{{ t('ManualHandling') }}</p>
-      <ConsentItem
-        class="flex flex-row pt-4"
-        :key="standardConsent.id"
-        :consent="standardConsent"
-        @change="dataChanged"
-        checkboxes="true"
-      />
     </div>
   </div>
 </template>
@@ -108,12 +90,14 @@ export default defineComponent({
     const { t } = useI18n({ messages })
     const selectedVideo = videoGetters.selectedVideo
     const selectedDataset = datasetGetters.selectedDataset
+    let manualConsent = true
     const video = ref(new Video(selectedVideo.value))
-    const consentList: Ref<Consent[]> = ref([])
+    const consentList: Ref<Ref<Consent>[]> = ref([])
     const standardConsent: Ref<Consent> = ref({
       id: 'standardConsent-id',
       name: 'Bekreft',
       checked: false,
+      submission_id: 'standardConsent',
       reference: {
         username: t('understood'),
       },
@@ -123,12 +107,16 @@ export default defineComponent({
     watch(
       () => datasetGetters.consents,
       (newValue) => {
-        consentList.value = [...newValue.value]
+        consentList.value = newValue.value.map((c) => ref(c))
       }
     )
 
     onMounted(() => {
       const v = selectedVideo.value
+      manualConsent = !(
+        !!selectedDataset.value &&
+        selectedDataset.value.consent.kind == CONSENT_TYPES.samtykke
+      )
       if (v) {
         video.value.updateStatus(v.status)
         standardConsent.value.checked = video.value.status.isConsented
@@ -140,50 +128,61 @@ export default defineComponent({
           !presetConfig.locks[datasetId] &&
           v.dataset.selection.length
         ) {
-          const split = v.dataset.selection[0].title.split(':')
+          const s = v.dataset.selection[0]
           datasetActions.lockSelection({
             datasetId,
             lock: {
               date: new Date(),
               selection: {
-                keyName: split[0],
-                title: split[1],
+                keyName: s.keyName,
+                title: s.title,
               },
             },
           })
           appActions.updateUserAtServer()
         }
       }
-      consentList.value = [...datasetGetters.consents.value]
+      consentList.value = manualConsent
+        ? [standardConsent]
+        : datasetGetters.consents.value.map((c) => ref(c))
     })
 
     function back(): void {
-      saveMetadata()
+      videoActions.updateMetadata(video.value)
       router.push('/videos/editor?page=0')
     }
     function checkAll(): void {
-      consentList.value.forEach((c) => (c.checked = true))
+      consentList.value.forEach((c) => (c.value.checked = true))
       dataChanged()
     }
     function dataChanged(newValue?: DataChangedEvent): void {
-      if (newValue && newValue.checked) {
-        video.value.status.isConsented = true
-      } else if (consentList.value.every((c) => !c.checked)) {
+      if (newValue) {
+        if (newValue.checked) video.value.status.isConsented = true
+        const consent = consentList.value.find(
+          (c) => c.value.submission_id === newValue.id
+        )
+        if (consent) consent.value.checked = newValue.checked
+      }
+      if (consentList.value.every((c) => !c.value.checked)) {
         video.value.status.isConsented = false
       }
       if (selectedVideo.value) {
-        video.value.consents = datasetGetters.consents.value.map((c) => c.name)
+        video.value.consents = consentList.value
+          .filter((c) => c.value.checked)
+          .map(
+            (c) =>
+              c.value.reference.username ||
+              c.value.reference.user_fullname ||
+              c.value.submission_id
+          )
         videoActions.setUnsavedChanges(selectedVideo.value?.details.id)
-        saveMetadata()
+        videoActions.updateMetadata(video.value)
       }
-    }
-    function saveMetadata(): void {
-      console.log(video.value.consents)
-      videoActions.updateMetadata(video.value)
     }
 
     return {
       t,
+      manualConsent,
       consentList,
       standardConsent,
       video,
@@ -192,7 +191,6 @@ export default defineComponent({
       back,
       checkAll,
       dataChanged,
-      saveMetadata,
       CONSENT_TYPES,
     }
   },

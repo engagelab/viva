@@ -130,12 +130,11 @@ const actions = {
   },
   removeDraftId(fileID: string): void {
     if (_appState.value.selectedUser) {
-      const i = _appState.value.selectedUser.videos.draftIDs.indexOf(fileID)
+      const vs = _appState.value.selectedUser.videos
+      const i = vs.draftIDs.indexOf(fileID)
       if (i > -1) {
-        _appState.value.selectedUser.videos.removedDraftIDs.push(
-          _appState.value.selectedUser.videos.draftIDs[i]
-        )
-        _appState.value.selectedUser.videos.draftIDs.splice(i, 1)
+        vs.removedDraftIDs.push(vs.draftIDs[i])
+        vs.draftIDs.splice(i, 1)
       }
     }
   },
@@ -244,7 +243,7 @@ const actions = {
         u.datasetConfig = datasetGetters.presetDatasetConfig.value
       return apiRequest<User>(payload)
         .then((su: User) => {
-          _appState.value.selectedUser = su
+          _appState.value.selectedUser = new User(su)
           return Promise.resolve()
         })
         .catch((error: Error) => {

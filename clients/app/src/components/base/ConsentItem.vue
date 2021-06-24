@@ -6,7 +6,7 @@
         :id="`consentCheckbox-${consent.id}`"
         name="Check me!"
         value="true"
-        v-model="checkedBox"
+        v-model="checked"
         @change="inputChanged"
       />
       <!--label :for="`consentCheckbox-${consent.id}`">&nbsp;godkjent</label-->
@@ -14,7 +14,7 @@
     <div class="ml-4 flex flex-row">
       <img
         class="w-6"
-        alt="consent question"
+        alt="consent question icon"
         v-for="question in consentQuestions"
         :key="question.key"
         :src="question.source"
@@ -25,7 +25,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, PropType, ref, toRefs } from 'vue'
+import { defineComponent, computed, ref, PropType, toRefs, watch } from 'vue'
 import { Consent } from '@/types/main'
 import circle1 from '@/assets/icons/svg/circle1.svg'
 import circle2 from '@/assets/icons/svg/circle2.svg'
@@ -33,6 +33,8 @@ import circle3 from '@/assets/icons/svg/circle3.svg'
 import circle4 from '@/assets/icons/svg/circle4.svg'
 import circle5 from '@/assets/icons/svg/circle5.svg'
 import circleX from '@/assets/icons/svg/circleX.svg'
+
+const circles = [circle1, circle2, circle3, circle4, circle5, circleX]
 
 export default defineComponent({
   props: {
@@ -45,17 +47,16 @@ export default defineComponent({
       default: 'false',
     },
   },
-  emits: ['change', 'update:modelValue'],
+  emits: ['change'],
   setup(props, context) {
-    const checkedBox = ref(false)
     const { consent } = toRefs(props)
-    const circles: { [index: number]: unknown } = {
-      1: circle1,
-      2: circle2,
-      3: circle3,
-      4: circle4,
-      5: circle5,
-    }
+    const checked = ref(consent.value.checked)
+    watch(
+      () => consent.value.checked,
+      (newValue) => {
+        checked.value = newValue
+      }
+    )
     const formattedName = computed(() => {
       const reference = consent.value.reference
       if (reference.user_identifier == 'child') {
@@ -69,30 +70,26 @@ export default defineComponent({
     const consentQuestions = computed(() => {
       const sortedAnswerKeys = Object.keys(consent.value.questions).sort()
       return sortedAnswerKeys.map((key, index) => {
-        const checked = consent.value.questions[key]
-        const truthy = checked.toLowerCase() === 'true'
-        const source = truthy ? circles[index + 1] : circleX
-        return { checked, source, key: `question-circle-id-${index}` }
+        const check = consent.value.questions[key]
+        const truthy = check.toLowerCase() === 'true'
+        const source = truthy ? circles[index] : circles[5]
+        return {
+          source: `/${source}`,
+          key: `question-circle-id-${index}`,
+        }
       })
     })
     function inputChanged() {
-      consent.value.checked = checkedBox.value
       context.emit('change', {
-        checked: checkedBox.value,
+        checked: checked.value,
         id: consent.value.submission_id,
       })
     }
     return {
-      checkedBox,
+      checked,
       formattedName,
       consentQuestions,
       inputChanged,
-      circle1,
-      circle2,
-      circle3,
-      circle4,
-      circle5,
-      circleX,
     }
   },
 })

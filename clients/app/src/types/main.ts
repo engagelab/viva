@@ -113,7 +113,7 @@ export interface Consent {
   delivered_on?: string // 'Tue, 25 Feb 2020 13:29:00 GMT'
   form_id?: string // '140649'
   source?: string // '140649'
-  submission_id?: string // '6256984'
+  submission_id: string // '6256984'
   questions: Record<string, string> // { consent_question_1: 'True', consent_question_2: 'True' }
   reference: {
     subset?: string // 'skole-Hauk.'
@@ -216,17 +216,21 @@ interface VideoUsers {
 interface VideoDatasetData {
   id?: string
   name?: string
-  selection?: UserDatasetSelection[] // 'utvalg' setting
+  selection?: Selection[] // 'utvalg' setting
 }
 interface VideoDataset {
   id: string
   name: string
-  selection: UserDatasetSelection[] // 'utvalg' setting
+  selection: Selection[] // 'utvalg' setting
+}
+interface VideoStorages {
+  kind: string
+  path: string
 }
 
 export interface VideoSpec {
   dataset: Dataset
-  selection: UserDatasetSelection[] // 'selection' as string array from PresetDataset
+  selection: Selection[] // 'selection' as string array from PresetDataset
   user: User
   deviceStatus: DeviceStatus
 }
@@ -240,7 +244,7 @@ export class Video {
   users: VideoUsers
   dataset: VideoDataset
   consents: string[]
-  storages: string[]
+  storages: VideoStorages[]
 
   constructor(data?: Video | VideoSpec) {
     const id = uuid()
@@ -301,7 +305,10 @@ export class Video {
         selection: data.selection,
       })
       this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
-      this.storages = data.dataset.storages.map((storage) => storage.name)
+      this.storages = data.dataset.storages.map((storage) => ({
+        kind: storage.kind,
+        path: '',
+      }))
       this.file = {
         mimeType:
           data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
@@ -431,19 +438,20 @@ interface DatasetUsers {
   owner: string
 }
 interface DatasetStorage {
-  name: VIDEO_STORAGE_TYPES
+  kind: VIDEO_STORAGE_TYPES
   groupId: string
   file: {
     name: string[]
   }
   category: string[]
 }
+export interface Selection {
+  title: string
+  keyName: string
+}
 export interface DatasetLock {
   date: Date
-  selection: {
-    keyName: string
-    title: string
-  }
+  selection: Selection
 }
 export class Dataset {
   _id: string
@@ -499,7 +507,7 @@ export class Dataset {
       this.storages =
         data.storages.map((s: DatasetStorage) => {
           return {
-            name: s.name || '',
+            kind: s.kind || '',
             groupId: s.groupId || '',
             file: { name: s.file.name || [] },
             category: s.category || [],
@@ -522,7 +530,7 @@ interface UserStatus {
   totalDrafts: number
   totalUploads: number
   totalTransfers: number
-  ethicsCompleted: boolean
+  prerequisiteCompleted: boolean
 }
 interface UserProfileGroup {
   id: string
@@ -538,13 +546,9 @@ interface UserProfile {
   reference: string // This should be sent to the client rather than _id
   groups: UserProfileGroup[] // Groups this user is a member of
 }
-export interface UserDatasetSelection {
-  title: string
-  keyName: string
-}
 export interface UserDatasetConfig {
   id: string
-  selection: UserDatasetSelection[]
+  currentSelection: Selection[]
   locks: Record<string, DatasetLock>
 }
 interface UserVideos {
@@ -568,7 +572,7 @@ export class User {
       totalDrafts: 0,
       totalUploads: 0,
       totalTransfers: 0,
-      ethicsCompleted: false,
+      prerequisiteCompleted: false,
     }
     this.profile = {
       username: 'initial user',
@@ -582,7 +586,7 @@ export class User {
     this.datasetConfig = {
       id: '',
       locks: {},
-      selection: [],
+      currentSelection: [],
     }
     this.videos = {
       draftIDs: [],
@@ -594,10 +598,13 @@ export class User {
       this.profile = data.profile
       this.datasetConfig = {
         id: data.datasetConfig.id || '',
-        selection: data.datasetConfig.selection || [],
+        currentSelection: data.datasetConfig.currentSelection || [],
         locks: data.datasetConfig.locks || {},
       }
-      this.videos = data.videos
+      this.videos = {
+        draftIDs: data.videos.draftIDs,
+        removedDraftIDs: data.videos.removedDraftIDs || [],
+      }
     }
   }
 }

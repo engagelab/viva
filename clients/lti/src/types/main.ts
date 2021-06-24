@@ -223,6 +223,10 @@ interface VideoDataset {
   name: string
   selection: UserDatasetSelection[] // 'utvalg' setting
 }
+interface VideoStorages {
+  kind: string
+  path: string
+}
 
 export interface VideoSpec {
   dataset: Dataset
@@ -240,7 +244,7 @@ export class Video {
   users: VideoUsers
   dataset: VideoDataset
   consents: string[]
-  storages: string[]
+  storages: VideoStorages[]
 
   constructor(data?: Video | VideoSpec) {
     const id = uuid()
@@ -301,7 +305,10 @@ export class Video {
         selection: data.selection,
       })
       this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
-      this.storages = data.dataset.storages.map((storage) => storage.name)
+      this.storages = data.dataset.storages.map((storage) => ({
+        kind: storage.kind,
+        path: '',
+      }))
       this.file = {
         mimeType:
           data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
@@ -430,21 +437,21 @@ interface DatasetConsent {
 interface DatasetUsers {
   owner: string
 }
-}
 interface DatasetStorage {
-  name: VIDEO_STORAGE_TYPES
+  kind: VIDEO_STORAGE_TYPES
   groupId: string
   file: {
     name: string[]
   }
   category: string[]
 }
+export interface Selection {
+  title: string
+  keyName: string
+}
 export interface DatasetLock {
   date: Date
-  selection: {
-    keyName: string
-    title: string
-  }
+  selection: Selection
 }
 export class Dataset {
   _id: string
@@ -472,9 +479,7 @@ export class Dataset {
     this.consent = {
       kind: CONSENT_TYPES.manuel,
     }
-    this.users =
-      { owner:''},
-
+    this.users = { owner: '' }
     this.selection = {}
     this.selectionPriority = []
     this.storages = []
@@ -490,7 +495,7 @@ export class Dataset {
         lockedBy: data.status.lockedBy,
       }
       this.consent = {
-        kind: (data.consent.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
+        kind: data.consent.kind || CONSENT_TYPES.manuel,
       }
       this.users = {
         owner: data.users.owner,
@@ -500,7 +505,7 @@ export class Dataset {
       this.storages =
         data.storages.map((s: DatasetStorage) => {
           return {
-            name: s.name || '',
+            kind: s.kind || '',
             groupId: s.groupId || '',
             file: { name: s.file.name || [] },
             category: s.category || [],
@@ -523,7 +528,7 @@ interface UserStatus {
   totalDrafts: number
   totalUploads: number
   totalTransfers: number
-  ethicsCompleted: boolean
+  prerequisiteCompleted: boolean
 }
 interface UserProfileGroup {
   id: string
@@ -545,7 +550,7 @@ export interface UserDatasetSelection {
 }
 export interface UserDatasetConfig {
   id: string
-  selection: UserDatasetSelection[]
+  currentSelection: Selection[]
   locks: Record<string, DatasetLock>
 }
 interface UserVideos {
@@ -569,7 +574,7 @@ export class User {
       totalDrafts: 0,
       totalUploads: 0,
       totalTransfers: 0,
-      ethicsCompleted: false,
+      prerequisiteCompleted: false,
     }
     this.profile = {
       username: 'initial user',
@@ -583,7 +588,7 @@ export class User {
     this.datasetConfig = {
       id: '',
       locks: {},
-      selection: [],
+      currentSelection: [],
     }
     this.videos = {
       draftIDs: [],
@@ -595,7 +600,7 @@ export class User {
       this.profile = data.profile
       this.datasetConfig = {
         id: data.datasetConfig.id || '',
-        selection: data.datasetConfig.selection || [],
+        currentSelection: data.datasetConfig.currentSelection || [],
         locks: data.datasetConfig.locks || {},
       }
       this.videos = data.videos

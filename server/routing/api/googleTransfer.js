@@ -3,15 +3,11 @@
  * Here we are managing transfer of a video file to Google Drive
  * Transfer must be initiated by the user
  */
-
-// const opn = require('opn');
-// const jwt = require('jsonwebtoken')
 const { google } = require('googleapis');
 const router = require('express').Router();
 
-const googleOperations = require('../../subprocesses/googleOperations');
+const googleOperations = require('../../services/google');
 const videoStatusTypes = require('../../constants').videoStatusTypes;
-// const videoStorageTypes = require('../../constants').videoStorageTypes
 const utilities = require('../../utilities');
 const Dataset = require('../../models/Dataset');
 const Video = require('../../models/Video');
@@ -38,59 +34,53 @@ const scopes = [
 
 // Authenticate for use of Google Drive with this user's account
 router.get('/google_transfer', utilities.authoriseUser, (request, response, next) => {
-  // const decodedUserToken = jwt.verify(request.user.id_token, 'shhhhh')
+  const user = response.locals.user
   const csrf_token = require('crypto')
     .randomBytes(20)
     .toString('hex');
-  User.findById(request.session.ref, (err, user) => {
-    if (err) {
-      console.error('Error beginning Google Transfer', err);
-      return response.status(500).end();
-    }
-    // This token will be checked at Google callback prevent falsification of the request
-    user.tokens.csrf_token = csrf_token;
-    user.save(error => {
-      if (error) {
-        return next(error)
-      } else {
-        // Create the request to Google
-        const device = request.query.device;
-        const mobileApp = typeof device === 'string' && device == 'mobileApp';
-        const authData = {
-          scope: scopes,
-          // Define values that should be passed through to the callback as a query string
-          state: JSON.stringify({
-            videoReference: request.query.videoReference,
-            settingId: request.query.settingId,
-            mode: request.query.mode,
-            userId: request.session.ref,
-            csrf_token,
-            device,
-          }),
-        };
-        authData.hd = 'uio.no'; // Influence Google to use this domain for login
-        const oauth2Client = getOauthClient()
-        oauth2Client.credentials = {
-          access_token: user.tokens.access_token,
-          token_type: 'Bearer',
-        };
-        if (mobileApp) {
-          response.cookie('id_token', user.tokens.id_token);
-          response.cookie('access_token', user.tokens.access_token);
-        }
-        const authorizeUrl = oauth2Client.generateAuthUrl(authData);
-        if (mobileApp) {
-          // response.set('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
-          return response.redirect(authorizeUrl);
-        } else {
-          return response
-            .send({ data: encodeURI(authorizeUrl) })
-            .status(200)
-            .end();
-        }
+
+  // This token will be checked at Google callback prevent falsification of the request
+  user.tokens.csrf_token = csrf_token;
+  user.save(error => {
+    if (error) {
+      return next(error)
+    } else {
+      // Create the request to Google
+      const device = request.query.device;
+      const mobileApp = typeof device === 'string' && device == 'mobileApp';
+      const authData = {
+        scope: scopes,
+        // Define values that should be passed through to the callback as a query string
+        state: JSON.stringify({
+          videoReference: request.query.videoReference,
+          settingId: request.query.settingId,
+          mode: request.query.mode,
+          userId: request.session.ref,
+          csrf_token,
+          device,
+        }),
+      };
+      authData.hd = 'uio.no'; // Influence Google to use this domain for login
+      const oauth2Client = getOauthClient()
+      oauth2Client.credentials = {
+        access_token: user.tokens.access_token,
+        token_type: 'Bearer',
+      };
+      if (mobileApp) {
+        response.cookie('id_token', user.tokens.id_token);
+        response.cookie('access_token', user.tokens.access_token);
       }
-    });
-  });
+      const authorizeUrl = oauth2Client.generateAuthUrl(authData);
+      if (mobileApp) {
+        return response.redirect(authorizeUrl);
+      } else {
+        return response
+          .send({ data: encodeURI(authorizeUrl) })
+          .status(200)
+          .end();
+      }
+    }
+  })
 });
 // Authentication callback
 router.get('/authenticated_google_transfer', (request, response) => {
@@ -104,7 +94,6 @@ router.get('/authenticated_google_transfer', (request, response) => {
   const userId = state.userId;
 
   const status = videoStatusTypes.edited;
-  // const storage = videoStorageTypes.google
   const mobileApp =
     typeof state.device === 'string' && state.device == 'mobileApp';
 
@@ -167,8 +156,8 @@ router.get('/authenticated_google_transfer', (request, response) => {
             (error4, video) => {
               if (error4) {
                 return console.error(error4);
-              } else if (video && !video.pipelineInProgress) {
-                video.pipelineInProgress = true;
+              } else if (video && !video.status.inPipeline) {
+                video.status.inPipeline = true;
                 video.save();
                 console.log(
                   `${new Date().toUTCString()} Attained a token and initiated video transfer for userid: ${
@@ -187,14 +176,14 @@ router.get('/authenticated_google_transfer', (request, response) => {
                   })
                   .catch(error5 => {
                     console.log(error5);
-                    video.pipelineInProgress = false;
+                    video.status.inPipeline = false;
                     video.status = 'error';
                     video.errorDebug = error5.toString();
                     video.save();
                     completedTransfer(error5.message);
                   });
               } else {
-                if (video && video.pipelineInProgress) {
+                if (video && video.status.inPipeline) {
                   const message =
                     'Attempted to transfer a video already in transfer';
                   console.log(message);

@@ -1,0 +1,99 @@
+{
+  "https://purl.imsglobal.org/spec/lti/claim/message_type": "LtiResourceLinkRequest",
+  "https://purl.imsglobal.org/spec/lti/claim/version": "1.3.0",
+  "https://purl.imsglobal.org/spec/lti/claim/resource_link": {
+    "id": "a5c06d9f464ae329aba5455f7c115b1b16e89479",
+    "description": null,
+    "title": null,
+    "validation_context": null,
+    "errors": {
+      "errors": {}
+    }
+  },
+  "aud": "108310000000000108",
+  "azp": "108310000000000108",
+  "https://purl.imsglobal.org/spec/lti/claim/deployment_id": "1237:a5c06d9f464ae329aba5455f7c115b1b16e89479",
+  "exp": 1624353678,
+  "iat": 1624350078,
+  "iss": "https://canvas.instructure.com",
+  "nonce": "",
+  "sub": "redacted",
+  "https://purl.imsglobal.org/spec/lti/claim/target_link_uri": "https://localhost:8080",
+  "picture": "https://canvas.instructure.com/images/messages/avatar-50.png",
+  "email": "test.user@iped.uio.no",
+  "name": "Test User",
+  "given_name": "Test",
+  "family_name": "User",
+  "https://purl.imsglobal.org/spec/lti/claim/lis": {
+    "person_sourcedid": "person_id:000000;account_name:testuser;",
+    "course_offering_sourcedid": null,
+    "validation_context": null,
+    "errors": {
+      "errors": {}
+    }
+  },
+  "https://purl.imsglobal.org/spec/lti/claim/context": {
+    "id": "a5c06d9f464ae329aba5455f7c115b1b16e89479",
+    "label": "vivatest",
+    "title": "EngageLab LTI development ",
+    "type": ["http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering"],
+    "validation_context": null,
+    "errors": {
+      "errors": {}
+    }
+  },
+  "https://purl.imsglobal.org/spec/lti/claim/tool_platform": {
+    "guid": "aQR6QrqJGZzP4pqAwLVw5LgTLelSbklNZPI1u5CG:canvas-lms",
+    "name": "University of Oslo",
+    "version": "cloud",
+    "product_family_code": "canvas",
+    "validation_context": null,
+    "errors": {
+      "errors": {}
+    }
+  },
+  "https://purl.imsglobal.org/spec/lti/claim/launch_presentation": {
+    "document_target": "iframe",
+    "height": 400,
+    "width": 800,
+    "return_url": "https://uio.instructure.com/courses/23222/external_content/success/external_tool_redirect",
+    "locale": "en-AU",
+    "validation_context": null,
+    "errors": {
+      "errors": {}
+    }
+  },
+  "locale": "en",
+  "https://purl.imsglobal.org/spec/lti/claim/roles": [
+    "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Administrator",
+    "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Instructor",
+    "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student",
+    "http://purl.imsglobal.org/vocab/lis/v2/membership#ContentDeveloper",
+    "http://purl.imsglobal.org/vocab/lis/v2/system/person#User"
+  ],
+  "https://purl.imsglobal.org/spec/lti/claim/custom": {
+    "user_id": 12345,
+    "login_id": "testuser@uio.no",
+    "user_email": "test.user@iped.uio.no"
+  },
+  "https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice": {
+    "context_memberships_url": "https://uio.instructure.com/api/lti/courses/23222/names_and_roles",
+    "service_versions": ["2.0"],
+    "validation_context": null,
+    "errors": {
+      "errors": {}
+    }
+  },
+  "https://purl.imsglobal.org/spec/lti/claim/lti11_legacy_user_id": "redacted2-match",
+  "https://purl.imsglobal.org/spec/lti/claim/lti1p1": {
+    "user_id": "redacted2-match",
+    "validation_context": null,
+    "errors": {
+      "errors": {}
+    }
+  },
+  "errors": {
+    "errors": {}
+  },
+  "https://www.instructure.com/placement": "course_navigation"
+}

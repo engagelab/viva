@@ -139,7 +139,7 @@ const createFFMPEG = (video, subDirSrc, subDirDest) => {
             reject(err)
           } else {
             video.file.mimeType = 'video/mp4'
-            video.file.type = 'mp4'
+            video.file.extension = 'mp4'
             fileOperations // Remove the generated QR code image
               .removeFile(`${video.details.id}_qrcode.png`, subDirSrc)
               .then(() => {

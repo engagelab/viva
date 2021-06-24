@@ -1,0 +1,20 @@
+{
+  "id": 12345,
+  "name": "Test User",
+  "short_name": "Test User",
+  "sortable_name": "User, Test",
+  "avatar_url": "https://uio.instructure.com/images/messages/avatar-50.png",
+  "title": null,
+  "bio": null,
+  "primary_email": "test.user@iped.uio.no",
+  "login_id": "testuser@uio.no",
+  "integration_id": "1176877",
+  "time_zone": "Europe/Stockholm",
+  "locale": "en-AU",
+  "effective_locale": "en-AU",
+  "calendar": {
+    "ics": "https://uio.instructure.com/feeds/calendars/user_DKnRraG6dXx6DBhKBtNBxuyWbibgBva5lTDhPYpb.ics"
+  },
+  "lti_user_id": "redacted2-match",
+  "k5_user": false
+}

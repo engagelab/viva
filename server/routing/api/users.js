@@ -13,36 +13,31 @@ const User = require('../../models/User')
 
 /** Update the current user  */
 router.put('/user', authoriseUser, (request, response, next) => {
-  const userId = request.session.ref
-  User.findById(userId, (error, u) => {
-    if (error) {
-      return next(error)
-    }
-    const update = request.body
-    if (update.videos.draftIDs && Array.isArray(update.videos.draftIDs)) {
-      // Setup structures
-      if (!u.videos.draftIDs) u.videos.draftIDs = []
-      const newDrafts = update.videos.draftIDs.filter(
-        (id) => !u.videos.draftIDs.includes(id)
-      )
-      const removedDrafts = update.videos.removedDraftIDs || []
+  const u = response.locals.user
+  const update = request.body
+  if (update.videos.draftIDs && Array.isArray(update.videos.draftIDs)) {
+    // Setup structures
+    if (!u.videos.draftIDs) u.videos.draftIDs = []
+    const newDrafts = update.videos.draftIDs.filter(
+      (id) => !u.videos.draftIDs.includes(id)
+    )
+    const removedDrafts = update.videos.removedDraftIDs || []
 
-      // Remove drafts
-      let dbDrafts = u.videos.draftIDs.filter((r) => !removedDrafts.includes(r))
+    // Remove drafts
+    let dbDrafts = u.videos.draftIDs.filter((r) => !removedDrafts.includes(r))
 
-      // Record statistics
-      if (!u.status.totalDrafts) u.status.totalDrafts = 0
-      u.status.totalDrafts += newDrafts.length
-      u.status.totalDrafts -= u.videos.draftIDs.length - dbDrafts.length
+    // Record statistics
+    if (!u.status.totalDrafts) u.status.totalDrafts = 0
+    u.status.totalDrafts += newDrafts.length
+    u.status.totalDrafts -= u.videos.draftIDs.length - dbDrafts.length
 
-      // Add new drafts
-      u.videos.draftIDs = [...dbDrafts, ...newDrafts]
-    }
-    if (update.datasetConfig) u.datasetConfig = update.datasetConfig
-    u.save((error2, savedUser) => {
-      if (error2) return next(error2)
-      response.send(savedUser.redacted())
-    })
+    // Add new drafts
+    u.videos.draftIDs = [...dbDrafts, ...newDrafts]
+  }
+  if (update.datasetConfig) u.datasetConfig = update.datasetConfig
+  u.save((error2, savedUser) => {
+    if (error2) return next(error2)
+    response.send(savedUser.redacted())
   })
 })
 

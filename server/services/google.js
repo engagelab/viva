@@ -1,0 +1,191 @@
+/*
+ Designed and developed by Richard Nesnass & Sharanya Manivasagam
+*/
+
+const fs = require('fs');
+const { google } = require('googleapis');
+const fileOperations = require('../subprocesses/fileOperations');
+const { videoStatusTypes, videoStorageTypes } = require('../constants');
+const { generatePath } = require('./storage');
+
+/* --------------    UiO Google Suite ----------------- */
+
+// API Documentation: https://github.com/googleapis/google-api-nodejs-client#google-apis-nodejs-client
+
+// Get user details from Google
+// * Returns a promise *
+function userDetailsFromGoogle(auth) {
+  const people = google.people({
+    version: 'v1',
+    auth,
+  });
+  return people.people.get({
+    resourceName: 'people/me',
+    personFields: 'emailAddresses',
+  });
+}
+
+function checkFolderExists(drive, metadata) {
+  // Resolves with the found folder, otherwise undefined
+  return new Promise((resolve, reject) => {
+    drive.files.list({
+      q: `mimeType = 'application/vnd.google-apps.folder' and name = '${metadata.name}' and trashed = false and appProperties has { key="appID" and value='${metadata.appProperties.appID}'} and appProperties has { key="folderStructure" and value='${metadata.appProperties.folderStructure}'}`,
+      spaces: 'drive',
+      fields: 'nextPageToken, files(name, id)',
+    },
+      function (err, res) {
+        if (err) {
+          reject(err);
+        } else if (res && res.data.files.length > 0) {
+          // We are looking for only one file with the given title
+          // console.log(res.data.files);
+          resolve({file: res.data.files[0], metadata });
+        } else {
+          console.log(`Folder: ${metadata.name} not found`);
+          resolve({ file: null, metadata });
+        }
+      }
+    );
+  });
+}
+
+function createGFile(drive, metadata, media) {
+  // Resolves with the created file
+  return new Promise((resolve, reject) => {
+    const f = {
+      resource: metadata,
+      fields: 'id',
+    }
+    if (media) {
+      f.media = media
+    }
+    drive.files.create(f, function (err, res) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ file: res.data, metadata });
+        }
+      }
+    );
+  });
+}
+
+/* Helper functions */
+function metadataObject(name, folderStructure) {
+  return {
+    name,
+    mimeType: 'application/vnd.google-apps.folder',
+    appProperties: { appID: 'viva-app-google-drive', folderStructure },
+    parents: [],
+  };
+}
+
+/* Creating folders */
+async function createFolders(drive, folders, rootID) {
+    let subFolder;
+
+    /* Find the lowest existing parent folder */
+    while (folders[0] && folders[0].file) {
+      subFolder = folders.shift();
+    }
+
+    /* Create needed new folders sequentially, async on GDrive */
+    for (const f of folders) {
+      const meta = f.metadata
+      const parentID = subFolder ? subFolder.id : rootID
+      meta.parents.push(parentID)
+      try {
+        subFolder = await createGFile(drive, meta)
+      } catch(error) {
+        return Promise.resolve({ error, subFolder: null })
+      }
+    }
+
+    // Return the lowest new subFolder
+    return Promise.resolve({ error: false, subFolder })
+}
+
+/* Prepare folder metadata and check for existing folders  */
+function createFolderStructures(drive, rootID, folderPath) {
+  const paths = folderPath.split('/')
+  const foldersChecked = []
+
+  // Create metadata items for GDrive for creation of new folders
+  let path = ''
+  for (const p of paths) {
+    path += `${p}/`
+    const metadata = metadataObject(p, path)
+    foldersChecked.push(checkFolderExists(drive, metadata))
+  }
+
+  // When all folders have been checked, create the ones that don't exist
+  return Promise
+    .all(foldersChecked)
+    .then(folders => createFolders(drive, folders, rootID))
+}
+
+function initializeStructure(video, drive, rootID, path, filename) {
+  return new Promise((resolve, reject) => {
+
+    const videoReject = (error, msg) => {
+      video.status.error.errorInfo = msg
+      reject(error);
+    }
+
+    createFolderStructures(drive, rootID, path).then(({error, subFolder}) => {
+      if (error || !subFolder.file) {
+        return videoReject(error, 'Error creating folder structure')
+      }
+      const dirPath = process.cwd();
+      const localVideoPath = `${dirPath}/videos/edited/${video.file.name}.${video.file.extension}`
+      const metaData = {
+        name: filename,
+        parents: [subFolder.file.id],
+      };
+      const media = {
+        mimeType: video.file.mimeType,
+        body: fs.createReadStream(localVideoPath),
+      };
+
+      createGFile(drive, metaData, media).then(() => {
+        console.log(`${new Date().toUTCString()} Folders OK, video transferred. SubFolder name: ${subFolder.file.name} Video name: ${filename}`)
+        fileOperations.moveFile(video, videoStatusTypes.edited, videoStatusTypes.complete).then(() => {
+          video.status.main = videoStatusTypes.complete
+          video.status.inPipeline = false
+          video.storages.push({ kind: videoStorageTypes.google, path: localVideoPath })
+          video.save()
+          resolve()
+        }).catch(err => videoReject(err, 'Error moving file to complete'))
+      }).catch(err => videoReject(err, 'File creation error for Google Drive. Transfer not completed'))
+    }).catch(err => videoReject(err, 'Folder setup error for Google Drive. Transfer not completed'))
+  });
+}
+
+// Upload a video file to the user's Google Drive space
+function createVideoAtGoogle(video, dataset, auth) {
+  return new Promise((resolve, reject) => {
+    const drive = google.drive({ version: 'v3', auth })
+    const vivaMetadata = metadataObject('VIVA', 'VIVA')
+    const storage = dataset.storages.find((element) => element.kind === videoStorageTypes.google)
+    const formedPath = generatePath({ list: storage.file.path, dataset, video }, '/')
+    const formedName = generatePath({ list: storage.file.name, dataset, video }, '-')
+
+    return checkFolderExists(drive, vivaMetadata)
+      .then(rootFolder => {
+        if (rootFolder && rootFolder.file) {
+          const rootID = rootFolder.file.id;
+          return initializeStructure(video, drive, rootID, formedPath, formedName.substring(1)).then(() => resolve())
+        } else {
+          console.log('VIVA folder not found ... \nCreating VIVA folder ...')
+          return createGFile(drive, vivaMetadata).then(vivaFolder => {
+            return initializeStructure(video, drive, vivaFolder.id, formedPath, formedName.substring(1)).then(() => resolve())
+          });
+        }
+    }).catch(error => reject(error));
+  });
+}
+
+module.exports = {
+  userDetailsFromGoogle,
+  createVideoAtGoogle
+};

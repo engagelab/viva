@@ -51,7 +51,11 @@ const { actions: videoActions } = useVideoStore()
 
 import SVGSymbol from './base/SVGSymbol.vue'
 import Button from './base/Button.vue'
-import { VIDEO_STATUS_TYPES, videoProgressCheckInterval } from '@/constants'
+import {
+  VIDEO_STATUS_TYPES,
+  VIDEO_STORAGE_TYPES,
+  videoProgressCheckInterval,
+} from '@/constants'
 
 interface VideoStatus {
   text: string
@@ -95,8 +99,7 @@ export default defineComponent({
     const datasetName = computed(() => {
       if (video.value.dataset && video.value.dataset.selection) {
         const selection = video.value.dataset.selection.reduce((acc, curr) => {
-          const split = curr.title.split(':')
-          return `${acc} > ${split[1]}`
+          return `${acc} > ${curr.title}`
         }, '')
         return `${video.value.dataset.name} ${selection}`
       } else {
@@ -150,7 +153,9 @@ export default defineComponent({
         status.symbol = 'accept'
         status.symbolClass = 'green'
         status.textClass = 'green'
-        status.google = video.value.storages.some((name) => name == 'google')
+        status.google = video.value.storages.some(
+          (s) => s.kind == VIDEO_STORAGE_TYPES.google
+        )
       }
       return status
     })

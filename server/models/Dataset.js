@@ -6,7 +6,7 @@ const consentTypes = require('../constants').consentTypes
 const mongoose = require('mongoose')
 
 const storageSchema = {
-  name: {
+  kind: {
     type: String,
     enum: Object.values(videoStorageTypes),
     default: videoStorageTypes.educloud,
@@ -72,7 +72,7 @@ datasetSchema.methods.redacted = function () {
       kind: data.consent.kind,
     },
     users: {
-      owner: data.users.owner.profile.username,
+      owner: data.users.owner,
     },
     storages: data.storages.map((store) => {
       const s = { ...store }

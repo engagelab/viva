@@ -2,19 +2,24 @@ const router = require('express').Router()
 const { generators } = require('openid-client')
 const jwt = require('jsonwebtoken')
 const User = require('../../models/User')
+const { organizations } = require('../../constants')
 const { createOrUpdateUser, completeCallback } = require('./helpers')
 const openidClient = require('../../services/openid')
 
 // Activate the Dataporten Clients
 let DPClient
-openidClient.createClient('dataporten').then((struct) => (DPClient = struct.client))
+openidClient
+  .createClient('dataporten')
+  .then((struct) => (DPClient = struct.client))
 
 // --------------- For Dataporten Login -----------------
 
 router.get('/dataporten/login', (req, res) => {
-  const { device, remember, testing, client } = req.query
-  req.session.device = device
-  req.session.client = client
+  const { organization, remember, testing, client } = req.query
+  if (Object.keys(organizations).includes(organization)) {
+    req.session.organization = organization // Which organization is hosting the servive e.g. 'uio'
+  }
+  req.session.client = client // Administration: 'admin' or Recorder: 'webApp' / 'mobileApp'
   req.session.remember = remember
   req.session.testing = testing || ''
 
@@ -25,7 +30,7 @@ router.get('/dataporten/login', (req, res) => {
   const code_challenge = generators.codeChallenge(code_verifier)
 
   let redirectUrl = DPClient.authorizationUrl({
-    scope: 'openid groups profile email',
+    scope: 'openid groups profile email userid userid-feide groups-org',
     // resource: 'https://my.api.example.com/resource/32178',
     code_challenge,
     code_challenge_method: 'S256',
@@ -38,7 +43,7 @@ router.get('/dataporten/login', (req, res) => {
 
 router.get('/dataporten/callback', function (request, response) {
   const params = DPClient.callbackParams(request)
-  const { code_verifier, testing } = request.session
+  const { code_verifier, testing, organization, client } = request.session
 
   // FOR AUTOMATED TESTS ONLY
   if (process.env.NODE_ENV !== 'production' && testing) {
@@ -46,24 +51,26 @@ router.get('/dataporten/callback', function (request, response) {
       access_token: '',
       id_token: '',
     }
-    const tokenInfo = {
-      sub: testing === 'testuser' || testing === 'testuser2' ? testing : 'testuser',
-    }
     const profile = {
-      name: testing === 'testuser1' ? 'Test User - pedleder' : 'Test User - foresatt',
+      provider: 'dataporten',
+      provider_id: '',
+      login_id: 'testuser1', // <-- THIS is intended to match Dataporten user ID and Canvas LTI + API token user ID
       email: `${testing}@engagelab.uio.no`,
+      fullName: testing === 'testuser1'
+        ? 'Test User - pedleder'
+        : 'Test User - foresatt',
+      organization: organization,
+      client,
     }
-    return createOrUpdateUser(
-      tokenSet,
-      { sub: tokenInfo.sub },
-      profile
-    ).then((user) =>
-      completeCallback(request, response, user)
+    return createOrUpdateUser(tokenSet, profile).then(
+      (user) => completeCallback(request, response, user)
     )
   }
 
   // Verify the received code with Dataporten, which should return the tokenSet
-  DPClient.callback(DPClient.metadata.redirect_uris[0], params, { code_verifier }) // => Promise
+  DPClient.callback(DPClient.metadata.redirect_uris[0], params, {
+    code_verifier,
+  }) // => Promise
     .then((tokenSet) => {
       const tokenInfo = tokenSet.claims()
       if (
@@ -79,20 +86,27 @@ router.get('/dataporten/callback', function (request, response) {
 
       // Now use the access_token to retrieve user profile information
       DPClient.userinfo(tokenSet.access_token) // => Promise
-        .then((profile) => {
+        .then((data) => {
           console.log(
-            `\nGot DP user; logging in ${profile.name} : ${profile.email} ...`
+            `\nGot DP user; logging in ${data.name} : ${data.email} ...`
           )
-          profile.provider = 'dataporten'
-
+          const profile = {
+            provider: 'dataporten',
+            provider_id: data.sub,
+            login_id: '', // <-- THIS is intended to match Dataporten user ID and Canvas LTI + API token user ID
+            email: data.email || '',
+            fullName: data.name || '',
+            organization: organization,
+            client,
+          }
+          let provider_id =
+            data['dataporten-userid_sec'] || data['connect-userid_sec']
+          if (provider_id && provider_id.length > 0) {
+            provider_id = provider_id[0].split(':')
+            if (provider_id.length === 2) profile.login_id = provider_id[1]
+          }
           // Configure the user profile in our DB, and finally respond to the client
-          createOrUpdateUser(
-            tokenSet,
-            { sub: tokenInfo.sub },
-            profile
-          ).then((user) =>
-            completeCallback(request, response, user)
-          )
+          createOrUpdateUser(tokenSet, profile).then((user) => completeCallback(request, response, user))
         })
         .catch((err) => {
           console.error('Error caught at DPClient userinfo: ' + err)

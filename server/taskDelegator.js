@@ -54,7 +54,7 @@ const errorProcessingVideo = (error, pStatus) => {
   if (pStatus) {
     const errorMessage = pipelineErrorMessages[pStatus]
     const nextVideo = activelyProcessing[pStatus]
-    nextVideo.status.pipelineInProgress = false
+    nextVideo.status.inPipeline = false
     nextVideo.status.error.errorDebug = error
     nextVideo.status.error.errorInfo = `${errorMessage}. Please contact support. Reference: ${nextVideo.filename}`
     nextVideo.status.main = videoStatusTypes.error
@@ -64,15 +64,19 @@ const errorProcessingVideo = (error, pStatus) => {
 }
 
 // Update the state of the video metadata for the next pipeline stage
-const updateVideoStatus = (video, pStatus) => {
+const advanceVideoStatus = (video, pStatus) => {
   const stateIndex = pipelineStates.indexOf(pStatus)
   // Increment video state (refer to constants.pipelineStates) and update pipeline progress
   if (stateIndex == pipelineStates.length - 1) {
-    video.status.main = videoStatusTypes.edited // Pipeline is finished
+    // Pipeline is finished. But may need to transfer the video to Google before marking as 'complete'
+    // Or complete directly if we are using Canvas
+    const editedTypes = [videoStorageTypes.google, videoStorageTypes.onedrive]
+    const isEdited = video.storages.map((s) => s.kind).some((kind) => editedTypes.includes(kind))
+    video.status.main = isEdited ? videoStatusTypes.edited : videoStatusTypes.complete
   } else {
     video.status.main = pipelineStates[stateIndex + 1]
   }
-  video.status.pipelineInProgress = false
+  video.status.inPipeline = false
   video.status.error.errorDebug = ''
   video.status.error.errorInfo = ''
   video.save(error => {
@@ -89,7 +93,7 @@ const updateVideoStatus = (video, pStatus) => {
 const beginProcessingVideo = pStatus => {
   const nextVideo = activelyProcessing[pStatus]
   // Update pipeline in progress for this video
-  nextVideo.status.pipelineInProgress = true
+  nextVideo.status.inPipeline = true
   nextVideo.save(error => {
     if (error) {
       return console.log(
@@ -107,7 +111,7 @@ const beginProcessingVideo = pStatus => {
               videoFolderNames.uploaded,
               videoFolderNames.decrypted
             )
-            .then(() => updateVideoStatus(nextVideo, pStatus))
+            .then(() => advanceVideoStatus(nextVideo, pStatus))
             .catch(err => {
               errorProcessingVideo(err, pStatus)
             })
@@ -119,7 +123,7 @@ const beginProcessingVideo = pStatus => {
               videoFolderNames.uploaded,
               videoFolderNames.decrypted
             )
-            .then(() => updateVideoStatus(nextVideo, pStatus))
+            .then(() => advanceVideoStatus(nextVideo, pStatus))
             .catch(err => errorProcessingVideo(err, pStatus))
         }
         break
@@ -136,7 +140,7 @@ const beginProcessingVideo = pStatus => {
               // Delete the 'decrypted' video file, as we now have a new 'edited' video file
               .removeFile(video.file.name, videoFolderNames.decrypted)
               .then(() => {
-                updateVideoStatus(video, pStatus)
+                advanceVideoStatus(video, pStatus)
               }).catch(err => {
                 errorProcessingVideo(err, pStatus)
               })
@@ -149,7 +153,7 @@ const beginProcessingVideo = pStatus => {
         fetchStorage(nextVideo).then(stores => {
           const allPromises = []
           stores.forEach(store => {
-            if (store.name == videoStorageTypes.lagringshotell) {
+            if (store.kind == videoStorageTypes.lagringshotell) {
               console.log(store);
               const LHpromise = lagringshotell.createVideoAtLagringshotell(
                 {
@@ -162,7 +166,7 @@ const beginProcessingVideo = pStatus => {
             }
           })
           Promise.all(allPromises).then(() =>
-            updateVideoStatus(nextVideo, pStatus)
+            advanceVideoStatus(nextVideo, pStatus)
           ).catch(err => {
             errorProcessingVideo(err, pStatus)
           })
@@ -170,8 +174,9 @@ const beginProcessingVideo = pStatus => {
         break
       }
       case videoStatusTypes.edited: {
+        // If we're using Dataporten:
         // The plan as at June 2019 is that the user must authorise transfer to their Google storage
-        // Therefore the pipeline stops here, it does not include a 'completed' state, that is set by the googleOperations
+        // Therefore the Dataporten pipeline stops at 'edited', it does not include a 'completed' state, that is set by the google code
         break
       }
       default: {

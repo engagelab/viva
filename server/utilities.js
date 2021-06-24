@@ -149,14 +149,14 @@ const hasMinimumUserRole = (user, requestedRole) => {
 }
 
 /**  https Request to TSD/ outside portal from  VIVA server */
-function httpRequest(params, postData) {
+function httpRequest(options, postData) {
   return new Promise(function (resolve, reject) {
-    const req = https.request(params, function (res) {
+    const req = https.request(options, (res) => {
       if (res.statusCode < 200 || res.statusCode >= 300) {
         reject(
           new Error(
             `Rejected HTTP Response. statusCode: ${res.statusCode} calling: ${
-              params.hostname + params.path
+              options.hostname + options.path
             } `
           )
         )

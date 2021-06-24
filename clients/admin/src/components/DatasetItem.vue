@@ -6,32 +6,62 @@
 
     <div class="flex flex-col ...">
       <div>
-        <div class="flex justify-between ...">
-          <div><p>Name</p></div>
-          <div>2</div>
-          <div>3</div>
+        <div class="w-4/5 flex justify-between ...">
+          <div>
+            <AnswerInput
+              class="m-2 w-32"
+              mode="text"
+              :border="false"
+              :label="t('Name')"
+              :required="true"
+              v-model="theDataset.name"
+            ></AnswerInput>
+          </div>
+          <div>
+            <AnswerInput
+              class="m-2"
+              mode="text"
+              :border="false"
+              :label="t('Owner')"
+              :required="true"
+              v-model="theDataset.users.owner"
+            ></AnswerInput>
+          </div>
         </div>
       </div>
-      <div>2</div>
-      <div>3</div>
+      <div>
+        <div class="w-4/5 flex justify-between ...">
+          <div>
+            <AnswerInput
+              class="m-2 w-32"
+              mode="text"
+              :border="false"
+              :label="t('Description')"
+              :required="true"
+              v-model="theDataset.description"
+            ></AnswerInput>
+          </div>
+          <div>
+            <AnswerInput
+              class="m-2"
+              mode="text"
+              :border="false"
+              :label="t('Data controller group ')"
+              :required="true"
+              v-model="theDataset.users.adminGroup"
+            ></AnswerInput>
+          </div>
+        </div>
+      </div>
+      <div>
+        <SelectionBox
+          id="select-kind"
+          style="display: none"
+          :label="t('Cohort')"
+          :options="SelectionOptionList"
+        ></SelectionBox>
+      </div>
     </div>
-
-    <!-- <AnswerInput
-      class="m-2 w-32"
-      mode="text"
-      :border="false"
-      :label="t('Name')"
-      :required="true"
-      v-model="theDataset.name"
-    ></AnswerInput> -->
-    <AnswerInput
-      class="m-2 w-32"
-      mode="text"
-      :border="false"
-      :label="t('Description')"
-      :required="true"
-      v-model="theDataset.description"
-    ></AnswerInput>
   </div>
 </template>
 
@@ -39,13 +69,13 @@
 import { defineComponent, PropType, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-// import { USER_ROLE } from '../constants'
+import { SELECTION } from '@/constants'
 // import { useAppStore } from '@/store/useAppStore'
 // import { useDatasetStore } from '@/store/useDatasetStore'
 import { Dataset } from '@/types/main'
 // import SlButton from '@/components/base/SlButton.vue'
 import AnswerInput from '@/components/base/AnswerInput.vue'
-// import SelectionBox from '@/components/base/SelectionBox.vue'
+import SelectionBox from '@/components/base/SelectionBox.vue'
 
 const messages = {
   nb_NO: {
@@ -59,9 +89,9 @@ const messages = {
   },
 }
 
-// interface KindOptionListItem {
+// interface SelectionOptionListItem {
 //   itemName: string
-//   item: string
+//   item: SELECTION
 // }
 
 // This component completes setup of the app after login
@@ -69,7 +99,7 @@ export default defineComponent({
   name: 'DatasetItem',
   components: {
     // SlButton,
-    // SelectionBox,
+    SelectionBox,
     AnswerInput,
   },
   props: {
@@ -82,7 +112,14 @@ export default defineComponent({
     // const { getters: datasetGetters } = useDatasetStore()
     const d = new Dataset(props.dataset)
     const theDataset = ref(d)
-
+    console.log(Object.values(SELECTION))
+    // let SelectionOptionList: SelectionOptionListItem[] = Object.values(
+    //   SELECTION
+    // ).map((r) => ({
+    //   item: r,
+    //   itemName: r,
+    // }))
+    // let SelectionOptionList: SelectionOptionListItem[]
     const initialise = (d: Dataset) => {
       theDataset.value = new Dataset(d)
     }
@@ -96,6 +133,7 @@ export default defineComponent({
     return {
       t,
       theDataset,
+      // SelectionOptionList,
       // Computed
       // Methods
     }
