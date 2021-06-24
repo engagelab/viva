@@ -11,7 +11,9 @@
     <content src="index.html" />
     <access allows-arbitrary-loads-for-media="true" allows-arbitrary-loads-in-web-content="true" allows-local-networking="true" origin="*" />
     <plugin name="cordova-plugin-whitelist" spec="1" />
-    <access origin="*" />
+    <access origin="viva:*" />
+    <allow-navigation href="viva:*" launch-external="yes" />
+    <allow-navigation href="mailto:*" launch-external="yes" />
     <access origin="cdvfile://*" />
     <access origin="android-webview-video-poster:*" />
     <allow-intent href="http://*/*" />
@@ -22,10 +24,9 @@
     <allow-intent href="geo:*" />
     <allow-intent href="oauth:*" />
     <allow-intent href="android-webview-video-poster:*" />
-    <allow-navigation href="mailto:*" launch-external="yes" />
     <hook src="scripts/patchVersionNumber.js" type="before_prepare" />
     <platform name="ios">
-        <preference name="scheme" value="slplus" />
+        <preference name="scheme" value="viva" />
         <preference name="hostname" value="localhost" />
         <preference name="WKWebViewOnly" value="true" />
 

@@ -261,7 +261,7 @@ const actions = {
     })
       .then(() => {
         // We now have an active session so proceed as normal..
-        router.push('/login')
+        router.push('/postlogin')
         return Promise.resolve(true)
       })
       .catch(() => {
