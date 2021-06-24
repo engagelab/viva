@@ -26,8 +26,15 @@
       </AgGridVue>
 
       <!-- Row details -->
-      <div>
-        {{ selectedRow }}
+      <div v-if="selectedRow" class="mt-4 flex justify-items-start">
+        <div class="border-2 rounded-md bg-gray-300 p-4">
+          <div class="recording-title text-lg">Metadata about recording</div>
+          <div>Name: {{ selectedRow.details.name }}</div>
+          <div>Category: {{ selectedRow.details.category }}</div>
+          <div>Created: {{ selectedRow.details.created }}</div>
+          <div>Duration: {{ `${selectedRow.details.duration} Seconds` }}</div>
+          <div>EDL: {{ selectedRow.details.edl }}</div>
+        </div>
       </div>
     </div>
   </div>
