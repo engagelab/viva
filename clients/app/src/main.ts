@@ -45,6 +45,27 @@ const i18n = createI18n({
   messages: globalTranslations,
 })
 
+/* interface SLPlusCustomEventDetail {
+  type: string
+  error: Error
+} */
+// Catch slPLus errors sent via utilities.js error function
+window.addEventListener('vivaerror', ((event: CustomEvent) => {
+  //do something
+  const error = event.detail
+  if (error) {
+    const errorText = error.toString()
+    console.log(errorText)
+  }
+}) as EventListener)
+
+// Catch unhandled errors
+window.addEventListener('unhandledrejection', function (event) {
+  console.warn(
+    `Uncaught promise: ${event.promise.toString()} Reason: ${event.reason.toString()}`
+  )
+})
+
 // Bootstrap the Vue app when called
 const initialiseApp = () => {
   app.use(router).use(i18n).mount('#app')
@@ -57,13 +78,15 @@ if (window.cordova) {
   const onDeviceReady = () => {
     // For Andoird, check device permissions
     const permissions = cordova.plugins.permissions
-    const permissionList = [
-      permissions.CAMERA,
-      permissions.RECORD_AUDIO,
-      permissions.READ_EXTERNAL_STORAGE,
-      permissions.WRITE_EXTERNAL_STORAGE,
-      permissions.INTERNET,
-    ]
+    const permissionList = permissions
+      ? [
+          permissions.CAMERA,
+          permissions.RECORD_AUDIO,
+          permissions.READ_EXTERNAL_STORAGE,
+          permissions.WRITE_EXTERNAL_STORAGE,
+          permissions.INTERNET,
+        ]
+      : []
     const permissionError = (
       p: AndroidPermissions,
       callback: () => void
@@ -112,33 +135,12 @@ if (window.cordova) {
         }, 2000)
       }
     }
-    checkPermissionList()
+    if (permissions) checkPermissionList()
 
     appActions.setUseCordova(true)
     initialiseApp()
   }
   document.addEventListener('deviceready', onDeviceReady, false)
+} else {
+  initialiseApp()
 }
-
-/* interface SLPlusCustomEventDetail {
-  type: string
-  error: Error
-} */
-// Catch slPLus errors sent via utilities.js error function
-window.addEventListener('vivaerror', ((event: CustomEvent) => {
-  //do something
-  const error = event.detail
-  if (error) {
-    const errorText = error.toString()
-    console.log(errorText)
-  }
-}) as EventListener)
-
-// Catch unhandled errors
-window.addEventListener('unhandledrejection', function (event) {
-  console.warn(
-    `Uncaught promise: ${event.promise.toString()} Reason: ${event.reason.toString()}`
-  )
-})
-
-initialiseApp()

@@ -6,7 +6,7 @@
       </p>
       <div class="flex flex-row justify-right">
         <Button
-          v-if="!isLoggedIn && browserOk && !appIsOld"
+          v-if="!isLoggedIn && browserOk"
           class="m-4 focus:outline-none"
           @click="login('uio')"
           >{{ t('loggedOut') }}</Button
@@ -85,7 +85,7 @@ export default defineComponent({
         GiSamtykke: 'Gi samtykke til GSuite',
         browserNotOk: 'VIVA krever Google Chrome nettleser',
         appIsOld:
-          'Viva appen er en eldre versjon, og du må laste ned en ny versjon fra Appstore',
+          'Viva appen er en eldre versjon, du må laste ned den ny versjonen fra Appstore',
       },
       en: {
         loggedIn: 'You are logged in',
