@@ -7,7 +7,7 @@
       mode="out-in"
     >
       <component
-        :is="selectedPage"
+        :is="rawPages[selectedPage]"
         :stateFromParent="stateToChildren"
         @slider-back="sliderBack"
         v-bind="$attrs"
@@ -25,12 +25,14 @@ import {
   PropType,
   Ref,
   toRefs,
+  markRaw,
+  ComponentPublicInstance,
 } from 'vue'
 import router from '@/router'
 export default defineComponent({
   props: {
     pages: {
-      type: Object as PropType<number[]>,
+      type: Object as PropType<ComponentPublicInstance[]>,
       required: true,
     },
     movePageTo: {
@@ -45,22 +47,22 @@ export default defineComponent({
   setup(props) {
     const selectedPage = ref(0)
     const { movePageTo, pages } = toRefs(props)
+    const rawPages = pages.value.map((p) => markRaw(p))
     const previousPages: Ref<number[]> = ref([])
     const leaveToClass = ref('slide-fade-leave-to-right')
     const enterClass = ref('slide-fade-enter-right')
     onMounted(() => {
-      const page = parseInt(movePageTo.value) || 0
-      selectedPage.value = props.pages.length > 0 ? props.pages[page] : 0
+      selectedPage.value = parseInt(movePageTo.value) || 0
     })
     watch(
       () => movePageTo.value,
       (nextPage) => {
-        const currentPageNumber = pages.value.indexOf(selectedPage.value)
+        const currentPageNumber = selectedPage.value
         const nextPageNumber = parseInt(nextPage)
         const direction = currentPageNumber < nextPageNumber ? 'left' : 'right'
         enterClass.value = `slide-fade-enter-${direction}`
         leaveToClass.value = `slide-fade-leave-to-${direction}`
-        selectedPage.value = props.pages[nextPageNumber]
+        selectedPage.value = nextPageNumber
         if (nextPageNumber === 0) {
           previousPages.value.length = 0
         } else if (nextPageNumber > currentPageNumber) {
@@ -75,6 +77,7 @@ export default defineComponent({
 
     return {
       selectedPage,
+      rawPages,
       previousPages: [],
       leaveToClass,
       enterClass,

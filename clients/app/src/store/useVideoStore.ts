@@ -10,7 +10,6 @@ import {
 import { useDeviceService, CordovaData } from './useDevice'
 import { Upload, HttpRequest } from 'tus-js-client'
 import { apiRequest } from '../api/apiRequest'
-import cordovaService from '../api/cordovaService'
 import { useNotifyStore } from './useNotifyStore'
 const { actions: notifyActions } = useNotifyStore()
 const { actions: deviceActions } = useDeviceService()
@@ -18,8 +17,6 @@ interface State {
   selectedVideo: Video | undefined
   videos: Map<string, Video>
   draftVideos: Map<string, Video>
-  // If using Cordova, videoDataFiles[fileId] will be a fileEntry object
-  videoDataFiles: Map<string, FileEntry>
   // Used to hold changes to video metadata before saving to the 'selectedVideo'
   // tempVideo: undefined,
   // Current TUS upload instances
@@ -33,9 +30,6 @@ const state: Ref<State> = ref({
   selectedVideo: undefined,
   videos: new Map(),
   draftVideos: new Map(),
-  // This dict is a volatile only instance holding the decrypted video chunks arrays by fileId.
-  // If using Cordova, videoDataFiles[fileId] will be a fileEntry object
-  videoDataFiles: new Map(),
   // Used to hold changes to video metadata before saving to the 'selectedVideo'
   // tempVideo: undefined,
   // Current TUS upload instances
@@ -55,7 +49,6 @@ interface Getters {
   estimatedStorageRemaining: ComputedRef<string>
   videoByID: (fileId: string) => Video | undefined
   draftVideos: (datasetId: string) => ComputedRef<Video[]>
-  videoDataFile: (fileId: string) => ComputedRef<FileEntry | undefined>
   hasUnsavedChanges: (fileId: string) => ComputedRef<boolean>
   hasTUSUploadReady: (video: Video) => ComputedRef<boolean>
 }
@@ -92,9 +85,6 @@ const getters = {
       return orderBy(filteredVids, 'details.created', 'desc')
     })
   },
-  videoDataFile: (fileId: string): ComputedRef<FileEntry | undefined> => {
-    return computed(() => state.value.videoDataFiles.get(fileId))
-  },
   hasUnsavedChanges: (fileId: string): ComputedRef<boolean> => {
     return computed(
       () => !!state.value.draftVideos.get(fileId)?.status.hasUnsavedChanges
@@ -117,14 +107,13 @@ interface Actions {
   setCordovaPath: (path: string[]) => void
   setRecordingNow: (value: boolean) => void
   addMetadata: (video: Video) => void
-  clearVideoDataFile: (videoId: string) => void
-  setDecryptedVideoData: (d: { fileId: string; data: FileEntry }) => void
   setTUSUpload: (d: { fileId: string; upload: Upload }) => void
   removeTUSUpload: (fileId: string) => void
   abortAllUploads: () => void
   clearDataUponLogout: () => void
   selectVideo: (video: Video | undefined) => void
   setUnsavedChanges: (fileId: string) => void
+  setNewDataAvailable: (fileId: string) => void
 
   controlUpload: (control: string, video: Video) => void
   generateUpload(video: Video): Promise<void | Upload>
@@ -135,11 +124,8 @@ interface Actions {
   saveMetadata: () => Promise<void>
   fetchMetadata: () => Promise<void>
   updateMetadata: (video: Video) => Promise<void>
-  loadCordovaMedia: (fileEntry: FileEntry) => Promise<void | FileEntry>
 
-  loadVideo(video: Video): Promise<boolean>
   removeVideo: (video: Video) => Promise<void>
-  removeVideoFile: (videoId: string) => Promise<void>
   replaceDraftVideo: (videoId: string) => Promise<void>
 }
 
@@ -150,13 +136,6 @@ const actions = {
   },
   setRecordingNow: (value: boolean): void => {
     state.value.recordingNow = value
-  },
-  clearVideoDataFile: (videoId: string): void => {
-    if (state.value.videoDataFiles.has(videoId))
-      state.value.videoDataFiles.delete(videoId)
-  },
-  setDecryptedVideoData: (d: { fileId: string; data: FileEntry }): void => {
-    state.value.videoDataFiles.set(d.fileId, d.data)
   },
   setTUSUpload: (d: { fileId: string; upload: Upload }): void => {
     state.value.tusUploadInstances.set(d.fileId, d.upload)
@@ -171,7 +150,6 @@ const actions = {
     values.forEach((tu: Upload) => tu.abort())
   },
   clearDataUponLogout: (): void => {
-    state.value.videoDataFiles.clear()
     state.value.selectedVideo = undefined
     state.value.videos.clear()
     state.value.draftVideos.clear()
@@ -186,10 +164,16 @@ const actions = {
     else if (state.value.videos.has(video.details.id))
       state.value.selectedVideo = state.value.videos.get(video.details.id)
   },
-  // This is a tracker to notify the rest of the app that something chas changed in the Editor
+  // This is a tracker to notify the rest of the app that something has changed in the Editor
   // which needs to be saved after 'samtykker'
   setUnsavedChanges: (fileId: string): void => {
     const updates = { hasUnsavedChanges: true }
+    const v = getters.videoByID(fileId)
+    if (v) v.updateStatus(updates)
+  },
+  // This is used to notify the app of new video recorer data available
+  setNewDataAvailable: (fileId: string): void => {
+    const updates = { hasNewDataAvailable: true }
     const v = getters.videoByID(fileId)
     if (v) v.updateStatus(updates)
   },
@@ -257,8 +241,7 @@ const actions = {
         return apiRequest(payload)
           .then(() => {
             actions.removeTUSUpload(fileId)
-            actions.clearVideoDataFile(fileId)
-            actions.removeVideoFile(fileId).then(() => {
+            deviceActions.removeVideoFile(fileId).then(() => {
               // After IndexedDB data removal is confirmed, also remove in-memory copies
               // then reload fresh from server
               state.value.draftVideos.delete(video.details.id)
@@ -313,8 +296,9 @@ const actions = {
       }
 
       const cd: CordovaData = new CordovaData({
-        fileName: video.details.id,
+        fileName: video.details.id + '.mp4',
         readFile: false,
+        create: false,
         path: state.value.cordovaPath,
       })
       deviceActions
@@ -349,7 +333,6 @@ const actions = {
   addMetadata: (video: Video): void => {
     if (video.status.main === VIDEO_STATUS_TYPES.draft) {
       state.value.draftVideos.set(video.details.id, video)
-      state.value.videoDataFiles.delete(video.details.id)
     } else {
       state.value.videos.set(video.details.id, video)
     }
@@ -436,8 +419,7 @@ const actions = {
 
   // Remove a video (data and metadata)
   removeVideo: (video: Video): Promise<void> => {
-    return actions.removeVideoFile(video.details.id).then(() => {
-      actions.clearVideoDataFile(video.details.id)
+    return deviceActions.removeVideoFile(video.details.id).then(() => {
       return actions
         .removeMetadata(video)
         .catch(() => notifyActions.errorMessage('Remove video'))
@@ -446,9 +428,8 @@ const actions = {
 
   // Call when a draft video is recorded to replace an older draft video
   replaceDraftVideo: (videoId: string): Promise<void> => {
-    actions.clearVideoDataFile(videoId)
     actions.removeTUSUpload(videoId)
-    return actions.removeVideoFile(videoId).then(() => {
+    return deviceActions.removeVideoFile(videoId).then(() => {
       const video = state.value.draftVideos.get(videoId)
       if (video) {
         video.details.duration = 0
@@ -458,68 +439,6 @@ const actions = {
       return actions
         .saveMetadata()
         .catch(() => notifyActions.errorMessage('Replace draft video error'))
-    })
-  },
-
-  // ----------   video DATA functions (.mp4 file) ------------
-
-  // Remove a video data from disk
-  removeVideoFile: (videoId: string): Promise<void> => {
-    const cd: CordovaData = new CordovaData({
-      fileName: videoId,
-      path: state.value.cordovaPath,
-    })
-    return cordovaService
-      .removeFromStorage(cd)
-      .catch(() =>
-        notifyActions.errorMessage('Error removing local video file')
-      )
-  },
-  // This gets video data as MediaFile required for iOS
-  loadCordovaMedia: (fileEntry: FileEntry): Promise<void | FileEntry> => {
-    // iOS WKWebkit can only load video from the <app_id>/tmp folder!
-    // 'device' comes from cordova-plugin-device
-    const device: Device = window.device
-    if (device.platform === 'iOS') {
-      return cordovaService
-        .clearTempFolder()
-        .then(() => {
-          const cd: CordovaData = new CordovaData({
-            file: fileEntry,
-          })
-          return cordovaService.copyFileToTemp(cd)
-        })
-        .catch((error) => notifyActions.errorMessage(error))
-    } else {
-      return Promise.resolve(fileEntry)
-    }
-  },
-  // Load video data from storage for use in the player
-  loadVideo(video: Video): Promise<boolean> {
-    const newVideo = new Video(video)
-    // Resolve only once finished each chunk, so the Video knows when to retrieve the data to play
-    return new Promise((resolve) => {
-      // Get a video DATA item from store based on fileId, then begin decryption
-      const cd: CordovaData = new CordovaData({
-        fileName: video.details.id,
-        readFile: false,
-        path: state.value.cordovaPath,
-      })
-      deviceActions
-        .loadFromStorage<FileEntry>(cd)
-        .then((loadedData) => {
-          if (loadedData) {
-            state.value.videoDataFiles.set(video.details.id, loadedData)
-            newVideo.status.decryptionInProgress = false
-            newVideo.status.hasNewDataAvailable = true
-            actions.updateMetadata(newVideo)
-            resolve(true)
-          }
-        })
-        .catch(() => {
-          notifyActions.errorMessage('Storage video load')
-          resolve(false)
-        })
     })
   },
 }

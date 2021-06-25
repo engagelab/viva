@@ -74,7 +74,7 @@ export default defineComponent({
         const truthy = check.toLowerCase() === 'true'
         const source = truthy ? circles[index] : circles[5]
         return {
-          source: `/${source}`,
+          source,
           key: `question-circle-id-${index}`,
         }
       })
@@ -86,6 +86,12 @@ export default defineComponent({
       })
     }
     return {
+      circle1,
+      circle2,
+      circle3,
+      circle4,
+      circle5,
+      circleX,
       checked,
       formattedName,
       consentQuestions,

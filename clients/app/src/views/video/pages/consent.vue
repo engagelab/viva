@@ -14,7 +14,7 @@
           selectedDataset.consent.kind == CONSENT_TYPES.samtykke &&
           consentList.length > 1
         "
-        @click="checkAll()"
+        @vclick="checkAll()"
         customWidth="130px"
       >
         <p class="text-sm">{{ t('SjekkAlt') }}</p>

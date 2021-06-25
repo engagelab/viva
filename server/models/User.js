@@ -43,8 +43,8 @@ const userSchema = new mongoose.Schema({
     encryptionKey: { type: String },
   },
   datasetConfig: {
-    id: { type: String },
-    currentSelection: { type: Array },
+    id: { type: String }, // Currently selected dataset
+    currentSelection: { type: Array }, // Currently selected 'utvalg'
     locks: { type: mongoose.Mixed, default: {} } // { [datasetID]: { date: Date.now(), keyName: String }
   },
   videos: {

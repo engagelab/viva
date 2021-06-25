@@ -55,10 +55,11 @@ export default defineComponent({
       default: '14rem',
     },
   },
+  emits: ['vclick'],
   setup(props, context) {
     function click($event: Event) {
       if (!props.disabled) {
-        context.emit('click', $event)
+        context.emit('vclick', $event)
       }
     }
     return {

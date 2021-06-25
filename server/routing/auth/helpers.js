@@ -111,7 +111,7 @@ function createOrUpdateUser(tokenSet, profile) {
 function completeCallback(request, response, user) {
   let redirectUrl
   let s = ''
-  const { client, remember, device } = request.session
+  const { client, remember } = request.session
   const host = process.env.VUE_APP_SERVER_HOST
 
   if (client === 'lti') {
@@ -121,9 +121,9 @@ function completeCallback(request, response, user) {
   }
   // Mobile app will be passed a token via Apple's ASWebAuthenticationSession / Google Custom Tabs
   // which must then be passed back to the /token route obtain a Session
-  else if (client === 'mobileApp') {
-    if (device == 'mobileApp') {
-      redirectUrl = `${process.env.APP_BUNDLE_ID}://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
+  else if (client === 'mobileApp' || client === 'webApp') {
+    if (client === 'mobileApp') {
+      redirectUrl = `viva://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
       s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
     } else {
       redirectUrl = process.env.NODE_ENV === 'development' ? `${host}:8082` : `${host}/app`

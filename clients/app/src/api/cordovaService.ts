@@ -70,9 +70,9 @@ const loadFromStorage = <T>(cordovaData: CordovaData): Promise<T | void> => {
     getPath(cordovaData.path).then((storeDirectory) => {
       if (storeDirectory) {
         return cordovaRoutines
-          .getFileByName(storeDirectory, filename, false)
+          .getFileByName(storeDirectory, filename, false, cordovaData.create)
           .then((fileEntry) => {
-            if (cordovaData.readFile) {
+            if (fileEntry && cordovaData.readFile) {
               cordovaRoutines
                 .readFile(fileEntry, cordovaData.asText, cordovaData.asJSON)
                 .then((filecontents) => resolve(filecontents as T))
@@ -80,10 +80,10 @@ const loadFromStorage = <T>(cordovaData: CordovaData): Promise<T | void> => {
                   emitError(readFileError)
                   resolve()
                 })
-            } else {
+            } else if (fileEntry) {
               console.log('Got FileEntry. Not asked to read file.')
               resolve(fileEntry as unknown as T)
-            }
+            } else resolve()
           })
           .catch((getFileByNameError) => {
             emitError(getFileByNameError)
@@ -108,21 +108,27 @@ const saveToStorage = (cordovaData: CordovaData): Promise<void> => {
         .getFileByName(
           storeDirectory,
           cordovaData.fileName,
-          cordovaData.overwrite
+          cordovaData.overwrite,
+          cordovaData.create
         )
         .then((fileEntry) => {
-          return cordovaRoutines
-            .writeFile(
-              fileEntry,
-              cordovaData.data,
-              cordovaData.asText,
-              cordovaData.asJSON,
-              cordovaData.append
-            )
-            .catch((error) => {
-              emitError(error)
-              return Promise.resolve()
-            })
+          if (fileEntry) {
+            return cordovaRoutines
+              .writeFile(
+                fileEntry,
+                cordovaData.data,
+                cordovaData.asText,
+                cordovaData.asJSON,
+                cordovaData.append
+              )
+              .catch((error) => {
+                emitError(error)
+                return Promise.resolve()
+              })
+          } else {
+            emitError(new Error('Error loading file to save to'))
+            return Promise.resolve()
+          }
         })
         .catch((error) => {
           emitError(error)
@@ -230,8 +236,10 @@ const removeFromStorage = (cordovaData: CordovaData): Promise<void> => {
   return getPath(cordovaData.path).then((storeDirectory) => {
     if (storeDirectory) {
       return cordovaRoutines
-        .getFileByName(storeDirectory, cordovaData.fileName, false)
-        .then((fileEntry) => cordovaRoutines.deleteFile(fileEntry))
+        .getFileByName(storeDirectory, cordovaData.fileName, false, false)
+        .then((fileEntry) => {
+          if (fileEntry) cordovaRoutines.deleteFile(fileEntry)
+        })
         .catch((error) => {
           emitError(error)
           return Promise.resolve()
@@ -307,6 +315,8 @@ const captureVideo = (): Promise<MediaFile | undefined> => {
     }
 
     const captureError = (error: CaptureError) => {
+      if (CaptureError.CAPTURE_NO_MEDIA_FILES === error.code)
+        return resolve(undefined)
       emitError(new Error(`Video capture error: ${error.code}`))
       resolve(undefined)
     }
@@ -388,9 +398,19 @@ const createAudio = (
             }
             //  const localURL = storeDirectory.toInternalURL() + cordovaData.fileName
             // new Media() cannot accept FileEntry, but can accept a cdvfile: URI
-            const nativePath = fileEntry.toInternalURL() // Create a cdvfile URI
-            media = new Media(nativePath, mediaSuccess, mediaError, mediaStatus)
-            resolve(fileEntry)
+            if (fileEntry) {
+              const nativePath = fileEntry.toInternalURL() // Create a cdvfile URI
+              media = new Media(
+                nativePath,
+                mediaSuccess,
+                mediaError,
+                mediaStatus
+              )
+              resolve(fileEntry)
+            } else {
+              emitError(new Error('Audio capture file not created'))
+              resolve(undefined)
+            }
           })
       },
       function (error: FileError) {
@@ -561,15 +581,17 @@ const saveLog = (errorText: string): Promise<void> => {
     if (storeDirectory) {
       return cordovaRoutines
         .getFileByName(storeDirectory, 'logfile.txt', false)
-        .then((fileEntry: FileEntry) =>
-          cordovaRoutines.writeFile(
-            fileEntry,
-            `${dateStamp}: ${errorText}`,
-            true,
-            false,
-            true
-          )
-        )
+        .then((fileEntry: FileEntry | void) => {
+          if (fileEntry) {
+            cordovaRoutines.writeFile(
+              fileEntry,
+              `${dateStamp}: ${errorText}`,
+              true,
+              false,
+              true
+            )
+          }
+        })
         .catch(() => console.log('Write to logfile.txt failed!'))
     } else return Promise.resolve()
   })

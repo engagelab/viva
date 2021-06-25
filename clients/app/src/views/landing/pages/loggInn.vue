@@ -6,7 +6,7 @@
       </p>
       <div class="flex flex-row justify-right">
         <Button
-          v-if="!isLoggedIn && browserOk && !appIsOld"
+          v-if="!isLoggedIn && browserOk"
           class="m-4 focus:outline-none"
           @click="login('uio')"
           >{{ t('loggedOut') }}</Button
@@ -23,13 +23,13 @@
         <p class="m-2 text-red-600 font-bold" v-if="appIsOld">
           {{ t('appIsOld') }}
         </p>
-        <Button v-if="isLoggedIn" class="m-4" @click="listView()">{{
+        <Button v-if="isLoggedIn" class="m-4" @vclick="listView()">{{
           t('MineOpptak')
         }}</Button>
         <Button
           v-if="isLoggedIn"
           class="text-viva-korall m-4"
-          @click="logout()"
+          @vclick="logout()"
           >{{ t('LoggUt') }}</Button
         >
       </div>
@@ -37,7 +37,7 @@
       <p class="text-viva-lilla text-sm">{{ t('UseOfGoogle') }}</p>
       <p class="text-xs mt-2">v{{ appVersion }}</p>
       <div class="flex flex-row justify-end">
-        <Button class="m-2" customWidth="110px" @click="giSamtykke()">
+        <Button class="m-2" customWidth="110px" @vclick="giSamtykke()">
           <p class="text-xs">{{ t('GiSamtykke') }}</p>
         </Button>
       </div>
@@ -85,7 +85,7 @@ export default defineComponent({
         GiSamtykke: 'Gi samtykke til GSuite',
         browserNotOk: 'VIVA krever Google Chrome nettleser',
         appIsOld:
-          'Viva appen er en eldre versjon, og du må laste ned en ny versjon fra Appstore',
+          'Viva appen er en eldre versjon, du må laste ned den ny versjonen fra Appstore',
       },
       en: {
         loggedIn: 'You are logged in',
@@ -103,6 +103,7 @@ export default defineComponent({
           'Your VIVA app is an older version, please download the latest version from the app store',
       },
     }
+    let count = 0
     const { t } = useI18n({ messages })
     const useCordova = appGetters.useCordova.value
     const browserOk = computed(() => {
@@ -113,14 +114,18 @@ export default defineComponent({
     })
 
     function login(organization: string): void {
-      let feideLoginUrl = `${baseUrl}/auth/dataporten/login?organization=${organization}&client=mobileApp`
+      let feideLoginUrl = `${baseUrl}/auth/dataporten/login?organization=${organization}`
       if (useCordova) {
+        count++
+        console.log(`Login count: ${count}`)
+        feideLoginUrl += '&client=mobileApp'
         window.OAuth(
           feideLoginUrl,
           'oauth:dataporten',
           'allowInlineMediaPlayback=yes,toolbar=no'
         )
       } else {
+        feideLoginUrl += '&client=webApp'
         window.location.href = feideLoginUrl
       }
     }

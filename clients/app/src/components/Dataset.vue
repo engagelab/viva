@@ -92,7 +92,7 @@
         "
       >
         <p>{{ t('Link to consent Nettschema') }}</p>
-        <Button class="mt-4 ml-2 my-2 w-64" @click="copyLink()">{{
+        <Button class="mt-4 ml-2 my-2 w-64" @vclick="copyLink()">{{
           t('Kopier lenke til skjema')
         }}</Button>
         <!--Button :text="t('Send epost med skjema')" class="mt-4 ml-2 my-2 w-64" @click="sendEmail()" /-->

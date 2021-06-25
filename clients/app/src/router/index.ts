@@ -23,6 +23,12 @@ import { idleTimeout } from '../constants'
 
 const routes: Array<RouteRecordRaw> = [
   {
+    path: '/',
+    name: 'Landing',
+    component: Landing,
+  },
+  { path: '/index.html', redirect: '/' },
+  {
     path: '/login',
     name: 'profile',
     component: Landing,
