@@ -191,8 +191,9 @@ const getDirectory = (
 const getFileByName = (
   dirEntry: DirectoryEntry,
   fileName: string,
-  overwrite: boolean
-): Promise<FileEntry> => {
+  overwrite: boolean,
+  create = true
+): Promise<FileEntry | void> => {
   return new Promise((resolve, reject) => {
     dirEntry.getFile(
       fileName,
@@ -203,15 +204,17 @@ const getFileByName = (
       (fileEntry) => resolve(fileEntry),
       () => {
         // File does not exist, create it
-        dirEntry.getFile(
-          fileName,
-          {
-            create: true,
-            exclusive: false,
-          },
-          (fileEntry) => resolve(fileEntry),
-          () => reject(new Error(`Error creating file ${fileName}`))
-        )
+        if (create) {
+          dirEntry.getFile(
+            fileName,
+            {
+              create: true,
+              exclusive: false,
+            },
+            (fileEntry) => resolve(fileEntry),
+            () => reject(new Error(`Error creating file ${fileName}`))
+          )
+        } else resolve()
       }
     )
   })

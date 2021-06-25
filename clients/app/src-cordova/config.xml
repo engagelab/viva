@@ -9,13 +9,11 @@
     </author>
     <hook src="../node_modules/vue-cli-plugin-cordova/serve-config-hook.js" type="after_prepare" />
     <content src="index.html" />
-    <access allows-arbitrary-loads-for-media="true" allows-arbitrary-loads-in-web-content="true" allows-local-networking="true" origin="*" />
+    <!--access allows-arbitrary-loads-for-media="true" allows-arbitrary-loads-in-web-content="true" allows-local-networking="true" origin="*" /-->
     <plugin name="cordova-plugin-whitelist" spec="1" />
-    <access origin="viva:*" />
+    <access origin="*" />
     <access origin="cdvfile://*" />
-    <access origin="file:///*" />
     <access origin="android-webview-video-poster:*" />
-    <allow-navigation href="file:///*" />
     <allow-navigation href="viva:*" launch-external="yes" />
     <allow-navigation href="mailto:*" launch-external="yes" />
     <allow-intent href="http://*/*" />
@@ -55,7 +53,6 @@
         <feature name="CDVWKWebViewEngine">
             <param name="ios-package" value="CDVWKWebViewEngine" />
         </feature>
-
         <preference name="AllowInlineMediaPlayback" value="true" />
         <preference name="OverrideUserAgent" value="Mozilla/5.0 Google" />
         <preference name="CordovaWebViewEngine" value="CDVWKWebViewEngine" />

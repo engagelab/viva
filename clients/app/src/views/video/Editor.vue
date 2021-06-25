@@ -18,11 +18,10 @@
       -->
       <div class="flex-none bg-black" @click="toggleScreenMode()">
         <video
-          class="playbackVideoSmall"
+          :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
           ref="playbackVideo"
           id="playbackVideo"
           oncontextmenu="return false;"
-          :src="sampleMovie ? 'https://localhost:8000/sampleClip.mp4' : ''"
           playsinline
           webkit-playsinline
           preload="metadata"
@@ -97,12 +96,6 @@
         </div>
       </div>
 
-      <!-- Full screen mode -->
-      <!--div v-if="!deviceStatus.mobile" type="flex" justify="end" style="margin-right: 20px;">
-          <span>fullskjermopptak</span>
-          <input type="checkbox" v-model="useFullScreen" />
-      </div-->
-
       <!-- Estimated storage remaining -->
       <!--div v-if="deviceStatus.browser != 'Safari'">
           <span>
@@ -135,12 +128,6 @@
           @click="backToList()"
           symbol="list"
         ></SVGSymbol>
-        <!--SVGSymbol
-        applyClasses="w-4 h-4 md:w-8 md:h-8"
-        @click.native="toggleScreenMode()"
-        width="30"
-        symbol="showList"
-        ></SVGSymbol-->
       </div>
 
       <Slider
@@ -161,12 +148,12 @@ import {
   Ref,
   computed,
   onMounted,
-  onUpdated,
   watch,
   markRaw,
 } from 'vue'
 import router from '@/router'
-import { CONSENT_TYPES, VIDEO_STATUS_TYPES } from '@/constants'
+import { CONSENT_TYPES } from '@/constants'
+import { convertFilePath } from '@/utilities'
 import { Video } from '@/types/main'
 import { useAppStore } from '@/store/useAppStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
@@ -211,12 +198,11 @@ export default defineComponent({
     const selectedDataset = datasetGetters.selectedDataset
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
     const video = ref(new Video(selectedVideo.value))
-    const sampleMovie = ref(false)
+    const videoUrl = ref('')
     const fullScreenMode = ref(false)
     const stateToChildren = ref({
       playerCurrentTime: '0',
     })
-    const recording = ref(false)
     const playing = ref(false)
     const videoDataLoaded = ref(false)
 
@@ -225,7 +211,6 @@ export default defineComponent({
     let currentVolume = 0
     let playerCurrentTime = ref('0')
     let videoWasReplaced = false
-    let reloadVideo = false
 
     document.addEventListener('fullscreenchange', () => {
       // document.fullscreenElement will point to the element that
@@ -247,24 +232,16 @@ export default defineComponent({
         datasetActions.fetchConsents(selectedVideo.value)
       }
       setupVideo(selectedVideo.value)
-      videoActions.setRecordingNow(false)
-      reloadVideo = true
       videoDataLoaded.value = false
       videoWasReplaced = false
-      if (
-        selectedVideo.value.status.main == VIDEO_STATUS_TYPES.draft &&
-        selectedVideo.value.status.recordingExists
-      ) {
-        videoActions.loadVideo(selectedVideo.value)
-      }
     })
 
-    onUpdated(() => {
+    /* onUpdated(() => {
       if (reloadVideo) {
         reloadVideo = false
         loadPlayerWithVideo()
       }
-    })
+    }) */
 
     // Computed values
 
@@ -283,7 +260,7 @@ export default defineComponent({
     })
 
     const playerTime = computed(() => {
-      if (recording.value) {
+      if (deviceGetters.recordingNow.value) {
         return '--:--.-'
       } else {
         const timeAsInt = parseInt(playerCurrentTime.value)
@@ -326,7 +303,7 @@ export default defineComponent({
     // METHODS
 
     function backToList(): void {
-      if (!recording.value) router.push('/videos/list')
+      if (!deviceGetters.recordingNow.value) router.push('/videos/list')
     }
 
     function toggleScreenMode(): void {
@@ -391,17 +368,12 @@ export default defineComponent({
     // Called on initialisation of this view to create placeholder for edited data
     function setupVideo(chosenVideo: Video): void {
       // Create a video placeholder that can be modifed by the user
+      const player: HTMLVideoElement | null = playbackVideo.value
       video.value = new Video(chosenVideo)
-      if (chosenVideo) {
-        if (
-          process.env.NODE_ENV === 'development' &&
-          !appGetters.useCordova.value
-        ) {
-          sampleMovie.value = true
-          video.value.status.recordingExists = true
-        }
+      if (chosenVideo && player) {
         video.value.updateAll(chosenVideo)
         setPlayerBounds()
+        loadPlayerWithVideo()
       }
     }
 
@@ -493,7 +465,7 @@ export default defineComponent({
     // or after returning to the video from the list
     function loadPlayerWithVideo(): void {
       const player: HTMLVideoElement | null = playbackVideo.value
-      if (player && selectedVideo.value) {
+      if (player && video.value && !deviceGetters.recordingNow.value) {
         const dataLoaded = () => {
           playerUpperBound = player.duration
           video.value.details.duration = player.duration
@@ -506,25 +478,38 @@ export default defineComponent({
           setPlayerBounds()
           player.removeEventListener('loadeddata', dataLoaded)
           videoDataLoaded.value = true
-          videoActions.setRecordingNow(false)
         }
 
         player.addEventListener('loadeddata', dataLoaded)
         player.addEventListener('ended', stopPlaying, false)
 
-        const data = videoGetters.videoDataFile(selectedVideo.value.details.id) // Ensure chunks exist
-        if (data.value) {
-          player.src = data.value.toURL() // + '#t=0.1'
-          player.load()
-          /* videoActions.loadCordovaMedia(data.value).then((fileEntry) => {
+        deviceActions
+          .loadVideo(video.value.details.id + '.mp4')
+          .then((fileEntry) => {
             if (fileEntry) {
-              // const objectURL = window.WkWebView.convertFilePath()
-              player.src = fileEntry.toURL() // + '#t=0.1'
-              //set the media bounds in the dataLoaded function..
+              deviceActions.loadCordovaMedia(fileEntry).then((tempEntry) => {
+                if (tempEntry) {
+                  const path = convertFilePath(tempEntry.toURL()) + '#t=0.1'
+                  //videoUrl.value = convertFilePath(tempEntry.toURL()) + '#t=0.1'
+                  //videoUrl.value = tempEntry.toURL() + '#t=0.1'
+                  player.setAttribute('src', path)
+                  player.load()
+                }
+              })
+            } else if (
+              // Dev mode in web browser will load a sample video
+              process.env.NODE_ENV === 'development' &&
+              !appGetters.useCordova.value
+            ) {
+              player.setAttribute(
+                'src',
+                'https://localhost:8000/sampleClip.mp4'
+              )
               player.load()
+              if (selectedVideo.value)
+                selectedVideo.value.status.recordingExists = true
             }
-          }) */
-        }
+          })
       }
     }
 
@@ -564,23 +549,15 @@ export default defineComponent({
         trim: [],
         blur: [],
       }
-      recording.value = true
       videoWasReplaced = true
-      videoActions.setRecordingNow(true)
 
       // Call the device camera. Video will be stored under the name: video.details.id
       videoActions.replaceDraftVideo(video.value.details.id).then(() => {
-        deviceActions.recordVideo(video.value.details.id).then(() => {
-          const videoData = deviceGetters.video.value
-          if (videoData) {
+        deviceActions.recordVideo(video.value.details.id + '.mp4').then(() => {
+          const videoEntry = deviceGetters.video.value
+          if (videoEntry) {
             // Add the FileEntry to the VideoStore to work with
-            videoActions.setDecryptedVideoData({
-              fileId: video.value.details.id,
-              data: videoData,
-            })
-            video.value.status.isEncrypted = true
             video.value.status.recordingExists = true
-            recording.value = false
             videoActions
               .updateMetadata(video.value)
               .then(() => console.log('Completed video data save'))
@@ -607,12 +584,13 @@ export default defineComponent({
       edlUpdated,
       stateToChildren,
       rawPages,
-      sampleMovie,
       playbackVideo,
+      videoUrl,
       // booleans
       videoDataLoaded,
-      recording,
+      recording: deviceGetters.recordingNow,
       playing,
+      fullScreenMode,
     }
   },
 })
