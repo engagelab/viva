@@ -60,14 +60,35 @@ const getters = {
 //Actions
 interface Actions {
   getVideoMetadata: () => Promise<void>
+  selectVideo: (videoId: string) => Promise<void>
 }
 
 const actions = {
+  // fetch a specific video with draft id
+  fetchVideo: async function (videoId: string): Promise<Video> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.GET,
+      credentials: true,
+      query: {
+        videoref: videoId,
+      },
+      route: '/api/video',
+    }
+    return apiRequest<Video>(payload)
+  },
+
   //Fetch videometadata from mongoDB
   getVideoMetadata: async function (): Promise<void> {
     const response = await fetchVideoMetadata()
     const video = new Video(response)
     console.log(video)
+    return Promise.resolve()
+  },
+
+  selectVideo: async function (videoId: string): Promise<void> {
+    const response = await this.fetchVideo(videoId)
+    const video = new Video(response)
+    state.value.selectedVideo = video
     return Promise.resolve()
   },
 }

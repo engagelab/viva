@@ -92,6 +92,8 @@ import { Video } from '@/types/main'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 /* import Edit from '../views/pages/edit.vue' */
 
+import { useVideoStore } from '../store/useVideoStore'
+
 export default defineComponent({
   name: 'editor',
   components: {
@@ -105,7 +107,11 @@ export default defineComponent({
     },
   },
   setup() {
+    const { getters: videoGetters } = useVideoStore()
+
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
+
+    const selectedVideo = computed(() => videoGetters.selectedVideo.value)
     const video = ref(new Video())
     const sampleMovie = ref(false)
     const stateToChildren = ref({
@@ -315,6 +321,8 @@ export default defineComponent({
       videoDataLoaded,
       recording,
       playing,
+      //computed
+      selectedVideo,
     }
   },
 })

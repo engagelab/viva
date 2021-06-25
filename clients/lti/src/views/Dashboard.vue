@@ -8,7 +8,7 @@
     </div> -->
     <div class="flex flex-wrap w-full border-2 h-full">
       <div class="w-1/2">
-        <RecordingsComponent />
+        <RecordingsComponent :user="user" />
       </div>
       <div class="w-1/2">
         <VideoComponent />
@@ -21,10 +21,9 @@
 
 <script lang="ts">
 // @ is an alias to /src
-import { computed, defineComponent, ref, Ref } from 'vue'
+import { computed, defineComponent } from 'vue'
 import router from '../router'
 
-import { User } from '../types/main'
 import { useAppStore } from '@/store/useAppStore'
 
 /* import SlButton from '@/components/base/SlButton.vue' */
@@ -40,15 +39,11 @@ export default defineComponent({
     VideoComponent,
   },
   setup() {
-    let user: Ref<User> = ref(new User())
+    const { getters: appGetters } = useAppStore()
+    const user = computed(() => appGetters.user.value)
     // userActions.getMyUser().then(() => {
     //   user.value = userGetters.myUser.value
     // })
-    const { getters: appGetters, actions: appActions } = useAppStore()
-
-    const userLocal = computed(() => appGetters.user)
-
-    console.log(userLocal, appActions)
 
     return {
       monitor: () => router.push('/monitor'),

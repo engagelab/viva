@@ -1,22 +1,45 @@
 <template>
-  <div class="text-black">RUser recordings</div>
+  <div class="text-black">
+    User recordings
+
+    <div>
+      <button
+        class="px-4 py-2 bg-green-400 rounded-lg"
+        v-for="(video, videoIndex) in videoList"
+        :key="videoIndex"
+        @click="selectVideo(video)"
+      >
+        {{ video }}
+      </button>
+    </div>
+  </div>
 </template>
 <script lang="ts">
-import { defineComponent, onMounted } from 'vue'
+import { defineComponent, computed } from 'vue'
 import { useVideoStore } from '@/store/useVideoStore'
+import { User } from '../types/main'
 
-const { getters: videoGetters, actions: videoActions } = useVideoStore()
+const { actions: videoActions } = useVideoStore()
 /* import Edit from '../views/pages/edit.vue' */
 
 export default defineComponent({
   name: 'Recording list',
   components: {},
-  setup() {
-    onMounted(() => {
-      console.log(videoGetters, videoActions)
-    })
+  props: {
+    user: { type: User, required: true },
+  },
+  setup(props) {
+    const videoList = computed(() => props.user.videos.draftIDs)
 
-    return {}
+    const selectVideo = (videoId: string) => {
+      videoActions.selectVideo(videoId)
+    }
+
+    return {
+      videoList,
+      // method
+      selectVideo,
+    }
   },
 })
 </script>
