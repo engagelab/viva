@@ -145,7 +145,7 @@
 
       <Slider
         class="flex flex-col flex-grow min-h-0"
-        :pages="pages"
+        :pages="rawPages"
         :movePageTo="page"
         :stateToChildren="stateToChildren"
         @edl-updated="edlUpdated"
@@ -163,6 +163,7 @@ import {
   onMounted,
   onUpdated,
   watch,
+  markRaw,
 } from 'vue'
 import router from '@/router'
 import { CONSENT_TYPES, VIDEO_STATUS_TYPES } from '@/constants'
@@ -173,7 +174,7 @@ import { useVideoStore } from '@/store/useVideoStore'
 import { useDeviceService } from '@/store/useDevice'
 import { useNotifyStore } from '@/store/useNotifyStore'
 const { actions: notifyActions } = useNotifyStore()
-const { actions: deviceActions } = useDeviceService()
+const { actions: deviceActions, getters: deviceGetters } = useDeviceService()
 const { actions: appActions, getters: appGetters } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
@@ -183,7 +184,7 @@ import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import main from './pages/main.vue'
 import consent from './pages/consent.vue'
 import edit from './pages/edit.vue'
-import metadata from './pages/metadata.vue'
+import classify from './pages/classify.vue'
 import upload from './pages/upload.vue'
 
 export default defineComponent({
@@ -199,11 +200,17 @@ export default defineComponent({
     },
   },
   setup() {
-    const pages = [main, consent, edit, metadata, upload]
+    const rawPages = [
+      markRaw(main),
+      markRaw(consent),
+      markRaw(edit),
+      markRaw(classify),
+      markRaw(upload),
+    ]
     const selectedVideo = videoGetters.selectedVideo
     const selectedDataset = datasetGetters.selectedDataset
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
-    const video = ref(new Video())
+    const video = ref(new Video(selectedVideo.value))
     const sampleMovie = ref(false)
     const fullScreenMode = ref(false)
     const stateToChildren = ref({
@@ -304,13 +311,15 @@ export default defineComponent({
     })
 
     watch(
-      () => hasNewDataAvailable,
-      () => loadPlayerWithVideo()
+      () => hasNewDataAvailable.value,
+      (newValue) => {
+        if (newValue) loadPlayerWithVideo()
+      }
     )
     watch(
-      () => selectedVideo,
+      () => selectedVideo.value,
       (newValue) => {
-        if (newValue.value) setupVideo(newValue.value)
+        if (newValue) setupVideo(newValue)
       }
     )
 
@@ -384,7 +393,10 @@ export default defineComponent({
       // Create a video placeholder that can be modifed by the user
       video.value = new Video(chosenVideo)
       if (chosenVideo) {
-        if (process.env.NODE_ENV === 'development') {
+        if (
+          process.env.NODE_ENV === 'development' &&
+          !appGetters.useCordova.value
+        ) {
           sampleMovie.value = true
           video.value.status.recordingExists = true
         }
@@ -502,17 +514,16 @@ export default defineComponent({
 
         const data = videoGetters.videoDataFile(selectedVideo.value.details.id) // Ensure chunks exist
         if (data.value) {
-          // <- FileEntry
-          videoActions.loadCordovaMedia(data.value).then((fileEntry) => {
-            // <- MediaFile
+          player.src = data.value.toURL() // + '#t=0.1'
+          player.load()
+          /* videoActions.loadCordovaMedia(data.value).then((fileEntry) => {
             if (fileEntry) {
-              const objectURL = fileEntry.nativeURL
-              if (player.srcObject) player.srcObject = null
-              player.setAttribute('src', objectURL + '#t=0.1')
+              // const objectURL = window.WkWebView.convertFilePath()
+              player.src = fileEntry.toURL() // + '#t=0.1'
               //set the media bounds in the dataLoaded function..
               player.load()
             }
-          })
+          }) */
         }
       }
     }
@@ -560,14 +571,22 @@ export default defineComponent({
       // Call the device camera. Video will be stored under the name: video.details.id
       videoActions.replaceDraftVideo(video.value.details.id).then(() => {
         deviceActions.recordVideo(video.value.details.id).then(() => {
-          video.value.status.isEncrypted = true
-          video.value.status.hasNewDataAvailable = true
-          video.value.status.recordingExists = true
-          video.value.status.hasUnsavedChanges = true
-          recording.value = false
-          videoActions
-            .updateMetadata(video.value)
-            .then(() => console.log('Completed video data save'))
+          const videoData = deviceGetters.video.value
+          if (videoData) {
+            // Add the FileEntry to the VideoStore to work with
+            videoActions.setDecryptedVideoData({
+              fileId: video.value.details.id,
+              data: videoData,
+            })
+            video.value.status.isEncrypted = true
+            video.value.status.recordingExists = true
+            recording.value = false
+            videoActions
+              .updateMetadata(video.value)
+              .then(() => console.log('Completed video data save'))
+            // Notify the app a new video is ready
+            videoActions.setNewDataAvailable(video.value.details.id)
+          }
         })
       })
     }
@@ -587,7 +606,7 @@ export default defineComponent({
       videoMimeType,
       edlUpdated,
       stateToChildren,
-      pages,
+      rawPages,
       sampleMovie,
       playbackVideo,
       // booleans

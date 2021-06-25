@@ -90,7 +90,7 @@ const hasMinimumRole = (user: User, requestedRole: USER_ROLE): boolean => {
 }
 
 const emitError = (error: Error): void => {
-  const e = new CustomEvent<Error>('slpluserror', {
+  const e = new CustomEvent<Error>('vivaerror', {
     detail: error,
   })
   window.dispatchEvent(e)

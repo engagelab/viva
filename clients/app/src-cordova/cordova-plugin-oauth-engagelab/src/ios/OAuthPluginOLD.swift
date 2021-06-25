@@ -19,14 +19,22 @@ import Foundation
 import AuthenticationServices
 import SafariServices
 
-@available(iOS 13.0, *)
-class OAuthViewModel: NSObject, ObservableObject, ASWebAuthenticationPresentationContextProviding {
-    var authSession : ASWebAuthenticationSession
+@available(iOS 12.0, *)
+@objc protocol OAuthSessionProvider {
+    var aswas : ASWebAuthenticationSession { get set }
+    init(_ endpoint : URL, callbackScheme : String)
+    func start() -> Void
+    func cancel() -> Void
+}
+
+@available(iOS 12.0, *)
+class ASWebAuthenticationSessionOAuthSessionProvider : OAuthSessionProvider {
+    public var aswas : ASWebAuthenticationSession
 
     required init(_ endpoint : URL, callbackScheme : String) {
         let url: URL = URL(string: callbackScheme)!
         let extractedScheme: String = url.scheme ?? callbackScheme
-        self.authSession = ASWebAuthenticationSession(url: endpoint, callbackURLScheme: extractedScheme, completionHandler: { (callBack:URL?, error:Error?) in
+        self.aswas = ASWebAuthenticationSession(url: endpoint, callbackURLScheme: extractedScheme, completionHandler: { (callBack:URL?, error:Error?) in
             if let incomingUrl = callBack {
                 NotificationCenter.default.post(name: NSNotification.Name.CDVPluginHandleOpenURL, object: incomingUrl)
             }
@@ -34,33 +42,20 @@ class OAuthViewModel: NSObject, ObservableObject, ASWebAuthenticationPresentatio
     }
 
     func start() {
-        self.authSession.presentationContextProvider = self
-        self.authSession.start()
+        self.aswas.start()
         /* DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { // Change `2.0` to the desired number of seconds. } */
     }
 
     func cancel() {
-        self.authSession.cancel()
+        self.aswas.cancel()
     }
-
-    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        return ASPresentationAnchor()
-    }
-
 }
 
 @available(iOS 12.0, *)
-class LoginViewController: UIViewController, ASWebAuthenticationPresentationContextProviding {
-    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        return ASPresentationAnchor()
-    }
-}
-
-@available(iOS 13.0, *)
 @objc(CDVOAuthPlugin)
-class OAuthPlugin : CDVPlugin, ASWebAuthenticationPresentationContextProviding {
-    var authSession : ASWebAuthenticationSession!
-    var callbackScheme : String = ""
+class OAuthPlugin : CDVPlugin, SFSafariViewControllerDelegate, ASWebAuthenticationPresentationContextProviding {
+    var authSystem : OAuthSessionProvider?
+    var callbackScheme : String?
     var logger : OSLog?
 
     override func pluginInitialize() {
@@ -84,7 +79,7 @@ class OAuthPlugin : CDVPlugin, ASWebAuthenticationPresentationContextProviding {
             self.commandDelegate.send(CDVPluginResult(status: .error), callbackId: command.callbackId)
             return
         }
-        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        UIApplication.shared.openURL(url)
     }
 
     @objc func startOAuth(_ command : CDVInvokedUrlCommand) {
@@ -97,23 +92,22 @@ class OAuthPlugin : CDVPlugin, ASWebAuthenticationPresentationContextProviding {
             self.commandDelegate.send(CDVPluginResult(status: .error), callbackId: command.callbackId)
             return
         }
-        let extractedScheme: String = url.scheme ?? self.callbackScheme
-        self.authSession = ASWebAuthenticationSession(url: url, callbackURLScheme: extractedScheme, completionHandler: { (callBack:URL?, error:Error?) in
-            if let incomingUrl = callBack {
-                NotificationCenter.default.post(name: NSNotification.Name.CDVPluginHandleOpenURL, object: incomingUrl)
-            }
-        })
-        self.authSession.presentationContextProvider = self
-        self.authSession.prefersEphemeralWebBrowserSession = true
-        self.start()
+
+        if #available(iOS 13.0, *) {
+            self.authSystem = ASWebAuthenticationSessionOAuthSessionProvider(url, callbackScheme:self.callbackScheme!)
+            self.authSystem?.aswas.presentationContextProvider = self
+        }
+
+        self.authSystem?.start()
+
         self.commandDelegate.send(CDVPluginResult(status: .ok), callbackId: command.callbackId)
         return
     }
 
 
     internal func parseToken(from url: URL) {
-        self.authSession?.cancel()
-        self.authSession = nil
+        self.authSystem?.cancel()
+        self.authSystem = nil
 
         var jsobj : [String : String] = [:]
         let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems
@@ -141,22 +135,14 @@ class OAuthPlugin : CDVPlugin, ASWebAuthenticationPresentationContextProviding {
             return
         }
 
-        if !url.absoluteString.hasPrefix(self.callbackScheme) {
+        if !url.absoluteString.hasPrefix(self.callbackScheme!) {
             return
         }
 
         self.parseToken(from: url)
     }
 
-    func start() {
-        self.authSession.start()
-        /* DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { // Change `2.0` to the desired number of seconds. } */
-    }
-
-    func cancel() {
-        self.authSession.cancel()
-    }
-
+    @available(iOS 13.0, *)
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         return ASPresentationAnchor()
     }

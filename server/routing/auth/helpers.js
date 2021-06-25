@@ -121,7 +121,7 @@ function completeCallback(request, response, user) {
   }
   // Mobile app will be passed a token via Apple's ASWebAuthenticationSession / Google Custom Tabs
   // which must then be passed back to the /token route obtain a Session
-  else if (client === 'mobileApp') {
+  else if (client === 'mobileApp' || client === 'webApp') {
     if (client === 'mobileApp') {
       redirectUrl = `viva://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
       s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`

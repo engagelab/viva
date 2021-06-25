@@ -125,6 +125,7 @@ interface Actions {
   clearDataUponLogout: () => void
   selectVideo: (video: Video | undefined) => void
   setUnsavedChanges: (fileId: string) => void
+  setNewDataAvailable: (fileId: string) => void
 
   controlUpload: (control: string, video: Video) => void
   generateUpload(video: Video): Promise<void | Upload>
@@ -186,10 +187,16 @@ const actions = {
     else if (state.value.videos.has(video.details.id))
       state.value.selectedVideo = state.value.videos.get(video.details.id)
   },
-  // This is a tracker to notify the rest of the app that something chas changed in the Editor
+  // This is a tracker to notify the rest of the app that something has changed in the Editor
   // which needs to be saved after 'samtykker'
   setUnsavedChanges: (fileId: string): void => {
     const updates = { hasUnsavedChanges: true }
+    const v = getters.videoByID(fileId)
+    if (v) v.updateStatus(updates)
+  },
+  // This is used to notify the app of new video recorer data available
+  setNewDataAvailable: (fileId: string): void => {
+    const updates = { hasNewDataAvailable: true }
     const v = getters.videoByID(fileId)
     if (v) v.updateStatus(updates)
   },
@@ -496,7 +503,6 @@ const actions = {
   },
   // Load video data from storage for use in the player
   loadVideo(video: Video): Promise<boolean> {
-    const newVideo = new Video(video)
     // Resolve only once finished each chunk, so the Video knows when to retrieve the data to play
     return new Promise((resolve) => {
       // Get a video DATA item from store based on fileId, then begin decryption
@@ -510,9 +516,7 @@ const actions = {
         .then((loadedData) => {
           if (loadedData) {
             state.value.videoDataFiles.set(video.details.id, loadedData)
-            newVideo.status.decryptionInProgress = false
-            newVideo.status.hasNewDataAvailable = true
-            actions.updateMetadata(newVideo)
+            actions.setNewDataAvailable(video.details.id)
             resolve(true)
           }
         })

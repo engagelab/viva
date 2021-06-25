@@ -118,8 +118,9 @@ const actions = {
   setFullScreen(value: boolean): void {
     _appState.value.deviceStatus.isFullScreen = value
   },
-  setUseCordova(value: boolean): void {
-    _appState.value.useCordova = value
+  setUseCordova(usingCordova: boolean): void {
+    _appState.value.useCordova = usingCordova
+    if (usingCordova) deviceActions.setup()
   },
   activeNow(): void {
     _appState.value.deviceStatus.lastActive = new Date().getTime()

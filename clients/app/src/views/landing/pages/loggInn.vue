@@ -23,13 +23,13 @@
         <p class="m-2 text-red-600 font-bold" v-if="appIsOld">
           {{ t('appIsOld') }}
         </p>
-        <Button v-if="isLoggedIn" class="m-4" @click="listView()">{{
+        <Button v-if="isLoggedIn" class="m-4" @vclick="listView()">{{
           t('MineOpptak')
         }}</Button>
         <Button
           v-if="isLoggedIn"
           class="text-viva-korall m-4"
-          @click="logout()"
+          @vclick="logout()"
           >{{ t('LoggUt') }}</Button
         >
       </div>
@@ -37,7 +37,7 @@
       <p class="text-viva-lilla text-sm">{{ t('UseOfGoogle') }}</p>
       <p class="text-xs mt-2">v{{ appVersion }}</p>
       <div class="flex flex-row justify-end">
-        <Button class="m-2" customWidth="110px" @click="giSamtykke()">
+        <Button class="m-2" customWidth="110px" @vclick="giSamtykke()">
           <p class="text-xs">{{ t('GiSamtykke') }}</p>
         </Button>
       </div>
@@ -103,6 +103,7 @@ export default defineComponent({
           'Your VIVA app is an older version, please download the latest version from the app store',
       },
     }
+    let count = 0
     const { t } = useI18n({ messages })
     const useCordova = appGetters.useCordova.value
     const browserOk = computed(() => {
@@ -113,14 +114,18 @@ export default defineComponent({
     })
 
     function login(organization: string): void {
-      let feideLoginUrl = `${baseUrl}/auth/dataporten/login?organization=${organization}&client=mobileApp`
+      let feideLoginUrl = `${baseUrl}/auth/dataporten/login?organization=${organization}`
       if (useCordova) {
+        count++
+        console.log(`Login count: ${count}`)
+        feideLoginUrl += '&client=mobileApp'
         window.OAuth(
           feideLoginUrl,
           'oauth:dataporten',
           'allowInlineMediaPlayback=yes,toolbar=no'
         )
       } else {
+        feideLoginUrl += '&client=webApp'
         window.location.href = feideLoginUrl
       }
     }

@@ -1,13 +1,13 @@
 <template>
   <Slider
     class="flex flex-col flex-grow min-h-0 h-full"
-    :pages="pages"
+    :pages="rawPages"
     :movePageTo="page"
   />
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, markRaw } from 'vue'
 import Slider from '@/components/base/Slider.vue'
 
 import page0 from './pages/main.vue'
@@ -27,8 +27,14 @@ export default defineComponent({
     },
   },
   data() {
+    const rawPages = [
+      markRaw(page0),
+      markRaw(page1),
+      markRaw(page2),
+      markRaw(page3),
+    ]
     return {
-      pages: [page0, page1, page2, page3],
+      rawPages,
     }
   },
 })

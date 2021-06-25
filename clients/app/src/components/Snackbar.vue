@@ -4,7 +4,7 @@
       {{ snackbar ? snackbar.text : '' }}
     </div>
 
-    <button class="snackbar-button" @click="closeSnackbar">
+    <button class="snackbar-button" @vclick="closeSnackbar">
       {{ t('close') }}
     </button>
   </div>

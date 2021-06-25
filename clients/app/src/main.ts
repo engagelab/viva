@@ -76,67 +76,6 @@ const initialiseApp = () => {
 if (window.cordova) {
   // If running Cordova, configure it once it becomes ready. Else, configure indexedDB
   const onDeviceReady = () => {
-    // For Andoird, check device permissions
-    const permissions = cordova.plugins.permissions
-    const permissionList = permissions
-      ? [
-          permissions.CAMERA,
-          permissions.RECORD_AUDIO,
-          permissions.READ_EXTERNAL_STORAGE,
-          permissions.WRITE_EXTERNAL_STORAGE,
-          permissions.INTERNET,
-        ]
-      : []
-    const permissionError = (
-      p: AndroidPermissions,
-      callback: () => void
-    ): void => {
-      console.warn(`Permission ${p} is not turned on`)
-      callback()
-    }
-    const permissionSuccess = (
-      p: AndroidPermissions,
-      callback: () => void,
-      status: { hasPermission: boolean }
-    ): void => {
-      if (!status.hasPermission) {
-        permissions.requestPermission(
-          p,
-          (status2) => {
-            if (!status2.hasPermission) permissionError(p, callback)
-          },
-          () => {
-            permissionError(p, callback)
-          }
-        )
-      }
-    }
-    const checkPermission = (
-      p: AndroidPermissions,
-      callback: () => void
-    ): void => {
-      permissions.checkPermission(
-        p,
-        (status) => {
-          permissionSuccess(p, callback, status)
-        },
-        () => {
-          permissionError(p, callback)
-        }
-      )
-    }
-
-    // Check permissions in series, asynchronously
-    const checkPermissionList = (): void => {
-      if (permissionList.length > 0) {
-        window.setTimeout(() => {
-          const p = permissionList.pop()
-          if (p) checkPermission(p, checkPermissionList)
-        }, 2000)
-      }
-    }
-    if (permissions) checkPermissionList()
-
     appActions.setUseCordova(true)
     initialiseApp()
   }

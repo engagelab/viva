@@ -12,10 +12,12 @@
     <access allows-arbitrary-loads-for-media="true" allows-arbitrary-loads-in-web-content="true" allows-local-networking="true" origin="*" />
     <plugin name="cordova-plugin-whitelist" spec="1" />
     <access origin="viva:*" />
+    <access origin="cdvfile://*" />
+    <access origin="file:///*" />
+    <access origin="android-webview-video-poster:*" />
+    <allow-navigation href="file:///*" />
     <allow-navigation href="viva:*" launch-external="yes" />
     <allow-navigation href="mailto:*" launch-external="yes" />
-    <access origin="cdvfile://*" />
-    <access origin="android-webview-video-poster:*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
     <allow-intent href="tel:*" />

@@ -27,7 +27,7 @@
             selectedVideo.status.isClassified
           )
         "
-        @click="startUpload()"
+        @vclick="startUpload()"
         >{{ t('send') }}</Button
       >
       <Button
@@ -40,7 +40,7 @@
             selectedVideo.status.isClassified
           )
         "
-        @click="stopUpload()"
+        @vclick="stopUpload()"
         >{{ t('cancel') }}</Button
       >
     </div>

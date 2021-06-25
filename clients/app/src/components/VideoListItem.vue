@@ -17,7 +17,7 @@
         logo="google"
         customWidth="250px"
         :disabled="disableTransfer"
-        @click="transferVideo()"
+        @vclick="transferVideo()"
         >{{ t('Overføre') }}</Button
       >
     </div>
