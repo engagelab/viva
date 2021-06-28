@@ -9,7 +9,9 @@
           ref="playbackVideo"
           id="playbackVideo"
           oncontextmenu="return false;"
-          :src="sampleMovie ? 'https://localhost:8000/sampleClip.mp4' : ''"
+          :src="
+            sampleMovie ? 'https://localhost:8000/sampleClip.mp4' : getVideoFile
+          "
           playsinline
           webkit-playsinline
           preload="metadata"
@@ -189,7 +191,7 @@ export default defineComponent({
       video.value = new Video(chosenVideo)
       if (chosenVideo) {
         if (process.env.NODE_ENV === 'development') {
-          sampleMovie.value = true
+          sampleMovie.value = false
           video.value.status.recordingExists = true
         }
         video.value.updateAll(chosenVideo)
@@ -307,6 +309,14 @@ export default defineComponent({
       }
     }
 
+    // Get video
+    const getVideoFile = computed(() => {
+      /* const videoKind = selectedVideo.value?.storages[0].kind */
+      const videoPath = selectedVideo.value?.storages[0].path
+      console.log(videoPath)
+      return videoPath
+    })
+
     return {
       // methods
       stopPlaying,
@@ -323,6 +333,7 @@ export default defineComponent({
       playing,
       //computed
       selectedVideo,
+      getVideoFile,
     }
   },
 })

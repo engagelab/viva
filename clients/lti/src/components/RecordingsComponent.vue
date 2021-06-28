@@ -4,35 +4,35 @@
 
     <div>
       <button
-        class="px-4 py-2 bg-green-400 rounded-lg"
+        class="px-4 py-2 bg-green-400 rounded-lg w-full"
         v-for="(video, videoIndex) in videoList"
         :key="videoIndex"
         @click="selectVideo(video)"
       >
-        {{ video }}
+        {{ video.details.name }}
       </button>
     </div>
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, computed } from 'vue'
+import { defineComponent, computed, onMounted } from 'vue'
 import { useVideoStore } from '@/store/useVideoStore'
-import { User } from '../types/main'
+import { Video } from '../types/main'
 
-const { actions: videoActions } = useVideoStore()
+const { getters: videoGetters, actions: videoActions } = useVideoStore()
 /* import Edit from '../views/pages/edit.vue' */
 
 export default defineComponent({
   name: 'Recording list',
-  components: {},
-  props: {
-    user: { type: User, required: true },
-  },
-  setup(props) {
-    const videoList = computed(() => props.user.videos.draftIDs)
+  setup() {
+    const videoList = computed(() => videoGetters.videos.value)
 
-    const selectVideo = (videoId: string) => {
-      videoActions.selectVideo(videoId)
+    onMounted(() => {
+      videoActions.getVideoMetadata()
+    })
+
+    const selectVideo = (video: Video) => {
+      videoActions.selectVideo(video)
     }
 
     return {

@@ -8,7 +8,7 @@
     </div> -->
     <div class="flex flex-wrap w-full border-2 h-full">
       <div class="w-1/2">
-        <RecordingsComponent :user="user" />
+        <RecordingsComponent />
       </div>
       <div class="w-1/2">
         <VideoComponent />

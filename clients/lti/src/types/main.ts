@@ -235,6 +235,12 @@ export interface VideoSpec {
   deviceStatus: DeviceStatus
 }
 
+// Only Video class has 'status' in object
+// eslint-disable-next-line
+const instanceOfVideo = (object: any): object is Video => {
+  return 'status' in object
+}
+
 export class Video {
   file: {
     mimeType: string
@@ -247,6 +253,7 @@ export class Video {
   storages: VideoStorages[]
 
   constructor(data?: Video | VideoSpec) {
+    console.log(data)
     const id = uuid()
     this.details = {
       id,
@@ -298,7 +305,7 @@ export class Video {
     this.file = { mimeType: 'video/mp4' }
 
     // Create a Video using the current App state
-    if (data && !(data instanceof Video)) {
+    if (data && !instanceOfVideo(data)) {
       this.updateDataset({
         id: data.dataset._id || '',
         name: data.dataset.name,

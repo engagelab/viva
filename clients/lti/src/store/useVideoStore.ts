@@ -21,7 +21,7 @@ import { apiRequest } from '../api/apiRequest'
 //State
 interface State {
   selectedVideo: Video | undefined
-  videos: Map<string, Video>
+  videos: Video[]
 }
 
 const state: Ref<State> = ref({
@@ -29,18 +29,18 @@ const state: Ref<State> = ref({
     name: PROJECT_NAME.viva,
   },
   selectedVideo: undefined,
-  videos: new Map(),
+  videos: [],
 })
 
 //----------------- Server side functions----------------//
 
-async function fetchVideoMetadata(): Promise<Video> {
+async function fetchVideoMetadata(): Promise<Video[]> {
   const payload: APIRequestPayload = {
     method: XHR_REQUEST_TYPE.GET,
     credentials: true,
     route: '/api/videos',
   }
-  return apiRequest<Video>(payload)
+  return apiRequest<Video[]>(payload)
 }
 
 //Getters
@@ -60,7 +60,7 @@ const getters = {
 //Actions
 interface Actions {
   getVideoMetadata: () => Promise<void>
-  selectVideo: (videoId: string) => Promise<void>
+  selectVideo: (video: Video) => Promise<void>
 }
 
 const actions = {
@@ -80,14 +80,14 @@ const actions = {
   //Fetch videometadata from mongoDB
   getVideoMetadata: async function (): Promise<void> {
     const response = await fetchVideoMetadata()
-    const video = new Video(response)
-    console.log(video)
+    const videos = response.map((v) => new Video(v))
+    state.value.videos = videos
     return Promise.resolve()
   },
 
-  selectVideo: async function (videoId: string): Promise<void> {
-    const response = await this.fetchVideo(videoId)
-    const video = new Video(response)
+  selectVideo: async function (video: Video): Promise<void> {
+    /*  const response = await this.fetchVideo(videoId) */
+    /* const video = new Video(response) */
     state.value.selectedVideo = video
     return Promise.resolve()
   },
