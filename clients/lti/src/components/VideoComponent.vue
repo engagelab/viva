@@ -10,7 +10,9 @@
           id="playbackVideo"
           oncontextmenu="return false;"
           :src="
-            sampleMovie ? 'https://localhost:8000/sampleClip.mp4' : getVideoFile
+            getVideoFile
+              ? getVideoFile
+              : 'https://localhost:8000/sampleClip.mp4'
           "
           playsinline
           webkit-playsinline
@@ -310,11 +312,16 @@ export default defineComponent({
     }
 
     // Get video
+    // Which one to use
+    // currently get the first source
     const getVideoFile = computed(() => {
       /* const videoKind = selectedVideo.value?.storages[0].kind */
-      const videoPath = selectedVideo.value?.storages[0].path
-      console.log(videoPath)
-      return videoPath
+      if (selectedVideo.value && selectedVideo.value.storages) return undefined
+      else {
+        const videoPath = selectedVideo.value?.storages[0].path
+        console.log(videoPath)
+        return videoPath
+      }
     })
 
     return {
