@@ -22,12 +22,12 @@
 import { defineComponent } from 'vue'
 /* import router from '../router' */
 
-import { useAppStore } from '@/store/useAppStore'
-import { useVideoStore } from '@/store/useVideoStore'
+import { useAppStore } from '../store/useAppStore'
+import { useVideoStore } from '../store/useVideoStore'
 /* import SlButton from '@/components/base/SlButton.vue' */
 
-import RecordingsComponent from '@/components/RecordingsComponent'
-import VideoComponent from '@/components/VideoComponent'
+import RecordingsComponent from '@/components/RecordingsComponent.vue'
+import VideoComponent from '@/components/VideoComponent.vue'
 
 export default defineComponent({
   name: 'Dashboard',
@@ -37,9 +37,10 @@ export default defineComponent({
     VideoComponent,
   },
   setup() {
-    const { getters: appGetters } = useAppStore()
+    const { getters: appGetters, actions: appActions } = useAppStore()
     const { getters: videoGetters } = useVideoStore()
     const user = appGetters.user.value
+    appActions.fetchUsers()
 
     const video = videoGetters.selectedVideo
 

@@ -23,6 +23,7 @@ export interface AppState {
   loading: boolean
   isLoggedIn: boolean
   selectedUser: User
+  users: Record<string, string>[]
   isAuthorised: boolean
   fade: boolean
   lastLogin: Date
@@ -37,6 +38,7 @@ const _appState: Ref<AppState> = ref({
   loading: false,
   isLoggedIn: false,
   selectedUser: new User(),
+  users: [],
   isAuthorised: false,
   fade: false,
   lastLogin: new Date(),
@@ -58,6 +60,7 @@ interface Getters {
   currentLocalUser: ComputedRef<LocalUser | undefined>
   persistedLocalUsers: ComputedRef<Record<string, LocalUser>>
   user: ComputedRef<User>
+  users: ComputedRef<Record<string, string>[]>
 }
 const getters = {
   get status(): ComputedRef<AppStatus> {
@@ -88,6 +91,9 @@ const getters = {
   get user(): ComputedRef<User> {
     return computed(() => _appState.value.selectedUser)
   },
+  get users(): ComputedRef<Record<string, string>[]> {
+    return computed(() => _appState.value.users)
+  },
 }
 // ------------  Actions --------------
 interface Actions {
@@ -99,9 +105,27 @@ interface Actions {
   logout: (rememberMe: boolean) => void
   tokenLogin: () => Promise<boolean>
   detectOldApp: () => Promise<void>
+  fetchUsers: () => Promise<void>
   redirectedLogin: () => Promise<void>
 }
 const actions = {
+  fetchUsers(): Promise<void> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.GET,
+      route: '/api/users',
+      credentials: true,
+    }
+    return apiRequest<Record<string, string>[]>(payload)
+      .then((response: Record<string, string>[]) => {
+        if (response) {
+          _appState.value.users = response
+          console.dir(response)
+        }
+      })
+      .catch((error: Error) => {
+        console.log(error)
+      })
+  },
   // Called after successful login to retieve user and mark as 'logged in'
   redirectedLogin(): Promise<void> {
     console.log('Hello')
