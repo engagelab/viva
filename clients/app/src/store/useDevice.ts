@@ -91,11 +91,12 @@ function moveFile(mediaFile: MediaFile, filename?: string): Promise<void> {
   // The returned file is in the temp directory
   const fileId = filename || uuid()
   const cordovaData: CordovaData = new CordovaData({
-    fileName: fileId,
+    fileName: fileId + '.mp4',
     fileToMove: mediaFile,
     path: _cordovaState.value.cordovaPath,
   })
   // This will move a file from a temp directory to our app storage
+  // We must include a '.mp4' extension for the video to play in a <video> tag
   return cordovaService
     .moveMediaFromTemp(cordovaData)
     .then((fileEntry: FileEntry | void) => {
@@ -213,7 +214,7 @@ const actions: Actions = {
   // Remove a video data from disk
   removeVideoFile: (videoId: string): Promise<void> => {
     const cd: CordovaData = new CordovaData({
-      fileName: videoId,
+      fileName: videoId + '.mp4',
       path: _cordovaState.value.cordovaPath,
     })
     return cordovaService

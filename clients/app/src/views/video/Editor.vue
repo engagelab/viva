@@ -197,7 +197,7 @@ export default defineComponent({
     const selectedVideo = videoGetters.selectedVideo
     const selectedDataset = datasetGetters.selectedDataset
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
-    const video = ref(new Video(selectedVideo.value))
+    const video = ref(new Video().updateFromVideo(selectedVideo.value))
     const videoUrl = ref('')
     const fullScreenMode = ref(false)
     const stateToChildren = ref({
@@ -369,9 +369,9 @@ export default defineComponent({
     function setupVideo(chosenVideo: Video): void {
       // Create a video placeholder that can be modifed by the user
       const player: HTMLVideoElement | null = playbackVideo.value
-      video.value = new Video(chosenVideo)
+      video.value = new Video().updateFromVideo(chosenVideo)
       if (chosenVideo && player) {
-        video.value.updateAll(chosenVideo)
+        video.value.updateFromVideo(chosenVideo)
         setPlayerBounds()
         loadPlayerWithVideo()
       }
@@ -553,7 +553,7 @@ export default defineComponent({
 
       // Call the device camera. Video will be stored under the name: video.details.id
       videoActions.replaceDraftVideo(video.value.details.id).then(() => {
-        deviceActions.recordVideo(video.value.details.id + '.mp4').then(() => {
+        deviceActions.recordVideo(video.value.details.id).then(() => {
           const videoEntry = deviceGetters.video.value
           if (videoEntry) {
             // Add the FileEntry to the VideoStore to work with

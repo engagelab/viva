@@ -1,10 +1,13 @@
 <template>
-  <div class="snackbar" :class="snackbarClass">
-    <div class="text-sm" style="flex-grow: 1">
+  <div
+    class="abosolute bottom-0 left-0 flex z-0 p-1 text-white"
+    :class="snackbarClass"
+  >
+    <div class="text-sm break-all">
       {{ snackbar ? snackbar.text : '' }}
     </div>
 
-    <button class="snackbar-button" @vclick="closeSnackbar">
+    <button class="snackbar-button" @click="closeSnackbar()">
       {{ t('close') }}
     </button>
   </div>
@@ -21,8 +24,8 @@ export default defineComponent({
     const snackbar = notifyGetters.snackbar
     const snackbarClass = computed(() => {
       return {
-        'snackbar-show': snackbar.value.visibility === true,
-        'snackbar-hidden': snackbar.value.visibility === false,
+        'snackbar-show': snackbar.value.visibility,
+        'snackbar-hidden': !snackbar.value.visibility,
         'bg-viva-korall': snackbar.value.type == 'error',
         'bg-black': snackbar.value.type != 'error',
       }
