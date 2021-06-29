@@ -17,11 +17,9 @@
   </div>
 </template>
 
-<style lang="stylus" scoped></style>
-
 <script lang="ts">
 // @ is an alias to /src
-import { computed, defineComponent } from 'vue'
+import { defineComponent } from 'vue'
 import router from '../router'
 
 import { useAppStore } from '@/store/useAppStore'
@@ -40,7 +38,7 @@ export default defineComponent({
   },
   setup() {
     const { getters: appGetters } = useAppStore()
-    const user = computed(() => appGetters.user.value)
+    const user = appGetters.user.value
     // userActions.getMyUser().then(() => {
     //   user.value = userGetters.myUser.value
     // })

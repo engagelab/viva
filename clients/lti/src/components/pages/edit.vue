@@ -11,13 +11,13 @@
       />
     </div>
     <div class="flex flex-col items-top p-1 md:p-4">
-      <SVGSymbol
+      <!--  <SVGSymbol
         class="text-viva-korall fill-current self-start p-2"
         applyClasses="w-4 md:w-8"
         @click="back()"
         width="25"
         rotation="180"
-      ></SVGSymbol>
+      ></SVGSymbol> -->
 
       <div
         class="flex-1 flex-col md:items-center m-1 md:m-8 overflow-y-auto pt-2"
@@ -26,7 +26,7 @@
           <div
             class="flex items-center flex-shrink justify-between p-2 bg-white rounded-md editItem"
           >
-            <p class="w-4">{{ t('trim') }}</p>
+            <p class="w-4">{{ 'trim' }}</p>
             <transition name="expand">
               <div
                 class="flex flex-row items-center"
@@ -107,7 +107,7 @@
             <div
               class="flex items-center justify-between p-2 bg-white rounded-md"
             >
-              <p class="w-4">{{ t('blur') }}</p>
+              <p class="w-4">{{ 'blur' }}</p>
               <transition name="expand">
                 <div class="flex flex-row items-center">
                   <div
@@ -166,7 +166,7 @@
         <div
           class="flex items-center justify-between p-2 mt-4 bg-white rounded-md"
         >
-          <p class="w-4">{{ t('blur') }}</p>
+          <p class="w-4">{{ 'blur' }}</p>
           <SVGSymbol
             class="ml-4 p-2 rounded-full"
             applyClasses="w-4 md:w-8"
@@ -182,16 +182,6 @@
 </template>
 
 <script lang="ts">
-const messages = {
-  nb_NO: {
-    trim: 'Trim',
-    blur: 'Maskér',
-  },
-  en: {
-    trim: 'Trim',
-    blur: 'Blur',
-  },
-}
 import {
   defineComponent,
   ref,
@@ -201,8 +191,7 @@ import {
   PropType,
   toRefs,
 } from 'vue'
-import router from '@/router'
-import { useI18n } from 'vue-i18n'
+//import router from '@/router'
 import { Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
@@ -227,7 +216,6 @@ export default defineComponent({
   },
   setup(props, context) {
     const { stateFromParent } = toRefs(props)
-    const { t } = useI18n({ messages })
     const selectedVideo = videoGetters.selectedVideo
     const moveScrubber = ref('0')
     const video = ref(new Video())
@@ -267,10 +255,10 @@ export default defineComponent({
 
     // -------- Methods -------------
 
-    function back() {
+    /*  function back() {
       videoActions.updateMetadata(video.value)
       router.push('/videos/editor?page=0')
-    }
+    } */
     function updateEDL(type: string, newValue: number[]) {
       // TODO: Can we use the store to fix this instead?
       context.emit('edl-updated', { type, newValue })
@@ -344,12 +332,11 @@ export default defineComponent({
     }
 
     return {
-      t,
       step,
       video,
       moveScrubber,
 
-      back,
+      /*  back, */
       scrubberMax,
       scrubberMin,
       trimButtonDisabled,
