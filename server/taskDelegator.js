@@ -10,8 +10,7 @@ const Video = require('./models/Video')
 const db = require('./database')
 const ffmpeg = require('./subprocesses/ffmpegOperation')
 const fileOperations = require('./subprocesses/fileOperations')
-const lagringshotell = require('./subprocesses/lagringshotellOperations')
-const fetchStorage = require('./services/storage').fetchStorage
+const { fetchStorage, sendToLagringshotell, sendToEducloud } = require('./services/storage')
 
 // Initialise queues and populate with unfinished work
 const videoBacklog = {} // Multiple arrays queuing videos for each state in the pipeline
@@ -68,13 +67,9 @@ const advanceVideoStatus = (video, pStatus) => {
   const stateIndex = pipelineStates.indexOf(pStatus)
   // Increment video state (refer to constants.pipelineStates) and update pipeline progress
   if (stateIndex == pipelineStates.length - 1) {
-    // Pipeline is finished. But may need to transfer the video to Google before marking as 'complete'
-    // Or complete directly if we are using Canvas
-    const editedTypes = [videoStorageTypes.google, videoStorageTypes.onedrive]
-    const isEdited = video.storages.map((s) => s.kind).some((kind) => editedTypes.includes(kind))
-    video.status.main = isEdited ? videoStatusTypes.edited : videoStatusTypes.complete
+    video.status = videoStatusTypes.complete // Pipeline is finished
   } else {
-    video.status.main = pipelineStates[stateIndex + 1]
+    video.status = pipelineStates[stateIndex + 1]
   }
   video.status.inPipeline = false
   video.status.error.errorDebug = ''
@@ -102,8 +97,9 @@ const beginProcessingVideo = pStatus => {
     }
 
     switch (pStatus) {
+      // The first stage after metadata and video data have been uploaded
+      // For now decryption is not active, move the video directly to the next state
       case videoStatusTypes.uploaded: {
-        // If status is 'UPLOADED', call decryption if needed, else move to the next queue
         if (nextVideo.status.isEncrypted) {
           fileOperations
             .moveFile(
@@ -128,6 +124,7 @@ const beginProcessingVideo = pStatus => {
         }
         break
       }
+      // Process the trims, blurs and watermark for this video
       case videoStatusTypes.decrypted: {
         ffmpeg
           .createFFMPEG(
@@ -148,14 +145,14 @@ const beginProcessingVideo = pStatus => {
           .catch(err => errorProcessingVideo(err, pStatus))
         break
       }
-      case videoStatusTypes.converted: {
-        // Here the video can be copied to Lagringshotell.  After copy, the video remains in the 'edited' folder for the next stage.
+      // Here the video can be copied to a final storage location
+      case videoStatusTypes.edited: {
         fetchStorage(nextVideo).then(stores => {
           const allPromises = []
           stores.forEach(store => {
+            console.log(store);
             if (store.kind == videoStorageTypes.lagringshotell) {
-              console.log(store);
-              const LHpromise = lagringshotell.createVideoAtLagringshotell(
+              const LHpromise = sendToLagringshotell(
                 {
                   video: nextVideo,
                   store,
@@ -163,20 +160,51 @@ const beginProcessingVideo = pStatus => {
                 }
               )
              allPromises.push(LHpromise)
+            } else if (store.kind == videoStorageTypes.educloud) {
+              const ECpromise = sendToEducloud({
+                video: nextVideo,
+                subDirSrc: videoFolderNames.edited
+              }).then(() =>
+                console.log('Video Transferrd to Educloud.')
+              )
+              .catch(err => errorProcessingVideo(err, pStatus))
+             allPromises.push(ECpromise)
             }
           })
-          Promise.all(allPromises).then(() =>
-            advanceVideoStatus(nextVideo, pStatus)
-          ).catch(err => {
+          Promise.all(allPromises).then(() => {
+            fileOperations
+              .moveFile(
+                nextVideo,
+                videoFolderNames.edited,
+                videoFolderNames.stored
+              )
+              .then(() => advanceVideoStatus(nextVideo, pStatus))
+              .catch(err => errorProcessingVideo(err, pStatus))
+          }).catch(err => {
             errorProcessingVideo(err, pStatus)
           })
         })
         break
       }
-      case videoStatusTypes.edited: {
-        // If we're using Dataporten:
-        // The plan as at June 2019 is that the user must authorise transfer to their Google storage
-        // Therefore the Dataporten pipeline stops at 'edited', it does not include a 'completed' state, that is set by the google code
+      // Decide if we keep the video ready for user-authenticated transfer to a third party
+      case videoStatusTypes.stored: {
+        const storageTypesRequiringTransfer = [videoStorageTypes.google]
+        const keepVideo = nextVideo.storages.map((s) => s.kind).some((kind) => storageTypesRequiringTransfer.includes(kind))
+        if (!keepVideo) {
+          fileOperations
+            .moveFile(
+              nextVideo,
+              videoFolderNames.stored,
+              videoFolderNames.complete
+            )
+            .then(() => advanceVideoStatus(nextVideo, pStatus))
+            .catch(err => errorProcessingVideo(err, pStatus))
+        }
+        break
+      }
+      case videoStatusTypes.complete: {
+        // TODO: Delete the video file!
+        // fileOperations.removeFile(nextVideo.file.name, videoFolderNames.decrypted).then(() => {})
         break
       }
       default: {

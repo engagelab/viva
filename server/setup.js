@@ -11,7 +11,7 @@ Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
   if (err) {
     return console.log(err)
   } else if (!dataSett) {
-    ;(dataSett = {
+    dataSett = {
       name: 'test',
       description: 'test description',
       created: new Date(),
@@ -44,8 +44,8 @@ Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
           category: [],
         },
       ],
-    }),
-      Dataset.create(dataSett)
+    }
+    Dataset.create(dataSett)
     console.log('Created a test Setting')
   }
 })
