@@ -36,7 +36,7 @@ async function fetchDatasets(): Promise<DatasetData> {
 
 async function saveDataset(dataset: Dataset): Promise<DatasetData> {
   const payload: APIRequestPayload = {
-    method: XHR_REQUEST_TYPE.POST,
+    method: XHR_REQUEST_TYPE.PUT,
     credentials: true,
     route: '/api/dataset',
     query: { dataset: dataset },
@@ -44,6 +44,15 @@ async function saveDataset(dataset: Dataset): Promise<DatasetData> {
   return apiRequest<DatasetData>(payload)
 }
 
+async function createDataset(): Promise<DatasetData> {
+  const payload: APIRequestPayload = {
+    method: XHR_REQUEST_TYPE.POST,
+    credentials: true,
+    route: '/api/dataset',
+    // params: { dataset: dataset },
+  }
+  return apiRequest<DatasetData>(payload)
+}
 //Getters
 interface Getters {
   datasets: ComputedRef<Dataset[]>
@@ -60,6 +69,7 @@ const getters = {
 //Actions
 interface Actions {
   getDatasets: () => Promise<void>
+  addDataset: ():Promise<void> {
   updateDataset: (dataset: Dataset) => Promise<void>
 }
 
@@ -71,6 +81,13 @@ const actions = {
     console.log(dataset)
     return Promise.resolve()
   },
+  // Create new dataset
+  addDataset:async function ():Promise<void> {
+    const response = await createDataset()
+    const dataset = new Dataset(response)
+    return Promise.resolve()
+  }
+  // Update an existing dataset
   updateDataset: async function (dataset: Dataset): Promise<void> {
     const response = await saveDataset(dataset)
     const d = new Dataset(response)
