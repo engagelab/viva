@@ -4,7 +4,7 @@
 
 const router = require('express').Router()
 const utilities = require('../../utilities')
-const { downloadS3File, getSignedUrlS3File } = require('../../services/storage')
+const { getSignedUrlS3File } = require('../../services/storage')
 const { userRoles } = require('../../constants')
 const videoStatusTypes = require('../../constants').videoStatusTypes
 const Video = require('../../models/Video')
