@@ -3,7 +3,7 @@ const videoStatusTypes = {
   uploaded: 'uploaded', // First pipeline state after file was uploaded
   decrypted: 'decrypted', // (Currently unused)
   edited: 'edited', // Video was converted by FFMPEG, ready to be sent to storage(s)
-  saved: 'saved', // If Google storage exists, video is ready to be transferred there. If not, video changes to 'complete'
+  stored: 'stored', // If Google storage exists, video is ready to be transferred there. If not, video changes to 'complete'
   complete: 'complete', // Video has now been uploaded, decrypted, trimmed/watermarked, saved and transferred to another location.
                         //This state means there is no more work to do, so the video should finally be removed here
   error: 'error' // Something went wrong. Videos in this state will not move further in the pipeline until attended to
