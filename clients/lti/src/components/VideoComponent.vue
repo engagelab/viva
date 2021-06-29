@@ -310,7 +310,7 @@ export default defineComponent({
       const player: HTMLVideoElement | null = playbackVideo.value
       video.value = new Video(chosenVideo)
       if (chosenVideo && player) {
-        video.value.updateAll(chosenVideo)
+        video.value.updateFromVideo(chosenVideo)
         setPlayerBounds()
         loadPlayerWithVideo()
       }

@@ -123,7 +123,7 @@ const actions = {
     if (state.value.videos.has(video.details.id))
       videoToUpdate = state.value.videos.get(video.details.id)
     if (videoToUpdate) {
-      videoToUpdate.updateAll(video)
+      videoToUpdate.updateFromVideo(video)
       return Promise.resolve()
     } else return Promise.resolve()
   },
