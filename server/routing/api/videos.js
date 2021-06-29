@@ -4,6 +4,7 @@
 
 const router = require('express').Router()
 const utilities = require('../../utilities')
+const { getSignedUrlS3File } = require('../../services/storage')
 const { userRoles } = require('../../constants')
 const videoStatusTypes = require('../../constants').videoStatusTypes
 const Video = require('../../models/Video')
@@ -51,6 +52,23 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
   })
 })
 
+// Get a signed URL to the video
+router.get('/videoURL', utilities.authoriseUser, (request, response) => {
+  Video.findOne({ 'details.id': request.query.videoref }, (error, v) => {
+    if (error) {
+      return response.status(403).end()
+    } else if (!v) {
+      return response.status(200).end()
+    } else {
+      getSignedUrlS3File({ keyname: v.details.id, timer: 60 })
+        .then((res) => {
+          response.send({ url: res }).status(200).end()
+        })
+        .catch((error) => response.send(error).status(200).end())
+    }
+  })
+})
+
 // Upload a single video metadata to be combined with an uploaded video file
 router.post('/video', utilities.authoriseUser, async (request, response) => {
   const query = { 'details.id': request.body.details.id }
@@ -65,7 +83,6 @@ router.post('/video', utilities.authoriseUser, async (request, response) => {
       v.updateOne(update, {}, () => response.status(200).end())
     }
   })
-
 })
 
 module.exports = router

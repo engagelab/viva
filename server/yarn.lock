@@ -594,6 +594,19 @@
     "@aws-sdk/types" "3.18.0"
     tslib "^2.0.0"
 
+"@aws-sdk/s3-request-presigner@^3.19.0":
+  version "3.19.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/s3-request-presigner/-/s3-request-presigner-3.19.0.tgz#922f79b3fbd6b02ed14ebcbf1b394a876e1b93dd"
+  integrity sha512-O79Hrgp/AAbTJGfZLjlFxW5qs3UeRxntgQC4Ip0ydoBYaUi/cgOV7pI32+usGxsZDudmSE3qacJdlTLFNpjt7w==
+  dependencies:
+    "@aws-sdk/protocol-http" "3.18.0"
+    "@aws-sdk/signature-v4" "3.18.0"
+    "@aws-sdk/smithy-client" "3.19.0"
+    "@aws-sdk/types" "3.18.0"
+    "@aws-sdk/util-create-request" "3.19.0"
+    "@aws-sdk/util-format-url" "3.18.0"
+    tslib "^2.0.0"
+
 "@aws-sdk/service-error-classification@3.19.0":
   version "3.19.0"
   resolved "https://registry.yarnpkg.com/@aws-sdk/service-error-classification/-/service-error-classification-3.19.0.tgz#0382d138ca3c9e75b352769a39ff9a02600c466a"
@@ -682,6 +695,25 @@
   integrity sha512-4Pp4owEfjNdmqH9cByJnN0GbfM2II3I4FnRN5d9BysJ6mG+rLhc6WYxBgr4sEFtsJGYCgFzLU5MfUMx9OuDdPA==
   dependencies:
     "@aws-sdk/is-array-buffer" "3.18.0"
+    tslib "^2.0.0"
+
+"@aws-sdk/util-create-request@3.19.0":
+  version "3.19.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/util-create-request/-/util-create-request-3.19.0.tgz#85af3692bdfa97429debb671c94e52dde219b2d0"
+  integrity sha512-3iSftujjte6+ap/F7zUkzloECaNm6j6g9Qypd9gqWoqeMKF/T6Y8JGwNuADooXtIROCnIaFiekjiwA9VNUShVw==
+  dependencies:
+    "@aws-sdk/middleware-stack" "3.18.0"
+    "@aws-sdk/smithy-client" "3.19.0"
+    "@aws-sdk/types" "3.18.0"
+    tslib "^2.0.0"
+
+"@aws-sdk/util-format-url@3.18.0":
+  version "3.18.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/util-format-url/-/util-format-url-3.18.0.tgz#5c5397131db442528ced498e153a4c8016f598dd"
+  integrity sha512-I9O9f/afdOy2tjNDUrrG6Q7e1VBY3l8xXZiQBk5poSlVPlAN2tWVia3qeYFsKvrBKW6HacYEuYkR7AdGUKgY0w==
+  dependencies:
+    "@aws-sdk/querystring-builder" "3.18.0"
+    "@aws-sdk/types" "3.18.0"
     tslib "^2.0.0"
 
 "@aws-sdk/util-hex-encoding@3.18.0":

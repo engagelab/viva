@@ -1,10 +1,10 @@
 <template>
   <div class="text-black">
-    User recordings
+    Videos
 
-    <div>
+    <div class="mx-3">
       <button
-        class="px-4 py-2 bg-green-400 rounded-lg w-full"
+        class="px-4 py-2 bg-green-400 rounded-lg w-full my-1"
         v-for="(video, videoIndex) in videoList"
         :key="videoIndex"
         @click="selectVideo(video)"

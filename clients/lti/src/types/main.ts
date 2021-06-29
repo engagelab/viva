@@ -265,7 +265,6 @@ export class Video {
   storages: VideoStorages[]
 
   constructor(data?: VideoData) {
-    console.log(data)
     const id = uuid()
     this.details = {
       id,

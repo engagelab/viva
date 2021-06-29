@@ -1,23 +1,22 @@
 <template>
-  <div class="flex flex-col flex-grow min-h-0 w-full">
+  <div
+    class="flex flex-col flex-grow min-h-0 w-full"
+    v-if="selectedVideo"
+    :key="selectedVideo.id"
+  >
     <div
       class="flex flex-col flex-grow min-h-o overflow-y-auto scrolling-touch w-full relative"
     >
-      <div class="flex-none bg-black">
+      <div class="flex-none bg-black" @click="toggleScreenMode()">
         <video
-          class="playbackVideoSmall"
+          :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
           ref="playbackVideo"
           id="playbackVideo"
           oncontextmenu="return false;"
-          :src="
-            getVideoFile
-              ? getVideoFile
-              : 'https://localhost:8000/sampleClip.mp4'
-          "
           playsinline
           webkit-playsinline
           preload="metadata"
-          :type="'video/mp4'"
+          :type="videoMimeType"
         >
           <track kind="subtitles" />
         </video>
@@ -29,24 +28,13 @@
         <div class="flex flex-grow-0 justify-center items-center">
           <div class="mx-4 text-white">{{ playerTime }}</div>
         </div>
-        <div
-          class="flex flex-grow justify-center items-center"
-          v-if="page === '0'"
-        >
-          <SVGSymbol
-            v-show="!recording"
-            applyClasses="w-8 h-8 md:w-12"
-            @click="startRecording()"
-            width="50"
-            symbol="record"
-          ></SVGSymbol>
-        </div>
+
         <div
           class="flex flex-grow-0 justify-center content-center items-center"
           v-show="videoDataLoaded"
         >
           <SVGSymbol
-            v-show="!recording && !playing"
+            v-show="!playing"
             class="pr-4 justify-center content-center"
             applyClasses="w-6 h-8 md:w-12"
             @click="startPlaying()"
@@ -60,49 +48,39 @@
             symbol="stop"
           ></SVGSymbol>
         </div>
-
-        <div
-          class="flex flex-grow justify-center items-center"
-          style="width: 90px"
-        >
-          <SVGSymbol
-            v-show="!recording"
-            applyClasses="w-4 md:w-8"
-            symbol="delete"
-          ></SVGSymbol>
-        </div>
       </div>
 
       <div
         class="absolute p-4 top-0 z-10 text-white w-full flex flex-row justify-between"
       >
-        <!-- <div>
-          <p class="text-sm">{{ datasetName }}</p>
+        <div>
           <p v-if="selectedVideo" class="font-vagBold">
             {{ selectedVideo.details.name }}
           </p>
-        </div> -->
-
-        <!--  <Edit /> -->
+        </div>
       </div>
+
+      <Edit :stateFromParent="stateToChildren" @edl-updated="edlUpdated" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, computed, onMounted, onUpdated } from 'vue'
-
+import { defineComponent, ref, Ref, computed, onMounted, watch } from 'vue'
 import { Video } from '@/types/main'
-import SVGSymbol from '@/components/base/SVGSymbol.vue'
-/* import Edit from '../views/pages/edit.vue' */
+import { useAppStore } from '@/store/useAppStore'
+import { useVideoStore } from '@/store/useVideoStore'
+const { actions: appActions } = useAppStore()
+const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
-import { useVideoStore } from '../store/useVideoStore'
+import SVGSymbol from '@/components/base/SVGSymbol.vue'
+import Edit from './pages/edit.vue'
 
 export default defineComponent({
   name: 'editor',
   components: {
     SVGSymbol,
-    /* Edit, */
+    Edit,
   },
   props: {
     page: {
@@ -111,17 +89,14 @@ export default defineComponent({
     },
   },
   setup() {
-    const { getters: videoGetters } = useVideoStore()
-
+    const selectedVideo = videoGetters.selectedVideo
+    const selectedVideoURL = videoGetters.selectedVideoURL
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
-
-    const selectedVideo = computed(() => videoGetters.selectedVideo.value)
-    const video = ref(new Video())
-    const sampleMovie = ref(false)
+    const video = ref(new Video(selectedVideo.value))
+    const fullScreenMode = ref(true)
     const stateToChildren = ref({
       playerCurrentTime: '0',
     })
-    const recording = ref(false)
     const playing = ref(false)
     const videoDataLoaded = ref(false)
 
@@ -129,44 +104,69 @@ export default defineComponent({
     let playerUpperBound = 0 // Time <= player end time when video should stop playing, when using the scrubber
     let currentVolume = 0
     let playerCurrentTime = ref('0')
-    /* let videoWasReplaced = false */
-    let reloadVideo = false
+    let videoWasReplaced = false
+
+    document.addEventListener('fullscreenchange', () => {
+      // document.fullscreenElement will point to the element that
+      // is in fullscreen mode if there is one. If not, the value
+      // of the property is null.
+      appActions.setFullScreen(!!document.fullscreenElement)
+    })
+
     // Lifecycle Hooks
 
     onMounted(() => {
-      setupVideo(video.value)
-
-      reloadVideo = true
-      videoDataLoaded.value = false
-      /*       videoWasReplaced = false */
-    })
-
-    onUpdated(() => {
-      if (reloadVideo) {
-        reloadVideo = false
-        loadPlayerWithVideo()
+      if (!selectedVideo.value) {
+        console.log('Video is undefined')
+      } else {
+        setupVideo(selectedVideo.value)
       }
     })
-
-    // Computed values
 
     const playerTime = computed(() => {
-      if (recording.value) {
-        return '--:--.-'
-      } else {
-        const timeAsInt = parseInt(playerCurrentTime.value)
-        let minutes = Math.floor(timeAsInt / 60)
-        // prettier-ignore
-        let seconds = minutes > 0 ? timeAsInt % (60 * minutes) : timeAsInt;
-        let milliseconds = timeAsInt.toFixed(2)
-        milliseconds = milliseconds.substring(milliseconds.length - 2)
-        const minutesString = minutes > 9 ? minutes : '0' + minutes
-        const secondsString = seconds > 9 ? seconds : '0' + seconds
-        return `${minutesString}:${secondsString}.${milliseconds}`
-      }
+      const timeAsInt = parseInt(playerCurrentTime.value)
+      let minutes = Math.floor(timeAsInt / 60)
+      // prettier-ignore
+      let seconds = minutes > 0 ? timeAsInt % (60 * minutes) : timeAsInt;
+      let milliseconds = timeAsInt.toFixed(2)
+      milliseconds = milliseconds.substring(milliseconds.length - 2)
+      const minutesString = minutes > 9 ? minutes : '0' + minutes
+      const secondsString = seconds > 9 ? seconds : '0' + seconds
+      return `${minutesString}:${secondsString}.${milliseconds}`
     })
 
+    // Always video/mp4
+    const videoMimeType = computed(() => {
+      return 'video/mp4'
+    })
+
+    const hasNewDataAvailable = computed(() => {
+      return selectedVideo.value
+        ? selectedVideo.value.status.hasNewDataAvailable
+        : false
+    })
+
+    watch(
+      () => hasNewDataAvailable.value,
+      (newValue) => {
+        if (newValue) loadPlayerWithVideo()
+      }
+    )
+
+    watch(
+      () => selectedVideo.value,
+      (newValue) => {
+        if (newValue) {
+          setupVideo(newValue)
+        }
+      }
+    )
+
     // METHODS
+
+    function toggleScreenMode(): void {
+      fullScreenMode.value = !fullScreenMode.value
+    }
 
     // Event handler for Edit Decision List updates
     function edlUpdated(d: { type: string; newValue: number[] }) {
@@ -189,15 +189,17 @@ export default defineComponent({
 
     // Called on initialisation of this view to create placeholder for edited data
     function setupVideo(chosenVideo: Video): void {
+      // reset states
+      videoDataLoaded.value = false
+      videoWasReplaced = false
+
       // Create a video placeholder that can be modifed by the user
+      const player: HTMLVideoElement | null = playbackVideo.value
       video.value = new Video(chosenVideo)
-      if (chosenVideo) {
-        if (process.env.NODE_ENV === 'development') {
-          sampleMovie.value = false
-          video.value.status.recordingExists = true
-        }
-        video.value.updateAll(chosenVideo)
+      if (chosenVideo && player) {
+        video.value.updateFromVideo(chosenVideo)
         setPlayerBounds()
+        loadPlayerWithVideo()
       }
     }
 
@@ -294,11 +296,11 @@ export default defineComponent({
           playerUpperBound = player.duration
           video.value.details.duration = player.duration
           // We need to save the latest duration
-          /*  videoActions.updateMetadata(video.value).then(() => {
+          videoActions.updateMetadata(video.value).then(() => {
             // But if this is new video replacing an old, the unsavedChanges must be set true to request 'samtykker' acceptance
             if (videoWasReplaced)
               videoActions.setUnsavedChanges(video.value.details.id)
-          }) */
+          })
           setPlayerBounds()
           player.removeEventListener('loadeddata', dataLoaded)
           videoDataLoaded.value = true
@@ -307,40 +309,30 @@ export default defineComponent({
         player.addEventListener('loadeddata', dataLoaded)
         player.addEventListener('ended', stopPlaying, false)
 
-        /*   const data = videoGetters.videoDataFile(selectedVideo.value.details.id) // Ensure chunks exist */
+        if (selectedVideoURL.value) {
+          player.setAttribute('src', selectedVideoURL.value + '#t=0.1')
+          player.load()
+        }
       }
     }
-
-    // Get video
-    // Which one to use
-    // currently get the first source
-    const getVideoFile = computed(() => {
-      /* const videoKind = selectedVideo.value?.storages[0].kind */
-      if (selectedVideo.value && selectedVideo.value.storages) return undefined
-      else {
-        const videoPath = selectedVideo.value?.storages[0].path
-        console.log(videoPath)
-        return videoPath
-      }
-    })
 
     return {
       // methods
       stopPlaying,
       startPlaying,
+      toggleScreenMode,
       // data
+      selectedVideo,
       playerTime,
+      videoMimeType,
       edlUpdated,
       stateToChildren,
-      sampleMovie,
       playbackVideo,
+      selectedVideoURL,
       // booleans
       videoDataLoaded,
-      recording,
       playing,
-      //computed
-      selectedVideo,
-      getVideoFile,
+      fullScreenMode,
     }
   },
 })

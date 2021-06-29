@@ -11,21 +11,19 @@
         <RecordingsComponent />
       </div>
       <div class="w-1/2">
-        <VideoComponent />
+        <VideoComponent :key="video ? video.details.id : 'video component'" />
       </div>
     </div>
   </div>
 </template>
 
-<style lang="stylus" scoped></style>
-
 <script lang="ts">
 // @ is an alias to /src
-import { computed, defineComponent } from 'vue'
-import router from '../router'
+import { defineComponent } from 'vue'
+/* import router from '../router' */
 
 import { useAppStore } from '@/store/useAppStore'
-
+import { useVideoStore } from '@/store/useVideoStore'
 /* import SlButton from '@/components/base/SlButton.vue' */
 
 import RecordingsComponent from '@/components/RecordingsComponent'
@@ -40,14 +38,14 @@ export default defineComponent({
   },
   setup() {
     const { getters: appGetters } = useAppStore()
-    const user = computed(() => appGetters.user.value)
-    // userActions.getMyUser().then(() => {
-    //   user.value = userGetters.myUser.value
-    // })
+    const { getters: videoGetters } = useVideoStore()
+    const user = appGetters.user.value
+
+    const video = videoGetters.selectedVideo
 
     return {
-      monitor: () => router.push('/monitor'),
       user,
+      video,
     }
   },
 })
