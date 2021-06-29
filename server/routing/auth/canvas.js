@@ -109,7 +109,10 @@ router.post('/canvas/callback', function (request, response) {
   // LTI must be configured with the "variable substitute" in 'Custom Fields' with:  `user_id=$Canvas.user.id`
   const requestUserInformation = (LTItokenSet, verified_decoded_id_token) => {
     const user_id = verified_decoded_id_token.sub
-    const custom_vars = verified_decoded_id_token['https://purl.imsglobal.org/spec/lti/claim/custom']
+    const custom_vars =
+      verified_decoded_id_token[
+        'https://purl.imsglobal.org/spec/lti/claim/custom'
+      ]
     const parsedUrl = new URL(
       verified_decoded_id_token[
         'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice'
@@ -127,9 +130,8 @@ router.post('/canvas/callback', function (request, response) {
       .httpRequest(options)
       .then((namesAndRoles) => {
         if (namesAndRoles) {
-          const myUser = namesAndRoles.members.find(
-            (n) => n.user_id === user_id
-          ) || {}
+          const myUser =
+            namesAndRoles.members.find((n) => n.user_id === user_id) || {}
           myUser.provider = 'canvas'
 
           createOrUpdateUser(
@@ -221,13 +223,11 @@ router.get('/canvas/callback', function (request, response) {
     CanvasAPIClient.grant(body).then((tokenSet) => {
       userDetails(tokenSet.access_token, tokenSet.user.id).then((profile) => {
         profile.provider = 'canvas'
-        createOrUpdateUser(
-          tokenSet,
-          { sub: profile.id },
-          profile
-        ).then((user) => {
-          completeCallback(request, response, user)
-        })
+        createOrUpdateUser(tokenSet, { sub: profile.id }, profile).then(
+          (user) => {
+            completeCallback(request, response, user)
+          }
+        )
       })
     })
   }

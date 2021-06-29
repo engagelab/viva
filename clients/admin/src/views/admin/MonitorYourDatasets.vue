@@ -9,7 +9,7 @@
           v-for="(dataset, datasetIndex) in datasets"
           :key="datasetIndex"
           class="cursor-pointer"
-          @click="selectedDataset = dataset"
+          @click="setSelectedDataset(dataset._id)"
         >
           {{ dataset.name }}
         </li>
@@ -17,7 +17,7 @@
     </div>
     <!-- Table -->
     <div class="w-5/6">
-      <DatasetItem :dataset="selectedDataset"></DatasetItem>
+      <DatasetItem v-if="selectedDataset"></DatasetItem>
     </div>
     <div
       class="
@@ -67,7 +67,7 @@ import {
   defineComponent,
   onMounted,
   ref,
-  Ref,
+  //Ref,
 } from 'vue'
 import { Dataset } from '@/types/main'
 import { useDatasetStore } from '../../store/useDatasetStore'
@@ -84,7 +84,7 @@ const messages = {
     Behandlingsansvarlig: 'Datasett',
   },
   en: {
-    'Your datasets': 'Din datasetter',
+    'Your datasets': 'Datasets',
     Datasett: 'Dataset',
     Opprettet: 'Created',
     'Antall opptak': 'Total recordings',
@@ -102,7 +102,7 @@ export default defineComponent({
     const showDatasets = ref(false)
     const showInput = ref(false)
     const newDatasetName = ref('')
-    const selectedDataset: Ref<Dataset | undefined> = ref(undefined)
+    // const selectedDataset: Ref<Dataset | undefined> = ref(undefined)
     const errorMessage = ref('')
     const datasets: ComputedRef<Dataset[]> = computed(
       () => datasetGetters.datasets.value
@@ -138,6 +138,9 @@ export default defineComponent({
     const createDataset = () => {
       datasetActions.addDataset(newDatasetName.value)
     }
+    const setSelectedDataset = (datasetIndex: string) => {
+      datasetActions.selectDatasetById(datasetIndex)
+    }
     return {
       t,
       restrict,
@@ -146,9 +149,10 @@ export default defineComponent({
       newDatasetName,
       datasets,
       headers,
-      selectedDataset,
+      selectedDataset: datasetGetters.selectedDataset,
       //Methods
       createDataset,
+      setSelectedDataset,
     }
   },
 })

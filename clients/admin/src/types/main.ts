@@ -504,19 +504,21 @@ export class Dataset {
       this.created = new Date(data.created)
       this.formId = data.formId
       this.status = {
-        lastUpdated: new Date(data.status.lastUpdated),
-        lockedBy: data.status.lockedBy,
+        lastUpdated: data.status?.lastUpdated
+          ? new Date(data.status.lastUpdated)
+          : new Date(),
+        lockedBy: data.status?.lockedBy ? data.status.lockedBy : '',
       }
       this.consent = {
-        kind: (data.consent.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
+        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
       }
       this.users = {
-        owner: data.users.owner,
+        owner: data.users?.owner,
       }
-      this.selection = data.selection
+      this.selection = data?.selection ? data.selection : {}
       this.selectionPriority = data.selectionPriority
       this.storages =
-        data.storages.map((s: DatasetStorage) => {
+        data?.storages?.map((s: DatasetStorage) => {
           return {
             name: s.name || '',
             groupId: s.groupId || '',

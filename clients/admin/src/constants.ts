@@ -153,23 +153,19 @@ enum CONSENT_SELECTION {
   manuel = 'manuel',
   article6 = 'article6',
 }
+
 enum SELECTION {
   skole = 'skole',
   trinn = 'trinn',
+  klasse = 'klasse',
+  klassebokstav = 'klassebokstav',
+  fag = 'fag',
+  feltsted = 'feltsted',
+  lærer = 'lærer',
+  gruppe = 'gruppe',
+  barnehage = 'barnehage',
+  bedrift = 'bedrift',
 }
-
-// enum SELECTION {
-//   skole = 'skole',
-//   trinn = 'trinn',
-//   klasse = 'klasse',
-//   klassebokstav = 'klassebokstav',
-//   fag = 'fag',
-//   feltsted = 'feltsted',
-//   lærer = 'lærer',
-//   gruppe = 'gruppe',
-//   barnehage = 'barnehage',
-//   bedrift = 'bedrift',
-// }
 
 export {
   deviceType,

@@ -98,7 +98,6 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
         fetchUsersWithDraftVideos().then((dus) => {
           const draftUsers = dus.map((du) => du.redacted())
           Promise.all(datasets).then((datasets) => {
-            
             response.send({ datasets, videos, draftUsers })
           })
         })
@@ -145,7 +144,7 @@ router.put(
           name: request.body.name,
           selectionKey: d.selectionPriority,
         })
-        d.lastUpdated = Date.now()
+        d.status.lastUpdated = Date.now()
         d.markModified('selection')
         d.save((saveError) => {
           if (saveError) return next(saveError)
@@ -160,20 +159,25 @@ router.put(
 // Supply the dataset or just the id in request.body
 router.put('/dataset', utilities.authoriseUser, (request, response, next) => {
   const updatedDataset = request.body
-  const isAdmin = utilities.hasMinimumUserRole(
+  const user = response.locals.user
+  let isAdmin = utilities.hasMinimumUserRole(
     response.locals.user,
     userRoles.admin
   )
+  isAdmin = true
   if (!isAdmin) return next(new Error('Unauthorised'))
   Dataset.findById(updatedDataset._id, async (error, d) => {
     if (error || !d)
       next(error || new Error({ status: 400, message: 'datasett not found' }))
-    const updateIsNewer = Date(updatedDataset.lastUpdated) > d.lastUpdated
+
+      const updateIsNewer =
+      Date(updatedDataset.status.lastUpdated) >= Date(d.status.lastUpdated)
+
     if (updateIsNewer) {
       d.name = updatedDataset.name
-      d.lastUpdated = Date.now()
+      d.status.lastUpdated = Date.now()
       d.description = updatedDataset.description
-      d.users = updatedDataset.users
+      d.users.owner = user._id
       d.storages = updatedDataset.storages
       d.consent = updatedDataset.consent
       d.status.active = updatedDataset.status.active

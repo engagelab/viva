@@ -7,6 +7,7 @@
 import { ref, Ref, computed, ComputedRef } from 'vue'
 import {
   Dataset,
+  DatasetSelection,
   Video,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
@@ -16,11 +17,11 @@ import { useAppStore } from './useAppStore'
 const { actions: appActions } = useAppStore()
 //State
 interface DatasetState {
-  selectedDataset: Dataset | undefined
+  selectedDataset: Dataset
   datasets: Map<string, Dataset>
 }
 const state: Ref<DatasetState> = ref({
-  selectedDataset: undefined,
+  selectedDataset: new Dataset(),
   datasets: new Map(),
 })
 
@@ -68,7 +69,10 @@ interface Actions {
   // fetchConsents: (video: Video) => void
   fetchDatasets: () => Promise<void>
   addDataset: (datasetName: string) => Promise<void>
-  updateDataset: (dataset: Dataset) => Promise<void>
+  updateDataset: () => Promise<void>
+  addSelectionPriority: (selectionPriority: string) => void
+  selectDatasetById: (datasetId: string) => void
+  addSelection: (selectionPriority: string, subset: DatasetSelection) => void
 }
 
 const actions = {
@@ -108,13 +112,13 @@ const actions = {
         appActions.errorMessage(error)
       })
   },
-
-  updateDataset: async function (dataset: Dataset): Promise<void> {
+  // Save selected dataset
+  updateDataset: async function (): Promise<void> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.PUT,
       credentials: true,
       route: '/api/dataset',
-      body: dataset,
+      body: state.value.selectedDataset,
     }
     return apiRequest<Dataset>(payload)
       .then((dataset) => {
@@ -124,7 +128,30 @@ const actions = {
         appActions.errorMessage(error)
       })
   },
+  addSelectionPriority: function (selectionPriority: string): void {
+    state.value.selectedDataset?.selectionPriority.push(selectionPriority)
+  },
+  selectDatasetById(datasetId: string): void {
+    if (state.value.datasets.get(datasetId))
+      state.value.selectedDataset = state.value.datasets.get(
+        datasetId
+      ) as Dataset
+  },
 
+  addSelection(selectionPriority: string, subset: DatasetSelection): void {
+    if (state.value.selectedDataset) {
+      const selection = state.value.selectedDataset.selection
+        ? state.value.selectedDataset.selection
+        : {}
+
+      selection[selectionPriority] == undefined
+        ? (selection[selectionPriority] = [subset])
+        : selection[selectionPriority].push(subset)
+
+      state.value.selectedDataset.selection = { ...selection }
+      console.log(state.value.selectedDataset)
+    }
+  },
   // datasetById(id: string): ComputedRef<Dataset | undefined> {
   //   return computed(() =>
   //     state.value.datasets.find((d: Dataset) => id === d._id)
