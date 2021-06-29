@@ -3,6 +3,7 @@ const fs = require('fs')
 const Dataset = require('../models/Dataset')
 const moment = require('moment');
 const { videoStorageTypes } = require('../constants');
+const { getPath, checkLHMount, createLHFolder, copyFile } = require('../subprocesses/fileOperations');
 
 // Initialize
 const endpoint = {
@@ -51,7 +52,7 @@ const uploadS3File = async ({ path, keyname }) => {
 };
 
 // (REFACTORED) but use not recommended
-const formPath = (path, datasett, video) => {
+/* const formPath = (path, datasett, video) => {
   return new Promise((resolve, reject) => {
     let folder = '';
     path.forEach(p => {
@@ -76,7 +77,7 @@ const formPath = (path, datasett, video) => {
     if (!folder) return reject('Path not found')
     resolve(folder)
   });
-}
+} */
 
 // RECOMMENDED (synchronous)
 // delimiter is the separator between path segments
@@ -130,8 +131,29 @@ const fetchStorage = (video) => {
   })
 }
 
+// Using user(owner) ID as a containing folder
+function sendToEducloud({ video, subDirSrc }) {
+  const path = getPath(video, subDirSrc)
+  const keyname = `${video.users.owner.toString()}/${video.file.name}.${video.file.extension}`
+  return uploadS3File({ path, keyname }).then((result) => {
+    video.storages.push({ path: result.Key, kind: videoStorageTypes.lagringshotell })
+  }).catch((err) => {
+    console.error(new Error(`Video upload to S3 failed\n Video ID: ${video.details.id} at path: ${path}\n Detail: ${err.toString()}`))
+  })
+}
+
+// Create a copy of the uploaded video to the lagringshotell
+function sendToLagringshotell({ video, store, subDirSrc }) {
+  return checkLHMount().then(() => {
+    return createLHFolder(store.path).then(() => {
+      return copyFile(video, subDirSrc, store.path, store.fileName)
+        .then(newVideoPath => video.storages.push({ path: newVideoPath, kind: videoStorageTypes.lagringshotell }))
+    })
+  })
+}
+
 /* Fetch Storage location from Dataset for selected video */
-const fetchStorageOLD = async video => {
+/* const fetchStorageOLD = async video => {
   try {
     let datasett = await Dataset.findById(video.dataset.id)
     let promises =  datasett.storages.map(storage => {
@@ -180,14 +202,14 @@ const fetchStoreOLD = (data) => {
       resolve(store)
     })
    })
-}
+} */
 
 
 module.exports = {
   uploadS3File,
   downloadS3File,
   fetchStorage,
-  fetchStorageOLD,
-  formPath,
+  sendToEducloud,
+  sendToLagringshotell,
   generatePath
 }

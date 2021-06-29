@@ -52,8 +52,8 @@ router.get('/google_transfer', utilities.authoriseUser, (request, response, next
         scope: scopes,
         // Define values that should be passed through to the callback as a query string
         state: JSON.stringify({
-          videoReference: request.query.videoReference,
-          settingId: request.query.settingId,
+          videoId: request.query.videoId,
+          datasetId: request.query.datasetId,
           mode: request.query.mode,
           userId: request.session.ref,
           csrf_token,
@@ -87,13 +87,13 @@ router.get('/authenticated_google_transfer', (request, response) => {
   const code = request.query.code || ''; // Google's code to exchange for a token
   const hd = request.query.hd || ''; // The domain of our Google Cloud Portal
   const state = JSON.parse(request.query.state); // State variables passed from the initial call
-  const fileId = state.videoReference || '';
-  const settingId = state.settingId || '';
+  const videoId = state.videoId || '';
+  const datasetId = state.datasetId || '';
   const mode = state.mode || '';
   const csrf_token = state.csrf_token || '';
   const userId = state.userId;
 
-  const status = videoStatusTypes.edited;
+  const status = videoStatusTypes.stored;
   const mobileApp =
     typeof state.device === 'string' && state.device == 'mobileApp';
 
@@ -102,11 +102,11 @@ router.get('/authenticated_google_transfer', (request, response) => {
     if (mobileApp) {
       const bundleId = process.env.APP_BUNDLE_ID;
       return response.redirect(
-        `${bundleId}://oauth_callback?mode=transfer&videoReference=${fileId}&settingId=${settingId}&error=${error}`
+        `${bundleId}://oauth_callback?mode=transfer&videoReference=${videoId}&settingId=${datasetId}&error=${error}`
       );
     } else {
       return response.redirect(
-        `${utilities.baseUrl}/#/transferred?videoReference=${fileId}&settingId=${settingId}&error=${error}`
+        `${utilities.baseUrl}/#/transferred?videoReference=${videoId}&settingId=${datasetId}&error=${error}`
       );
     }
   };
@@ -141,18 +141,18 @@ router.get('/authenticated_google_transfer', (request, response) => {
       token_type: 'Bearer',
     };
     oauth2Client.getToken(code, (error2, tokens) => {
-      if (error2) return console.error(`${new Date().toUTCString()} Error retrieving access token ${error2} foro userid: ${user.id} username: ${user.username} videoFileId: ${fileId}`);
+      if (error2) return console.error(`${new Date().toUTCString()} Error retrieving access token ${error2} foro userid: ${user.id} username: ${user.profile.username} videoFileId: ${videoId}`);
       oauth2Client.setCredentials(tokens);
       // Check that the supplied settingID is indeed configured to transfer to this location
-      Dataset.findById(settingId, (error3, setting) => {
+      Dataset.findById(datasetId, (error3, dataset) => {
         if (error3) {
           return console.error(error3);
-        } else if (setting) {
+        } else if (dataset) {
           // const store = setting.storages.find(s => s.name == videoStorageTypes.google)
           // Now retrieve the video that matches this request
           // Only retrieve a video matching the reference, user and complete status
           Video.findOne(
-            { userId, settingId, fileId, status },
+            { 'users.owner': userId, 'dataset.id': datasetId, 'details.id': videoId, 'status.main': status },
             (error4, video) => {
               if (error4) {
                 return console.error(error4);
@@ -162,23 +162,23 @@ router.get('/authenticated_google_transfer', (request, response) => {
                 console.log(
                   `${new Date().toUTCString()} Attained a token and initiated video transfer for userid: ${
                     user.id
-                  } username: ${user.username} Video filename: ${
-                    video.filename
+                  } username: ${user.profile.username} Video filename: ${
+                    video.file.name
                   }`
                 );
                 googleOperations
-                  .createVideoAtGoogle(video, setting, oauth2Client)
+                  .createVideoAtGoogle(video, dataset, oauth2Client)
                   .then(() => {
-                    if (!user.stats.totalTransfers) user.stats.totalTransfers = 0
-                    user.stats.totalTransfers += 1
+                    if (!user.status.totalTransfers) user.status.totalTransfers = 0
+                    user.status.totalTransfers += 1
                     user.save()
                     completedTransfer()
                   })
                   .catch(error5 => {
                     console.log(error5);
                     video.status.inPipeline = false;
-                    video.status = 'error';
-                    video.errorDebug = error5.toString();
+                    video.status.main = 'error';
+                    video.status.error.errorDebug = error5.toString();
                     video.save();
                     completedTransfer(error5.message);
                   });
