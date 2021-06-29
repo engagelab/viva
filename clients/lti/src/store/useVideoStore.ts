@@ -16,7 +16,12 @@ enum PROJECT_NAME {
 }
 
 import { ref, Ref, computed, ComputedRef } from 'vue'
-import { Video, APIRequestPayload, XHR_REQUEST_TYPE } from '../types/main'
+import {
+  Video,
+  VideoData,
+  APIRequestPayload,
+  XHR_REQUEST_TYPE,
+} from '../types/main'
 import { apiRequest } from '../api/apiRequest'
 //State
 interface State {
@@ -34,13 +39,13 @@ const state: Ref<State> = ref({
 
 //----------------- Server side functions----------------//
 
-async function fetchVideoMetadata(): Promise<Video[]> {
+async function fetchVideoMetadata(): Promise<VideoData[]> {
   const payload: APIRequestPayload = {
     method: XHR_REQUEST_TYPE.GET,
     credentials: true,
     route: '/api/videos',
   }
-  return apiRequest<Video[]>(payload)
+  return apiRequest<VideoData[]>(payload)
 }
 
 //Getters
