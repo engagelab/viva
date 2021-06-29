@@ -92,9 +92,9 @@ const createFFMPEG = (video, subDirSrc, subDirDest) => {
       'panic',
       '-y', // Overwrite existing file
       '-i', // Input file
-      `${dirPath}/videos/${subDirSrc}/${video.filename}`,
+      `${dirPath}/videos/${subDirSrc}/${video.file.name}`,
       '-i', // 2nd Input file (watermark)
-      `${dirPath}/videos/${subDirSrc}/${video.filename}_qrcode.png`,
+      `${dirPath}/videos/${subDirSrc}/${video.file.name}_qrcode.png`,
       '-filter_complex',
       videoArgs + audioArgs + overlayArgs, // watermarking process
       '-map',
@@ -103,11 +103,11 @@ const createFFMPEG = (video, subDirSrc, subDirDest) => {
       audioOutput, // map the audio output
       '-strict', // required to enable experimental features
       '-2', // required to enable experimental features
-      `${dirPath}/videos/${subDirDest}/${video.filename}.mp4` // Output file as MP4
+      `${dirPath}/videos/${subDirDest}/${video.file.name}.mp4` // Output file as MP4
     ]
 
     QRCode.toFile(
-      `${dirPath}/videos/${subDirSrc}/${video.details.id}_qrcode.png`,
+      `${dirPath}/videos/${subDirSrc}/${video.file.name}_qrcode.png`,
       video.details.id,
       { scale: 2, margin: 2 }
     )
@@ -141,7 +141,7 @@ const createFFMPEG = (video, subDirSrc, subDirDest) => {
             video.file.mimeType = 'video/mp4'
             video.file.extension = 'mp4'
             fileOperations // Remove the generated QR code image
-              .removeFile(`${video.details.id}_qrcode.png`, subDirSrc)
+              .removeFile(`${video.file.name}_qrcode.png`, subDirSrc)
               .then(() => {
                 console.log(`Completed FFMPEG operations on ${video.details.id}`)
                 resolve(video)

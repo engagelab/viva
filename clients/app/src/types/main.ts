@@ -141,7 +141,7 @@ interface VideoDetailsData {
   id?: string // Used instead of video._id front end, and for QR Code.
   name?: string // A human-readable string for naming this video
   category?: string // green, yellow, red
-  created?: Date
+  created?: string
   description?: string
   duration?: number // Seconds  created: { type: Date },
   edl?: EditDecriptionList
@@ -159,7 +159,7 @@ interface VideoDetails {
 }
 interface VideoStatusData {
   main?: VIDEO_STATUS_TYPES
-  errorInfo?: string
+  error?: { errorInfo?: string }
   inPipeline?: boolean // true if a pipeline is currently working on this file
   isEncrypted?: boolean // true if this video is encrypted
   isEdited?: boolean // true if this video has edits to perform
@@ -235,6 +235,18 @@ export interface VideoSpec {
   deviceStatus: DeviceStatus
 }
 
+export interface VideoData {
+  file: {
+    mimeType: string
+  }
+  details: VideoDetailsData
+  status: VideoStatusData
+  users: VideoUsersData
+  dataset: VideoDatasetData
+  consents: string[]
+  storages: VideoStorages[]
+}
+
 export class Video {
   file: {
     mimeType: string
@@ -246,7 +258,7 @@ export class Video {
   consents: string[]
   storages: VideoStorages[]
 
-  constructor(data?: Video | VideoSpec) {
+  constructor(data?: VideoData) {
     const id = uuid()
     this.details = {
       id,
@@ -297,32 +309,54 @@ export class Video {
     this.storages = []
     this.file = { mimeType: 'video/mp4' }
 
-    // Create a Video using the current App state
-    if (data && !(data instanceof Video)) {
-      this.updateDataset({
-        id: data.dataset._id || '',
-        name: data.dataset.name,
-        selection: data.selection,
-      })
-      this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
-      this.storages = data.dataset.storages.map((storage) => ({
-        kind: storage.kind,
-        path: '',
-      }))
-      this.file = {
-        mimeType:
-          data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
-      }
-    } else if (data) {
-      // Create a video based on a given Video
-      this.updateAll(data)
+    if (data) {
+      this.updateDetails(data.details)
+      this.updateStatus(data.status)
+      this.updateUsers(data.users)
+      this.updateDataset(data.dataset)
+      this.storages = data.storages
+      this.consents = data.consents
+      this.file = data.file
     }
+  }
+
+  // Create a Video using the current App state
+  updateFromVideoSpec(data: VideoSpec): Video {
+    this.updateDataset({
+      id: data.dataset._id || '',
+      name: data.dataset.name,
+      selection: data.selection,
+    })
+    this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
+    this.storages = data.dataset.storages.map((storage) => ({
+      kind: storage.kind,
+      path: '',
+    }))
+    this.file = {
+      mimeType:
+        data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
+    }
+    return this
+  }
+
+  // Upate from another Video class
+  updateFromVideo(data?: Video): Video {
+    if (data) {
+      this.details = data.details
+      this.status = data.status
+      this.users = data.users
+      this.dataset = data.dataset
+      this.consents = data.consents
+      this.storages = data.storages
+      this.file.mimeType = data.file.mimeType
+    }
+    return this
   }
 
   // Update sections by given keys only
   updateDetails(details: VideoDetailsData): void {
     if (details.category) this.details.category = details.category
-    if (details.created) this.details.created = details.created
+    if (details.created) this.details.created = new Date(details.created)
     if (details.description) this.details.description = details.description
     if (details.duration) this.details.duration = details.duration
     if (details.edl) this.details.edl = details.edl
@@ -334,13 +368,16 @@ export class Video {
   updateStatus(status: VideoStatusData): void {
     if (status.decryptionInProgress)
       this.status.decryptionInProgress = status.decryptionInProgress
-    if (status.errorInfo) this.status.error.errorInfo = status.errorInfo
+    if (status.error && status.error.errorInfo)
+      this.status.error.errorInfo = status.error.errorInfo
     if (status.encryptionInProgress)
       this.status.encryptionInProgress = status.encryptionInProgress
     if (status.hasNewDataAvailable)
       this.status.hasNewDataAvailable = status.hasNewDataAvailable
     if (status.hasUnsavedChanges)
       this.status.hasUnsavedChanges = status.hasUnsavedChanges
+    if (status.recordingExists)
+      this.status.recordingExists = status.recordingExists
     if (status.inPipeline) this.status.inPipeline = status.inPipeline
     if (status.isClassified) this.status.isClassified = status.isClassified
     if (status.isConsented) this.status.isConsented = status.isConsented
@@ -358,17 +395,6 @@ export class Video {
     if (dataset.id) this.dataset.id = dataset.id
     if (dataset.name) this.dataset.name = dataset.name
     if (dataset.selection) this.dataset.selection = dataset.selection
-  }
-
-  // Upate from another Video class
-  updateAll(data: Video): void {
-    this.details = data.details
-    this.status = data.status
-    this.users = data.users
-    this.dataset = data.dataset
-    this.consents = data.consents
-    this.storages = data.storages
-    this.file.mimeType = data.file.mimeType
   }
 
   // Convert this class to string representation
@@ -497,7 +523,7 @@ export class Dataset {
         lockedBy: data.status.lockedBy,
       }
       this.consent = {
-        kind: (data.consent.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
+        kind: data.consent.kind || CONSENT_TYPES.manuel,
       }
       this.users = {
         owner: data.users.owner,

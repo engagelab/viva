@@ -11,9 +11,8 @@ const editDecriptionList = {
 }
 
 const videoSchema = new mongoose.Schema({
-  file: {
-    // For Back-End use only
-    extension: { type: String, default: '' }, // File extension to use e.g. mp4  Assigned by FFMPEG, back end only.
+  file: { // For Back-End use only
+    extension: { type: String }, // File extension to use e.g. mp4  Assigned by FFMPEG, back end only.
     name: { type: String }, // The name of the file stored server-side by TUS
     mimeType: { type: String }, // mime type e.g. video/mp4  Assigned by recorder at front end.
   },

@@ -76,6 +76,7 @@ export default defineComponent({
       },
     }
     const { t } = useI18n({ messages, useScope: 'global' })
+
     return {
       t,
       isLoggedIn: appGetters.isLoggedIn,

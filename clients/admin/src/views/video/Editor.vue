@@ -162,16 +162,14 @@ import {
   watch,
 } from 'vue'
 import router from '@/router'
-import { CONSENT_TYPES, VIDEO_STATUS_TYPES } from '@/constants'
+import { VIDEO_STATUS_TYPES } from '@/constants'
 import { Video } from '@/types/main'
 import { useAppStore } from '@/store/useAppStore'
-import { useDatasetStore } from '@/store/useDatasetStore'
 import { useVideoStore } from '@/store/useVideoStore'
 import { useDeviceService } from '@/store/useDevice'
 const { actions: deviceActions } = useDeviceService()
 const { actions: appActions, getters: appGetters } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
-const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
 
 import Slider from '@/components/base/Slider.vue'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
@@ -197,7 +195,6 @@ export default defineComponent({
     const pages = [main, consent, edit, metadata, upload]
     const pageNumber = parseInt(props.page)
     const selectedVideo = videoGetters.selectedVideo
-    const selectedDataset = datasetGetters.selectedDataset
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
     const video = ref(new Video())
     const fullScreenMode = ref(false)
@@ -228,12 +225,12 @@ export default defineComponent({
       if (!selectedVideo.value) {
         return router.push('/videos/list')
       }
-      if (
+      /*       if (
         selectedDataset.value &&
         selectedDataset.value.consent.kind === CONSENT_TYPES.samtykke
       ) {
         datasetActions.fetchConsents(selectedVideo.value)
-      }
+      } */
       setupVideo(selectedVideo.value)
       videoActions.setRecordingNow(false)
       reloadVideo = true
@@ -371,7 +368,7 @@ export default defineComponent({
     function setupVideo(chosenVideo: Video): void {
       // Create a video placeholder that can be modifed by the user
       if (chosenVideo) {
-        video.value.updateAll(chosenVideo)
+        video.value.updateFromVideo(chosenVideo)
         setPlayerBounds()
       }
     }

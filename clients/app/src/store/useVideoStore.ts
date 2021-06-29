@@ -3,6 +3,7 @@ import { ref, Ref, computed, ComputedRef } from 'vue'
 import orderBy from 'lodash/orderBy'
 import {
   Video,
+  VideoData,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
   VideoSpec,
@@ -195,10 +196,11 @@ const actions = {
 
     const up = state.value.tusUploadInstances.get(video.details.id)
     if (up) toggleUpload(up)
-    else
+    else {
       actions.generateUpload(video).then((upload) => {
         if (upload) toggleUpload(upload)
       })
+    }
   },
   // Given a video, fetch it from server (used for status update)
   // This will cause an update to the video status in store, and also return the update
@@ -277,11 +279,8 @@ const actions = {
           Authorization: `jwt ${token}`,
         },
         metadata: {
-          video: state.value.selectedVideo
-            ? state.value.selectedVideo.getFileUploadInfo()
-            : '',
+          video: video.getFileUploadInfo(),
         },
-        resume: false, //! state.useCordova, // TUS resume ability requires indexedDB
         // onChunkComplete,
         onProgress,
         onSuccess,
@@ -320,7 +319,7 @@ const actions = {
 
   // Create a new draft metadata
   createMetadata: (d: VideoSpec): Promise<void> => {
-    const newVideo = new Video({
+    const newVideo = new Video().updateFromVideoSpec({
       dataset: d.dataset,
       user: d.user,
       selection: d.selection,
@@ -347,7 +346,7 @@ const actions = {
     else if (state.value.videos.has(video.details.id))
       videoToUpdate = state.value.videos.get(video.details.id)
     if (videoToUpdate) {
-      videoToUpdate.updateAll(video)
+      videoToUpdate.updateFromVideo(video)
       return actions.saveMetadata()
     } else return Promise.resolve()
   },
@@ -367,11 +366,12 @@ const actions = {
       data: draftArray,
       asText: true,
       asJSON: true,
+      create: true,
       path: state.value.cordovaPath,
     })
     return deviceActions.saveToStorage(cd)
   },
-  // Load metadata from a file on local disk
+  // Load draft metadata from a file on local disk
   // Draft video metadata is stored in a single JSON file
   loadMetadata: (): Promise<void> => {
     const cd: CordovaData = new CordovaData({
@@ -381,9 +381,9 @@ const actions = {
       asJSON: true,
       path: state.value.cordovaPath,
     })
-    return deviceActions.loadFromStorage<Video[]>(cd).then((videoList) => {
+    return deviceActions.loadFromStorage<VideoData[]>(cd).then((videoList) => {
+      state.value.draftVideos.clear()
       if (videoList && videoList.length) {
-        videoList = videoList as Video[]
         videoList.forEach((video) => {
           const v = new Video(video)
           // If video has expired, remove it
@@ -396,17 +396,16 @@ const actions = {
       }
     })
   },
-  // Fetch metadata from server
+  // Fetch non-draft metadata from server
   fetchMetadata: (): Promise<void> => {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/api/videos',
       credentials: true,
     }
-    return apiRequest<Video[]>(payload)
-      .then((videos: Video[]) => {
+    return apiRequest<VideoData[]>(payload)
+      .then((videos: VideoData[]) => {
         state.value.videos.clear()
-        state.value.draftVideos.clear()
         videos.forEach((v) => actions.addMetadata(new Video(v)))
       })
       .catch((error) => {
