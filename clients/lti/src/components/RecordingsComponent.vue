@@ -24,7 +24,7 @@ const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
 export default defineComponent({
   name: 'Recording list',
-  setup(props, context) {
+  setup() {
     const videoList = computed(() => videoGetters.videos.value)
 
     onMounted(() => {
@@ -33,14 +33,12 @@ export default defineComponent({
 
     const selectVideo = (video: Video) => {
       videoActions.selectVideo(video)
-      context.emit('videoChosen')
     }
 
     return {
       videoList,
       // method
       selectVideo,
-      props,
     }
   },
 })
