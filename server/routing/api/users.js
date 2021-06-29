@@ -3,7 +3,8 @@
 */
 
 const router = require('express').Router()
-const { authoriseUser } = require('../../utilities')
+const { authoriseUser, hasMinimumUserRole } = require('../../utilities')
+const { userRoles } = require('../../constants')
 const dataporten = require('../../services/dataporten')
 const canvas = require('../../services/canvas')
 const User = require('../../models/User')
@@ -56,6 +57,28 @@ if (process.env.NODE_ENV === 'development') {
 // Get the current User model
 router.get('/user', authoriseUser, async (request, response) => {
   response.send(response.locals.user.redacted())
+})
+
+// Get all users
+router.get('/users', authoriseUser, async (request, response, next) => {
+  const u = response.locals.user
+  const isAdmin = hasMinimumUserRole(u, userRoles.admin)
+  if (isAdmin) {
+    User.find({}, (error, users) => {
+      if (error) next(error)
+      else {
+        const usersRedacted = users.map((u) => {
+          return {
+            name: u.profile.username,
+            videos: u.videos.draftIDs,
+          }
+        })
+        response.send(usersRedacted)
+      }
+    })
+  } else {
+    next(new Error('User is not an admin'))
+  }
 })
 
 router.get('/groups', authoriseUser, async (request, response, next) => {

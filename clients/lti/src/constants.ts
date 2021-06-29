@@ -39,6 +39,11 @@ enum USER_ROLE {
   monitor = 'monitor',
   admin = 'admin',
 }
+
+export enum PROJECT_NAME {
+  viva = 'viva',
+}
+
 // Ensure enums match those defined in env file
 const t = Object.values(USER_ROLE)
 if (

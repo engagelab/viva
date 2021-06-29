@@ -6,6 +6,7 @@ import {
   LocalUser,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
+  User,
 } from '../types/main'
 
 import { appVersion } from '../constants'
@@ -20,6 +21,9 @@ export interface AppState {
   validToken: boolean
   errorMessage: string
   loading: boolean
+  isLoggedIn: boolean
+  selectedUser: User
+  isAuthorised: boolean
   fade: boolean
   lastLogin: Date
   currentLocalUser: LocalUser | undefined
@@ -31,6 +35,9 @@ const _appState: Ref<AppState> = ref({
   validToken: false,
   errorMessage: '',
   loading: false,
+  isLoggedIn: false,
+  selectedUser: new User(),
+  isAuthorised: false,
   fade: false,
   lastLogin: new Date(),
   currentLocalUser: undefined,
@@ -50,6 +57,7 @@ interface Getters {
   disableDelays: ComputedRef<boolean>
   currentLocalUser: ComputedRef<LocalUser | undefined>
   persistedLocalUsers: ComputedRef<Record<string, LocalUser>>
+  user: ComputedRef<User>
 }
 const getters = {
   get status(): ComputedRef<AppStatus> {
@@ -77,6 +85,9 @@ const getters = {
   get persistedLocalUsers(): ComputedRef<Record<string, LocalUser>> {
     return computed(() => _persistedAppState.value.localUsers)
   },
+  get user(): ComputedRef<User> {
+    return computed(() => _appState.value.selectedUser)
+  },
 }
 // ------------  Actions --------------
 interface Actions {
@@ -88,8 +99,36 @@ interface Actions {
   logout: (rememberMe: boolean) => void
   tokenLogin: () => Promise<boolean>
   detectOldApp: () => Promise<void>
+  redirectedLogin: () => Promise<void>
 }
 const actions = {
+  // Called after successful login to retieve user and mark as 'logged in'
+  redirectedLogin(): Promise<void> {
+    console.log('Hello')
+    const completeLogin = () => {
+      const payload: APIRequestPayload = {
+        method: XHR_REQUEST_TYPE.GET,
+        route: '/api/user',
+        credentials: true,
+      }
+      return apiRequest<User>(payload)
+        .then((response: User) => {
+          if (response) {
+            const user: User = new User(response)
+            _appState.value.isLoggedIn = true
+            _appState.value.isAuthorised = true
+            _appState.value.selectedUser = user
+          } else {
+            console.log('User not found')
+          }
+        })
+        .catch((error: Error) => {
+          console.log(error)
+        })
+    }
+    return completeLogin()
+  },
+
   // FOR TESTING ONLY. Remove app delays
   setDisableDelays(s: boolean) {
     _appState.value.disableDelays = s

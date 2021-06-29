@@ -10,19 +10,18 @@
  6. Action function to retrive access to sharing
  7. Route call to mongoDB to update video metadata
  */
-import { PROJECT_NAME } from '@/constants'
+
+enum PROJECT_NAME {
+  viva = 'viva',
+}
+
 import { ref, Ref, computed, ComputedRef } from 'vue'
-import {
-  VideoData,
-  Video,
-  APIRequestPayload,
-  XHR_REQUEST_TYPE,
-} from '@/types/main'
+import { Video, APIRequestPayload, XHR_REQUEST_TYPE } from '../types/main'
 import { apiRequest } from '../api/apiRequest'
 //State
 interface State {
   selectedVideo: Video | undefined
-  videos: Map<string, Video>
+  videos: Video[]
 }
 
 const state: Ref<State> = ref({
@@ -30,18 +29,18 @@ const state: Ref<State> = ref({
     name: PROJECT_NAME.viva,
   },
   selectedVideo: undefined,
-  videos: new Map(),
+  videos: [],
 })
 
 //----------------- Server side functions----------------//
 
-async function fetchVideoMetadata(): Promise<VideoData> {
+async function fetchVideoMetadata(): Promise<Video[]> {
   const payload: APIRequestPayload = {
     method: XHR_REQUEST_TYPE.GET,
     credentials: true,
     route: '/api/videos',
   }
-  return apiRequest<VideoData>(payload)
+  return apiRequest<Video[]>(payload)
 }
 
 //Getters
@@ -61,14 +60,35 @@ const getters = {
 //Actions
 interface Actions {
   getVideoMetadata: () => Promise<void>
+  selectVideo: (video: Video) => Promise<void>
 }
 
 const actions = {
+  // fetch a specific video with draft id
+  fetchVideo: async function (videoId: string): Promise<Video> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.GET,
+      credentials: true,
+      query: {
+        videoref: videoId,
+      },
+      route: '/api/video',
+    }
+    return apiRequest<Video>(payload)
+  },
+
   //Fetch videometadata from mongoDB
   getVideoMetadata: async function (): Promise<void> {
     const response = await fetchVideoMetadata()
-    const video = new Video(response)
-    console.log(video)
+    const videos = response.map((v) => new Video(v))
+    state.value.videos = videos
+    return Promise.resolve()
+  },
+
+  selectVideo: async function (video: Video): Promise<void> {
+    /*  const response = await this.fetchVideo(videoId) */
+    /* const video = new Video(response) */
+    state.value.selectedVideo = video
     return Promise.resolve()
   },
 }

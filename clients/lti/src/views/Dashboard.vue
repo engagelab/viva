@@ -1,10 +1,18 @@
 <template>
   <div class="relative w-screen h-screen overflow-hidden">
-    <div
+    <!-- <div
       class="relative flex md:flex-row flex-col h-full justify-center bg-blue-button"
     >
       Welcome to the Dashboard. Your username is: {{ user }}
       <SlButton class="m-4" @click="monitor()">Monitor</SlButton>
+    </div> -->
+    <div class="flex flex-wrap w-full border-2 h-full">
+      <div class="w-1/2">
+        <RecordingsComponent />
+      </div>
+      <div class="w-1/2">
+        <VideoComponent />
+      </div>
     </div>
   </div>
 </template>
@@ -13,18 +21,26 @@
 
 <script lang="ts">
 // @ is an alias to /src
-import { defineComponent, ref, Ref } from 'vue'
+import { computed, defineComponent } from 'vue'
 import router from '../router'
 
-import { User } from '../types/main'
-import SlButton from '@/components/base/SlButton.vue'
+import { useAppStore } from '@/store/useAppStore'
+
+/* import SlButton from '@/components/base/SlButton.vue' */
+
+import RecordingsComponent from '@/components/RecordingsComponent'
+import VideoComponent from '@/components/VideoComponent'
+
 export default defineComponent({
   name: 'Dashboard',
   components: {
-    SlButton,
+    /*  SlButton, */
+    RecordingsComponent,
+    VideoComponent,
   },
   setup() {
-    let user: Ref<User> = ref(new User())
+    const { getters: appGetters } = useAppStore()
+    const user = computed(() => appGetters.user.value)
     // userActions.getMyUser().then(() => {
     //   user.value = userGetters.myUser.value
     // })
