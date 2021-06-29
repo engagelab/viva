@@ -11,7 +11,7 @@
         <RecordingsComponent />
       </div>
       <div class="w-1/2">
-        <VideoComponent :key="video.details.id" />
+        <VideoComponent :key="video ? video.details.id : 'video component'" />
       </div>
     </div>
   </div>

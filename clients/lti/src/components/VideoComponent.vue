@@ -1,5 +1,4 @@
 <template>
-  <!--div v-if="selectedVideo && video" class="flex flex-col flex-grow min-h-0 relative"-->
   <div
     class="flex flex-col flex-grow min-h-0 w-full"
     v-if="selectedVideo"
@@ -8,11 +7,6 @@
     <div
       class="flex flex-col flex-grow min-h-o overflow-y-auto scrolling-touch w-full relative"
     >
-      <!--div
-            v-show="!selectedVideo.decryptionInProgress"
-            id="videoContainer"
-            ref="videoContainer"
-      -->
       <div class="flex-none bg-black" @click="toggleScreenMode()">
         <video
           :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
@@ -27,28 +21,14 @@
           <track kind="subtitles" />
         </video>
       </div>
-      <!--/div>
-          <div v-show="selectedVideo.decryptionInProgress">
-            <div>dekryptering..</div>
-      </div-->
+
       <div
         class="flex flex-row flex-grow-0 w-full bg-black py-1 md:py-4 justify-between"
       >
         <div class="flex flex-grow-0 justify-center items-center">
           <div class="mx-4 text-white">{{ playerTime }}</div>
         </div>
-        <!--   <div
-          class="flex flex-grow justify-center items-center"
-          v-if="page === '0'"
-        >
-          <SVGSymbol
-            v-show="!recording"
-            applyClasses="w-8 h-8 md:w-12"
-            @click="startRecording()"
-            width="50"
-            symbol="record"
-          ></SVGSymbol>
-        </div> -->
+
         <div
           class="flex flex-grow-0 justify-center content-center items-center"
           v-show="videoDataLoaded"
@@ -68,22 +48,6 @@
             symbol="stop"
           ></SVGSymbol>
         </div>
-        <!--div
-          class="text-white"
-          style="width:90px;height:50px;"
-          v-show="!playing && !videoDataLoaded"
-        ></div-->
-        <!-- <div
-          class="flex flex-grow justify-center items-center"
-          style="width: 90px"
-        >
-          <SVGSymbol
-            v-show="!recording"
-            @click="deleteDraft($event)"
-            applyClasses="w-4 md:w-8"
-            symbol="delete"
-          ></SVGSymbol>
-        </div> -->
       </div>
 
       <div
@@ -102,31 +66,19 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  ref,
-  Ref,
-  computed,
-  onMounted,
-  watch,
-  onUnmounted,
-
-  /* markRaw, */
-} from 'vue'
+import { defineComponent, ref, Ref, computed, onMounted, watch } from 'vue'
 import { Video } from '@/types/main'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: appActions } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
-/* import Slider from '@/components/base/Slider.vue' */
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import Edit from './pages/edit.vue'
 
 export default defineComponent({
   name: 'editor',
   components: {
-    /*    Slider, */
     SVGSymbol,
     Edit,
   },
@@ -137,7 +89,6 @@ export default defineComponent({
     },
   },
   setup() {
-    /* const rawPages = [markRaw(edit)] */
     const selectedVideo = videoGetters.selectedVideo
     const selectedVideoURL = videoGetters.selectedVideoURL
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
@@ -166,23 +117,11 @@ export default defineComponent({
 
     onMounted(() => {
       if (!selectedVideo.value) {
-        // No need to push
-        //wait for fetch?
         console.log('Video is undefined')
       } else {
         setupVideo(selectedVideo.value)
       }
     })
-
-    onUnmounted(() => {
-      console.log('unmounted')
-    })
-
-    /*  onUpdated(() => {
-      if (!videoDataLoaded.value) {
-        setupVideo(selectedVideo.value)
-      }
-    }) */
 
     const playerTime = computed(() => {
       const timeAsInt = parseInt(playerCurrentTime.value)
@@ -229,42 +168,6 @@ export default defineComponent({
       fullScreenMode.value = !fullScreenMode.value
     }
 
-    /* function confirmDeleteModalDone(confirmed: boolean) {
-      notifyActions.setDialog({
-        visible: false,
-        data: {},
-        doneCallback: () => ({}),
-      })
-      if (confirmed && selectedVideo.value) {
-        videoActions
-          .removeVideo(selectedVideo.value)
-          .then(() => {
-            appActions.removeDraftId(video.value.details.id)
-            return appActions.updateUserAtServer().then(() => {
-              console.log(`Removed a draft video: ${video.value.details.id}`)
-            })
-          })
-          .then(() => {
-            router.push('/videos/list')
-          })
-      }
-    } */
-
-    /*  function deleteDraft(event: Event): void {
-      event.stopPropagation()
-      notifyActions.setDialog({
-        visible: true,
-        data: {
-          titleText: 'Advarsel',
-          messageText:
-            'Vennligst bekreft at du vil slette videoen. Det kan ikke bli ugjort!',
-          cancelText: 'avbryt',
-          confirmText: 'bekreft',
-        },
-        doneCallback: confirmDeleteModalDone,
-      })
-    } */
-
     // Event handler for Edit Decision List updates
     function edlUpdated(d: { type: string; newValue: number[] }) {
       const player: HTMLVideoElement | null = playbackVideo.value
@@ -289,8 +192,6 @@ export default defineComponent({
       // reset states
       videoDataLoaded.value = false
       videoWasReplaced = false
-      /* stateToChildren.value.playerCurrentTime = '0'
-      playerCurrentTime.value = '0' */
 
       // Create a video placeholder that can be modifed by the user
       const player: HTMLVideoElement | null = playbackVideo.value
@@ -415,65 +316,17 @@ export default defineComponent({
       }
     }
 
-    /* function startRecording() {
-      if (video.value.details.duration > 0) {
-        notifyActions.setDialog({
-          visible: true,
-          data: {
-            titleText: 'Advarsel',
-            messageText:
-              'Vennligst bekreft at du vil overskrive videoen. Det kan ikke bli ugjort!',
-            cancelText: 'avbryt',
-            confirmText: 'bekreft',
-          },
-          doneCallback: confirmRecordingModalDone,
-        })
-      } else {
-        recordVideo()
-      }
-    } */
-
-    /*  function confirmRecordingModalDone(confirmed: boolean): void {
-      notifyActions.setDialog({
-        visible: false,
-        data: {},
-        doneCallback: () => ({}),
-      })
-      if (confirmed) {
-        recordVideo()
-      }
-    } */
-
-    // Begin recording
-    /*  async function recordVideo() {
-      // Make sure EDL is cleared if it is
-      video.value.details.edl = {
-        trim: [],
-        blur: [],
-      }
-      videoWasReplaced = true
-
-      // Call the device camera. Video will be stored under the name: video.details.id
-      videoActions.replaceDraftVideo(video.value.details.id).then(() => {
-
-      })
-    } */
-
     return {
       // methods
       stopPlaying,
       startPlaying,
       toggleScreenMode,
-      /*  startRecording,
-      deleteDraft, */
       // data
       selectedVideo,
-      /*  datasetName, */
       playerTime,
       videoMimeType,
       edlUpdated,
       stateToChildren,
-      /* rawPages, */
       playbackVideo,
       selectedVideoURL,
       // booleans
