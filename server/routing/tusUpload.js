@@ -47,7 +47,7 @@ tusServer.on(EVENTS.EVENT_UPLOAD_COMPLETE, (event) => {
       console.log(
         `${new Date().toUTCString()} Upload received for user: ${u.profile.username} id: ${
           u._id
-        } filename: ${videoMetadata.file.name}`
+        } filename: ${videoMetadata.file.name} file ID: ${videoMetadata.details.id}`
       )
     }
   })

@@ -1,5 +1,6 @@
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3')
 const fs = require('fs')
+const crypto = require("crypto")
 const Dataset = require('../models/Dataset')
 const moment = require('moment');
 const { videoStorageTypes } = require('../constants');
@@ -21,15 +22,16 @@ const s3 = new S3Client({ region: process.env.AWS_BUCKET_REGION, endpoint, tls: 
  * @param {string} meta.keyname - Name to be used for the file in the S3 bucket.
  * @return {promise} Promise
  */
-const uploadS3File = async ({ path, keyname }) => {
+const uploadS3File = async ({ path, keyname, sseKey, sseMD5 }) => {
   const objectParams = {
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: keyname,
     Body: fs.createReadStream(path),
     // ServerSideEncryption: 'AES256', // must be "AES256",
     SSECustomerAlgorithm: 'AES256',
-    SSECustomerKey: Buffer.from(process.env.AWS_SSE_CUSTOMER_KEY), // 256-bit, base64-encoded encryption key, Base-64 encoded
-  };
+    SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
+    SSECustomerKeyMD5: sseMD5
+  }
   return s3.send(new PutObjectCommand(objectParams));
 };
 
@@ -135,10 +137,12 @@ const fetchStorage = (video) => {
 function sendToEducloud({ video, subDirSrc }) {
   const path = getPath(video, subDirSrc)
   const keyname = `${video.users.owner.toString()}/${video.file.name}.${video.file.extension}`
-  return uploadS3File({ path, keyname }).then((result) => {
+  const sseKey = Buffer.alloc(32, crypto.randomBytes(32).toString("hex").slice(0, 32))
+  const sseMD5 = crypto.createHash('md5').update(sseKey).digest('base64');
+  video.file.encryptionKey = sseKey
+  video.file.encryptionMD5 = sseMD5
+  return uploadS3File({ path, keyname, sseKey, sseMD5 }).then((result) => {
     video.storages.push({ path: result.Key, kind: videoStorageTypes.lagringshotell })
-  }).catch((err) => {
-    console.error(new Error(`Video upload to S3 failed\n Video ID: ${video.details.id} at path: ${path}\n Detail: ${err.toString()}`))
   })
 }
 
