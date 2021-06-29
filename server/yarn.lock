@@ -594,6 +594,19 @@
     "@aws-sdk/types" "3.18.0"
     tslib "^2.0.0"
 
+"@aws-sdk/s3-request-presigner@^3.19.0":
+  version "3.19.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/s3-request-presigner/-/s3-request-presigner-3.19.0.tgz#922f79b3fbd6b02ed14ebcbf1b394a876e1b93dd"
+  integrity sha512-O79Hrgp/AAbTJGfZLjlFxW5qs3UeRxntgQC4Ip0ydoBYaUi/cgOV7pI32+usGxsZDudmSE3qacJdlTLFNpjt7w==
+  dependencies:
+    "@aws-sdk/protocol-http" "3.18.0"
+    "@aws-sdk/signature-v4" "3.18.0"
+    "@aws-sdk/smithy-client" "3.19.0"
+    "@aws-sdk/types" "3.18.0"
+    "@aws-sdk/util-create-request" "3.19.0"
+    "@aws-sdk/util-format-url" "3.18.0"
+    tslib "^2.0.0"
+
 "@aws-sdk/service-error-classification@3.18.0":
   version "3.18.0"
   resolved "https://registry.yarnpkg.com/@aws-sdk/service-error-classification/-/service-error-classification-3.18.0.tgz#5e8a9609a6fcd64f1f3f0e71b8a0bbd3bed9b21c"
@@ -621,6 +634,15 @@
   version "3.18.0"
   resolved "https://registry.yarnpkg.com/@aws-sdk/smithy-client/-/smithy-client-3.18.0.tgz#ed441f76921c0f21558a35839cc1e8af91668647"
   integrity sha512-fIcfzrf2TnhB4W8UyqdPQ9fPAfIfuLQ0dO/Y9qwzsw0Bvj4qYYPcUaNI2raX7WN1G2KHa9wZdiceR0J+uQO7yg==
+  dependencies:
+    "@aws-sdk/middleware-stack" "3.18.0"
+    "@aws-sdk/types" "3.18.0"
+    tslib "^2.0.0"
+
+"@aws-sdk/smithy-client@3.19.0":
+  version "3.19.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/smithy-client/-/smithy-client-3.19.0.tgz#88602e88b5f38e0166432640bec5c970bd06f080"
+  integrity sha512-vd1hIs2IxIuEdaiinx6gICVSlkFMe7peGgmlMQtY4CT29cI5DT1Uip8i6PnlSJHS+/qPQUetIsnc5Nc9eFDGmQ==
   dependencies:
     "@aws-sdk/middleware-stack" "3.18.0"
     "@aws-sdk/types" "3.18.0"
@@ -682,6 +704,25 @@
   integrity sha512-4Pp4owEfjNdmqH9cByJnN0GbfM2II3I4FnRN5d9BysJ6mG+rLhc6WYxBgr4sEFtsJGYCgFzLU5MfUMx9OuDdPA==
   dependencies:
     "@aws-sdk/is-array-buffer" "3.18.0"
+    tslib "^2.0.0"
+
+"@aws-sdk/util-create-request@3.19.0":
+  version "3.19.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/util-create-request/-/util-create-request-3.19.0.tgz#85af3692bdfa97429debb671c94e52dde219b2d0"
+  integrity sha512-3iSftujjte6+ap/F7zUkzloECaNm6j6g9Qypd9gqWoqeMKF/T6Y8JGwNuADooXtIROCnIaFiekjiwA9VNUShVw==
+  dependencies:
+    "@aws-sdk/middleware-stack" "3.18.0"
+    "@aws-sdk/smithy-client" "3.19.0"
+    "@aws-sdk/types" "3.18.0"
+    tslib "^2.0.0"
+
+"@aws-sdk/util-format-url@3.18.0":
+  version "3.18.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/util-format-url/-/util-format-url-3.18.0.tgz#5c5397131db442528ced498e153a4c8016f598dd"
+  integrity sha512-I9O9f/afdOy2tjNDUrrG6Q7e1VBY3l8xXZiQBk5poSlVPlAN2tWVia3qeYFsKvrBKW6HacYEuYkR7AdGUKgY0w==
+  dependencies:
+    "@aws-sdk/querystring-builder" "3.18.0"
+    "@aws-sdk/types" "3.18.0"
     tslib "^2.0.0"
 
 "@aws-sdk/util-hex-encoding@3.18.0":
@@ -2536,10 +2577,10 @@ mongoose-legacy-pluralize@1.0.2:
   resolved "https://registry.yarnpkg.com/mongoose-legacy-pluralize/-/mongoose-legacy-pluralize-1.0.2.tgz#3ba9f91fa507b5186d399fb40854bff18fb563e4"
   integrity sha512-Yo/7qQU4/EyIS8YDFSeenIvXxZN+ld7YdV9LqFVQJzTLye8unujAWPZ4NWKfFA+RNjh+wvTWKY9Z3E5XM6ZZiQ==
 
-mongoose@^5.12.3:
-  version "5.12.13"
-  resolved "https://registry.yarnpkg.com/mongoose/-/mongoose-5.12.13.tgz#6707fb2f6284536bb6367c94ccc3ce85475a387d"
-  integrity sha512-QGn1FCzZ8Z+mMGVg8oR2kQw4NmhLloCHsw1NqKWg3Yr7WfPzkE4pe7s9P6o5pkYGsku17n9mqMHowne7EFK/zQ==
+mongoose@^5.12.13:
+  version "5.13.0"
+  resolved "https://registry.yarnpkg.com/mongoose/-/mongoose-5.13.0.tgz#3d5241991261681a913696d5b7c88f76b31aedb0"
+  integrity sha512-8dvu7vxmDzlupj4I9T0g33GPf4HzSZmIOKQfG9RJQ5Nxk/Ztx1b8zlYp+blvaCfWwtBpiAJuKYOBU17Wq1RVFQ==
   dependencies:
     "@types/mongodb" "^3.5.27"
     bson "^1.1.4"

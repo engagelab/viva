@@ -65,9 +65,9 @@ const getters = {
 //Actions
 interface Actions {
   getVideoMetadata: () => Promise<void>
-  selectVideo: (video: Video) => Promise<void>
+  selectVideo: (video: Video) => Promise<string>
   updateMetadata: (video: Video) => Promise<void>
-  fetchVideoData: (path: string) => Promise<void>
+  fetchVideoData: (videoId: string) => Promise<string>
 }
 
 const actions = {
@@ -84,8 +84,8 @@ const actions = {
     return apiRequest<Video>(payload)
   },
 
-  fetchVideoData: async function (): Promise<void> {
-    /*  const payload: APIRequestPayload = {
+  fetchVideoData: async function (videoId: string): Promise<string> {
+    const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       credentials: true,
       query: {
@@ -93,9 +93,7 @@ const actions = {
       },
       route: '/api/video',
     }
-    return apiRequest<Video>(payload) */
-
-    return Promise.resolve()
+    return apiRequest<string>(payload)
   },
 
   //Fetch videometadata from mongoDB
@@ -108,11 +106,11 @@ const actions = {
     return Promise.resolve()
   },
 
-  selectVideo: async function (video: Video): Promise<void> {
-    /*  const response = await this.fetchVideo(videoId) */
-    /* const video = new Video(response) */
+  selectVideo: async function (video: Video): Promise<string> {
+    const response = await this.fetchVideoData(video.details.id)
+    console.log(response)
     state.value.selectedVideo = video
-    return Promise.resolve()
+    return Promise.resolve('')
   },
 
   // Update the video in store with the given video (by fileId) and save to local disk

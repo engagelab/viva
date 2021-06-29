@@ -4,6 +4,7 @@
 
 const router = require('express').Router()
 const utilities = require('../../utilities')
+const { downloadS3File, getSignedUrlS3File } = require('../../services/storage')
 const { userRoles } = require('../../constants')
 const videoStatusTypes = require('../../constants').videoStatusTypes
 const Video = require('../../models/Video')
@@ -46,6 +47,18 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
     } else if (!v) {
       return response.status(200).end()
     } else {
+      downloadS3File({ keyname: v.details.id })
+        .then((res) => {
+          console.log(res)
+        })
+        .catch((error) => {
+          console.log(error)
+        })
+      getSignedUrlS3File({ keyname: v.details.id, timer: 60 })
+        .then((res) => {
+          console.log(res)
+        })
+        .catch((error) => console.log(error))
       response.send(v.redacted()).status(200).end()
     }
   })
@@ -65,7 +78,6 @@ router.post('/video', utilities.authoriseUser, async (request, response) => {
       v.updateOne(update, {}, () => response.status(200).end())
     }
   })
-
 })
 
 module.exports = router
