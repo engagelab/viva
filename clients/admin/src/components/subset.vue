@@ -1,30 +1,11 @@
 <template>
   <div>
-    <p>{{ Object.keys(selection)[0] }} :</p>
+    <p>{{ nodes.title }}</p>
 
-    <div
-      v-for="(item, index) in selection[Object.keys(selection)[0]]"
-      :key="index"
-    >
-      {{ item.title }}sd
-      {{ item.selection }}
+    re {{ nodes }}{{ nodeKey }}
+    <div v-if="nodes && nodeKey">
+      <Subset v-for="node in nodes" :nodes="node" :key="node"> </Subset>
     </div>
-
-    <Subset
-      v-for="subset in selection[Object.keys(selection)[0]]"
-      :selection="subset"
-      :key="subset"
-    >
-    </Subset>
-    <!-- <div class="tree-menu">
-      <div>{{ Object.keys(selection)[0] }}</div>
-      <tree-menu
-        v-for="node in Object.keys(selection)[0].selection"
-        :nodes="node.nodes"
-        :label="node.titlel"
-      >
-      </tree-menu>
-    </div> -->
   </div>
 </template>
 
@@ -36,7 +17,9 @@ export default defineComponent({
   name: 'Subset',
   components: {},
   props: {
-    selection: { type: Object as PropType<DatasetSelection>, required: true },
+    label: String,
+    nodeKey: String,
+    nodes: { type: Object as PropType<DatasetSelection>, required: true },
   },
 
   setup() {

@@ -4,8 +4,17 @@
       Recursive display:
 
       <Set
-        :label="theDataset.selectionPriority[0]"
-        :nodes="theDataset.selection[theDataset.selectionPriority[0]]"
+        :nodes="theDataset.selection"
+        :selectedPriority="
+          theDataset.selectionPriority.find(
+            (i) => i == Object.keys(theDataset.selection)[0]
+          )
+        "
+        :label="
+          theDataset.selectionPriority.find(
+            (i) => i == Object.keys(theDataset.selection)[0]
+          )
+        "
       ></Set>
     </div>
 
