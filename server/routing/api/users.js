@@ -77,7 +77,9 @@ router.get('/users', authoriseUser, async (request, response, next) => {
       }
     })
   } else {
-    next(new Error('User is not an admin'))
+    let users = []
+    if (request.session.namesAndRoles) users = request.session.namesAndRoles
+    response.send(users)
   }
 })
 

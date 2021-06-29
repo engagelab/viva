@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken')
 const jwksClient = require('jwks-rsa')
 const { createOrUpdateUser, completeCallback } = require('./helpers')
 
+const { httpRequest } = require('../../utilities')
 const openidClient = require('../../services/openid')
 const { userDetails } = require('../../services/canvas')
 
@@ -107,21 +108,50 @@ router.post('/canvas/callback', function (request, response) {
   // Save the details to the User's profile including id_token
   // LTI must be configured with the "variable substitute" in 'Custom Fields' with:  `user_id=$Canvas.user.id`
   const requestUserInformation = (LTItokenSet, verified_decoded_id_token) => {
-    const custom_vars = verified_decoded_id_token['https://purl.imsglobal.org/spec/lti/claim/custom']
+    // Configure data from 'variable substitutes'
+    const custom_vars =
+      verified_decoded_id_token[
+        'https://purl.imsglobal.org/spec/lti/claim/custom'
+      ]
     const profile = {
       provider: 'canvas',
       provider_id: custom_vars.user_id,
-      login_id: custom_vars.login_id,    // <-- THIS is intended to match Dataporten user ID and Canvas API token user ID
+      login_id: custom_vars.login_id, // <-- THIS is intended to match Dataporten user ID and Canvas API token user ID
       email: custom_vars.user_email || '',
       fullName: custom_vars.person_name || '',
       organization: organization || '',
       client,
     }
 
-    createOrUpdateUser({ id_token: idToken }, profile)
-      .then((user) => {
+    // Configure data from Names and Roles service
+    const parsedUrl = new URL(
+      verified_decoded_id_token[
+        'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice'
+      ].context_memberships_url
+    )
+    const options = {
+      hostname: parsedUrl.host,
+      path: parsedUrl.pathname,
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${LTItokenSet.access_token}`,
+      },
+    }
+    httpRequest(options).then((namesAndRoles) => {
+      if (namesAndRoles) {
+        request.session.namesAndRoles = namesAndRoles.members.map((m) => {
+          return {
+            name: m.name || 'unknown',
+            ltiUserID: m.user_id || 'unknown',
+            email: m.email || 'unknown',
+            roles: m.roles,
+          }
+        })
+      }
+      createOrUpdateUser({ id_token: idToken }, profile).then((user) => {
         return completeCallback(request, response, user)
       })
+    })
   }
 
   // Verify the token using a JWK specified by 'kid' in the decoded token's header
@@ -198,18 +228,22 @@ router.get('/canvas/callback', function (request, response, next) {
       code,
     }
     CanvasAPIClient.grant(body).then((tokenSet) => {
-      userDetails(tokenSet.access_token, tokenSet.user.id).then((data) => {
-        const profile = {
-          provider: 'canvas',
-          provider_id: data.id,
-          login_id: data.login_id,    // <-- THIS is intended to match Dataporten user ID and Canvas API token user ID
-          email: data.primary_email || '',
-          fullName: data.name || '',
-          organization: organization,
-          client,
-        }
-        createOrUpdateUser(tokenSet,profile).then((user) => completeCallback(request, response, user))
-      }).catch((error) => next(error))
+      userDetails(tokenSet.access_token, tokenSet.user.id)
+        .then((data) => {
+          const profile = {
+            provider: 'canvas',
+            provider_id: data.id,
+            login_id: data.login_id, // <-- THIS is intended to match Dataporten user ID and Canvas API token user ID
+            email: data.primary_email || '',
+            fullName: data.name || '',
+            organization: organization,
+            client,
+          }
+          createOrUpdateUser(tokenSet, profile).then((user) =>
+            completeCallback(request, response, user)
+          )
+        })
+        .catch((error) => next(error))
     })
   }
 })

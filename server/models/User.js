@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema({
       _id: false,
       id: { type: String },
       name: { type: String },
-      isAdmin: { type: Boolean, default: false }
+      isAdmin: { type: Boolean, default: false },
      }], // Groups that this user is a member of ('courses' for Canvas)
   },
   tokens: {
