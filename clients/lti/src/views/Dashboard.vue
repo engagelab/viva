@@ -8,10 +8,10 @@
     </div> -->
     <div class="flex flex-wrap w-full border-2 h-full">
       <div class="w-1/2">
-        <RecordingsComponent />
+        <RecordingsComponent @videoChosen="videoChosen" />
       </div>
       <div class="w-1/2">
-        <VideoComponent />
+        <VideoComponent v-if="showVideo" :key="video.details.id" />
       </div>
     </div>
   </div>
@@ -19,11 +19,11 @@
 
 <script lang="ts">
 // @ is an alias to /src
-import { defineComponent } from 'vue'
-import router from '../router'
+import { defineComponent, ref } from 'vue'
+/* import router from '../router' */
 
 import { useAppStore } from '@/store/useAppStore'
-
+import { useVideoStore } from '@/store/useVideoStore'
 /* import SlButton from '@/components/base/SlButton.vue' */
 
 import RecordingsComponent from '@/components/RecordingsComponent'
@@ -38,14 +38,28 @@ export default defineComponent({
   },
   setup() {
     const { getters: appGetters } = useAppStore()
+    const { getters: videoGetters } = useVideoStore()
     const user = appGetters.user.value
     // userActions.getMyUser().then(() => {
     //   user.value = userGetters.myUser.value
     // })
+    const showVideo = ref(false)
+    const video = videoGetters.selectedVideo
+    // Add a slight delay to force rerender
+    const videoChosen = () => {
+      showVideo.value = false
+      console.log(video.value.details.id)
+
+      setTimeout(() => {
+        showVideo.value = true
+      }, 10)
+    }
 
     return {
-      monitor: () => router.push('/monitor'),
       user,
+      videoChosen,
+      showVideo,
+      video,
     }
   },
 })

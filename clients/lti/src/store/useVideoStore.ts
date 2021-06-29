@@ -26,6 +26,7 @@ import { apiRequest } from '../api/apiRequest'
 //State
 interface State {
   selectedVideo: Video | undefined
+  selectedVideoURL: string
   videos: Map<string, Video>
 }
 
@@ -35,6 +36,7 @@ const state: Ref<State> = ref({
   },
   selectedVideo: undefined,
   videos: new Map<string, Video>(),
+  selectedVideoURL: '',
 })
 
 //----------------- Server side functions----------------//
@@ -60,14 +62,17 @@ const getters = {
   get selectedVideo(): ComputedRef<State['selectedVideo']> {
     return computed(() => state.value.selectedVideo)
   },
+  get selectedVideoURL(): ComputedRef<State['selectedVideoURL']> {
+    return computed(() => state.value.selectedVideoURL)
+  },
 }
 
 //Actions
 interface Actions {
   getVideoMetadata: () => Promise<void>
-  selectVideo: (video: Video) => Promise<string>
+  selectVideo: (video: Video) => Promise<void>
   updateMetadata: (video: Video) => Promise<void>
-  fetchVideoData: (videoId: string) => Promise<string>
+  fetchVideoData: (videoId: string) => Promise<{ url: string }>
 }
 
 const actions = {
@@ -84,16 +89,16 @@ const actions = {
     return apiRequest<Video>(payload)
   },
 
-  fetchVideoData: async function (videoId: string): Promise<string> {
+  fetchVideoData: async function (videoId: string): Promise<{ url: string }> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       credentials: true,
       query: {
         videoref: videoId,
       },
-      route: '/api/video',
+      route: '/api/videoURL',
     }
-    return apiRequest<string>(payload)
+    return apiRequest<{ url: string }>(payload)
   },
 
   //Fetch videometadata from mongoDB
@@ -106,11 +111,11 @@ const actions = {
     return Promise.resolve()
   },
 
-  selectVideo: async function (video: Video): Promise<string> {
-    const response = await this.fetchVideoData(video.details.id)
-    console.log(response)
+  selectVideo: async function (video: Video): Promise<void> {
+    const response = await actions.fetchVideoData(video.details.id)
     state.value.selectedVideo = video
-    return Promise.resolve('')
+    state.value.selectedVideoURL = response.url
+    return Promise.resolve()
   },
 
   // Update the video in store with the given video (by fileId) and save to local disk

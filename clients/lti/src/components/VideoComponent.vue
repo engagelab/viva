@@ -1,6 +1,10 @@
 <template>
   <!--div v-if="selectedVideo && video" class="flex flex-col flex-grow min-h-0 relative"-->
-  <div class="flex flex-col flex-grow min-h-0 w-full" v-if="selectedVideo">
+  <div
+    class="flex flex-col flex-grow min-h-0 w-full"
+    v-if="selectedVideo"
+    :key="selectedVideo.id"
+  >
     <div
       class="flex flex-col flex-grow min-h-o overflow-y-auto scrolling-touch w-full relative"
     >
@@ -82,32 +86,17 @@
         </div> -->
       </div>
 
-      <!-- Estimated storage remaining -->
-      <!--div v-if="deviceStatus.browser != 'Safari'">
-          <span>
-            estimert lagring tilgjengelig:
-            {{ estimatedStorageRemaining }}%
-          </span>
-      </div-->
-
       <div
         class="absolute p-4 top-0 z-10 text-white w-full flex flex-row justify-between"
       >
         <div>
-          <!--   <p class="text-sm">{{ datasetName }}</p> -->
           <p v-if="selectedVideo" class="font-vagBold">
             {{ selectedVideo.details.name }}
           </p>
         </div>
       </div>
 
-      <Slider
-        class="flex flex-col flex-grow min-h-0"
-        :pages="rawPages"
-        :movePageTo="page"
-        :stateToChildren="stateToChildren"
-        @edl-updated="edlUpdated"
-      />
+      <Edit :stateFromParent="stateToChildren" @edl-updated="edlUpdated" />
     </div>
   </div>
 </template>
@@ -120,7 +109,9 @@ import {
   computed,
   onMounted,
   watch,
-  markRaw,
+  onUnmounted,
+
+  /* markRaw, */
 } from 'vue'
 import { Video } from '@/types/main'
 import { useAppStore } from '@/store/useAppStore'
@@ -128,15 +119,16 @@ import { useVideoStore } from '@/store/useVideoStore'
 const { actions: appActions } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
-import Slider from '@/components/base/Slider.vue'
+/* import Slider from '@/components/base/Slider.vue' */
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
-import edit from './pages/edit.vue'
+import Edit from './pages/edit.vue'
 
 export default defineComponent({
   name: 'editor',
   components: {
-    Slider,
+    /*    Slider, */
     SVGSymbol,
+    Edit,
   },
   props: {
     page: {
@@ -145,11 +137,11 @@ export default defineComponent({
     },
   },
   setup() {
-    const rawPages = [markRaw(edit)]
+    /* const rawPages = [markRaw(edit)] */
     const selectedVideo = videoGetters.selectedVideo
+    const selectedVideoURL = videoGetters.selectedVideoURL
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
     const video = ref(new Video(selectedVideo.value))
-    const videoUrl = ref('')
     const fullScreenMode = ref(true)
     const stateToChildren = ref({
       playerCurrentTime: '0',
@@ -179,31 +171,16 @@ export default defineComponent({
         console.log('Video is undefined')
       } else {
         setupVideo(selectedVideo.value)
-        videoDataLoaded.value = false
-        videoWasReplaced = false
       }
     })
 
-    /* onUpdated(() => {
-      if (reloadVideo) {
-        reloadVideo = false
-        loadPlayerWithVideo()
-      }
-    }) */
+    onUnmounted(() => {
+      console.log('unmounted')
+    })
 
-    // Computed values
-
-    /* const datasetName = computed(() => {
-      if (selectedVideo.value && selectedVideo.value.dataset.selection) {
-        const utvalg = selectedVideo.value.dataset.selection.reduce(
-          (acc, curr) => {
-            return `${acc} > ${curr.title}`
-          },
-          ''
-        )
-        return `${selectedVideo.value.dataset.name} ${utvalg}`
-      } else {
-        return ''
+    /*  onUpdated(() => {
+      if (!videoDataLoaded.value) {
+        setupVideo(selectedVideo.value)
       }
     }) */
 
@@ -236,10 +213,13 @@ export default defineComponent({
         if (newValue) loadPlayerWithVideo()
       }
     )
+
     watch(
       () => selectedVideo.value,
       (newValue) => {
-        if (newValue) setupVideo(newValue)
+        if (newValue) {
+          setupVideo(newValue)
+        }
       }
     )
 
@@ -306,6 +286,12 @@ export default defineComponent({
 
     // Called on initialisation of this view to create placeholder for edited data
     function setupVideo(chosenVideo: Video): void {
+      // reset states
+      videoDataLoaded.value = false
+      videoWasReplaced = false
+      /* stateToChildren.value.playerCurrentTime = '0'
+      playerCurrentTime.value = '0' */
+
       // Create a video placeholder that can be modifed by the user
       const player: HTMLVideoElement | null = playbackVideo.value
       video.value = new Video(chosenVideo)
@@ -422,17 +408,10 @@ export default defineComponent({
         player.addEventListener('loadeddata', dataLoaded)
         player.addEventListener('ended', stopPlaying, false)
 
-        /*  const data = videoGetters.videoData(selectedVideo.value.details.id) // Ensure chunks exist
-        if (data.value) {
-          console.log(data.val)
-          // <- MediaFile */
-        const objectURL = 'https://localhost:8000/sampleClip.mp4'
-        /* if (player.srcObject) player.srcObject = 'https://localhost:8000/sampleClip.mp4' */
-        player.setAttribute('src', objectURL + '#t=0.1')
-        //set the media bounds in the dataLoaded function..
-        player.load()
-        console.log()
-        /*  } */
+        if (selectedVideoURL.value) {
+          player.setAttribute('src', selectedVideoURL.value + '#t=0.1')
+          player.load()
+        }
       }
     }
 
@@ -494,9 +473,9 @@ export default defineComponent({
       videoMimeType,
       edlUpdated,
       stateToChildren,
-      rawPages,
+      /* rawPages, */
       playbackVideo,
-      videoUrl,
+      selectedVideoURL,
       // booleans
       videoDataLoaded,
       playing,

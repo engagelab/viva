@@ -47,19 +47,24 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
     } else if (!v) {
       return response.status(200).end()
     } else {
-      downloadS3File({ keyname: v.details.id })
-        .then((res) => {
-          console.log(res)
-        })
-        .catch((error) => {
-          console.log(error)
-        })
+      response.send(v.redacted()).status(200).end()
+    }
+  })
+})
+
+// Get a signed URL to the video
+router.get('/videoURL', utilities.authoriseUser, (request, response) => {
+  Video.findOne({ 'details.id': request.query.videoref }, (error, v) => {
+    if (error) {
+      return response.status(403).end()
+    } else if (!v) {
+      return response.status(200).end()
+    } else {
       getSignedUrlS3File({ keyname: v.details.id, timer: 60 })
         .then((res) => {
-          console.log(res)
+          response.send({ url: res }).status(200).end()
         })
-        .catch((error) => console.log(error))
-      response.send(v.redacted()).status(200).end()
+        .catch((error) => response.send(error).status(200).end())
     }
   })
 })
