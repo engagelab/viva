@@ -22,9 +22,8 @@ tusServer.on(EVENTS.EVENT_UPLOAD_COMPLETE, (event) => {
   const metadataDecoded = tusMetadata.decode(str)
   //tusMetaData decodes to string rather than array of objects
   const metadata = JSON.parse(metadataDecoded.video)
-  const uploadedVideo = Object.assign({}, metadata)
   const videoMetadata = {
-    ...uploadedVideo,
+    ...metadata,
     status: { main: videoStatusTypes.premeta },
     file: { name: event.file.id }
   }
@@ -40,15 +39,15 @@ tusServer.on(EVENTS.EVENT_UPLOAD_COMPLETE, (event) => {
         Video.create(videoMetadata, (videoCreateError) => {
           if (videoCreateError) console.log('Error creating DB entry for file upload')
           u.videos.draftIDs.splice(i, 1)
-          if (!u.stats.totalUploads) u.stats.totalUploads = 0
-          u.stats.totalUploads += 1
+          if (!u.status.totalUploads) u.status.totalUploads = 0
+          u.status.totalUploads += 1
           u.save()
         })
       }
       console.log(
         `${new Date().toUTCString()} Upload received for user: ${u.profile.username} id: ${
           u._id
-        } filename: ${videoMetadata.file.name}`
+        } filename: ${videoMetadata.file.name} file ID: ${videoMetadata.details.id}`
       )
     }
   })

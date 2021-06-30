@@ -40,9 +40,9 @@ import { useDatasetStore } from '@/store/useDatasetStore'
 import { DatasetSelection } from '@/types/main'
 // import Subset from '@/components/subset.vue'
 // import { DatasetSelection } from '@/types/main'
-// interface selection {
-//   [key: string]: DatasetSelection[]
-// }
+interface selection {
+  [key: string]: DatasetSelection[]
+}
 export default defineComponent({
   name: 'tree-menu',
   components: {
@@ -52,7 +52,7 @@ export default defineComponent({
     label: String,
     selectedPriority: String,
     selection: [],
-    nodes: { type: Object as PropType<DatasetSelection>, required: true },
+    nodes: { type: Object as PropType<selection>, required: true },
   },
   setup() {
     const { getters: datasetGetters } = useDatasetStore()

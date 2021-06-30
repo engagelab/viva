@@ -5,13 +5,22 @@
 
 require('dotenv').config({ silent: process.env.NODE_ENV !== 'development' })
 const nodeCleanup = require('node-cleanup')
-const { pipelineErrorMessages, pipelineStates, videoFolderNames, videoStatusTypes, videoStorageTypes } = require('./constants')
+const {
+  pipelineErrorMessages,
+  pipelineStates,
+  videoFolderNames,
+  videoStatusTypes,
+  videoStorageTypes,
+} = require('./constants')
 const Video = require('./models/Video')
 const db = require('./database')
 const ffmpeg = require('./subprocesses/ffmpegOperation')
 const fileOperations = require('./subprocesses/fileOperations')
-const lagringshotell = require('./subprocesses/lagringshotellOperations')
-const fetchStorage = require('./services/storage').fetchStorage
+const {
+  fetchStorage,
+  sendToLagringshotell,
+  sendToEducloud,
+} = require('./services/storage')
 
 // Initialise queues and populate with unfinished work
 const videoBacklog = {} // Multiple arrays queuing videos for each state in the pipeline
@@ -27,10 +36,10 @@ process.on('message', function (data) {
   if (data == 'exit') {
     process.exit()
   }
-});
+})
 
 const findVideosToProcess = () => {
-  pipelineStates.forEach(state => {
+  pipelineStates.forEach((state) => {
     Video.find({ 'status.main': state }, (error, foundVideos) => {
       if (error) {
         console.log(error)
@@ -54,7 +63,7 @@ const errorProcessingVideo = (error, pStatus) => {
   if (pStatus) {
     const errorMessage = pipelineErrorMessages[pStatus]
     const nextVideo = activelyProcessing[pStatus]
-    nextVideo.status.pipelineInProgress = false
+    nextVideo.status.inPipeline = false
     nextVideo.status.error.errorDebug = error
     nextVideo.status.error.errorInfo = `${errorMessage}. Please contact support. Reference: ${nextVideo.filename}`
     nextVideo.status.main = videoStatusTypes.error
@@ -64,21 +73,21 @@ const errorProcessingVideo = (error, pStatus) => {
 }
 
 // Update the state of the video metadata for the next pipeline stage
-const updateVideoStatus = (video, pStatus) => {
+const advanceVideoStatus = (video, pStatus) => {
   const stateIndex = pipelineStates.indexOf(pStatus)
   // Increment video state (refer to constants.pipelineStates) and update pipeline progress
   if (stateIndex == pipelineStates.length - 1) {
-    video.status.main = videoStatusTypes.edited // Pipeline is finished
+    video.status.main = videoStatusTypes.complete // Pipeline is finished
   } else {
     video.status.main = pipelineStates[stateIndex + 1]
   }
-  video.status.pipelineInProgress = false
+  video.status.inPipeline = false
   video.status.error.errorDebug = ''
   video.status.error.errorInfo = ''
-  video.save(error => {
+  video.save((error) => {
     if (error) {
       console.log(
-        `Error saving video after completed processing. Video fileId: ${video.fileId}`
+        `Error saving video after completed processing. Video details ID: ${video.details.id}`
       )
     }
     delete activelyProcessing[pStatus]
@@ -86,11 +95,11 @@ const updateVideoStatus = (video, pStatus) => {
 }
 
 // Decide which kind of child task to use to process the video based on its queue
-const beginProcessingVideo = pStatus => {
+const beginProcessingVideo = (pStatus) => {
   const nextVideo = activelyProcessing[pStatus]
   // Update pipeline in progress for this video
-  nextVideo.status.pipelineInProgress = true
-  nextVideo.save(error => {
+  nextVideo.status.inPipeline = true
+  nextVideo.save((error) => {
     if (error) {
       return console.log(
         `Error saving after complete processing. Video fileId: ${nextVideo.details.id}`
@@ -98,8 +107,9 @@ const beginProcessingVideo = pStatus => {
     }
 
     switch (pStatus) {
+      // The first stage after metadata and video data have been uploaded
+      // For now decryption is not active, move the video directly to the next state
       case videoStatusTypes.uploaded: {
-        // If status is 'UPLOADED', call decryption if needed, else move to the next queue
         if (nextVideo.status.isEncrypted) {
           fileOperations
             .moveFile(
@@ -107,8 +117,8 @@ const beginProcessingVideo = pStatus => {
               videoFolderNames.uploaded,
               videoFolderNames.decrypted
             )
-            .then(() => updateVideoStatus(nextVideo, pStatus))
-            .catch(err => {
+            .then(() => advanceVideoStatus(nextVideo, pStatus))
+            .catch((err) => {
               errorProcessingVideo(err, pStatus)
             })
           // ------------------
@@ -119,11 +129,12 @@ const beginProcessingVideo = pStatus => {
               videoFolderNames.uploaded,
               videoFolderNames.decrypted
             )
-            .then(() => updateVideoStatus(nextVideo, pStatus))
-            .catch(err => errorProcessingVideo(err, pStatus))
+            .then(() => advanceVideoStatus(nextVideo, pStatus))
+            .catch((err) => errorProcessingVideo(err, pStatus))
         }
         break
       }
+      // Process the trims, blurs and watermark for this video
       case videoStatusTypes.decrypted: {
         ffmpeg
           .createFFMPEG(
@@ -131,47 +142,81 @@ const beginProcessingVideo = pStatus => {
             videoFolderNames.decrypted,
             videoFolderNames.edited
           ) // Edit and watermark the video, producing a new file
-          .then(video =>
+          .then((video) =>
             fileOperations
               // Delete the 'decrypted' video file, as we now have a new 'edited' video file
               .removeFile(video.file.name, videoFolderNames.decrypted)
               .then(() => {
-                updateVideoStatus(video, pStatus)
-              }).catch(err => {
+                advanceVideoStatus(video, pStatus)
+              })
+              .catch((err) => {
                 errorProcessingVideo(err, pStatus)
               })
           )
-          .catch(err => errorProcessingVideo(err, pStatus))
+          .catch((err) => errorProcessingVideo(err, pStatus))
         break
       }
-      case videoStatusTypes.converted: {
-        // Here the video can be copied to Lagringshotell.  After copy, the video remains in the 'edited' folder for the next stage.
-        fetchStorage(nextVideo).then(stores => {
+      // Here the video can be copied to a final storage location
+      case videoStatusTypes.edited: {
+        fetchStorage(nextVideo).then((stores) => {
           const allPromises = []
-          stores.forEach(store => {
-            if (store.name == videoStorageTypes.lagringshotell) {
-              console.log(store);
-              const LHpromise = lagringshotell.createVideoAtLagringshotell(
-                {
-                  video: nextVideo,
-                  store,
-                  subDirSrc: videoFolderNames.edited
-                }
-              )
-             allPromises.push(LHpromise)
+          stores.forEach((store) => {
+            console.log(store)
+            if (store.kind == videoStorageTypes.lagringshotell) {
+              const LHpromise = sendToLagringshotell({
+                video: nextVideo,
+                store,
+                subDirSrc: videoFolderNames.edited,
+              })
+              allPromises.push(LHpromise)
+            } else if (store.kind == videoStorageTypes.educloud) {
+              const ECpromise = sendToEducloud({
+                video: nextVideo,
+                subDirSrc: videoFolderNames.edited,
+              })
+                .then(() => console.log('Video sent to Educloud'))
+                .catch((err) => errorProcessingVideo(err, pStatus))
+              allPromises.push(ECpromise)
             }
           })
-          Promise.all(allPromises).then(() =>
-            updateVideoStatus(nextVideo, pStatus)
-          ).catch(err => {
-            errorProcessingVideo(err, pStatus)
-          })
+          Promise.all(allPromises)
+            .then(() => {
+              fileOperations
+                .moveFile(
+                  nextVideo,
+                  videoFolderNames.edited,
+                  videoFolderNames.stored
+                )
+                .then(() => advanceVideoStatus(nextVideo, pStatus))
+                .catch((err) => errorProcessingVideo(err, pStatus))
+            })
+            .catch((err) => {
+              errorProcessingVideo(err, pStatus)
+            })
         })
         break
       }
-      case videoStatusTypes.edited: {
-        // The plan as at June 2019 is that the user must authorise transfer to their Google storage
-        // Therefore the pipeline stops here, it does not include a 'completed' state, that is set by the googleOperations
+      // Decide if we keep the video ready for user-authenticated transfer to a third party
+      case videoStatusTypes.stored: {
+        const storageTypesRequiringTransfer = [videoStorageTypes.google]
+        const keepVideo = nextVideo.storages
+          .map((s) => s.kind)
+          .some((kind) => storageTypesRequiringTransfer.includes(kind))
+        if (!keepVideo) {
+          fileOperations
+            .moveFile(
+              nextVideo,
+              videoFolderNames.stored,
+              videoFolderNames.complete
+            )
+            .then(() => advanceVideoStatus(nextVideo, pStatus))
+            .catch((err) => errorProcessingVideo(err, pStatus))
+        }
+        break
+      }
+      case videoStatusTypes.complete: {
+        // TODO: Delete the video file!
+        // fileOperations.removeFile(nextVideo.file.name, videoFolderNames.decrypted).then(() => {})
         break
       }
       default: {
@@ -183,9 +228,12 @@ const beginProcessingVideo = pStatus => {
 
 // Attempt to process the next video in each queue, if queue is not already busy
 const runProcessing = () => {
-  pipelineStates.forEach(pStatus => {
+  pipelineStates.forEach((pStatus) => {
     // An active queue is empty and videos are waiting for the given state
-    if (!activelyProcessing[pStatus] && Object.hasOwnProperty.call(videoBacklog, pStatus)) {
+    if (
+      !activelyProcessing[pStatus] &&
+      Object.hasOwnProperty.call(videoBacklog, pStatus)
+    ) {
       // Shift a video from the front of the queue, if one exists
       const nextVideo = videoBacklog[pStatus].shift()
       if (nextVideo) {

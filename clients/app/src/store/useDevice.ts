@@ -2,6 +2,8 @@ import { ref, Ref, computed, ComputedRef } from 'vue'
 import cordovaService from '../api/cordovaService'
 import { emitError, uuid } from '../utilities'
 import { cordovaConstants } from '../constants'
+import { useNotifyStore } from './useNotifyStore'
+const { actions: notifyActions } = useNotifyStore()
 
 export enum CordovaPathName {
   root = '.',
@@ -15,6 +17,7 @@ export interface CordovaDataType {
   asJSON?: boolean // true   Set to false to read/write a file without parsing or stringifying JSON  (read/write)
   overwrite?: boolean // false   Set to true to overwrite an existing file (open file)
   append?: boolean // false   Set to true to append data to the end of the file (write)
+  create?: boolean // true   Set to false if you don't want to create a new file if file is not found
   path?: string[] // Path to the file below the root as an array of directory names (read/write)
   fileName?: string // name of the file on disk (read/write)
   data?: unknown | Blob | string // the content to be written  (write)
@@ -25,6 +28,7 @@ export class CordovaData {
   readFile = false
   asText = false
   asJSON = true
+  create = true
   overwrite = false
   append = false
   path: string[]
@@ -35,18 +39,17 @@ export class CordovaData {
 
   constructor(data: CordovaDataType) {
     this.path = []
-    if (data) {
-      this.readFile = data.readFile ? data.readFile : false
-      this.asText = data.asText ? data.asText : false
-      this.asJSON = data.asJSON ? data.asJSON : true
-      this.overwrite = data.overwrite ? data.overwrite : false
-      this.append = data.append ? data.append : false
-      this.path = data.path ? data.path : []
-      this.fileName = data.fileName ? data.fileName : ''
-      this.data = data.data
-      this.file = data.file
-      this.fileToMove = data.fileToMove
-    }
+    this.readFile = !!data.readFile
+    this.asText = !!data.asText
+    this.asJSON = !!data.asJSON
+    this.overwrite = !!data.overwrite
+    this.append = !!data.append
+    this.create = !!data.create
+    this.path = data.path ? data.path : []
+    this.fileName = data.fileName ? data.fileName : ''
+    this.data = data.data
+    this.file = data.file
+    this.fileToMove = data.fileToMove
   }
 }
 
@@ -88,11 +91,12 @@ function moveFile(mediaFile: MediaFile, filename?: string): Promise<void> {
   // The returned file is in the temp directory
   const fileId = filename || uuid()
   const cordovaData: CordovaData = new CordovaData({
-    fileName: fileId,
+    fileName: fileId + '.mp4',
     fileToMove: mediaFile,
     path: _cordovaState.value.cordovaPath,
   })
   // This will move a file from a temp directory to our app storage
+  // We must include a '.mp4' extension for the video to play in a <video> tag
   return cordovaService
     .moveMediaFromTemp(cordovaData)
     .then((fileEntry: FileEntry | void) => {
@@ -112,6 +116,7 @@ interface Getters {
   directoryPath: ComputedRef<string[]>
   deviceOnline: ComputedRef<boolean>
   deviceReady: ComputedRef<boolean>
+  recordingNow: ComputedRef<boolean>
   video: ComputedRef<FileEntry | undefined>
   audio: ComputedRef<FileEntry | undefined>
   audioFilename: ComputedRef<string>
@@ -127,6 +132,9 @@ const getters = {
   },
   get deviceReady(): ComputedRef<boolean> {
     return computed(() => _cordovaState.value.deviceReady)
+  },
+  get recordingNow(): ComputedRef<boolean> {
+    return computed(() => _cordovaState.value.recordingNow)
   },
   get video(): ComputedRef<FileEntry | undefined> {
     return computed(() => _cordovaState.value.currentVideo)
@@ -149,6 +157,8 @@ interface Actions {
     recordingCompleted?: () => void
   ) => Promise<void>
   loadVideo: (filename: string) => Promise<void | FileEntry>
+  removeVideoFile: (videoId: string) => Promise<void>
+  loadCordovaMedia: (fileEntry: FileEntry) => Promise<void | FileEntry>
   createAudio: () => Promise<void>
   startRecordingAudio: () => Promise<void>
   stopRecordingAudio: () => Promise<void>
@@ -181,11 +191,12 @@ const actions: Actions = {
   setCordovaPath: function (path: string[]): void {
     _cordovaState.value.cordovaPath = path
   },
-  // This will look in the Participant's folder for a file and load it to the state.currentVideo.
+  // This will look for a file and load it to the state.currentVideo.
   loadVideo: function (fileName: string): Promise<FileEntry | void> {
     const cd: CordovaData = new CordovaData({
       fileName,
       readFile: false,
+      create: false,
       path: _cordovaState.value.cordovaPath,
     })
     return this.loadFromStorage<FileEntry>(cd).then(
@@ -196,8 +207,39 @@ const actions: Actions = {
           _cordovaState.value.currentVideo = fileEntry
           _cordovaState.value.recordingNow = false
         }
+        return Promise.resolve(fileEntry)
       }
     )
+  },
+  // Remove a video data from disk
+  removeVideoFile: (videoId: string): Promise<void> => {
+    const cd: CordovaData = new CordovaData({
+      fileName: videoId + '.mp4',
+      path: _cordovaState.value.cordovaPath,
+    })
+    return cordovaService
+      .removeFromStorage(cd)
+      .catch(() =>
+        notifyActions.errorMessage('Error removing local video file')
+      )
+  },
+  // iOS WKWebkit can only load video from the <app_id>/tmp folder!
+  loadCordovaMedia: (fileEntry: FileEntry): Promise<void | FileEntry> => {
+    // 'device' comes from cordova-plugin-device
+    const device: Device = window.device
+    if (device.platform === 'iOS') {
+      return cordovaService
+        .clearTempFolder()
+        .then(() => {
+          const cd: CordovaData = new CordovaData({
+            file: fileEntry,
+          })
+          return cordovaService.copyFileToTemp(cd)
+        })
+        .catch((error) => notifyActions.errorMessage(error))
+    } else {
+      return Promise.resolve(fileEntry)
+    }
   },
   // Begin a video recording session - this will call the OS Camera module and resolve when that module returns with a finished video
   // Then the video is moved from the temp folder to a more suitable location

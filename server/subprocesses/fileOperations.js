@@ -1,5 +1,11 @@
 const { exec } = require('child_process');
 const dirPath = process.cwd();
+const lagringshotellPath = process.env.LAGRINGSHOTELL
+
+// Get the complete file system path for the given video
+const getPath = (video, subDir) => {
+  return `${dirPath}/videos/${subDir}/${video.file.name}.${video.file.extension}`
+}
 
 // Create a file on the server in given video subfolder
 const createFile = (filename, subDir) => {
@@ -30,7 +36,7 @@ const removeFile = (filename, subDir) => {
 // Move a file from one folder to another
 // source and destination folders are set by videoFolderNames
 const moveFile = (video, subDirSrc, subDirDest) => {
-  const fileExtension = video.file.type ? '.' + video.file.type : '';
+  const fileExtension = video.file.extension ? '.' + video.file.extension : '';
   return new Promise((resolve, reject) => {
     exec(
       `cd ${dirPath}/videos/${subDirSrc} && mv ${
@@ -55,7 +61,7 @@ const copyFile = (video, subDirSrc, subDirDest, fileName) => {
   let videoFilename = video.file.name.replace(regex, "")
   let destinationFilename = fileName.replace(regex,"")
   console.log(videoFilename)
-  const fileExtension = video.file.type ? '.' + video.file.type : '';
+  const fileExtension = video.file.extension ? '.' + video.file.extension : '';
   const newVideoPath = `${subDirDest}/${destinationFilename}${fileExtension}`;
   console.log(`cp  ${dirPath}/videos/${subDirSrc}/${
     videoFilename
@@ -87,7 +93,7 @@ const copyFile = (video, subDirSrc, subDirDest, fileName) => {
  * @returns {String} name - a newly created filename based on the parameters above
  */
 const createName = (video, schoolname, addUsername, username) => {
-  const fileExtension = video.fileType ? '.' + video.fileType : '';
+  const fileExtension = video.file.extension ? '.' + video.file.extension : '';
   const datetime = new Date()
     .toLocaleString()
     // eslint-disable-next-line no-useless-escape
@@ -96,10 +102,51 @@ const createName = (video, schoolname, addUsername, username) => {
   return `${datetime[0]}-${datetime[1]}${(addUsername ? username : '')}${fileExtension}`
 };
 
+/* Create a folder on Lagringshotell if it does not exist */
+/* Need to create path based on Dataset.storagePath */
+const createLHFolder = folderPath => {
+  return new Promise((resolve, reject) => {
+    const removedPath = folderPath.replace(lagringshotellPath, '')
+    const folder = removedPath;
+    const completed = (error) => {
+      if (error) return reject(error)
+      console.log(`Created folder ${folder} in ${lagringshotellPath} successfully`)
+      resolve()
+    }
+    if (lagringshotellPath) exec(`cd ${lagringshotellPath} && mkdir -p ${folder}`, completed)
+    else exec(`cd ${__dirname}/videos/edited && mkdir -p ${folder}`, completed)
+  })
+}
+
+// Check that a LagringsHotell mount exists
+const checkLHMount = () => {
+  return new Promise((resolve, reject) => {
+    // check  if mount is available with a timeout
+    if (lagringshotellPath) {
+      exec(`ls ${lagringshotellPath}`);
+      setTimeout(() => {
+        exec(`ls ${lagringshotellPath}`, error => {
+          if (error) {
+            return reject("Path is not available , unmounted")
+          }
+          resolve()
+        })
+      }
+        , 5000);
+    } else {
+      reject();
+    }
+
+  })
+}
+
 module.exports = {
+  getPath,
   createFile,
   removeFile,
   moveFile,
   copyFile,
   createName,
+  createLHFolder,
+  checkLHMount,
 };

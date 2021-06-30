@@ -4,6 +4,7 @@ const dirPath = process.cwd()
 const Dataset = require('./models/Dataset')
 const Video = require('./models/Video')
 const { videoStorageTypes, consentTypes } = require('./constants')
+/* const { uploadS3File } = require('./services/storage') */
 const videoFolderNames = require('./constants').videoFolderNames
 
 Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
@@ -11,7 +12,7 @@ Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
   if (err) {
     return console.log(err)
   } else if (!dataSett) {
-    ;(dataSett = {
+    dataSett = {
       name: 'test',
       description: 'test description',
       created: new Date(),
@@ -44,8 +45,8 @@ Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
           category: [],
         },
       ],
-    }),
-      Dataset.create(dataSett)
+    }
+    Dataset.create(dataSett)
     console.log('Created a test Setting')
   }
 })
@@ -85,6 +86,11 @@ Video.findOne({ 'file.name': 'VideoTest' }, (error, v) => {
     console.log('Created a video Setting')
   }
 })
+
+/* uploadS3File({
+  path: './videos/uploaded/ForBiggerBlazes.mp4',
+  keyname: 'blazinghot',
+}).then((res) => console.log(res)) */
 /*const createReference = data =>
   require('crypto')
     .createHash('sha1')

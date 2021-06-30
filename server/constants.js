@@ -2,9 +2,10 @@ const videoStatusTypes = {
   premeta: 'premeta', // Pre-stage when awaiting linking of file upload to complete uploaded metadata in DB
   uploaded: 'uploaded', // First pipeline state after file was uploaded
   decrypted: 'decrypted', // (Currently unused)
-  converted: 'converted', // Video was converted by FFMPEG, ready to be sent to storage(s)
-  edited: 'edited', // Video was saved to Lagringshotell. Video is ready to be transferred to another location.
-  complete: 'complete', // Video has now been uploaded, decrypted, trimmed/watermarked, saved and transferred to another location. This is the LAST pipeline stage
+  edited: 'edited', // Video was converted by FFMPEG, ready to be sent to storage(s)
+  stored: 'stored', // If Google storage exists, video is ready to be transferred there. If not, video changes to 'complete'
+  complete: 'complete', // Video has now been uploaded, decrypted, trimmed/watermarked, saved and transferred to another location.
+                        //This state means there is no more work to do, so the video should finally be removed here
   error: 'error' // Something went wrong. Videos in this state will not move further in the pipeline until attended to
 }
 
@@ -13,6 +14,7 @@ const videoFolderNames = {
   uploaded: 'uploaded',
   decrypted: 'decrypted',
   edited: 'edited',
+  stored: 'stored',
   complete: 'complete',
   error: 'error'
 }
@@ -41,7 +43,7 @@ userRolesAsArray.forEach(ur => {
 //   -- on success, video is copied to specified storages and remains stored in 'edited' folder
 // ** The final transfer to Google Drive is initiated by the user, not the pipeline **
 //   -- on success, video is moved to 'complete' folder
-const pipelineStates = ['uploaded', 'decrypted', 'converted'] // Subset of videoStatusTypes
+const pipelineStates = ['uploaded', 'decrypted', 'edited', 'stored'] // Subset of videoStatusTypes
 
 const pipelineErrorMessages = {
   'uploaded': 'Error decrypting video',
@@ -76,6 +78,29 @@ const adminUsers = [
   'Jan ElevVGS Olsen',
   'olesm'
 ]
+
+const platforms = {
+  canvas: 'canvas',
+  dataporten: 'dataporten',
+}
+const organizations = {
+  uio: {
+    name: 'uio',
+    platform: platforms.canvas,
+  },
+  usn: {
+    name: 'usn',
+    platform: platforms.canvas,
+  },
+  ntnu: {
+    name: 'ntnu',
+    platform: platforms.canvas,
+  },
+  other: {
+    name: 'other',
+    platform: platforms.dataporten,
+  }
+}
 
 const pilotDataset = []
 
@@ -130,5 +155,7 @@ module.exports = {
   pilotDataset,
   pilotUsers,
   consentTypes,
-  userRoles
+  userRoles,
+  platforms,
+  organizations
 }

@@ -4,6 +4,7 @@
 
 const router = require('express').Router()
 const utilities = require('../../utilities')
+const { getSignedUrlS3File } = require('../../services/storage')
 const { userRoles } = require('../../constants')
 const videoStatusTypes = require('../../constants').videoStatusTypes
 const Video = require('../../models/Video')
@@ -23,7 +24,7 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
   if (isAdmin) {
     query = {}
   } else {
-    query = { userId: response.locals.user._id }
+    query = { 'users.owner': response.locals.user._id }
   }
 
   Video.find(query, (error, videos) => {
@@ -51,15 +52,37 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
   })
 })
 
+// Get a signed URL to the video
+router.get('/videoURL', utilities.authoriseUser, (request, response) => {
+  Video.findOne({ 'details.id': request.query.videoref }, (error, v) => {
+    if (error) {
+      return response.status(403).end()
+    } else if (!v) {
+      return response.status(200).end()
+    } else {
+      getSignedUrlS3File({ keyname: v.details.id, timer: 60 })
+        .then((res) => {
+          response.send({ url: res }).status(200).end()
+        })
+        .catch((error) => response.send(error).status(200).end())
+    }
+  })
+})
+
 // Upload a single video metadata to be combined with an uploaded video file
 router.post('/video', utilities.authoriseUser, async (request, response) => {
-  const query = { 'details.id': request.body.videoref }
-  const update = { ...request.body }
-  update.status = videoStatusTypes.uploaded
-  // https://mongoosejs.com/docs/api.html#model_Model.update
-  const res = await Video.updateOne(query, update) // Mongoose update() returns updateWriteOpResult with 'ok'
-  if (!res || res.ok !== 1) return response.status(403).end()
-  else response.status(200).end()
+  const query = { 'details.id': request.body.details.id }
+  Video.findOne(query, (error, v) => {
+    if (error || !v) {
+      return response.status(400).end()
+    } else {
+      const update = { ...request.body }
+      update.status.main = videoStatusTypes.uploaded
+      update.file.name = v.file.name
+      update.file.extension = v.file.extension
+      v.updateOne(update, {}, () => response.status(200).end())
+    }
+  })
 })
 
 module.exports = router

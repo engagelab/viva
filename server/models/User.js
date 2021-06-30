@@ -18,20 +18,21 @@ const userSchema = new mongoose.Schema({
     totalDrafts: { type: Number, default: 0 },
     totalUploads: { type: Number, default: 0 },
     totalTransfers: { type: Number, default: 0 },
-    ethicsCompleted: { type: Boolean, default: false }
+    prerequisiteCompleted: { type: Boolean, default: false }
   },
   profile: {
     username: { type: String, default: '' },
     password: { type: String },
     fullName: { type: String, default: '' },
-    oauthId: { type: String },
+    provider_id: { type: String },
     email: { type: String },
     reference: { type: String }, // This should be sent to the client rather than _id
+    organization: { type: String },
     groups: [{
       _id: false,
       id: { type: String },
       name: { type: String },
-      isAdmin: { type: Boolean, default: false }
+      isAdmin: { type: Boolean, default: false },
      }], // Groups that this user is a member of ('courses' for Canvas)
   },
   tokens: {
@@ -42,8 +43,8 @@ const userSchema = new mongoose.Schema({
     encryptionKey: { type: String },
   },
   datasetConfig: {
-    id: { type: String },
-    utvalg: { type: Array },
+    id: { type: String }, // Currently selected dataset
+    currentSelection: { type: Array }, // Currently selected 'utvalg'
     locks: { type: mongoose.Mixed, default: {} } // { [datasetID]: { date: Date.now(), keyName: String }
   },
   videos: {
@@ -58,6 +59,7 @@ userSchema.methods.redacted = function () {
   const redacted = this.toObject()
   delete redacted.tokens
   delete redacted.profile.oauthId
+  delete redacted.profile.organization
   delete redacted.profile.password
   return redacted
 }

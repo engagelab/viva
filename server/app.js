@@ -46,11 +46,13 @@ if (process.env.NODE_ENV === 'development') {
       'https://auth.dataporten.no'
     ]
     let referer = req.headers.referer || req.headers.Referer
-    if (referer.charAt(referer.length - 1) === '/') referer = referer.slice(0, -1)
-    const i = allowedOrigins.indexOf(referer)
-    if (i > -1) {
-      origin = referer
-      res.header('Access-Control-Allow-Origin', origin)
+    if (referer) {
+      if (referer.charAt(referer.length - 1) === '/') referer = referer.slice(0, -1)
+      const i = allowedOrigins.indexOf(referer)
+      if (i > -1) {
+        origin = referer
+        res.header('Access-Control-Allow-Origin', origin)
+      }
     }
     // add details of what is allowed in HTTP request headers to the response headers
     res.header(

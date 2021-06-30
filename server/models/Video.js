@@ -7,14 +7,16 @@ const videoStatusTypes = require('../constants').videoStatusTypes
 
 const editDecriptionList = {
   trim: { type: Array, default: [] },
-  blur: { type: Array, default: [] }
+  blur: { type: Array, default: [] },
 }
 
 const videoSchema = new mongoose.Schema({
   file: { // For Back-End use only
-    type: { type: String, default: '' }, // File extension to use e.g. mp4  Assigned by FFMPEG, back end only.
+    extension: { type: String }, // File extension to use e.g. mp4  Assigned by FFMPEG, back end only.
     name: { type: String }, // The name of the file stored server-side by TUS
     mimeType: { type: String }, // mime type e.g. video/mp4  Assigned by recorder at front end.
+    encryptionKey: { type: String },
+    encryptionMD5: { type: String }
   },
   details: {
     id: { type: String }, // Used instead of video._id front end, and for QR Code.
@@ -46,14 +48,15 @@ const videoSchema = new mongoose.Schema({
   users: {
     owner: { type: mongoose.Schema.ObjectId, ref: 'User' },
     sharedWith: [{ type: mongoose.Schema.ObjectId, ref: 'User' }], // Users who can see this video. Used for easier searching
-    sharing: [ // Each entry is a share for a particular set of users, and particular EDL of this video
+    sharing: [
+      // Each entry is a share for a particular set of users, and particular EDL of this video
       {
         users: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
         access: { type: Boolean, default: false },
         description: { type: String },
         edl: editDecriptionList,
-      }
-    ]
+      },
+    ],
   },
   dataset: {
     id: { type: mongoose.Schema.ObjectId, ref: 'Dataset' },
@@ -61,10 +64,12 @@ const videoSchema = new mongoose.Schema({
     selection: { type: Array }, // 'utvalg' setting
   },
   consents: { type: Array }, // These are the consents confirmed by the teacher in this recording
-  storages: [{
-    type: { type: String }, // 'lagringshotell', 'educloud', etc..
-    path: { type: Array },
-  }],
+  storages: [
+    {
+      kind: { type: String }, // 'lagringshotell', 'educloud', etc..
+      path: { type: String },
+    },
+  ],
 })
 
 // Choose what attributes will be returned with the video object
@@ -73,15 +78,16 @@ const videoSchema = new mongoose.Schema({
 videoSchema.methods.redacted = function () {
   const v = {
     file: {
-      mimeType: this.file.mimeType
+      mimeType: this.file.mimeType,
     },
     details: this.details,
     status: this.status,
     users: this.users,
     dataset: this.dataset,
     consents: this.consents,
-    storages: this.storages.map((s) => s.type)
+    storages: this.storages.map((s) => s),
   }
+
   delete v.status.error.errorDebug
   return v
 }

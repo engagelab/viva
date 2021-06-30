@@ -27,7 +27,7 @@
             selectedVideo.status.isClassified
           )
         "
-        @click="startUpload()"
+        @vclick="startUpload()"
         >{{ t('send') }}</Button
       >
       <Button
@@ -40,7 +40,7 @@
             selectedVideo.status.isClassified
           )
         "
-        @click="stopUpload()"
+        @vclick="stopUpload()"
         >{{ t('cancel') }}</Button
       >
     </div>
@@ -66,16 +66,14 @@ export default defineComponent({
       nb_NO: {
         opptakSendes:
           'Opptaket kan nå sendes fra din enhet til behandling i UiOs VIVA tjeneste',
-        opptakSendt:
-          "Opptaket blir nå behandlet. Når dette er ferdig, kan du sende opptaket til din Google Drive lagringskonto. Dette gjøres under 'Mine opptak'",
+        opptakSendt: 'Opptaket blir nå behandlet..',
         send: 'Send',
         cancel: 'Avbryt',
       },
       en: {
         opptakSendes:
           'The recording may now be transferred from your device to processing by the VIVA service',
-        opptakSendt:
-          "The recording is now processed. When that is completed, you can transfer the recording to your Google Drive. Do that under 'My recordings'",
+        opptakSendt: 'The recording is now being processed..',
         send: 'Transfer',
         cancel: 'Cancel',
       },

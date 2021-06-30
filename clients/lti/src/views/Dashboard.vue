@@ -1,37 +1,52 @@
 <template>
   <div class="relative w-screen h-screen overflow-hidden">
-    <div
+    <!-- <div
       class="relative flex md:flex-row flex-col h-full justify-center bg-blue-button"
     >
       Welcome to the Dashboard. Your username is: {{ user }}
       <SlButton class="m-4" @click="monitor()">Monitor</SlButton>
+    </div> -->
+    <div class="flex flex-wrap w-full border-2 h-full">
+      <div class="w-1/2">
+        <RecordingsComponent />
+      </div>
+      <div class="w-1/2">
+        <VideoComponent :key="video ? video.details.id : 'video component'" />
+      </div>
     </div>
   </div>
 </template>
 
-<style lang="stylus" scoped></style>
-
 <script lang="ts">
 // @ is an alias to /src
-import { defineComponent, ref, Ref } from 'vue'
-import router from '../router'
+import { defineComponent } from 'vue'
+/* import router from '../router' */
 
-import { User } from '../types/main'
-import SlButton from '@/components/base/SlButton.vue'
+import { useAppStore } from '../store/useAppStore'
+import { useVideoStore } from '../store/useVideoStore'
+/* import SlButton from '@/components/base/SlButton.vue' */
+
+import RecordingsComponent from '@/components/RecordingsComponent.vue'
+import VideoComponent from '@/components/VideoComponent.vue'
+
 export default defineComponent({
   name: 'Dashboard',
   components: {
-    SlButton,
+    /*  SlButton, */
+    RecordingsComponent,
+    VideoComponent,
   },
   setup() {
-    let user: Ref<User> = ref(new User())
-    // userActions.getMyUser().then(() => {
-    //   user.value = userGetters.myUser.value
-    // })
+    const { getters: appGetters, actions: appActions } = useAppStore()
+    const { getters: videoGetters } = useVideoStore()
+    const user = appGetters.user.value
+    appActions.fetchLTIData()
+
+    const video = videoGetters.selectedVideo
 
     return {
-      monitor: () => router.push('/monitor'),
       user,
+      video,
     }
   },
 })

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken')
-const { userRoles } = require('../../constants')
+const { userRoles, organizations, platforms } = require('../../constants')
 const { createReference } = require('../../utilities')
 const User = require('../../models/User')
 const dataporten = require('../../services/dataporten')
@@ -13,18 +13,23 @@ function signJWT(data) {
   )
 }
 
-async function setUserAttributes(user, userProfile, userIdentifier, tokenSet) {
-  user.profile.oauthId = userIdentifier.sub || userIdentifier.id || ''
-  user.profile.reference = createReference(user.profile.oauthId)
-  user.profile.fullName = userProfile.name
-  user.profile.username = user.profile.fullName.replace(/[^\d\s\wæøå&@]/gi, '')
-  user.profile.email = userProfile.email || userProfile.primary_email || ''
-  if (userProfile.email) {
-    const lastIndex = userProfile.email.lastIndexOf('@')
-    user.profile.username = userProfile.email.substring(0, lastIndex)
-  }
-  const tDiff = new Date().getTime() - new Date(user.status.lastLogin).getTime()
-  if (tDiff > 1000 * 60 * 60) user.status.lastLogin = new Date()
+/*
+Sample profile = {
+            provider: 'dataporten',
+            provider_id: data.sub,
+            login_id: '',    // <-- THIS is intended to match Dataporten user ID and Canvas LTI + API token user ID
+            email: data.email || '',
+            fullName: data.name || '',
+            organization: ''
+          }
+*/
+async function setUserAttributes(user, profile, tokenSet) {
+  user.profile.username = profile.login_id
+  user.profile.provider_id = profile.provider_id
+  user.profile.reference = createReference(user.profile.provider_id)
+  user.profile.fullName = profile.fullName
+  user.profile.email = profile.email
+  user.profile.organization = profile.organization
 
   // Tokens from Issuer service
   if (tokenSet.access_token) user.tokens.access_token = tokenSet.access_token
@@ -33,52 +38,65 @@ async function setUserAttributes(user, userProfile, userIdentifier, tokenSet) {
   user.tokens.csrf_token = require('crypto').randomBytes(20).toString('hex')
   // Token for API requests to VIVA
   user.tokens.local_token = signJWT(user.id)
-  user.status.provider = userProfile.provider
-  if (userProfile.roles) {
-    user.status.role = userProfile.roles.some((role) => role.includes('Admin'))
-      ? userRoles.admin
-      : userRoles.user
-  }
+
+  // Status update
+  user.status.provider = profile.provider
+  const tDiff = new Date().getTime() - new Date(user.status.lastLogin).getTime()
+  if (tDiff > 1000 * 60 * 60) user.status.lastLogin = new Date()
 }
 
-function getCanvasEthicsCourseProgress(user) {
-  return canvas.courseProgress(user.tokens.access_token, user.profile.oauthId, process.env.CANVAS_ETHICS_COURSE_ID).then((progress) => {
-    user.status.ethicsCompleted = progress.requirement_count == progress.requirement_completed_count
+/* function getPrerequisiteCourseProgress(user) {
+  if (process.env.CANVAS_DEPENDENT_COURSE_ID === 'none') {
+    user.status.prerequisiteCompleted = true
+    return Promise.resolve()
+  }
+  return canvas.courseProgress(user.tokens.access_token, user.profile.oauthId, process.env.CANVAS_DEPENDENT_COURSE_ID).then((progress) => {
+    user.status.prerequisiteCompleted = progress.requirement_count == progress.requirement_completed_count
   })
-}
+} */
 
 function setUserGroups(user) {
-  if (user.status.provider === 'dataporten') {
-       return dataporten.groupsForUser(user.tokens.access_token).then((groups) => {
+  // The 'organization' determines what system takes care of groups
+  const platform = organizations[user.profile.organization]
+  if (platform === platforms.dataporten) {
+       return dataporten.groupsForUser(user).then((groups) => {
         user.profile.groups = groups.map((g) => ({ id: g.id, name: g.displayName }))
        })
-  } else if (user.status.provider === 'canvas') {
-      return canvas.coursesForUser(user.tokens.access_token).then((courses) => {
+  } else if (platform === platforms.canvas) {
+    return Promise.resolve()
+      /* return canvas.coursesForUser(user).then((courses) => {
         user.profile.groups = courses.map((c) => {
           let isAdmin = c.enrollments.length && c.enrollments.some((e) => e.role === process.env.CANVAS_ADMIN_ROLE)
           return { id: c.id, name: c.course_code, isAdmin }
         })
-        return getCanvasEthicsCourseProgress(user)
-      })
+        return getPrerequisiteCourseProgress(user)
+      }) */
   } else {
     return Promise.resolve()
   }
 }
 
-function createOrUpdateUser(tokenSet, userIdentifier, profile) {
-  const query = { }
-  if (userIdentifier.sub) query['profile.oauthId'] = userIdentifier.sub
-  else if (userIdentifier.email) query['profile.email'] = userIdentifier.email
-  else if (userIdentifier.id) query._id = userIdentifier.id
-  const userProfile = profile.data ? profile.data : profile
+function setUserRole(user) {
+  return canvas.usersForGroup(process.env.CANVAS_ADMIN_GROUP_ID).then((users) => {
+    if (users.some((u) => u.id === user.profile.username)) user.status.role = userRoles.admin
+    else user.status.role = userRoles.user
+  }).catch((err) => {
+    console.error(err)
+  })
+}
 
+function createOrUpdateUser(tokenSet, profile) {
   return new Promise((resolve, reject) => {
-    User.findOne(query, async (err, usr) => {
+    User.findOne({ 'profile.username': profile.login_id }, async (err, usr) => {
       let user
       if (err) return reject(`Error checking user ${err}`)
       user = usr || new User()
-      setUserAttributes(user, userProfile, userIdentifier, tokenSet)
-      if (user.tokens.access_token) await setUserGroups(user)
+      setUserAttributes(user, profile, tokenSet)
+      if (profile.client === 'mobileApp' || profile.client === 'lti') {
+        await setUserGroups(user)
+      } else if (profile.client === 'admin') {
+        await setUserRole(user)
+      }
       try {
         const savedUser = await user.save()
         resolve(savedUser)
@@ -93,7 +111,7 @@ function createOrUpdateUser(tokenSet, userIdentifier, profile) {
 function completeCallback(request, response, user) {
   let redirectUrl
   let s = ''
-  const { client, remember, device } = request.session
+  const { client, remember } = request.session
   const host = process.env.VUE_APP_SERVER_HOST
 
   if (client === 'lti') {
@@ -103,9 +121,9 @@ function completeCallback(request, response, user) {
   }
   // Mobile app will be passed a token via Apple's ASWebAuthenticationSession / Google Custom Tabs
   // which must then be passed back to the /token route obtain a Session
-  else if (client === 'mobileApp') {
-    if (device == 'mobileApp') {
-      redirectUrl = `${process.env.APP_BUNDLE_ID}://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
+  else if (client === 'mobileApp' || client === 'webApp') {
+    if (client === 'mobileApp') {
+      redirectUrl = `viva://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
       s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
     } else {
       redirectUrl = process.env.NODE_ENV === 'development' ? `${host}:8082` : `${host}/app`

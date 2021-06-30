@@ -18,12 +18,12 @@
       ></Set>
     </div>
 
-    <div
+    <!-- <div
       class="bg-blue-400 rounded-lg w-4 cursor-pointer"
       @click="setCurrentSelectionPriority(selectionItem)"
     >
       +
-    </div>
+    </div> -->
     <div v-if="theDataset.selection">
       <div v-for="(item, index) in theDataset.selection" :key="index">
         item: {{ index }}:

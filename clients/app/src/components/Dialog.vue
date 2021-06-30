@@ -19,12 +19,12 @@
       <p class="mt-4 text-center">{{ dialog.data.messageText }}</p>
       <div v-if="dialog" class="flex justify-around mt-6 mb-3">
         <Button
-          @click="dialog.doneCallback(true)"
+          @vclick="dialog.doneCallback(true)"
           :text="dialog.data.confirmText"
           :customWidth="'8rem'"
         />
         <Button
-          @click="dialog.doneCallback(false)"
+          @vclick="dialog.doneCallback(false)"
           :text="dialog.data.cancelText"
           :customWidth="'8rem'"
         />

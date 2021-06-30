@@ -71,7 +71,7 @@ const actions = {
     }
     this.setSnackbar({
       visibility: true,
-      text: errorMessage,
+      text: errorMessage.toString(),
       type: 'error',
       callback: undefined,
     })

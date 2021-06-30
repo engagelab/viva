@@ -4,39 +4,38 @@
 const router = require('express').Router()
 const utilities = require('../../utilities')
 const Dataset = require('../../models/Dataset')
-const Video = require('../../models/Video')
-const User = require('../../models/User')
+/* const Video = require('../../models/Video')
+const User = require('../../models/User') */
 const { userRoles, consentTypes } = require('../../constants')
 
 /* ---------------- Setting activities ---------------- */
 
 // Modifies the given utvalg setup in place
-const updateSelection = ({ path, newName, selectionKeys, selection }) => {
-  let selectedUtvalg = selection
-
+const updateSelection = ({ currentPriority, selection, pathToNewName, newName }) => {
   // Find the correct level to insert
-  let currentUtvalgKey = selectionKeys[0]
+  let currentUtvalgKey = currentPriority[0]
   if (!currentUtvalgKey) return
-  path.forEach((title, index) => {
-    selectedUtvalg = selectedUtvalg[currentUtvalgKey].find(
+  pathToNewName.forEach((title, index) => {
+    const foundItem = selection[currentUtvalgKey].find(
       (u) => u.title == title
     )
-    currentUtvalgKey = selectionKeys[index + 1]
+    if (foundItem) selection = foundItem.selection
+    currentUtvalgKey = currentPriority[index + 1]
   })
 
   // Add an empty array for the new Utvalg if it is missing
-  if (!selectedUtvalg[currentUtvalgKey]) selectedUtvalg[currentUtvalgKey] = []
+  if (!selection[currentUtvalgKey]) selection[currentUtvalgKey] = []
 
   // Add an empty placeholder array for the next utvalg below, if needed
-  const newItem = { title: newName }
-  if (path.length + 1 < selectionKeys.length) {
-    const nextKeyDown = selectionKeys[path.length + 1]
-    newItem[nextKeyDown] = []
+  const newItem = { title: newName, selection: {} }
+  if (pathToNewName.length + 1 < currentPriority.length) {
+    const nextKeyDown = currentPriority[pathToNewName.length + 1]
+    newItem.selection[nextKeyDown] = []
   }
-  selectedUtvalg[currentUtvalgKey].push(newItem)
+  selection[currentUtvalgKey].push(newItem)
 }
 
-const fetchVideosForDatasets = (datasets) => {
+/* const fetchVideosForDatasets = (datasets) => {
   const datasetIds = datasets.map((d) => d._id)
   const query = { datasetId: { $in: datasetIds } }
   const populateUser = [{ path: 'userId', select: ['profile.username'] }]
@@ -58,18 +57,17 @@ const fetchUsersWithDraftVideos = () => {
       resolve(users)
     })
   })
-}
+} */
 
 // Get datasets for the current user
 // If admin, also get Users with outstanding drafts, and video listing
 router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
   const u = response.locals.user
   const groupIds = u.profile.groups.map((g) => g.id)
-  /* const isAdmin = utilities.hasMinimumUserRole(
+  const isAdmin = utilities.hasMinimumUserRole(
     response.locals.user,
     userRoles.admin
-  )*/
-  const isAdmin = true
+  )
   let query = {}
   if (isAdmin) {
     query = { 'users.owner': u._id }
@@ -85,23 +83,17 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
     ]
   }
 
+  function populateDatasets(datasets) {
+    const opts = [{ path: 'users.owner', select: 'profile.username' }];
+    return Dataset.populate(datasets, opts);
+  }
+
   Dataset.find(query, async (error, ds) => {
     if (error) return next(error)
-
-    const datasets = await ds.map(async (d) => {
-      d = await d.populate('users.owner').execPopulate()
-      return d.redacted()
-    })
+    const datasets = ds.map((d) => d.redacted())
     if (isAdmin) {
-      fetchVideosForDatasets(ds).then((vs) => {
-        const videos = vs.map((v) => v.redacted())
-        fetchUsersWithDraftVideos().then((dus) => {
-          const draftUsers = dus.map((du) => du.redacted())
-          Promise.all(datasets).then((datasets) => {
-            response.send({ datasets, videos, draftUsers })
-          })
-        })
-      })
+      const populatedDatasets = await populateDatasets(ds)
+      return response.send(populatedDatasets)
     } else response.send(datasets)
   })
 })
@@ -139,10 +131,10 @@ router.put(
       else {
         const d = foundDataset
         updateSelection({
-          selection: d.selection,
-          path: request.body.path,
-          name: request.body.name,
-          selectionKey: d.selectionPriority,
+          selection: d.selection, // The current selection for this Dataset
+          currentPriority: d.selectionPriority, // The complete list of the Dataset's selection categories
+          pathToNewName: request.body.path, // A path list of 'titles' above the location of the new title
+          newName: request.body.name, // The name of the new item
         })
         d.status.lastUpdated = Date.now()
         d.markModified('selection')

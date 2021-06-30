@@ -6,6 +6,7 @@ import {
   APIRequestPayload,
   XHR_REQUEST_TYPE,
   VideoSpec,
+  VideoData,
 } from '../types/main'
 import { useDeviceService, CordovaData } from './useDevice'
 import { Upload, HttpRequest } from 'tus-js-client'
@@ -332,7 +333,7 @@ const actions = {
 
   // Create a new draft metadata
   createMetadata: (d: VideoSpec): Promise<void> => {
-    const newVideo = new Video({
+    const newVideo = new Video().updateFromVideoSpec({
       dataset: d.dataset,
       user: d.user,
       selection: d.selection,
@@ -346,13 +347,11 @@ const actions = {
       .then(() => actions.saveMetadata())
   },
   addMetadata: (video: Video): void => {
-    console.log(video.status.main, VIDEO_STATUS_TYPES.draft)
     if (video.status.main === VIDEO_STATUS_TYPES.draft) {
       state.value.draftVideos.set(video.details.id, video)
       state.value.videoDataFiles.delete(video.details.id)
     } else {
       state.value.videos.set(video.details.id, video)
-      console.log(state.value.videos)
     }
   },
   // Update the video in store with the given video (by fileId) and save to local disk
@@ -365,7 +364,7 @@ const actions = {
     else if (state.value.videos.has(video.details.id))
       videoToUpdate = state.value.videos.get(video.details.id)
     if (videoToUpdate) {
-      videoToUpdate.updateAll(video)
+      videoToUpdate.updateFromVideo(video)
       return actions.saveMetadata()
     } else return Promise.resolve()
   },
@@ -399,9 +398,8 @@ const actions = {
       asJSON: true,
       path: state.value.cordovaPath,
     })
-    return deviceActions.loadFromStorage<Video[]>(cd).then((videoList) => {
+    return deviceActions.loadFromStorage<VideoData[]>(cd).then((videoList) => {
       if (videoList && videoList.length) {
-        videoList = videoList as Video[]
         videoList.forEach((video) => {
           const v = new Video(video)
           // If video has expired, remove it
@@ -426,7 +424,7 @@ const actions = {
         state.value.videos.clear()
         state.value.draftVideos.clear()
         videos.forEach((v: Video) => {
-          actions.addMetadata(new Video(v))
+          actions.addMetadata(new Video().updateFromVideo(v))
         })
       })
       .catch((error) => {
@@ -503,7 +501,7 @@ const actions = {
   },
   // Load video data from storage for use in the player
   loadVideo(video: Video): Promise<boolean> {
-    const newVideo = new Video(video)
+    const newVideo = new Video().updateFromVideo(video)
     // Resolve only once finished each chunk, so the Video knows when to retrieve the data to play
     return new Promise((resolve) => {
       // Get a video DATA item from store based on fileId, then begin decryption

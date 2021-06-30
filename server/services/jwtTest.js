@@ -13,11 +13,11 @@ const expiryInSeconds = Math.floor(expiryDate.valueOf() / 1000);
 
 const jwtContent = {
   sub: process.env.CANVAS_LTI_CLIENT_ID,
-  iss: "https://canvas.instructure.com",
+  iss: `https://${process.env.CANVAS_ISSUER_DOMAIN}`,
   jti: "1234567890987654321", // Do we really need this?
   exp: expiryInSeconds,
   iat: issuedAtDate,
-  aud: "https://uio.instructure.com/login/oauth2/token",
+  aud: `https://${process.env.CANVAS_ENDPOINT_DOMAIN}/login/oauth2/token`,
 };
 const signedToken = jwt.sign(jwtContent, privateKey, { algorithm: "RS256", header: { kid } });
 
@@ -30,7 +30,7 @@ let body = {
   client_assertion: signedToken,
   scope: 'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly',
 }
-const curlRequestString = `curl -X POST -H "Content-Type: application/json" -d '${JSON.stringify(body)}' https://uio.instructure.com/login/oauth2/token`
+const curlRequestString = `curl -X POST -H "Content-Type: application/json" -d '${JSON.stringify(body)}' https://${process.env.CANVAS_ENDPOINT_DOMAIN}/login/oauth2/token`
 console.log(curlRequestString)
 
 // -------------  Verify the token -------------

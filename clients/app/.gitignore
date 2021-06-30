@@ -28,3 +28,6 @@ src-cordova/plugins/**/*
 src-cordova/www/**/*
 public/cordova.js
 src-cordova/build.json
+
+# Sample video file
+src/assets/sample.mp4

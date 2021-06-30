@@ -23,6 +23,12 @@ import { idleTimeout } from '../constants'
 
 const routes: Array<RouteRecordRaw> = [
   {
+    path: '/',
+    name: 'Landing',
+    component: Landing,
+  },
+  { path: '/index.html', redirect: '/' },
+  {
     path: '/login',
     name: 'profile',
     component: Landing,
@@ -33,7 +39,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/postlogin',
     name: 'afterlogin',
-    component: MyRecordings,
+    component: Landing,
     beforeEnter: () => {
       appActions
         .redirectedLogin()
@@ -44,6 +50,7 @@ const routes: Array<RouteRecordRaw> = [
               .then(() => videoActions.loadMetadata())
               .then(() => videoActions.fetchMetadata())
               .then(() => {
+                router.push('/videos/list')
                 return { path: '/videos/list' }
               })
               .catch((error) => {

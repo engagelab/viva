@@ -1,0 +1,9 @@
+{
+  "sub": "redacted-NO-Match",
+  "connect-userid_sec": [],
+  "dataporten-userid_sec": [],
+  "name": "Test User",
+  "email": "testuser@uio.no",
+  "email_verified": true,
+  "picture": "https://api.dataporten.no/userinfo/v1/user/media/p:redacted"
+}

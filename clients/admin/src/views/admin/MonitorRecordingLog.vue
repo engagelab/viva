@@ -12,7 +12,6 @@
           @input="onWardTableSearchTextChanged"
         />
         <div>{{ t('MonitorRecordingLog') }}</div>
-        {{ rowData }}
       </div>
 
       <AgGridVue
@@ -25,6 +24,18 @@
         @cellClicked="cellClicked"
       >
       </AgGridVue>
+
+      <!-- Row details -->
+      <div v-if="selectedRow" class="mt-4 flex justify-items-start">
+        <div class="border-2 rounded-md bg-gray-300 p-4">
+          <div class="recording-title text-lg">Metadata about recording</div>
+          <div>Name: {{ selectedRow.details.name }}</div>
+          <div>Category: {{ selectedRow.details.category }}</div>
+          <div>Created: {{ selectedRow.details.created }}</div>
+          <div>Duration: {{ `${selectedRow.details.duration} Seconds` }}</div>
+          <div>EDL: {{ selectedRow.details.edl }}</div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -83,7 +94,9 @@ export default defineComponent({
     // Convert video when fetched
 
     const columnDefs = Video.columnDefs()
-    const rowData = computed(() => videoGetters.allVideos.value)
+    const rowData = computed(() =>
+      videoGetters.allVideos.value.map((v) => v.asTableData)
+    )
 
     // Filter all columns based on the text
     // If one of the columns contain the text, the table will show them
@@ -93,13 +106,15 @@ export default defineComponent({
 
     // Handle Table Events
     const cellClicked = (event: CellEvent) => {
-      selectedRow.value = event
+      selectedRow.value = event.data
+      console.log(selectedRow.value)
     }
 
     return {
       columnDefs,
       gridOptions,
       searchField,
+      selectedRow,
       t,
       // computed
       rowData,

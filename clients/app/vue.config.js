@@ -5,7 +5,8 @@ const host = process.env.VUE_APP_SERVER_HOST
 const port = process.env.VUE_APP_SERVER_PORT
 const https_key = fs.readFileSync(process.env.SSL_KEY_FILE)
 const https_cert = fs.readFileSync(process.env.SSL_CERT_FILE)
-const baseUrl = process.env.NODE_ENV === 'development' ? '' : '/app'
+const baseUrl = process.env.BASE_URL
+const devHost = host === 'https://localhost' ? 'localhost' : '10.0.0.11'
 
 module.exports = {
   pluginOptions: {
@@ -63,7 +64,7 @@ module.exports = {
       cert: https_cert,
     },
     index: 'index.html',
-    host: 'localhost',
+    host: devHost,
     port: '8082',
     overlay: {
       warnings: true,
