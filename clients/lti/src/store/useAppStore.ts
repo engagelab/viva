@@ -23,7 +23,7 @@ export interface AppState {
   loading: boolean
   isLoggedIn: boolean
   selectedUser: User
-  users: Record<string, string>[]
+  canvasData: Record<string, string>
   isAuthorised: boolean
   fade: boolean
   lastLogin: Date
@@ -38,7 +38,7 @@ const _appState: Ref<AppState> = ref({
   loading: false,
   isLoggedIn: false,
   selectedUser: new User(),
-  users: [],
+  canvasData: {},
   isAuthorised: false,
   fade: false,
   lastLogin: new Date(),
@@ -60,7 +60,7 @@ interface Getters {
   currentLocalUser: ComputedRef<LocalUser | undefined>
   persistedLocalUsers: ComputedRef<Record<string, LocalUser>>
   user: ComputedRef<User>
-  users: ComputedRef<Record<string, string>[]>
+  canvasData: ComputedRef<Record<string, string>>
 }
 const getters = {
   get status(): ComputedRef<AppStatus> {
@@ -91,8 +91,8 @@ const getters = {
   get user(): ComputedRef<User> {
     return computed(() => _appState.value.selectedUser)
   },
-  get users(): ComputedRef<Record<string, string>[]> {
-    return computed(() => _appState.value.users)
+  get canvasData(): ComputedRef<Record<string, string>> {
+    return computed(() => _appState.value.canvasData)
   },
 }
 // ------------  Actions --------------
@@ -105,20 +105,20 @@ interface Actions {
   logout: (rememberMe: boolean) => void
   tokenLogin: () => Promise<boolean>
   detectOldApp: () => Promise<void>
-  fetchUsers: () => Promise<void>
+  fetchLTIData: () => Promise<void>
   redirectedLogin: () => Promise<void>
 }
 const actions = {
-  fetchUsers(): Promise<void> {
+  fetchLTIData(): Promise<void> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/api/users',
       credentials: true,
     }
-    return apiRequest<Record<string, string>[]>(payload)
-      .then((response: Record<string, string>[]) => {
+    return apiRequest<Record<string, string>>(payload)
+      .then((response: Record<string, string>) => {
         if (response) {
-          _appState.value.users = response
+          _appState.value.canvasData = response
           console.dir(response)
         }
       })

@@ -83,6 +83,13 @@ router.get('/users', authoriseUser, async (request, response, next) => {
   }
 })
 
+// Respond with data saved for the current LTI session
+router.get('/ltidata', authoriseUser, async (request, response) => {
+  let data = {}
+  if (request.session.canvasData) data = request.session.canvasData
+  response.send(data)
+})
+
 router.get('/groups', authoriseUser, async (request, response, next) => {
   const u = response.locals.user
   const serviceType = u.status.provider

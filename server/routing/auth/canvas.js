@@ -50,6 +50,7 @@ router.post('/canvas/login', function (request, response) {
 // POST Callback from Canvas contains the id_token for an OpenID LTI authentication
 router.post('/canvas/callback', function (request, response) {
   const { state, organization, client } = request.session
+  request.session.canvasData = {}
   const idToken = request.body.id_token
   const decodedToken = jwt.decode(idToken, { complete: true })
 
@@ -123,6 +124,10 @@ router.post('/canvas/callback', function (request, response) {
       client,
     }
 
+    // Note the course we are launching from
+    if (custom_vars.course_id)
+      request.session.canvasData.courseId = custom_vars.course_id
+
     // Configure data from Names and Roles service
     const parsedUrl = new URL(
       verified_decoded_id_token[
@@ -139,7 +144,7 @@ router.post('/canvas/callback', function (request, response) {
     }
     httpRequest(options).then((namesAndRoles) => {
       if (namesAndRoles) {
-        request.session.namesAndRoles = namesAndRoles.members.map((m) => {
+        request.session.canvasData.namesAndRoles = namesAndRoles.members.map((m) => {
           return {
             name: m.name || 'unknown',
             ltiUserID: m.user_id || 'unknown',

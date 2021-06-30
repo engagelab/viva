@@ -29,6 +29,7 @@ The LTI settings has a section called 'custom fields' enter the following:
     user_email=$Person.email.primary
     person_name=$Person.name.full
     api_domain=$Canvas.api.domain
+    course_id=$Canvas.course.id
 
 
 ##### Administrator Role

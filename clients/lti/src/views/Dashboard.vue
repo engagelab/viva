@@ -40,7 +40,7 @@ export default defineComponent({
     const { getters: appGetters, actions: appActions } = useAppStore()
     const { getters: videoGetters } = useVideoStore()
     const user = appGetters.user.value
-    appActions.fetchUsers()
+    appActions.fetchLTIData()
 
     const video = videoGetters.selectedVideo
 
