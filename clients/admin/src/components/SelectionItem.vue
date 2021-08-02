@@ -1,21 +1,30 @@
 <template>
   <div>
     <div>
-      Recursive display:
-
       <Set
+        v-if="theDataset.selection"
         :nodes="theDataset.selection"
-        :selectedPriority="
-          theDataset.selectionPriority.find(
-            (i) => i == Object.keys(theDataset.selection)[0]
-          )
-        "
-        :label="
-          theDataset.selectionPriority.find(
-            (i) => i == Object.keys(theDataset.selection)[0]
-          )
-        "
+        :selectedPriority="InitialSelectionPriority"
+        :label="Object.keys(theDataset.selection)[0]"
+        :title="''"
       ></Set>
+
+      <!-- <div v-for="(selections, key) in theDataset.selection" :key="key">
+        Key: {{ key }}
+        <div v-if="selections.length != 0">
+          <div v-for="(selection, index) in selections" :key="index">
+
+          </div>
+        </div>
+      </div> -->
+      <Subset
+        v-if="theDataset.selection"
+        :title="Object.keys(theDataset.selection)[0]"
+        :label="Object.keys(theDataset.selection)[0]"
+        :nodes="theDataset.selection[Object.keys(theDataset.selection)[0]]"
+        :index="0"
+        :path="''"
+      ></Subset>
     </div>
 
     <!-- <div
@@ -24,7 +33,9 @@
     >
       +
     </div> -->
-    <div v-if="theDataset.selection">
+    <!-- <div
+      v-if="theDataset.selection && theDataset.selectionPriority.length != 0"
+    >
       <div v-for="(item, index) in theDataset.selection" :key="index">
         item: {{ index }}:
         <div v-for="(subItem, subItemIndex) in item" :key="subItemIndex">
@@ -44,7 +55,12 @@
         >
           <p>{{ titleItem.title }}{{ titleIndex }}</p>
 
-          <p>
+          <p
+            v-if="
+              titleItem.selection &&
+              Object.keys(titleItem.selection).length != 0
+            "
+          >
             {{ Object.keys(titleItem.selection)[0] }}:
             {{ titleItem.selection[Object.keys(titleItem.selection)[0]] }}
           </p>
@@ -57,7 +73,8 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
+
     <!-- Add new subset -->
     <div class="flex justify-start ...">
       <div class="flex flex-row" v-if="showInput">
@@ -88,20 +105,27 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { computed, defineComponent, ref } from 'vue'
 
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { DatasetSelection } from '@/types/main'
 import Set from '@/components/TreeMenu.vue'
 // import AnswerInput from '@/components/base/AnswerInput.vue'
 // import SelectionBox from '@/components/base/SelectionBox.vue'
-
+// interface Tree {
+//   label: string
+//   nodes: Tree[]
+// }
+import SlButton from '@/components/base/Button.vue'
+import Subset from './subset.vue'
 export default defineComponent({
   name: 'DatasetItem',
   components: {
     Set,
     // SelectionBox,
     // AnswerInput,
+    SlButton,
+    Subset,
   },
 
   setup() {
@@ -113,6 +137,13 @@ export default defineComponent({
     const currentSubset = ref('')
     let currentSelectionPriority = ref('')
 
+    const InitialSelectionPriority = computed(() => {
+      return theDataset.value.selection
+        ? theDataset.value.selectionPriority.find(
+            (i) => i == Object.keys(theDataset.value.selection)[0]
+          )
+        : ''
+    })
     //Methods
     const setCurrentSelectionPriority = (selectionPriority: string) => {
       let index: number =
@@ -136,12 +167,13 @@ export default defineComponent({
       showInput.value = !showInput.value
       currentSelectionPriority.value = ''
     }
+
     return {
       theDataset,
       showInput,
       currentSelectionPriority,
       currentSubset,
-
+      InitialSelectionPriority,
       // Methods
       addSubset,
       setCurrentSelectionPriority,

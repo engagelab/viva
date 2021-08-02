@@ -491,6 +491,12 @@ export class Video {
     this.status.hasUnsavedChanges = false
   }
 }
+export interface DataPath {
+  path: string
+  currentKey: string
+  currentValue: string
+  title: string
+}
 export interface DatasetSelection {
   title: string
   selection: { [key: string]: DatasetSelection[] }
@@ -503,7 +509,11 @@ interface DatasetConsent {
   kind: CONSENT_TYPES
 }
 interface DatasetUsers {
-  owner: string
+  owner: {
+    profile: {
+      username: string
+    }
+  }
 }
 interface DatasetStorage {
   kind: VIDEO_STORAGE_TYPES
@@ -548,7 +558,11 @@ export class Dataset {
       kind: CONSENT_TYPES.manuel,
     }
     this.users = {
-      owner: '',
+      owner: {
+        profile: {
+          username: '',
+        },
+      },
     }
     this.selection = {}
     this.selectionPriority = []
@@ -569,9 +583,11 @@ export class Dataset {
       this.consent = {
         kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
       }
-      this.users = {
-        owner: data.users?.owner,
-      }
+
+      this.users.owner.profile.username = data.users?.owner?.profile?.username
+      // this.users = {
+      //   owner: data.users?.owner,
+      // }
       this.selection = data?.selection ? data.selection : {}
       this.selectionPriority = data.selectionPriority
       this.storages =

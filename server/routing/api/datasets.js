@@ -11,14 +11,17 @@ const { userRoles, consentTypes } = require('../../constants')
 /* ---------------- Setting activities ---------------- */
 
 // Modifies the given utvalg setup in place
-const updateSelection = ({ currentPriority, selection, pathToNewName, newName }) => {
+const updateSelection = ({
+  currentPriority,
+  selection,
+  pathToNewName,
+  newName,
+}) => {
   // Find the correct level to insert
   let currentUtvalgKey = currentPriority[0]
   if (!currentUtvalgKey) return
   pathToNewName.forEach((title, index) => {
-    const foundItem = selection[currentUtvalgKey].find(
-      (u) => u.title == title
-    )
+    const foundItem = selection[currentUtvalgKey].find((u) => u.title == title)
     if (foundItem) selection = foundItem.selection
     currentUtvalgKey = currentPriority[index + 1]
   })
@@ -84,8 +87,8 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
   }
 
   function populateDatasets(datasets) {
-    const opts = [{ path: 'users.owner', select: 'profile.username' }];
-    return Dataset.populate(datasets, opts);
+    const opts = [{ path: 'users.owner', select: 'profile.username' }]
+    return Dataset.populate(datasets, opts)
   }
 
   Dataset.find(query, async (error, ds) => {
@@ -93,7 +96,8 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
     const datasets = ds.map((d) => d.redacted())
     if (isAdmin) {
       const populatedDatasets = await populateDatasets(ds)
-      return response.send(populatedDatasets)
+      const pdatasets = populatedDatasets.map((d) => d.redacted())
+      return response.send(pdatasets)
     } else response.send(datasets)
   })
 })
@@ -162,7 +166,7 @@ router.put('/dataset', utilities.authoriseUser, (request, response, next) => {
     if (error || !d)
       next(error || new Error({ status: 400, message: 'datasett not found' }))
 
-      const updateIsNewer =
+    const updateIsNewer =
       Date(updatedDataset.status.lastUpdated) >= Date(d.status.lastUpdated)
 
     if (updateIsNewer) {

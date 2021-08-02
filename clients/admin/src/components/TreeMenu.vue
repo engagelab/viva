@@ -2,13 +2,11 @@
   <div class="tree-menu">
     <!-- <div v-for="(priority, index) in theDataset.selectionPriority" :key="index"> -->
     <div v-if="nodes && selectedPriority">
-      {{ label }}
-
       <tree-menu
-        v-for="node in nodes[selectedPriority]"
+        v-for="node in nodes"
         :key="node"
-        :nodes="node.selection"
-        :label="node.title"
+        :nodes="node.selection ? node.selection : []"
+        :label="node.selection ? Object.keys(node.selection)[0] : ''"
         :selectedPriority="
           node.selection
             ? theDataset.selectionPriority.find(
@@ -19,16 +17,15 @@
       >
       </tree-menu>
 
-      {{ selectedPriority }}:
-      <div v-if="selectedPriority">
-        <!-- <Subset :nodes="nodes[selectedPriority]"></Subset> -->
+      <!-- <div v-if="selectedPriority">
+         <Subset :nodes="nodes[selectedPriority]"></Subset>
         <div
           v-for="(item, itemIndex) in nodes[selectedPriority]"
           :key="itemIndex"
         >
           {{ item.title }}
         </div>
-      </div>
+      </div>-->
     </div>
     <!-- </div> -->
   </div>
@@ -40,9 +37,9 @@ import { useDatasetStore } from '@/store/useDatasetStore'
 import { DatasetSelection } from '@/types/main'
 // import Subset from '@/components/subset.vue'
 // import { DatasetSelection } from '@/types/main'
-interface selection {
-  [key: string]: DatasetSelection[]
-}
+// interface selection {
+//   [key: string]: DatasetSelection[]
+// }
 export default defineComponent({
   name: 'tree-menu',
   components: {
@@ -50,9 +47,10 @@ export default defineComponent({
   },
   props: {
     label: String,
+    title: String,
     selectedPriority: String,
     selection: [],
-    nodes: { type: Object as PropType<selection>, required: true },
+    nodes: { type: Object as PropType<DatasetSelection[]>, required: true },
   },
   setup() {
     const { getters: datasetGetters } = useDatasetStore()

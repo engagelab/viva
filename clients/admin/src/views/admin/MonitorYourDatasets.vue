@@ -17,7 +17,7 @@
     </div>
     <!-- Table -->
     <div class="w-5/6">
-      <DatasetItem v-if="selectedDataset"></DatasetItem>
+      <DatasetItem v-if="selectedDataset._id != ''"> </DatasetItem>
     </div>
     <div
       class="

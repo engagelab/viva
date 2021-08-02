@@ -8,7 +8,8 @@ import { ref, Ref, computed, ComputedRef } from 'vue'
 import {
   Dataset,
   DatasetSelection,
-  Video,
+  DataPath,
+  // Video,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
 } from '../types/main'
@@ -25,11 +26,11 @@ const state: Ref<DatasetState> = ref({
   datasets: new Map(),
 })
 
-interface ResponseData {
-  datasets: Dataset[] | undefined
-  videos: Video[] | undefined
-  draftUsers: string[] | undefined
-}
+// interface ResponseData {
+//   datasets: Dataset[] | undefined
+//   videos: Video[] | undefined
+//   draftUsers: string[] | undefined
+// }
 
 //----------------- Server side functions----------------//
 
@@ -72,7 +73,7 @@ interface Actions {
   updateDataset: () => Promise<void>
   addSelectionPriority: (selectionPriority: string) => void
   selectDatasetById: (datasetId: string) => void
-  addSelection: (selectionPriority: string, subset: DatasetSelection) => void
+  addSelection: (currentDataPath: DataPath) => void
 }
 
 const actions = {
@@ -83,10 +84,10 @@ const actions = {
       route: '/api/datasets',
       credentials: true,
     }
-    return apiRequest<ResponseData>(payload)
-      .then((data) => {
-        if (data.datasets && data.datasets.length !== 0) {
-          data.datasets.forEach((s) => {
+    return apiRequest<Dataset[]>(payload)
+      .then((datasets) => {
+        if (datasets && datasets.length !== 0) {
+          datasets.forEach((s) => {
             const newDataset = s as Dataset
             state.value.datasets.set(newDataset._id, newDataset)
           })
@@ -138,125 +139,48 @@ const actions = {
       ) as Dataset
   },
 
-  addSelection(selectionPriority: string, subset: DatasetSelection): void {
-    if (state.value.selectedDataset) {
-      const selection = state.value.selectedDataset.selection
-        ? state.value.selectedDataset.selection
-        : {}
+  addSelection(currentDataPath: DataPath): void {
+    // if (state.value.selectedDataset) {
+    //   const selection = state.value.selectedDataset.selection
+    //     ? state.value.selectedDataset.selection
+    //     : {}
 
-      selection[selectionPriority] == undefined
-        ? (selection[selectionPriority] = [subset])
-        : selection[selectionPriority].push(subset)
+    //   selection[selectionPriority] == undefined
+    //     ? (selection[selectionPriority] = [subset])
+    //     : selection[selectionPriority].push(subset)
 
-      state.value.selectedDataset.selection = { ...selection }
-      console.log(state.value.selectedDataset)
+    //   state.value.selectedDataset.selection = { ...selection }
+    //   console.log(state.value.selectedDataset)
+    // }
+
+    const recurse = (nodes: DatasetSelection[], label: string) => {
+      nodes.forEach((node) => {
+        if (label) console.log('Label:' + label + 'Value:' + node.title)
+        if (node.selection)
+          recurse(
+            node.selection[Object.keys(node.selection)[0]],
+            Object.keys(node.selection)[0]
+          )
+      })
     }
-  },
-  // datasetById(id: string): ComputedRef<Dataset | undefined> {
-  //   return computed(() =>
-  //     state.value.datasets.find((d: Dataset) => id === d._id)
-  //   )
-  // },
-  // errorMessage(error: Error): void {
-  //   const errorMessage = error.message || error
-  //   console.log(`Error: ${errorMessage}`)
-  //   appActions.setSnackbar({
-  //     visibility: true,
-  //     text: errorMessage.toString(),
-  //     type: 'error',
-  //     callback: undefined,
-  //   })
-  // },
-  // selectDataset(dataset: Dataset | undefined): void {
-  //   state.value.selectedDataset = dataset
-  // },
-  // selectDatasetById(datasetId: string): void {
-  //   const dataset = state.value.datasets.find((s) => s._id == datasetId)
-  //   if (dataset) state.value.selectedDataset = dataset
-  //   else state.value.selectedDataset = undefined
-  // },
-  // lockSelection(d: { datasetId: string; lock: DatasetLock }): void {
-  //   const pc = state.value.presetDatasetConfig
-  //   if (pc && pc.locks[d.datasetId]) pc.locks[d.datasetId] = d.lock
-  // },
-  // unlockSelection(datasetId: string): void {
-  //   const pc = state.value.presetDatasetConfig
-  //   if (pc && pc.locks[datasetId]) delete pc.locks[datasetId]
-  // },
 
-  // setPresetDatasetConfig(config: UserDatasetConfig): void {
-  //   state.value.presetDatasetConfig = config
-  //   const d = state.value.datasets.find((ds) => ds._id === config.id)
-  //   if (d) state.value.selectedDataset = d
-  // },
-  // addSelectionToDataset(data: SelectionOptions): void {
-  //   const newDataset = new Dataset(data.dataset)
-  //   let subSetToAddTo = newDataset.selection
-  //   let key: string
-  //   data.path.forEach((p, index) => {
-  //     key = newDataset.selectionPriority[index]
-  //     const subset = subSetToAddTo[key].find((item) => item.title == p)
-  //     if (subset && subset.selection) subSetToAddTo = subset.selection
-  //   })
-  //   key = newDataset.selectionPriority[data.path.length]
-  //   if (!subSetToAddTo[key]) {
-  //     subSetToAddTo[key] = []
-  //   }
-  //   const newItem: DatasetSelection = {
-  //     title: data.newSelectionName,
-  //     selection: {},
-  //   }
-  //   if (data.path.length + 1 < newDataset.selectionPriority.length) {
-  //     const nextKeyDown = newDataset.selectionPriority[data.path.length + 1]
-  //     if (newItem.selection) newItem.selection[nextKeyDown] = []
-  //   }
-  //   subSetToAddTo[key].push(newItem)
-  //   const payload: APIRequestPayload = {
-  //     method: XHR_REQUEST_TYPE.PUT,
-  //     credentials: true,
-  //     route: '/api/dataset/selection',
-  //     body: {
-  //       _id: data.dataset._id,
-  //       path: data.path,
-  //       name: data.newSelectionName,
-  //     },
-  //   }
-  //   apiRequest(payload).then(() => {
-  //     if (state.value.selectedDataset) {
-  //       state.value.selectedDataset.selection = newDataset.selection
-  //     }
-  //   })
-  // },
-  // fetchConsents(video: Video): void {
-  //   // Relies on a setting being already selected
-  //   const datasetForVideo: Dataset | undefined = state.value.datasets.find(
-  //     (d) => d._id == video.dataset.id
-  //   )
-  //   const utvalg = video.dataset.selection.map((i) => `${i.keyName}:${i.title}`)
-  //   if (datasetForVideo) {
-  //     const payload: APIRequestPayload = {
-  //       method: XHR_REQUEST_TYPE.GET,
-  //       route: '/api/consents',
-  //       query: {
-  //         datasetId: video.dataset.id,
-  //         utvalg,
-  //         formId: datasetForVideo.formId,
-  //       },
-  //       credentials: true,
-  //       body: undefined,
-  //     }
-  //     apiRequest<Consent[]>(payload)
-  //       .then((consents: Consent[]) => {
-  //         state.value.selectedDatasetConsents = consents.map((c) => ({
-  //           ...c,
-  //           checked: false,
-  //         }))
-  //       })
-  //       .catch((error: Error) => {
-  //         this.errorMessage(error)
-  //       })
-  //   }
-  // },
+    recurse(
+      state.value.selectedDataset.selection[
+        Object.keys(state.value.selectedDataset.selection)[0]
+      ],
+      Object.keys(state.value.selectedDataset.selection)[0]
+    )
+
+    console.log(currentDataPath)
+    const path = currentDataPath.path.split('-')
+    console.log(path)
+    for (const [key, value] of Object.entries(
+      state.value.selectedDataset.selection
+    )) {
+      console.log(`${key}: ${value}`)
+    }
+    //)
+  },
 }
 
 // This defines the interface used externally

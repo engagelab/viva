@@ -24,7 +24,7 @@
               :border="false"
               :label="t('owner')"
               :required="true"
-              v-model="theDataset.users.owner"
+              v-model="theDataset.users.owner.profile.username"
             ></AnswerInput>
           </div>
         </div>
