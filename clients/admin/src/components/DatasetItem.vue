@@ -99,6 +99,7 @@
       <div><p>Instances</p></div>
       <SelectionItem></SelectionItem>
 
+      <ConsentHandling></ConsentHandling>
       <SlButton
         class="ml-4 p-2 self-center capitalize bg-green-highlight rounded-lg"
         id="button-accept"
@@ -120,7 +121,7 @@ import { DatasetSelection } from '@/types/main'
 import SelectionItem from '@/components/SelectionItem.vue'
 import AnswerInput from '@/components/base/AnswerInput.vue'
 import SelectionBox from '@/components/base/SelectionBox.vue'
-
+import ConsentHandling from '@/components/ConsentHandling.vue'
 import SlButton from '@/components/base/SlButton.vue'
 const messages = {
   nb_NO: {
@@ -155,6 +156,7 @@ export default defineComponent({
     SelectionBox,
     AnswerInput,
     SelectionItem,
+    ConsentHandling,
   },
   // props: {
   //   dataset: { type: Object as PropType<Dataset>, required: true },

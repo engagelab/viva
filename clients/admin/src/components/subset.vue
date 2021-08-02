@@ -78,15 +78,6 @@ import { defineComponent, computed, PropType, ref } from 'vue'
 import { DatasetSelection, DataPath } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
 
-// export interface subset {
-//   selection: { [key: string]: DatasetSelection[] }
-// }
-// interface dataPath {
-//   path: string
-//   currentKey: string
-//   currentValue: string
-//   title: string
-// }
 export default defineComponent({
   name: 'subset',
   components: {},
@@ -121,7 +112,7 @@ export default defineComponent({
       datasetActions.addSelection(currentDataPath.value)
       showInput.value = !showInput.value
     }
-    return { 
+    return {
       selectionPriority: computed(() =>
         theDataset.value.selectionPriority.findIndex((i) => i == props.label)
       ),

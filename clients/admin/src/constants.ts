@@ -41,7 +41,7 @@ const behandlings = {
     description:
       'Opptak er basert på samtykker som er gitt digitalt i UiOs samtykkeportal.',
   },
-  manuel: {
+  manual: {
     name: 'Manuelt samtykke',
     description: 'Opptak er basert på samtykker som er håndtert manuelt.',
   },
@@ -174,6 +174,7 @@ export {
   userRoles,
   USER_ROLE,
   consentTypes,
+  behandlings,
   CONSENT_TYPES,
   VIDEO_STORAGE_TYPES,
   VIDEO_STATUS_TYPES,
@@ -195,7 +196,6 @@ export {
   device,
   videoStorageTypes,
   utvalger,
-  behandlings,
   stores,
   datasettAttributes,
   opptakAttributes,
