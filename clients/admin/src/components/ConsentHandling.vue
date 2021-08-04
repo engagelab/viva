@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="ml-8">
     <div
       v-for="(consent, consentKey) in behandlings"
       :value="consent"

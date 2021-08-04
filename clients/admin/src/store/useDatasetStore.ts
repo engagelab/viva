@@ -12,9 +12,11 @@ import {
   // Video,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
+  DatasetStorage,
 } from '../types/main'
 import { apiRequest } from '../api/apiRequest'
 import { useAppStore } from './useAppStore'
+// import { VIDEO_STORAGE_TYPES } from '../constants'
 const { actions: appActions } = useAppStore()
 //State
 interface DatasetState {
@@ -72,6 +74,11 @@ interface Actions {
   addDataset: (datasetName: string) => Promise<void>
   updateDataset: () => Promise<void>
   addSelectionPriority: (selectionPriority: string) => void
+  addStorageFields: (
+    storageId: string,
+    value: string | DatasetStorage,
+    mode: string
+  ) => void
   selectDatasetById: (datasetId: string) => void
   addSelection: (currentDataPath: DataPath) => void
 }
@@ -86,9 +93,9 @@ const actions = {
     }
     return apiRequest<Dataset[]>(payload)
       .then((datasets) => {
-        if (datasets && datasets.length !== 0) {
+        if (datasets) {
           datasets.forEach((s) => {
-            const newDataset = s as Dataset
+            const newDataset = new Dataset(s)
             state.value.datasets.set(newDataset._id, newDataset)
           })
         }
@@ -132,6 +139,37 @@ const actions = {
   addSelectionPriority: function (selectionPriority: string): void {
     state.value.selectedDataset?.selectionPriority.push(selectionPriority)
   },
+  addStorageFields: function (
+    storageId: string,
+    value: string | DatasetStorage,
+    mode: string
+  ): void {
+    if (mode == 'new') {
+      state.value.selectedDataset?.storages.push(value as DatasetStorage)
+      actions.updateDataset()
+    } else {
+      state.value.selectedDataset?.storages.filter((storage) => {
+        if (storage._id == storageId) {
+          // storage.file[mode].push(value)
+          switch (mode) {
+            case 'name':
+              storage.file.name.push(value as string)
+              break
+            case 'path':
+              storage.file.path.push(value as string)
+              break
+            case 'kind':
+              //   storage.kind = VIDEO_STORAGE_TYPES[value]
+              break
+            case 'groupId':
+              storage.groupId = value as string
+              break
+          }
+        }
+      })
+    }
+  },
+
   selectDatasetById(datasetId: string): void {
     if (state.value.datasets.get(datasetId))
       state.value.selectedDataset = state.value.datasets.get(

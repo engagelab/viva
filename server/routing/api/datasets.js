@@ -165,7 +165,9 @@ router.put('/dataset', utilities.authoriseUser, (request, response, next) => {
   Dataset.findById(updatedDataset._id, async (error, d) => {
     if (error || !d)
       next(error || new Error({ status: 400, message: 'datasett not found' }))
-
+    updatedDataset.storages.forEach((storage) => {
+      if (storage._id == '') delete storage._id
+    })
     const updateIsNewer =
       Date(updatedDataset.status.lastUpdated) >= Date(d.status.lastUpdated)
 

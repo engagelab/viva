@@ -76,11 +76,11 @@ datasetSchema.methods.redacted = function () {
     },
     storages: data.storages.map((store) => {
       const s = { ...store }
-      delete s.file.path
+      //delete s.file.path // Commented by SM,reason:Admin  may need to change the path
       return s
     }),
   }
-  console.log(d)
+
   return d
 }
 // Duplicate the ID field.

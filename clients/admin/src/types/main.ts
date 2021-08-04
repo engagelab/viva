@@ -515,11 +515,13 @@ interface DatasetUsers {
     }
   }
 }
-interface DatasetStorage {
+export interface DatasetStorage {
+  _id: string
   kind: VIDEO_STORAGE_TYPES
   groupId: string
   file: {
     name: string[]
+    path: string[]
   }
   category: string[]
 }
@@ -540,7 +542,7 @@ export class Dataset {
   status: DatasetStatus
   consent: DatasetConsent
   users: DatasetUsers
-  selection: { [key: string]: DatasetSelection[] }
+  selection: { [key: string]: DatsetSelection[] }
   selectionPriority: string[]
   storages: DatasetStorage[]
 
@@ -567,7 +569,7 @@ export class Dataset {
     this.selection = {}
     this.selectionPriority = []
     this.storages = []
-
+    console.log(data)
     if (data) {
       this._id = data._id // undefined if a new dataset
       this.name = data.name
@@ -590,12 +592,17 @@ export class Dataset {
       // }
       this.selection = data?.selection ? data.selection : {}
       this.selectionPriority = data.selectionPriority
+
       this.storages =
         data?.storages?.map((s: DatasetStorage) => {
           return {
+            _id: s._id || '',
             kind: s.kind || '',
             groupId: s.groupId || '',
-            file: { name: s.file.name || [] },
+            file: {
+              name: s.file.name || [],
+              path: s.file.path || [],
+            },
             category: s.category || [],
           }
         }) || []

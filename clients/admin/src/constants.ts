@@ -131,12 +131,12 @@ if (
 }
 
 enum VIDEO_STORAGE_TYPES {
-  none = 'none',
-  google = 'google',
-  onedrive = 'onedrive',
   educloud = 'educloud',
   lagringshotell = 'lagringshotell',
 }
+
+const FILEGROUPS = ['uv-ils-viva-diva1', 'uv-ils-viva-proto1']
+
 enum VIDEO_STATUS_TYPES {
   draft = 'draft', // Before upload has been attempted
   premeta = 'premeta', // Pre-stage when awaiting linking of file upload to complete uploaded metadata in DB
@@ -167,6 +167,12 @@ enum SELECTION {
   bedrift = 'bedrift',
 }
 
+const FILE = {
+  name: ['fileId', 'timeStamp'],
+  path: ['DatasetName', 'fileId', 'ataManager', 'UserID', 'timeStamp'],
+}
+const GROUPS = ['uv-ils-viva-diva1', 'uv-ils-viva-proto1']
+
 export {
   deviceType,
   baseUrl,
@@ -176,10 +182,13 @@ export {
   consentTypes,
   behandlings,
   CONSENT_TYPES,
+  FILE,
+  GROUPS,
   VIDEO_STORAGE_TYPES,
   VIDEO_STATUS_TYPES,
   CONSENT_SELECTION,
   SELECTION,
+  FILEGROUPS,
   appVersion,
   taskColours,
   vivaServer,

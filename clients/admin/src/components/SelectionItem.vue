@@ -162,7 +162,7 @@ export default defineComponent({
         title: currentSubset.value,
         selection: {},
       }
-      console.log(subset)
+
       datasetActions.addSelection(currentSelectionPriority.value, subset)
       showInput.value = !showInput.value
       currentSelectionPriority.value = ''

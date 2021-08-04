@@ -96,10 +96,13 @@
           </p>
         </div>
       </div>
-      <div><p>Instances</p></div>
+      <div><p class="text-red-600 mt-4 ml-2">Instances</p></div>
       <SelectionItem></SelectionItem>
-
+      <div><p class="text-red-600 mt-4 ml-2">Lawful grounds:</p></div>
       <ConsentHandling></ConsentHandling>
+
+      <div><p class="text-red-600 mt-4 ml-2">Storage options</p></div>
+      <Storage></Storage>
       <SlButton
         class="ml-4 p-2 self-center capitalize bg-green-highlight rounded-lg"
         id="button-accept"
@@ -122,6 +125,7 @@ import SelectionItem from '@/components/SelectionItem.vue'
 import AnswerInput from '@/components/base/AnswerInput.vue'
 import SelectionBox from '@/components/base/SelectionBox.vue'
 import ConsentHandling from '@/components/ConsentHandling.vue'
+import Storage from '@/components/Storage.vue'
 import SlButton from '@/components/base/SlButton.vue'
 const messages = {
   nb_NO: {
@@ -157,6 +161,7 @@ export default defineComponent({
     AnswerInput,
     SelectionItem,
     ConsentHandling,
+    Storage,
   },
   // props: {
   //   dataset: { type: Object as PropType<Dataset>, required: true },
@@ -192,17 +197,6 @@ export default defineComponent({
         }))
     })
 
-    console.log(SelectionOptionList)
-    // const initialise = (d: Dataset) => {
-    //   theDataset.value = new Dataset(d)
-    // }
-    // initialise(d)
-    // watch(
-    //   () => props.dataset,
-    //   (newValue: Dataset) => {
-    //     initialise(newValue)
-    //   }
-    // )
     //Methods
     // Add selection priority
     const addSelectionPriority = () => {
@@ -217,7 +211,6 @@ export default defineComponent({
       let subset: DatasetSelection = {
         title: currentSubset.value,
       }
-      console.log(subset)
 
       datasetActions.addSelection(theDataset.value.selectionPriority[0], subset)
     }
