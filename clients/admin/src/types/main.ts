@@ -542,7 +542,7 @@ export class Dataset {
   status: DatasetStatus
   consent: DatasetConsent
   users: DatasetUsers
-  selection: { [key: string]: DatsetSelection[] }
+  selection: { [key: string]: DatasetSelection[] }
   selectionPriority: string[]
   storages: DatasetStorage[]
 
