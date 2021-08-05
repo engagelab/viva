@@ -149,7 +149,7 @@ export default defineComponent({
         status.symbolClass = 'black'
         status.textClass = 'black'
       } else if (v.status.main == VIDEO_STATUS_TYPES.edited) {
-        status.text = 'Klar til overføring'
+        status.text = 'Klar'
         status.symbol = 'accept'
         status.symbolClass = 'green'
         status.textClass = 'green'

@@ -24,7 +24,7 @@ Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
       },
 
       consent: {
-        kind: consentTypes.manual,
+        kind: consentTypes.manuel,
       },
       users: {
         adminGroup: 'test',
