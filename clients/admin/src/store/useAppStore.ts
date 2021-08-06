@@ -4,19 +4,20 @@ import { apiRequest } from '../api/apiRequest'
 import {
   User,
   DeviceStatus,
+  LocalUser,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
   Callback,
-  UserRecordingInProcess,
+  // UserRecordingInProcess,
 } from '../types/main'
-import { useDeviceService, CordovaPathName } from './useDevice'
+// import { useDeviceService } from './useDevice'
 
 import { useVideoStore } from './useVideoStore'
 // import { useDatasetStore } from './useDatasetStore'
-const { actions: deviceActions } = useDeviceService()
+// const { actions: deviceActions } = useDeviceService()
 const { actions: videoActions } = useVideoStore()
 // const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
-import { appVersion } from '../constants'
+// import { appVersion } from '../constants'
 
 // ------------  Types --------------
 interface Dialog {
@@ -24,9 +25,9 @@ interface Dialog {
   data: Record<string, unknown>
   doneCallback: (d: boolean) => void
 }
-interface ServerStatus {
-  cpuload: Record<string, unknown>
-}
+// interface ServerStatus {
+//   cpuload: Record<string, unknown>
+// }
 interface Snackbar {
   type: string
   visibility: boolean // A toggle for showing error messages to the user
@@ -34,70 +35,79 @@ interface Snackbar {
   callback?: Callback
 }
 export interface AppState {
-  selectedUser: User
-  hostType: string
+  validToken: boolean
+  errorMessage: string
+  loading: boolean
   isLoggedIn: boolean
+  selectedUser: User
+  canvasData: Record<string, string>
   isAuthorised: boolean
-  useCordova: boolean
+  fade: boolean
+  lastLogin: Date
+  currentLocalUser: LocalUser | undefined
   appIsOld: boolean
   dialog: Dialog
-  deviceStatus: DeviceStatus
-  serverStatus: ServerStatus
+  disableDelays: boolean
   snackbar: Snackbar
-  cordovaPath: string[]
-  userRecordingsInProcess: UserRecordingInProcess[]
+  deviceStatus: DeviceStatus
 }
 // ------------  State (internal) --------------
 const _appState: Ref<AppState> = ref({
-  selectedUser: new User(),
-  hostType: 'tablet',
+  //
+  validToken: false,
+  errorMessage: '',
+  loading: false,
   isLoggedIn: false,
+  selectedUser: new User(),
+  canvasData: {},
   isAuthorised: false,
-  useCordova: false,
-  cordovaPath: [],
+  fade: false,
+  lastLogin: new Date(),
+  currentLocalUser: undefined,
   appIsOld: false,
+  disableDelays: process.env.VUE_APP_DISABLE_DELAYS === 'true',
   dialog: {
     visible: false,
-    data: {}, // Data object to pass to the child dialog
-    doneCallback: () => ({}), // Callback function from the originating component
+    data: {},
+    doneCallback: () => ({}),
   },
   deviceStatus: {
-    mobile: false,
-    browser: '',
-    isFullScreen: false,
+    // mobile: false,
+    // browser: '',
+    // isFullScreen: false,
     lastActive: new Date().getTime(), // ms from epoch
   },
-  serverStatus: {
-    cpuload: {},
-  },
+  // serverStatus: {
+  //   cpuload: {},
+  // },
   snackbar: {
     visibility: false, // A toggle for showing error messages to the user
     type: 'none',
     text: '',
   },
-  userRecordingsInProcess: new Array<UserRecordingInProcess>(),
+  // userRecordingsInProcess: new Array<UserRecordingInProcess>(),
 })
 
 // ------------  Getters (Read only) --------------
 interface Getters {
-  hostType: ComputedRef<string>
+  // hostType: ComputedRef<string>
   lastActive: ComputedRef<number>
   isLoggedIn: ComputedRef<boolean>
   isAuthorised: ComputedRef<boolean>
-  useCordova: ComputedRef<boolean>
-  appIsOld: ComputedRef<boolean>
-  isFullScreen: ComputedRef<boolean>
+  // useCordova: ComputedRef<boolean>
+  // appIsOld: ComputedRef<boolean>
+  // isFullScreen: ComputedRef<boolean>
   dialog: ComputedRef<Dialog>
   snackbar: ComputedRef<Snackbar>
-  deviceStatus: ComputedRef<DeviceStatus>
-  serverStatus: ComputedRef<ServerStatus>
+  // deviceStatus: ComputedRef<DeviceStatus>
+  // serverStatus: ComputedRef<ServerStatus>
   user: ComputedRef<User>
-  users: ComputedRef<UserRecordingInProcess[]>
+  // users: ComputedRef<UserRecordingInProcess[]>
 }
 const getters = {
-  get hostType(): ComputedRef<string> {
-    return computed(() => _appState.value.hostType)
-  },
+  // get hostType(): ComputedRef<string> {
+  //   return computed(() => _appState.value.hostType)
+  // },
   get lastActive(): ComputedRef<number> {
     return computed(() => _appState.value.deviceStatus.lastActive)
   },
@@ -107,61 +117,79 @@ const getters = {
   get isAuthorised(): ComputedRef<boolean> {
     return computed(() => _appState.value.isAuthorised)
   },
-  get useCordova(): ComputedRef<boolean> {
-    return computed(() => _appState.value.useCordova)
-  },
-  get appIsOld(): ComputedRef<boolean> {
-    return computed(() => _appState.value.appIsOld)
-  },
-  get isFullScreen(): ComputedRef<boolean> {
-    return computed(() => _appState.value.deviceStatus.isFullScreen)
-  },
+  // get useCordova(): ComputedRef<boolean> {
+  //   return computed(() => _appState.value.useCordova)
+  // },
+  // get appIsOld(): ComputedRef<boolean> {
+  //   return computed(() => _appState.value.appIsOld)
+  // },
+  // get isFullScreen(): ComputedRef<boolean> {
+  //   return computed(() => _appState.value.deviceStatus.isFullScreen)
+  // },
   get dialog(): ComputedRef<Dialog> {
     return computed(() => _appState.value.dialog)
   },
   get snackbar(): ComputedRef<Snackbar> {
     return computed(() => _appState.value.snackbar)
   },
-  get deviceStatus(): ComputedRef<DeviceStatus> {
-    return computed(() => _appState.value.deviceStatus)
-  },
-  get serverStatus(): ComputedRef<ServerStatus> {
-    return computed(() => _appState.value.serverStatus)
-  },
+  // get deviceStatus(): ComputedRef<DeviceStatus> {
+  //   return computed(() => _appState.value.deviceStatus)
+  // },
+  // get serverStatus(): ComputedRef<ServerStatus> {
+  //   return computed(() => _appState.value.serverStatus)
+  // },
   get user(): ComputedRef<User> {
     return computed(() => _appState.value.selectedUser)
   },
-  get users(): ComputedRef<UserRecordingInProcess[]> {
-    return computed(() => _appState.value.userRecordingsInProcess)
-  },
+  // get users(): ComputedRef<UserRecordingInProcess[]> {
+  //   return computed(() => _appState.value.userRecordingsInProcess)
+  // },
 }
 // ------------  Actions --------------
 interface Actions {
-  setFullScreen: (value: boolean) => void
-  setUseCordova: (value: boolean) => void
+  // setFullScreen: (value: boolean) => void
+  // setUseCordova: (value: boolean) => void
   activeNow: () => void
   addDraftIdToUser: (fileID: string) => void
   removeDraftId: (fileID: string) => void
   setDialog: (dialog: Dialog) => void
   setSnackbar: (newSnackbar: Snackbar) => void
   errorMessage: (message: Error | string) => void
-  detectDevice: () => void
-  detectAppVersion: () => void
+  // detectDevice: () => void
+  // detectAppVersion: () => void
   logout: () => void
   updateUserAtServer: (user: User | void) => Promise<void>
   redirectedLogin: () => Promise<void>
   getLoginSession: () => Promise<void>
   tokenLogin: () => Promise<boolean>
-  setCordovaPath: (path: string[]) => void
-  getUsers: () => Promise<void>
+  // setCordovaPath: (path: string[]) => void
+  // getUsers: () => Promise<void>
+  fetchLTIData: () => Promise<void>
 }
 const actions = {
-  setFullScreen(value: boolean): void {
-    _appState.value.deviceStatus.isFullScreen = value
+  fetchLTIData(): Promise<void> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.GET,
+      route: '/api/users',
+      credentials: true,
+    }
+    return apiRequest<Record<string, string>>(payload)
+      .then((response: Record<string, string>) => {
+        if (response) {
+          _appState.value.canvasData = response
+          console.dir(response)
+        }
+      })
+      .catch((error: Error) => {
+        console.log(error)
+      })
   },
-  setUseCordova(value: boolean): void {
-    _appState.value.useCordova = value
-  },
+  // setFullScreen(value: boolean): void {
+  //   _appState.value.deviceStatus.isFullScreen = value
+  // },
+  // setUseCordova(value: boolean): void {
+  //   _appState.value.useCordova = value
+  // },
   activeNow(): void {
     _appState.value.deviceStatus.lastActive = new Date().getTime()
   },
@@ -209,36 +237,36 @@ const actions = {
       callback: undefined,
     })
   },
-  detectDevice(): void {
-    const ua = navigator.userAgent
-    console.log(ua)
-    const deviceStatus = {
-      mobile: ua.indexOf('Mobi') !== -1,
-      browser:
-        ua.indexOf('Chrome') !== -1 && ua.indexOf('Safari') !== -1
-          ? 'Chrome'
-          : 'Safari',
-    }
-    _appState.value.deviceStatus.mobile = deviceStatus.mobile
-    _appState.value.deviceStatus.browser = deviceStatus.browser
-  },
-  detectAppVersion(): void {
-    const payload: APIRequestPayload = {
-      method: XHR_REQUEST_TYPE.GET,
-      route: '/api/appversion',
-    }
-    apiRequest<{ version: string }>(payload).then((result) => {
-      if (appVersion !== result.version) {
-        _appState.value.appIsOld = true
-        this.setSnackbar({
-          visibility: true,
-          text: 'Viva appen er en eldre versjon, og du må laste ned en ny versjon fra Appstore',
-          callback: undefined,
-          type: 'message',
-        })
-      }
-    })
-  },
+  // detectDevice(): void {
+  //   const ua = navigator.userAgent
+  //   console.log(ua)
+  //   const deviceStatus = {
+  //     mobile: ua.indexOf('Mobi') !== -1,
+  //     browser:
+  //       ua.indexOf('Chrome') !== -1 && ua.indexOf('Safari') !== -1
+  //         ? 'Chrome'
+  //         : 'Safari',
+  //   }
+  //   _appState.value.deviceStatus.mobile = deviceStatus.mobile
+  //   _appState.value.deviceStatus.browser = deviceStatus.browser
+  // },
+  // detectAppVersion(): void {
+  //   const payload: APIRequestPayload = {
+  //     method: XHR_REQUEST_TYPE.GET,
+  //     route: '/api/appversion',
+  //   }
+  //   apiRequest<{ version: string }>(payload).then((result) => {
+  //     if (appVersion !== result.version) {
+  //       _appState.value.appIsOld = true
+  //       this.setSnackbar({
+  //         visibility: true,
+  //         text: 'Viva appen er en eldre versjon, og du må laste ned en ny versjon fra Appstore',
+  //         callback: undefined,
+  //         type: 'message',
+  //       })
+  //     }
+  //   })
+  // },
   logout(): void {
     _appState.value.isLoggedIn = false
     _appState.value.isAuthorised = false
@@ -286,9 +314,9 @@ const actions = {
 
             actions.activeNow()
             _appState.value.selectedUser = user
-            actions.setCordovaPath([CordovaPathName.users, user._id])
-            deviceActions.setCordovaPath([CordovaPathName.users, user._id])
-            videoActions.setCordovaPath([CordovaPathName.users, user._id])
+            // actions.setCordovaPath([CordovaPathName.users, user._id])
+            // deviceActions.setCordovaPath([CordovaPathName.users, user._id])
+            // videoActions.setCordovaPath([CordovaPathName.users, user._id])
             //datasetActions.setPresetDatasetConfig(user.datasetConfig)
           } else {
             actions.errorMessage('User not found')
@@ -322,22 +350,22 @@ const actions = {
         })
     } else return Promise.resolve()
   },
-  getUsers(): Promise<void> {
-    const payload: APIRequestPayload = {
-      method: XHR_REQUEST_TYPE.GET,
-      route: '/api/users',
-      credentials: true,
-    }
-    return apiRequest<UserRecordingInProcess[]>(payload)
-      .then((userRecordings) => {
-        _appState.value.userRecordingsInProcess = userRecordings
-        return Promise.resolve()
-      })
-      .catch((error: Error) => {
-        actions.errorMessage(error)
-        return Promise.reject(error)
-      })
-  },
+  // getUsers(): Promise<void> {
+  //   const payload: APIRequestPayload = {
+  //     method: XHR_REQUEST_TYPE.GET,
+  //     route: '/api/users',
+  //     credentials: true,
+  //   }
+  //   return apiRequest<UserRecordingInProcess[]>(payload)
+  //     .then((userRecordings) => {
+  //       _appState.value.userRecordingsInProcess = userRecordings
+  //       return Promise.resolve()
+  //     })
+  //     .catch((error: Error) => {
+  //       actions.errorMessage(error)
+  //       return Promise.reject(error)
+  //     })
+  // },
 
   // Try to exchange token for a session if the token already exists
   tokenLogin: function (): Promise<boolean> {
@@ -357,9 +385,9 @@ const actions = {
         return Promise.resolve(false)
       })
   },
-  setCordovaPath: (path: string[]): void => {
-    _appState.value.cordovaPath = path
-  },
+  // setCordovaPath: (path: string[]): void => {
+  //   _appState.value.cordovaPath = path
+  // },
 }
 // This defines the interface used externally
 interface ServiceInterface {

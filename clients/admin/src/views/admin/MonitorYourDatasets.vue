@@ -67,7 +67,8 @@ import {
   defineComponent,
   onMounted,
   ref,
-  //Ref,
+  // Ref,
+  // watch,
 } from 'vue'
 import { Dataset } from '@/types/main'
 import { useDatasetStore } from '../../store/useDatasetStore'
@@ -102,10 +103,10 @@ export default defineComponent({
     const showDatasets = ref(false)
     const showInput = ref(false)
     const newDatasetName = ref('')
-    // const selectedDataset: Ref<Dataset | undefined> = ref(undefined)
+
     const errorMessage = ref('')
-    const datasets: ComputedRef<Dataset[]> = computed(
-      () => datasetGetters.datasets.value
+    const datasets: ComputedRef<Dataset[]> = computed(() =>
+      Array.from(datasetGetters.datasets.value.values())
     )
     const headers = Dataset.columnDefs()
     // Fetch datasets

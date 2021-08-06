@@ -126,9 +126,9 @@ export interface Consent {
   }
 }
 export interface DeviceStatus {
-  mobile: boolean
-  browser: string
-  isFullScreen: boolean
+  // mobile: boolean
+  // browser: string
+  // isFullScreen: boolean
   lastActive: number // ms from epoch
 }
 
@@ -354,8 +354,8 @@ export class Video {
       path: '',
     }))
     this.file = {
-      mimeType:
-        data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
+      mimeType: 'video/webm',
+      // data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
     }
     return this
   }
@@ -491,6 +491,30 @@ export class Video {
     this.status.hasUnsavedChanges = false
   }
 }
+
+// // Dataporten groups
+// export interface DataportenGroupsData {
+//   type: string
+//   displayName: string
+//   id: string
+//   membership: {
+//     basic: string
+//   }
+// }
+// export class DataportenGroups {
+//   type: string
+//   displayName: string
+//   id: string
+//   membership: {
+//     basic: string
+//   }
+//   constructor(data?: DataportenGroupsData) {
+//     this.type = data?.type
+//     this.displayName = data?.displayName
+//     this.id = data?.id
+//     this.membership = data?.membership.basic
+//   }
+// }
 export interface DataPath {
   path: string
   currentKey: string
@@ -512,11 +536,13 @@ interface DatasetUsers {
   owner: {
     profile: {
       username: string
+      dataportenGroups: string[]
+      canvasGroups: string[]
     }
   }
 }
 export interface DatasetStorage {
-  _id: string
+  _id?: string
   kind: VIDEO_STORAGE_TYPES
   groupId: string
   file: {
@@ -533,6 +559,7 @@ export interface DatasetLock {
   date: Date
   selection: Selection
 }
+
 export class Dataset {
   _id: string
   name: string
@@ -563,13 +590,14 @@ export class Dataset {
       owner: {
         profile: {
           username: '',
+          dataportenGroups: [],
+          canvasGroups: [],
         },
       },
     }
     this.selection = {}
     this.selectionPriority = []
     this.storages = []
-    console.log(data)
     if (data) {
       this._id = data._id // undefined if a new dataset
       this.name = data.name
@@ -587,9 +615,12 @@ export class Dataset {
       }
 
       this.users.owner.profile.username = data.users?.owner?.profile?.username
-      // this.users = {
-      //   owner: data.users?.owner,
-      // }
+      this.users.owner.profile.dataportenGroups =
+        data.users?.owner?.profile?.dataportenGroups || []
+
+      this.users.owner.profile.canvasGroups =
+        data.users?.owner?.profile?.canvasGroups || []
+
       this.selection = data?.selection ? data.selection : {}
       this.selectionPriority = data.selectionPriority
 
