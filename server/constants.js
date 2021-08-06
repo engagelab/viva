@@ -86,18 +86,26 @@ const platforms = {
 const organizations = {
   uio: {
     name: 'uio',
+    dc: ['uio'], // Explicit list of names to match against   https://innsyn.feide.no/aboutme
+    ou: [], // List of sub-org names to match against
     platform: platforms.canvas,
   },
   usn: {
     name: 'usn',
+    dc: ['uio'], // Explicit list of names to match against   https://innsyn.feide.no/aboutme
+    ou: [], // List of sub-org names to match against
     platform: platforms.canvas,
   },
   ntnu: {
     name: 'ntnu',
+    dc: ['uio'], // Explicit list of names to match against   https://innsyn.feide.no/aboutme
+    ou: [], // List of sub-org names to match against
     platform: platforms.canvas,
   },
   other: {
     name: 'other',
+    dc: ['uio'], // Explicit list of names to match against   https://innsyn.feide.no/aboutme
+    ou: [], // List of sub-org names to match against
     platform: platforms.dataporten,
   }
 }

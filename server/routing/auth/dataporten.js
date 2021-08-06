@@ -3,6 +3,7 @@ const { generators } = require('openid-client')
 const jwt = require('jsonwebtoken')
 const User = require('../../models/User')
 const { organizations } = require('../../constants')
+// const { httpRequest } = require('../../utilities')
 const { createOrUpdateUser, completeCallback } = require('./helpers')
 const openidClient = require('../../services/openid')
 
@@ -30,7 +31,7 @@ router.get('/dataporten/login', (req, res) => {
   const code_challenge = generators.codeChallenge(code_verifier)
 
   let redirectUrl = DPClient.authorizationUrl({
-    scope: 'openid groups profile email userid userid-feide groups-org',
+    scope: 'openid groups profile email userid userid-feide groups-org groups-edu groups-other',
     // resource: 'https://my.api.example.com/resource/32178',
     code_challenge,
     code_challenge_method: 'S256',
@@ -85,9 +86,37 @@ router.get('/dataporten/callback', function (request, response) {
       }
 
       // Now use the access_token to retrieve user profile information
-      DPClient.userinfo(tokenSet.access_token) // => Promise
+      DPClient.userinfo(tokenSet.access_token, { params: { scope: 'groups-org groups-edu groups-other' } }) // => Promise
         .then((data) => {
-          console.log(
+
+          // Dataporten calls for retrieving GROUPS and ORGS (orgs not working..)
+
+/*           const options = {
+            host: 'groups-api.dataporten.no',
+            path: `/groups/me/groups`,
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${tokenSet.access_token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+          httpRequest(options, '').then((groups) => {
+            console.dir(groups)
+            const options2 = {
+              host: 'api.feide.no',
+              path: `/2/org/all`,
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${tokenSet.access_token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+            httpRequest(options2, '').then((orgs) => {
+              console.dir(orgs)
+            }).catch(error => console.log(error.toString()))
+          }) */
+
+           console.log(
             `\nGot DP user; logging in ${data.name} : ${data.email} ...`
           )
           const profile = {

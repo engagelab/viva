@@ -23,8 +23,10 @@ const endpoint = {
   port: 443,
 }
 const s3 = new S3Client({
-  secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
-  accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
+  credentials: {
+    secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
+    accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
+  },
   region: process.env.AWS_BUCKET_REGION,
   endpoint,
   tls: true,

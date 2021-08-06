@@ -43,6 +43,7 @@ To skip this check, set `CANVAS_ETHICS_COURSE_ID=none`
 
 ##### API Routes Required
 
+### ** These routes require a USER TOKEN (not in use as at 2021) **
 
 Users in a group (working)
 ```
@@ -50,6 +51,10 @@ Users in a group (working)
 To determine which users are considered "Viva Administrators"
 Create this group at the sub-Account level
 Set CANVAS_ADMIN_GROUP_ID to the group_id
+
+Admin: needs Canvas groups to allocate one or more 'canvas group's to a Dataset
+MobileApp:  needs Canvas groups to determine which Datasets to receive
+
 ```
 Users in a Course (working)
 ```
@@ -73,4 +78,36 @@ Progress of Course for a user (NOT WORKING)
 To grant access to VIVA depending on completion of a particular course e.g. Ethics course
 Set CANVAS_DEPENDENT_COURSE_ID to the course_id
 Set to 'none' if no such course exists
+```
+
+
+### ** These routes require a PRIVELIGED ACCESS TOKEN known by the server **
+
+
+Admin
+
+```
+  All groups (Courses) (under the Account) So admins can allocate courses to a Dataset
+```
+
+```
+  Members of the 'VIVA admin group' to ensure user is an Administrator
+```
+
+MobileApp
+
+```
+  Groups (courses) To know which Datasets (based on courses) a user is allowed to receive
+```
+
+```
+  Progress for a course - To grant access to VIVA depending on completion of a particular course e.g. Ethics course
+  Set CANVAS_DEPENDENT_COURSE_ID to the course_id
+  Set to 'none' if no such course exists
+```
+
+LTI for Video Sharing
+
+```
+  Names and Roles to allow current user to share with others in same Course   (DONE)
 ```
