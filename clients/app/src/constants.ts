@@ -142,8 +142,8 @@ enum VIDEO_STATUS_TYPES {
   premeta = 'premeta', // Pre-stage when awaiting linking of file upload to complete uploaded metadata in DB
   uploaded = 'uploaded', // First pipeline state after file was uploaded
   decrypted = 'decrypted', // (Currently unused)
-  converted = 'converted', // Video was converted by FFMPEG, ready to be sent to storage(s)
-  edited = 'edited', // Video was saved to Lagringshotell. Video is ready to be transferred to another location.
+  edited = 'edited', // Video was processed by FFMPEG (trimming, blurring, watermarking, etc.)
+  stored = 'stored', // Video was successfully copied to all storage locations
   complete = 'complete', // Video has now been uploaded, decrypted, trimmed/watermarked, saved and transferred to another location. This is the LAST pipeline stage
   error = 'error', // Something went wrong. Videos in this state will not move further in the pipeline until attended to
 }

@@ -48,7 +48,8 @@ const pipelineStates = ['uploaded', 'decrypted', 'edited', 'stored'] // Subset o
 const pipelineErrorMessages = {
   'uploaded': 'Error decrypting video',
   'decrypted': 'Error editing video',
-  'converted': 'Error copying video'
+  'edited': 'Error storing video',
+  'stored': 'Error cleaning up video'
 }
 
 const videoStorageTypes = {

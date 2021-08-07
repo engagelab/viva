@@ -203,6 +203,7 @@ const beginProcessingVideo = (pStatus) => {
           .map((s) => s.kind)
           .some((kind) => storageTypesRequiringTransfer.includes(kind))
         if (!keepVideo) {
+          // TODO: Remove file here, rather than moving to 'complete' folder
           fileOperations
             .moveFile(
               nextVideo,
