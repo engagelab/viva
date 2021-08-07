@@ -102,7 +102,7 @@ const beginProcessingVideo = (pStatus) => {
   nextVideo.save((error) => {
     if (error) {
       return console.log(
-        `Error saving after complete processing. Video fileId: ${nextVideo.details.id}`
+        `Error saving Video to DB during begin processing. Video fileId: ${nextVideo.details.id} Error: ${error.toString()}`
       )
     }
 
@@ -174,8 +174,6 @@ const beginProcessingVideo = (pStatus) => {
                 video: nextVideo,
                 subDirSrc: videoFolderNames.edited,
               })
-                .then(() => console.log('Video sent to Educloud'))
-                .catch((err) => errorProcessingVideo(err, pStatus))
               allPromises.push(ECpromise)
             }
           })
