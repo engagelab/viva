@@ -179,6 +179,7 @@ const beginProcessingVideo = (pStatus) => {
           })
           Promise.all(allPromises)
             .then(() => {
+              console.log('Continuing after all resolved')
               fileOperations
                 .moveFile(
                   nextVideo,
@@ -186,9 +187,13 @@ const beginProcessingVideo = (pStatus) => {
                   videoFolderNames.stored
                 )
                 .then(() => advanceVideoStatus(nextVideo, pStatus))
-                .catch((err) => errorProcessingVideo(err, pStatus))
+                .catch((err) => {
+                  console.log(`Error after move file. Error: ${err}`)
+                  errorProcessingVideo(err, pStatus)
+                })
             })
             .catch((err) => {
+              console.log(`Error after all resolved. Error: ${err}`)
               errorProcessingVideo(err, pStatus)
             })
         })
