@@ -87,7 +87,7 @@ const advanceVideoStatus = (video, pStatus) => {
   video.save((error) => {
     if (error) {
       console.log(
-        `Error saving video after completed processing. Video details ID: ${video.details.id}`
+        `Error saving Video to DB. Video details ID: ${video.details.id} Error: ${error.toString()}`
       )
     }
     delete activelyProcessing[pStatus]
