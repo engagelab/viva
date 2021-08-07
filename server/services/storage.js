@@ -194,6 +194,9 @@ function sendToEducloud({ video, subDirSrc }) {
   return uploadS3File({ path, keyname, sseKey, sseMD5 }).then((result) => {
     console.log('Video sent to Educloud')
     video.storages.push({ path: result.Key, kind: videoStorageTypes.educloud })
+  }).catch((error) => {
+    console.log(error)
+    return Promise.reject(error)
   })
 }
 
