@@ -2,7 +2,7 @@
  Designed and developed by Richard Nesnass
  Maintains a record of existing video processing tasks, and checks for new videos to process
 */
-
+const AWS = require("aws-sdk")
 require('dotenv').config({ silent: process.env.NODE_ENV !== 'development' })
 const nodeCleanup = require('node-cleanup')
 const {
@@ -21,6 +21,9 @@ const {
   sendToLagringshotell,
   sendToEducloud,
 } = require('./services/storage')
+
+// AWS Storage load config
+AWS.config.loadFromPath(process.env.AWS_CONFIG_FILE)
 
 // Initialise queues and populate with unfinished work
 const videoBacklog = {} // Multiple arrays queuing videos for each state in the pipeline
