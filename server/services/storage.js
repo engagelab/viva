@@ -3,12 +3,13 @@ const {
   GetObjectCommand,
   PutObjectCommand,
 } = require('@aws-sdk/client-s3')
+
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const fs = require('fs')
 const crypto = require("crypto")
 const Dataset = require('../models/Dataset')
 const moment = require('moment')
-const AWS = require("aws-sdk")
+
 const { videoStorageTypes } = require('../constants')
 const {
   getPath,
@@ -17,24 +18,23 @@ const {
   copyFile,
 } = require('../subprocesses/fileOperations')
 
-// AWS Storage load config
-AWS.config.loadFromPath(process.env.AWS_CONFIG_FILE)
-console.log(AWS.config)
-// Initialize
-const endpoint = {
-  protocol: 'https',
-  hostname: process.env.AWS_BUCKET_ENDPOINT,
-  port: 443,
-}
-const s3 = new S3Client({
-/*   credentials: {
+const s3Configuration = {
+  credentials: {
     secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
     accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
-  }, */
-  // region: process.env.AWS_BUCKET_REGION,
-  endpoint,
+  },
+  region: process.env.AWS_BUCKET_REGION,
+  endpoint: {
+    protocol: 'https',
+    hostname: process.env.AWS_BUCKET_ENDPOINT,
+    port: 443,
+  },
   tls: true,
-})
+};
+
+const s3 = new S3Client(s3Configuration)
+console.log(s3.config.credentials())
+
 
 /**
  * Upload a file to S3
