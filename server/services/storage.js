@@ -19,7 +19,7 @@ const {
 
 // AWS Storage load config
 AWS.config.loadFromPath(process.env.AWS_CONFIG_FILE)
-
+console.log(AWS.config)
 // Initialize
 const endpoint = {
   protocol: 'https',
