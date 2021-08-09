@@ -29,6 +29,7 @@ const s3Configuration = {
     protocol: 'https',
     hostname: process.env.AWS_BUCKET_ENDPOINT,
     port: 443,
+    path: process.env.AWS_BUCKET_NAME,
   },
   tls: true,
 };
