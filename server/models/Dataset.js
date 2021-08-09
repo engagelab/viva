@@ -73,6 +73,8 @@ datasetSchema.methods.redacted = function () {
     },
     users: {
       owner: data.users.owner,
+      dataportenGroups: data.users.dataportenGroups,
+      canvasGroups: data.users.canvasGroups,
     },
     storages: data.storages.map((store) => {
       const s = { ...store }

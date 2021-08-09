@@ -536,10 +536,10 @@ interface DatasetUsers {
   owner: {
     profile: {
       username: string
-      dataportenGroups: string[]
-      canvasGroups: string[]
     }
   }
+  dataportenGroups: string[]
+  canvasGroups: string[]
 }
 export interface DatasetStorage {
   _id?: string
@@ -590,10 +590,10 @@ export class Dataset {
       owner: {
         profile: {
           username: '',
-          dataportenGroups: [],
-          canvasGroups: [],
         },
       },
+      dataportenGroups: [],
+      canvasGroups: [],
     }
     this.selection = {}
     this.selectionPriority = []
@@ -615,11 +615,11 @@ export class Dataset {
       }
 
       this.users.owner.profile.username = data.users?.owner?.profile?.username
-      this.users.owner.profile.dataportenGroups =
-        data.users?.owner?.profile?.dataportenGroups || []
+      this.users.dataportenGroups = data.users?.dataportenGroups || []
 
-      this.users.owner.profile.canvasGroups =
-        data.users?.owner?.profile?.canvasGroups || []
+      this.users.canvasGroups = data.users?.canvasGroups
+        ? data.users?.canvasGroups
+        : []
 
       this.selection = data?.selection ? data.selection : {}
       this.selectionPriority = data.selectionPriority

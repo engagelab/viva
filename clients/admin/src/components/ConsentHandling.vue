@@ -19,6 +19,16 @@
     </div>
     <div class="flex flex-col w-3/6">
       <p class="text-red-600 mt-4 ml-2">Data collectors :</p>
+      <div
+        v-for="(group, index) in theDataset.users.canvasGroups"
+        :value="group"
+        :key="index"
+      >
+        {{ group }}
+      </div>
+    </div>
+
+    <div>
       <SlButton
         class="self-center rounded-lg"
         id="button-accept"
@@ -26,24 +36,11 @@
       >
         Show groups
       </SlButton>
-    </div>
-    <div class="grid grid-cols-2 gap-4 w-">
-      <div>
-        <div
-          v-for="(group, index) in theDataset.users.owner.profile.canvasGroups"
-          :value="group"
-          :key="index"
-        >
-          {{ group }}
-        </div>
+      <div v-for="(group, index) in allGroups" :value="group" :key="index">
+        {{ group }}
       </div>
+    </div>
 
-      <div>
-        <div v-for="(group, index) in allGroups" :value="group" :key="index">
-          {{ group }}
-        </div>
-      </div>
-    </div>
     <!-- <AnswerInput
       class="m-2"
       mode="singleChoice"
@@ -85,6 +82,7 @@ export default defineComponent({
       behandlings,
       showGroups,
       allGroups: appGetters.user.value.profile.groups,
+      g: appGetters.user.value.profile,
       //Methods
       addGroup,
     }
