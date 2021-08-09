@@ -10,12 +10,17 @@ const MemoryStore = require('memorystore')(session)
 
 const cors = require('cors')
 const path = require('path')
+const AWS = require("aws-sdk")
 
 // Local includes
 const db = require('./database')
 const apiRoutes = require('./routing/api')
 const authenticationRoutes = require('./routing/auth')
 const setup = require('./setup')
+
+// AWS Storage load config
+AWS.config.loadFromPath(process.env.AWS_CONFIG_FILE)
+
 // Create directories if necessary
 setup.createVideoDirectories()
 
