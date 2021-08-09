@@ -2,8 +2,6 @@
   <div>
     <h2>{{ t('dataset') }}</h2>
 
-    <p>{{ groups }}</p>
-
     <div class="flex flex-col ...">
       <div>
         <div class="w-4/5 flex justify-between ...">
@@ -98,7 +96,7 @@
       </div>
       <div><p class="text-red-600 mt-4 ml-2">Instances</p></div>
       <SelectionItem></SelectionItem>
-      <div><p class="text-red-600 mt-4 ml-2">Lawful grounds:</p></div>
+
       <ConsentHandling></ConsentHandling>
 
       <div><p class="text-red-600 mt-4 ml-2">Storage options</p></div>
