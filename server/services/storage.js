@@ -8,6 +8,7 @@ const fs = require('fs')
 const crypto = require("crypto")
 const Dataset = require('../models/Dataset')
 const moment = require('moment')
+const AWS = require("aws-sdk")
 const { videoStorageTypes } = require('../constants')
 const {
   getPath,
@@ -15,6 +16,9 @@ const {
   createLHFolder,
   copyFile,
 } = require('../subprocesses/fileOperations')
+
+// AWS Storage load config
+AWS.config.loadFromPath(process.env.AWS_CONFIG_FILE)
 
 // Initialize
 const endpoint = {
