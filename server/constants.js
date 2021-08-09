@@ -48,7 +48,8 @@ const pipelineStates = ['uploaded', 'decrypted', 'edited', 'stored'] // Subset o
 const pipelineErrorMessages = {
   'uploaded': 'Error decrypting video',
   'decrypted': 'Error editing video',
-  'converted': 'Error copying video'
+  'edited': 'Error storing video',
+  'stored': 'Error cleaning up video'
 }
 
 const videoStorageTypes = {
@@ -61,7 +62,7 @@ const videoStorageTypes = {
 
 const consentTypes = {
   samtykke: 'samtykke',
-  manual: 'manual',
+  manuel: 'manuel',
   article6: 'article6',
 }
 
@@ -86,18 +87,26 @@ const platforms = {
 const organizations = {
   uio: {
     name: 'uio',
+    dc: ['uio'], // Explicit list of names to match against   https://innsyn.feide.no/aboutme
+    ou: [], // List of sub-org names to match against
     platform: platforms.canvas,
   },
   usn: {
     name: 'usn',
+    dc: ['uio'], // Explicit list of names to match against   https://innsyn.feide.no/aboutme
+    ou: [], // List of sub-org names to match against
     platform: platforms.canvas,
   },
   ntnu: {
     name: 'ntnu',
+    dc: ['uio'], // Explicit list of names to match against   https://innsyn.feide.no/aboutme
+    ou: [], // List of sub-org names to match against
     platform: platforms.canvas,
   },
   other: {
     name: 'other',
+    dc: ['uio'], // Explicit list of names to match against   https://innsyn.feide.no/aboutme
+    ou: [], // List of sub-org names to match against
     platform: platforms.dataporten,
   }
 }

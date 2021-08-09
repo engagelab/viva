@@ -130,7 +130,10 @@ export default defineComponent({
         status.text = 'Klipper og legger på filtre'
         status.symbolClass = 'text-viva-korall'
         status.textClass = 'text-viva-lilla'
-      } else if (v.status.main == VIDEO_STATUS_TYPES.complete) {
+      } else if (
+        v.status.main == VIDEO_STATUS_TYPES.stored ||
+        v.status.main === VIDEO_STATUS_TYPES.complete
+      ) {
         status.text = 'Opptak er lagret'
         status.symbolClass = 'black'
         status.textClass = 'black'
@@ -141,15 +144,14 @@ export default defineComponent({
         status.textClass = 'red'
       } else if (
         v.status.main === VIDEO_STATUS_TYPES.uploaded ||
-        v.status.main === VIDEO_STATUS_TYPES.decrypted ||
-        v.status.main === VIDEO_STATUS_TYPES.converted
+        v.status.main === VIDEO_STATUS_TYPES.decrypted
       ) {
         status.text = 'Opptak behandles av UiOs VIVA tjeneste ...'
         status.symbol = 'wait'
         status.symbolClass = 'black'
         status.textClass = 'black'
       } else if (v.status.main == VIDEO_STATUS_TYPES.edited) {
-        status.text = 'Klar til overføring'
+        status.text = 'Konvertert. venter på overføring ..'
         status.symbol = 'accept'
         status.symbolClass = 'green'
         status.textClass = 'green'

@@ -5,7 +5,7 @@ const host = process.env.VUE_APP_SERVER_HOST
 const port = process.env.VUE_APP_SERVER_PORT
 const https_key = fs.readFileSync(process.env.SSL_KEY_FILE)
 const https_cert = fs.readFileSync(process.env.SSL_CERT_FILE)
-const baseUrl = process.env.BASE_URL
+const baseUrl = process.env.BASE_URL || '/'
 const devHost = host === 'https://localhost' ? 'localhost' : '10.0.0.11'
 
 module.exports = {

@@ -23,8 +23,10 @@ const endpoint = {
   port: 443,
 }
 const s3 = new S3Client({
-  secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
-  accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
+/*   credentials: {
+    secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
+    accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
+  }, */
   region: process.env.AWS_BUCKET_REGION,
   endpoint,
   tls: true,
@@ -190,7 +192,11 @@ function sendToEducloud({ video, subDirSrc }) {
   video.file.encryptionKey = sseKey
   video.file.encryptionMD5 = sseMD5
   return uploadS3File({ path, keyname, sseKey, sseMD5 }).then((result) => {
-    video.storages.push({ path: result.Key, kind: videoStorageTypes.lagringshotell })
+    console.log('Video sent to Educloud')
+    video.storages.push({ path: result.Key, kind: videoStorageTypes.educloud })
+  }).catch((error) => {
+    console.log(error)
+    return Promise.reject(error)
   })
 }
 

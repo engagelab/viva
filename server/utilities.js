@@ -175,8 +175,12 @@ function httpRequest(options, postData) {
         } else {
           // Everything is OK
           // json = JSON.parse(Buffer.concat(data).toString())
-          const json = JSON.parse(data.join(''))
-          resolve(json)
+          const d = data.join('')
+          if (d === 'Invalid access token') reject(new Error('Access token not valid for this request'))
+          else {
+            const json = JSON.parse(d)
+            resolve(json)
+          }
         }
       })
     })
