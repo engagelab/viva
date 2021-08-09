@@ -2,8 +2,6 @@
   <div>
     <h2>{{ t('dataset') }}</h2>
 
-    <p>{{ theDataset }}</p>
-
     <div class="flex flex-col ...">
       <div>
         <div class="w-4/5 flex justify-between ...">
@@ -98,11 +96,25 @@
       </div>
       <div><p class="text-red-600 mt-4 ml-2">Instances</p></div>
       <SelectionItem></SelectionItem>
-      <div><p class="text-red-600 mt-4 ml-2">Lawful grounds:</p></div>
+
       <ConsentHandling></ConsentHandling>
 
       <div><p class="text-red-600 mt-4 ml-2">Storage options</p></div>
-      <Storage></Storage>
+      <!-- <Storage></Storage> -->
+      <div
+        class="m-2"
+        v-for="(storage, index) in theDataset.storages"
+        :key="index"
+      >
+        <Storage :selectedStorage="storage" v-if="storage._id != ''"></Storage>
+      </div>
+      <SlButton
+        class="ml-2 p-0 self-center rounded-lg"
+        id="button-accept"
+        @click="addStorage"
+        >+ Add new storage
+      </SlButton>
+
       <SlButton
         class="ml-4 p-2 self-center capitalize bg-green-highlight rounded-lg"
         id="button-accept"
@@ -120,13 +132,15 @@ import { useI18n } from 'vue-i18n'
 import { SELECTION } from '@/constants'
 // import { useAppStore } from '@/store/useAppStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import { DatasetSelection } from '@/types/main'
+import { DatasetSelection, DatasetStorage } from '@/types/main'
 import SelectionItem from '@/components/SelectionItem.vue'
 import AnswerInput from '@/components/base/AnswerInput.vue'
 import SelectionBox from '@/components/base/SelectionBox.vue'
 import ConsentHandling from '@/components/ConsentHandling.vue'
 import Storage from '@/components/Storage.vue'
 import SlButton from '@/components/base/SlButton.vue'
+import { VIDEO_STORAGE_TYPES } from '@/constants'
+import { useAppStore } from '@/store/useAppStore'
 const messages = {
   nb_NO: {
     dataset: 'Registrering',
@@ -163,15 +177,14 @@ export default defineComponent({
     ConsentHandling,
     Storage,
   },
-  // props: {
-  //   dataset: { type: Object as PropType<Dataset>, required: true },
-  // },
-  setup(/*props*/) {
+  setup() {
     const { t } = useI18n({ messages })
-    // const { getters: appGetters } = useAppStore()
+
     const showInput = ref(false)
     const { getters: datasetGetters, actions: datasetActions } =
       useDatasetStore()
+
+    const { getters: appGetters } = useAppStore()
     const currentSubset = ref('')
 
     const d = datasetGetters.selectedDataset
@@ -181,13 +194,7 @@ export default defineComponent({
       item: '',
       itemName: '',
     })
-    // let SelectionOptionList1: SelectionOptionListItem[] = Object.values(
-    //   SELECTION
-    // ).map((r) => ({
-    //   item: r,
-    //   itemName: r,
-    // }))
-
+    console.log(appGetters.user.value.profile.groups)
     let SelectionOptionList: SelectionOptionListItem[] = computed(() => {
       return Object.values(SELECTION)
         .filter((r) => !theDataset.value.selectionPriority.includes(r))
@@ -202,6 +209,18 @@ export default defineComponent({
     const addSelectionPriority = () => {
       if (currentSelection.value)
         datasetActions.addSelectionPriority(currentSelection.value.itemName)
+    }
+    const addStorage = () => {
+      const newStorage: DatasetStorage = {
+        kind: VIDEO_STORAGE_TYPES.educloud,
+        groupId: '',
+        file: {
+          name: [],
+          path: [],
+        },
+        category: [],
+      }
+      datasetActions.addStorageFields('', newStorage, 'new')
     }
     // Save updated dataset
     const updateDataset = () => {
@@ -221,8 +240,10 @@ export default defineComponent({
       currentSelection,
       showInput,
       currentSubset,
+      groups: appGetters.user.value.profile.groups,
       // Computed
       // Methods
+      addStorage,
       addSubset,
       addSelectionPriority,
       updateDataset,

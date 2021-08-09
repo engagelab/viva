@@ -78,7 +78,10 @@ function setUserGroups(user) {
 
 function setUserRole(user) {
   return canvas.usersForGroup(process.env.CANVAS_ADMIN_GROUP_ID).then((users) => {
-    if (users.some((u) => u.id === user.profile.username)) user.status.role = userRoles.admin
+    if (users.some((u) => u.id === user.profile.username)) {
+      user.status.role = userRoles.admin
+      console.log(`User ${user.profile.username} was set to 'admin' role`)
+    }
     else user.status.role = userRoles.user
   }).catch((err) => {
     console.error(err)

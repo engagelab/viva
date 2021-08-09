@@ -16,6 +16,7 @@ const db = require('./database')
 const apiRoutes = require('./routing/api')
 const authenticationRoutes = require('./routing/auth')
 const setup = require('./setup')
+
 // Create directories if necessary
 setup.createVideoDirectories()
 

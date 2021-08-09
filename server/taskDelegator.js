@@ -2,7 +2,6 @@
  Designed and developed by Richard Nesnass
  Maintains a record of existing video processing tasks, and checks for new videos to process
 */
-
 require('dotenv').config({ silent: process.env.NODE_ENV !== 'development' })
 const nodeCleanup = require('node-cleanup')
 const {
@@ -87,7 +86,7 @@ const advanceVideoStatus = (video, pStatus) => {
   video.save((error) => {
     if (error) {
       console.log(
-        `Error saving video after completed processing. Video details ID: ${video.details.id}`
+        `Error saving Video to DB. Video details ID: ${video.details.id} Error: ${error.toString()}`
       )
     }
     delete activelyProcessing[pStatus]
@@ -102,7 +101,7 @@ const beginProcessingVideo = (pStatus) => {
   nextVideo.save((error) => {
     if (error) {
       return console.log(
-        `Error saving after complete processing. Video fileId: ${nextVideo.details.id}`
+        `Error saving Video to DB during begin processing. Video fileId: ${nextVideo.details.id} Error: ${error.toString()}`
       )
     }
 
@@ -174,13 +173,12 @@ const beginProcessingVideo = (pStatus) => {
                 video: nextVideo,
                 subDirSrc: videoFolderNames.edited,
               })
-                .then(() => console.log('Video sent to Educloud'))
-                .catch((err) => errorProcessingVideo(err, pStatus))
               allPromises.push(ECpromise)
             }
           })
           Promise.all(allPromises)
             .then(() => {
+              console.log('Continuing after all resolved')
               fileOperations
                 .moveFile(
                   nextVideo,
@@ -188,9 +186,13 @@ const beginProcessingVideo = (pStatus) => {
                   videoFolderNames.stored
                 )
                 .then(() => advanceVideoStatus(nextVideo, pStatus))
-                .catch((err) => errorProcessingVideo(err, pStatus))
+                .catch((err) => {
+                  console.log(`Error after move file. Error: ${err}`)
+                  errorProcessingVideo(err, pStatus)
+                })
             })
             .catch((err) => {
+              console.log(`Error after all resolved. Error: ${err}`)
               errorProcessingVideo(err, pStatus)
             })
         })

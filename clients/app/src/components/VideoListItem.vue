@@ -152,7 +152,7 @@ export default defineComponent({
         status.textClass = 'black'
       } else if (v.status.main == VIDEO_STATUS_TYPES.edited) {
         status.text = 'Konvertert. venter på overføring ..'
-        status.symbol = 'accept'
+        status.symbol = 'wait'
         status.symbolClass = 'green'
         status.textClass = 'green'
         status.google = video.value.storages.some(

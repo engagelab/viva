@@ -2,12 +2,15 @@ const {
   S3Client,
   GetObjectCommand,
   PutObjectCommand,
+  ListObjectsCommand,
 } = require('@aws-sdk/client-s3')
+
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const fs = require('fs')
 const crypto = require("crypto")
 const Dataset = require('../models/Dataset')
 const moment = require('moment')
+
 const { videoStorageTypes } = require('../constants')
 const {
   getPath,
@@ -16,21 +19,34 @@ const {
   copyFile,
 } = require('../subprocesses/fileOperations')
 
-// Initialize
-const endpoint = {
-  protocol: 'https',
-  hostname: process.env.AWS_BUCKET_ENDPOINT,
-  port: 443,
-}
-const s3 = new S3Client({
+const s3Configuration = {
   credentials: {
     secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
     accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
   },
   region: process.env.AWS_BUCKET_REGION,
-  endpoint,
+  endpoint: {
+    protocol: 'https',
+    hostname: process.env.AWS_BUCKET_ENDPOINT,
+    port: 443,
+    path: process.env.AWS_BUCKET_NAME,
+  },
   tls: true,
-})
+};
+
+const s3 = new S3Client(s3Configuration)
+// console.log(s3.config.credentials())
+
+async function listBucketItems() {
+  const bucketParams = { Bucket: process.env.AWS_BUCKET_NAME };
+  try {
+    const data = await s3.send(new ListObjectsCommand(bucketParams));
+    console.log("Success", data.Buckets);
+  } catch (err) {
+    console.log("Error", err);
+  }
+}
+listBucketItems()
 
 /**
  * Upload a file to S3
@@ -192,7 +208,11 @@ function sendToEducloud({ video, subDirSrc }) {
   video.file.encryptionKey = sseKey
   video.file.encryptionMD5 = sseMD5
   return uploadS3File({ path, keyname, sseKey, sseMD5 }).then((result) => {
-    video.storages.push({ path: result.Key, kind: videoStorageTypes.lagringshotell })
+    console.log('Video sent to Educloud')
+    video.storages.push({ path: result.Key, kind: videoStorageTypes.educloud })
+  }).catch((error) => {
+    console.log(error)
+    return Promise.reject(error)
   })
 }
 

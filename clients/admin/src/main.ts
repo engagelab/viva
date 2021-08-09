@@ -114,7 +114,7 @@ if (window.cordova) {
     }
     checkPermissionList()
 
-    appActions.setUseCordova(true)
+    // appActions.setUseCordova(true)
     initialiseApp()
   }
   document.addEventListener('deviceready', onDeviceReady, false)
