@@ -13,51 +13,43 @@ import {
   APIRequestPayload,
   XHR_REQUEST_TYPE,
   DatasetStorage,
+  // DataportenGroupsData,
+  // DataportenGroups,
 } from '../types/main'
 import { apiRequest } from '../api/apiRequest'
 import { useAppStore } from './useAppStore'
-// import { VIDEO_STORAGE_TYPES } from '../constants'
+import { VIDEO_STORAGE_TYPES } from '../constants'
 const { actions: appActions } = useAppStore()
 //State
 interface DatasetState {
   selectedDataset: Dataset
   datasets: Map<string, Dataset>
+  // dataportenGroups: Map<string, DataportenGroups>
 }
 const state: Ref<DatasetState> = ref({
   selectedDataset: new Dataset(),
   datasets: new Map(),
+  // dataportenGroups: new Map(),
 })
-
-// interface ResponseData {
-//   datasets: Dataset[] | undefined
-//   videos: Video[] | undefined
-//   draftUsers: string[] | undefined
-// }
-
-//----------------- Server side functions----------------//
-
-// async function saveDataset(dataset: Dataset): Promise<Dataset> {
-//   const payload: APIRequestPayload = {
-//     method: XHR_REQUEST_TYPE.POST,
-//     credentials: true,
-//     route: '/api/dataset',
-//     query: { dataset },
-//   }
-//   return apiRequest<Dataset>(payload)
-// }
 
 //Getters
 interface Getters {
-  datasets: ComputedRef<Dataset[]>
+  datasets: ComputedRef<Map<string, Dataset>>
   selectedDataset: ComputedRef<DatasetState['selectedDataset']>
+  // dataportenGroups:ComputedRef<Map<string,DataportenGroups>
 }
 const getters = {
-  get datasets(): ComputedRef<Dataset[]> {
-    return computed(() => Array.from(state.value.datasets.values()))
+  get datasets(): ComputedRef<Map<string, Dataset>> {
+    // return computed(() => Array.from(state.value.datasets.values()))
+    return computed(() => state.value.datasets)
   },
   get selectedDataset(): ComputedRef<DatasetState['selectedDataset']> {
     return computed(() => state.value.selectedDataset)
   },
+
+  // get dataportenGroups(): ComputedRef<Map<string, DataportenGroups>> {
+  //   return computed(() => state.value.dataportenGroups)
+  // },
 }
 //Actions
 interface Actions {
@@ -71,6 +63,7 @@ interface Actions {
   // addSelectionToDataset: (data: SelectionOptions) => void
   // fetchConsents: (video: Video) => void
   fetchDatasets: () => Promise<void>
+  // fetchDataportenGroups: () => Promise<void>
   addDataset: (datasetName: string) => Promise<void>
   updateDataset: () => Promise<void>
   addSelectionPriority: (selectionPriority: string) => void
@@ -104,6 +97,26 @@ const actions = {
         appActions.errorMessage(error)
       })
   },
+  // // Fetch all dataporten groups for the user
+  // fetchDataportenGroups(): Promise<void> {
+  //   const payload: APIRequestPayload = {
+  //     method: XHR_REQUEST_TYPE.GET,
+  //     route: '/api/dataset/dataportengroups',
+  //     credentials: true,
+  //   }
+  //   return apiRequest<DataportenGroups[]>(payload)
+  //     .then((dataportenGroups) => {
+  //       if (dataportenGroups) {
+  //         dataportenGroups.forEach((s) => {
+  //           const newDataportenGroups = new DataportenGroups(s)
+  //           state.value.dataportenGroups.set(newDataportenGroups.id, newDataportenGroups)
+  //         })
+  //       }
+  //     })
+  //     .catch((error: Error) => {
+  //       appActions.errorMessage(error)
+  //     })
+  // },
   //To create a new dataset
   addDataset(datasetName: string): Promise<void> {
     const payload: APIRequestPayload = {
@@ -159,7 +172,7 @@ const actions = {
               storage.file.path.push(value as string)
               break
             case 'kind':
-              //   storage.kind = VIDEO_STORAGE_TYPES[value]
+              storage.kind = value as VIDEO_STORAGE_TYPES
               break
             case 'groupId':
               storage.groupId = value as string
@@ -217,7 +230,6 @@ const actions = {
     )) {
       console.log(`${key}: ${value}`)
     }
-    //)
   },
 }
 

@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted } from 'vue'
+import { defineComponent /*onMounted*/ } from 'vue'
 import { idleTimeout } from '@/constants'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
@@ -47,10 +47,10 @@ export default defineComponent({
       }
     })
 
-    onMounted(() => {
-      appActions.detectDevice()
-      appActions.detectAppVersion()
-    })
+    // onMounted(() => {
+    //   appActions.detectDevice()
+    //   appActions.detectAppVersion()
+    // })
 
     return {
       activeNow: appActions.activeNow,
