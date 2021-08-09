@@ -42,7 +42,6 @@ async function listBucketItems() {
   try {
     const data = await s3.send(new ListObjectsCommand(bucketParams));
     console.log("Success", data.Buckets);
-    return data; // For unit tests.
   } catch (err) {
     console.log("Error", err);
   }
