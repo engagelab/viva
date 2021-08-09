@@ -25,13 +25,10 @@ const s3Configuration = {
     accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
   },
   region: process.env.AWS_BUCKET_REGION,
+  forcePathStyle: true,
   endpoint: {
-    protocol: 'https',
     hostname: process.env.AWS_BUCKET_ENDPOINT,
-    port: 443,
-    path: process.env.AWS_BUCKET_NAME,
   },
-  tls: true,
 };
 
 const s3 = new S3Client(s3Configuration)
