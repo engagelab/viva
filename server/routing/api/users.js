@@ -78,7 +78,7 @@ router.get('/users', authoriseUser, async (request, response, next) => {
     })
   } else {
     let users = []
-    if (request.session.namesAndRoles) users = request.session.namesAndRoles
+    if (request.session.canvasData.namesAndRoles) users = request.session.canvasData.namesAndRoles
     response.send(users)
   }
 })
