@@ -5,8 +5,6 @@ const {
   ListObjectsCommand,
 } = require('@aws-sdk/client-s3')
 
-const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts')
-
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const fs = require('fs')
 const crypto = require("crypto")
@@ -22,22 +20,19 @@ const {
 } = require('../subprocesses/fileOperations')
 
 const s3Configuration = {
-   credentials: {
+  /* credentials: {
     secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
     accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
-  },
+  }, */
   region: process.env.AWS_BUCKET_REGION,
   forcePathStyle: true,
   tls: true,
   endpoint: {
-    protocol: 'https',
     hostname: process.env.AWS_BUCKET_ENDPOINT,
-    port: 443
   },
 };
 
 const s3 = new S3Client(s3Configuration)
-const sts = new STSClient(s3Configuration);
 
 async function listBucketItems() {
   const bucketParams = { Bucket: process.env.AWS_BUCKET_NAME };
@@ -49,17 +44,6 @@ async function listBucketItems() {
   }
 }
 listBucketItems()
-
-async function getIdentity() {
-  const command = new GetCallerIdentityCommand({});
-  try {
-    const data = await sts.send(command);
-    console.log("Success", data);
-  } catch (err) {
-    console.log("Error", err);
-  }
-}
-getIdentity()
 
 /**
  * Upload a file to S3
