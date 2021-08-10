@@ -2,7 +2,7 @@ const {
   S3Client,
   GetObjectCommand,
   PutObjectCommand,
-  ListObjectsCommand,
+  // ListObjectsCommand,
 } = require('@aws-sdk/client-s3')
 
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
@@ -35,7 +35,8 @@ const s3Configuration = {
 
 const s3 = new S3Client(s3Configuration)
 
-async function listBucketItems() {
+// FOR TESTING ONLY
+/* async function listBucketItems() {
   const bucketParams = { Bucket: process.env.AWS_BUCKET_NAME };
   try {
     const data = await s3.send(new ListObjectsCommand(bucketParams));
@@ -44,7 +45,7 @@ async function listBucketItems() {
     console.log("Error", err);
   }
 }
-listBucketItems()
+listBucketItems() */
 
 /**
  * Upload a file to S3
