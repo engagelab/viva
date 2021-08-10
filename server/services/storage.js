@@ -20,6 +20,7 @@ const {
 } = require('../subprocesses/fileOperations')
 
 const s3Configuration = {
+  // Setting credentials here does not seem to work. The should be only in .env file, AWS SDK will read them there
   /* credentials: {
     secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
     accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
@@ -38,7 +39,7 @@ async function listBucketItems() {
   const bucketParams = { Bucket: process.env.AWS_BUCKET_NAME };
   try {
     const data = await s3.send(new ListObjectsCommand(bucketParams));
-    console.log("Success", data.Buckets);
+    console.log("Success", data);
   } catch (err) {
     console.log("Error", err);
   }
