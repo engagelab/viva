@@ -3,7 +3,6 @@
 */
 
 require('dotenv').config({ silent: process.env.NODE_ENV !== 'development' })
-require('debugging-aid/network')
 
 const express = require('express')
 const session = require('express-session')
