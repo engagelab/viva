@@ -158,7 +158,7 @@ function completeCallback(request, response, user) {
   // Set the session here at last!
   // Web app receives a Session immediately, does not need to pass a token
   request.session.ref = user.id
-  s = `${new Date().toLocaleString()}: Web App Login: ${user.fullName}`
+  s = `${new Date().toLocaleString()}: Mobile App Login: ${user.profile.username}`
   console.log(s)
   console.log(`Session: ${request.session.ref}`)
   return response.redirect(redirectUrl)

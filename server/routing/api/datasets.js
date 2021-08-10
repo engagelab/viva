@@ -72,18 +72,17 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
     userRoles.admin
   )
   let query = {}
+  query.$and = [
+    {
+      $or: [
+        { 'users.dataportenGroups': { $in: groupIds } },
+        { 'users.canvasGroups': { $in: groupIds } },
+      ],
+    },
+    { 'status.active': true },
+  ]
   if (isAdmin) {
-    query = { 'users.owner': u._id }
-  } else {
-    query.$and = [
-      {
-        $or: [
-          { 'users.dataportenGroups': { $in: groupIds } },
-          { 'users.canvasGroups': { $in: groupIds } },
-        ],
-      },
-      { 'status.active': true },
-    ]
+    query.$and[0].$or.push({ 'users.owner': u._id })
   }
 
   function populateDatasets(datasets) {
