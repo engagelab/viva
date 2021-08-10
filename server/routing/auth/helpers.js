@@ -45,15 +45,18 @@ async function setUserAttributes(user, profile, tokenSet) {
   if (tDiff > 1000 * 60 * 60) user.status.lastLogin = new Date()
 }
 
-/* function getPrerequisiteCourseProgress(user) {
+// Check the 'prerequisite' course has been completed
+// This is the course id environment variable: CANVAS_DEPENDENT_COURSE_ID
+function getPrerequisiteCourseProgress(user) {
   if (process.env.CANVAS_DEPENDENT_COURSE_ID === 'none') {
     user.status.prerequisiteCompleted = true
     return Promise.resolve()
   }
+  // TODO: Fix this for superToken..
   return canvas.courseProgress(user.tokens.access_token, user.profile.oauthId, process.env.CANVAS_DEPENDENT_COURSE_ID).then((progress) => {
     user.status.prerequisiteCompleted = progress.requirement_count == progress.requirement_completed_count
   })
-} */
+}
 
 function setUserGroups(user) {
   // The 'organization' determines what system takes care of groups
@@ -63,22 +66,35 @@ function setUserGroups(user) {
         user.profile.groups = groups.map((g) => ({ id: g.id, name: g.displayName }))
        })
   } else if (platform === platforms.canvas) {
-    return Promise.resolve()
-      /* return canvas.coursesForUser(user).then((courses) => {
-        user.profile.groups = courses.map((c) => {
-          let isAdmin = c.enrollments.length && c.enrollments.some((e) => e.role === process.env.CANVAS_ADMIN_ROLE)
-          return { id: c.id, name: c.course_code, isAdmin }
+    return canvas.coursesInAccount(process.env.CANVAS_VIVA_ACCOUNT_ID)
+    .then(async (coursesInAccount) => {
+      const courses = []
+      for (let c of coursesInAccount) {
+        canvas.usersForCourse(c.id).then((users) => {
+          const t = users.some((u) => u.login_id === user.profile.username)
+          if (t) courses.push(c)
         })
-        return getPrerequisiteCourseProgress(user)
-      }) */
+      }
+      user.profile.groups = courses.map((c) => {
+        let isAdmin = c.enrollments.length && c.enrollments.some((e) => e.role === process.env.CANVAS_ADMIN_ROLE)
+        return { id: c.id, name: c.course_code, isAdmin }
+      })
+      return getPrerequisiteCourseProgress(user)
+    })
+    .catch((error) => console.log(error))
   } else {
     return Promise.resolve()
   }
 }
 
 function setUserRole(user) {
+  // TESTING
+  canvas.coursesForUser(`sis_login_id:${user.profile.username}`)
+    .then((courses) => console.log(courses))
+    .catch((error) => console.log(error))
+
   return canvas.usersForGroup(process.env.CANVAS_ADMIN_GROUP_ID).then((users) => {
-    if (users.some((u) => u.id === user.profile.username)) {
+    if (users.some((u) => u.login_id === user.profile.username)) {
       user.status.role = userRoles.admin
       console.log(`User ${user.profile.username} was set to 'admin' role`)
     }

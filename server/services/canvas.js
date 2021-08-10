@@ -4,13 +4,47 @@ const host = process.env.CANVAS_ENDPOINT_DOMAIN
 const superToken = process.env.CANVAS_VIVA_ACCESS_TOKEN
 
 // Get list of user's Courses (including enrolment roles) from Canvas
+// NOTE: Will not work for 'canvasAccessToken' unless userId is the calling user
+// NOTE: Currently not functional for superToken (token requires further access rights)
 // https://canvas.instructure.com/doc/api/courses.html#method.courses.index
 // Returns a Promise
-const coursesForUser = (canvasAccessToken) => {
+const coursesForUser = (userId, canvasAccessToken) => {
   let options = {
     host,
     port: 443,
-    path: `/api/v1/users/:user_id/courses`,
+    path: `/api/v1/users/${userId}/courses`,
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${canvasAccessToken || superToken}`,
+    },
+  }
+  return httpRequest(options, '')
+}
+
+// Get list of the current groups's Users from Canvas
+// https://canvas.instructure.com/doc/api/courses.html#method.courses.users
+// Returns a Promise
+const usersForCourse = (courseId, canvasAccessToken) => {
+  let options = {
+    host,
+    port: 443,
+    path: `/api/v1/courses/${courseId}/users`,
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${canvasAccessToken || superToken}`,
+    },
+  }
+  return httpRequest(options, '')
+}
+
+// Get list of active Courses in Account
+// https://canvas.instructure.com/doc/api/accounts.html#method.accounts.courses_api
+// Returns a Promise
+const coursesInAccount = (accountId, canvasAccessToken) => {
+  let options = {
+    host,
+    port: 443,
+    path: `/api/v1/accounts/${accountId}/courses`,
     method: 'GET',
     headers: {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
@@ -66,4 +100,4 @@ const userDetails = (canvasAccessToken, canvasUserId) => {
   return httpRequest(options, '')
 }
 
-module.exports = { coursesForUser, userDetails, courseProgress, usersForGroup }
+module.exports = { coursesForUser, userDetails, courseProgress, usersForGroup, coursesInAccount, usersForCourse }

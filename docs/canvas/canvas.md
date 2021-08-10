@@ -43,7 +43,7 @@ To skip this check, set `CANVAS_ETHICS_COURSE_ID=none`
 
 ##### API Routes Required
 
-### ** These routes require a USER TOKEN (not in use as at 2021) **
+## ** These routes require a USER TOKEN (not in use as at 2021) **
 
 Users in a group (working)
 ```
@@ -81,24 +81,44 @@ Set to 'none' if no such course exists
 ```
 
 
-### ** These routes require a PRIVELIGED ACCESS TOKEN known by the server **
+## ** These routes require a PRIVELIGED ACCESS TOKEN known by the server **
 
 
-Admin
+### Admin
 
-```
-  All groups (Courses) (under the Account) So admins can allocate courses to a Dataset
-```
 
-```
-  Members of the 'VIVA admin group' to ensure user is an Administrator
-```
+  *All groups (Courses) (under the Account)*   (**DONE**)
+
+  So admins can allocate courses to a Dataset
+  * Relies on `process.env.CANVAS_VIVA_ACCOUNT_ID` - referring to the VIVA 'Account' ID inside Canvas
+
+  see server/services/canvas.js > `coursesInAccount()`
+
+  e.g.
+  ```
+    canvas.coursesInAccount(process.env.CANVAS_VIVA_ACCOUNT_ID).then((courses) => console.log(courses))
+  ```
+
+
+  *Members of the 'VIVA admin group'*   (**DONE**)
+
+  To ensure user is an Administrator
+  see server/services/canvas.js > `usersForGroup()`
+
+  e.g.
+  ```
+    canvas.usersForGroup(process.env.CANVAS_ADMIN_GROUP_ID).then((users) => {
+      if (users.some((u) => u.login_id === user.profile.username)) { ... }
+    }
+  ```
+
 
 MobileApp
 
-```
-  Groups (courses) To know which Datasets (based on courses) a user is allowed to receive
-```
+
+  *Groups (courses) for a User*
+  To know which Datasets (based on courses) a user is allowed to receive
+  see server/services/canvas.js > `coursesForUser()`
 
 ```
   Progress for a course - To grant access to VIVA depending on completion of a particular course e.g. Ethics course
@@ -108,6 +128,10 @@ MobileApp
 
 LTI for Video Sharing
 
-```
-  Names and Roles to allow current user to share with others in same Course   (DONE)
-```
+  *Names and Roles*  (**DONE**)
+  to allow current user to share with others in same Course
+  see `server/routing/auth/canvas.js` line 147
+  data saved to session in `request.session.canvasData.namesAndRoles`
+
+  Can be retrieved to front end using GET `/api/users/` when user is NOT admin
+

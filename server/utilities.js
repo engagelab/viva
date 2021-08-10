@@ -156,7 +156,7 @@ function httpRequest(options, postData) {
         reject(
           new Error(
             `Rejected HTTP Response. statusCode: ${res.statusCode} calling: ${
-              options.hostname + options.path
+              options.host + options.path
             } `
           )
         )
