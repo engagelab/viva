@@ -36,11 +36,11 @@
       <p class="text-viva-lilla text-sm mb-1">{{ t('GoogleSuite') }}</p>
       <p class="text-viva-lilla text-sm">{{ t('UseOfGoogle') }}</p>
       <p class="text-xs mt-2">v{{ appVersion }}</p>
-      <div class="flex flex-row justify-end">
+      <!--div class="flex flex-row justify-end">
         <Button class="m-2" customWidth="110px" @vclick="giSamtykke()">
           <p class="text-xs">{{ t('GiSamtykke') }}</p>
         </Button>
-      </div>
+      </div-->
     </div>
     <div class="flex flex-row w-full justify-between">
       <div class="pl-16" @click="$emit('slider-back')">
