@@ -12,11 +12,27 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "checkJs": false,
-    "baseUrl": "/",
+    "baseUrl": "./",
     "typeRoots": ["node_modules/@types", "src/types"],
     "paths": {
       "@/*": ["src/*"]
     },
-    "lib": ["ES2020", "dom", "dom.iterable", "scripthost"]
-  }
+    "lib": ["dom"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "node_modules/**/*.d.ts",
+    "src-cordova/node_modules/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "src/**/*.json",
+  ],
+  "exclude": [
+    "vue.config.js",
+    "tailwind.config.js",
+    "src-cordova/**/*",
+    "www/**/*",
+    "dist/**/*",
+  ]
 }

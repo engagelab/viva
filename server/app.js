@@ -3,7 +3,6 @@
 */
 
 require('dotenv').config({ silent: process.env.NODE_ENV !== 'development' })
-require('debugging-aid/network')
 
 const express = require('express')
 const session = require('express-session')
@@ -75,8 +74,9 @@ if (process.env.NODE_ENV === 'development') {
   })
   app.use(cors({ credentials: true, origin }))
 }
-else app.use(cors({ credentials: true, origin: process.env.VUE_APP_SERVER_HOST }))
-
+else {
+  app.use(cors({ credentials: true, origin: process.env.VUE_APP_SERVER_HOST }))
+}
 const sessionOptions = {
   secret: process.env.SESSION_SECRET,
   store: new MemoryStore({

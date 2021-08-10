@@ -2,10 +2,8 @@ const {
   S3Client,
   GetObjectCommand,
   PutObjectCommand,
-  ListObjectsCommand,
+  // ListObjectsCommand,
 } = require('@aws-sdk/client-s3')
-
-const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts')
 
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const fs = require('fs')
@@ -22,7 +20,8 @@ const {
 } = require('../subprocesses/fileOperations')
 
 const s3Configuration = {
-/*   credentials: {
+  // Setting credentials here does not seem to work. The should be only in .env file, AWS SDK will read them there
+  /* credentials: {
     secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
     accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
   }, */
@@ -30,36 +29,23 @@ const s3Configuration = {
   forcePathStyle: true,
   tls: true,
   endpoint: {
-    protocol: 'https',
     hostname: process.env.AWS_BUCKET_ENDPOINT,
-    port: 443
   },
 };
 
 const s3 = new S3Client(s3Configuration)
-const sts = new STSClient(s3Configuration);
 
-async function listBucketItems() {
+// FOR TESTING ONLY
+/* async function listBucketItems() {
   const bucketParams = { Bucket: process.env.AWS_BUCKET_NAME };
   try {
     const data = await s3.send(new ListObjectsCommand(bucketParams));
-    console.log("Success", data.Buckets);
-  } catch (err) {
-    console.log("Error", err);
-  }
-}
-listBucketItems()
-
-async function getIdentity() {
-  const command = new GetCallerIdentityCommand({});
-  try {
-    const data = await sts.send(command);
     console.log("Success", data);
   } catch (err) {
     console.log("Error", err);
   }
 }
-getIdentity()
+listBucketItems() */
 
 /**
  * Upload a file to S3
