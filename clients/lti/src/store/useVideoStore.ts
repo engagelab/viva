@@ -54,6 +54,7 @@ async function fetchVideoMetadata(): Promise<VideoData[]> {
 interface Getters {
   videos: ComputedRef<Video[]>
   selectedVideo: ComputedRef<State['selectedVideo']>
+  selectedVideoURL: ComputedRef<State['selectedVideoURL']>
 }
 const getters = {
   get videos(): ComputedRef<Video[]> {
@@ -112,9 +113,9 @@ const actions = {
   },
 
   selectVideo: async function (video: Video): Promise<void> {
-    const response = await actions.fetchVideoData(video.details.id)
+    // const response = await actions.fetchVideoData(video.details.id)
     state.value.selectedVideo = video
-    state.value.selectedVideoURL = response.url
+    // state.value.selectedVideoURL = response.url
     return Promise.resolve()
   },
 

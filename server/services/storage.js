@@ -75,13 +75,14 @@ const uploadS3File = async ({ path, keyname, sseKey, sseMD5 }) => {
  * @param {string} meta.keyname - Name to be used for the file in the S3 bucket.
  * @return {promise} Promise
  */
-const downloadS3File = async ({ keyname }) => {
+const downloadS3File = async ({ keyname, sseKey, sseMD5 }) => {
   const objectParams = {
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: keyname,
     // ServerSideEncryption: 'AES256', // must be "AES256",
     SSECustomerAlgorithm: 'AES256',
-    SSECustomerKey: Buffer.from(process.env.AWS_SSE_CUSTOMER_KEY), // 256-bit, base64-encoded encryption key, Base-64 encoded
+    SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
+    SSECustomerKeyMD5: sseMD5
   }
   return s3.send(new GetObjectCommand(objectParams))
 }
@@ -93,52 +94,18 @@ const downloadS3File = async ({ keyname }) => {
  * @param {string} meta.keyname - Name to be used for the file in the S3 bucket.
  * @return {promise} Promise
  */
-const getSignedUrlS3File = async ({ keyname, timer, sseKey, sseMD5 }) => {
+const getSignedUrlS3URL = async ({ keyname }) => {
   const objectParams = {
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: keyname,
     // ServerSideEncryption: 'AES256', // must be "AES256",
     SSECustomerAlgorithm: 'AES256',
     /* SSECustomerKey: Buffer.from(process.env.AWS_SSE_CUSTOMER_KEY), // 256-bit, base64-encoded encryption key, Base-64 encoded */
-    SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
-    SSECustomerKeyMD5: sseMD5
+    // SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
+    // SSECustomerKeyMD5: sseMD5,
   }
-  return getSignedUrl(s3, new GetObjectCommand(objectParams), {
-    expiresIn: timer,
-  })
+  return getSignedUrl(s3, new GetObjectCommand(objectParams))
 }
-/*
-var params = {Bucket: 'bucket', Key: 'key', Expires: 60};
-var url = s3.getSignedUrl('getObject', params);
-console.log('The URL is', url); // expires in 60 seconds */
-
-// (REFACTORED) but use not recommended
-/* const formPath = (path, datasett, video) => {
-  return new Promise((resolve, reject) => {
-    let folder = '';
-    path.forEach(p => {
-      switch (p) {
-        case 'datasettName':
-          folder = folder + '/' + datasett.navn
-          break
-        case 'fileId':
-          folder = folder + '/' + video.fileId.substring(0, 7)
-          break
-        case 'timeStamp':
-          folder = folder + '/' + moment(video.created).format('DD-MMM-YYYY-hh-mm-ss')
-          break
-        case 'owner':
-          folder = folder + '/' + datasett.owner
-          break
-        case 'UserID':
-          folder = folder + '/' + video.userId
-          break
-      }
-    });
-    if (!folder) return reject('Path not found')
-    resolve(folder)
-  });
-} */
 
 // RECOMMENDED (synchronous)
 // delimiter is the separator between path segments
@@ -230,62 +197,10 @@ function sendToLagringshotell({ video, store, subDirSrc }) {
   })
 }
 
-/* Fetch Storage location from Dataset for selected video */
-/* const fetchStorageOLD = async video => {
-  try {
-    let datasett = await Dataset.findById(video.dataset.id)
-    let promises =  datasett.storages.map(storage => {
-      return fetchStoreOLD({ storage, datasett, video })
-    })
-    return Promise.all(promises)
-  } catch (error) {
-    console.log(error)
-  }
-}
-const fetchStoreOLD = (data) => {
-  return new Promise((resolve) => {
-    const store = {};
-    const slashes = /[/]/g;
-    let path = formPath(
-      data.storage.storagePath.path,
-      data.datasett,
-      data.video);
-    let fileName = formPath(
-      data.storage.storagePath.fileName,
-      data.datasett,
-      data.video);
-     Promise.all([path, fileName]).then((paths) => {
-
-      if (data.storage.name == 'lagringshotell') {
-        let basePath = '';
-        if (process.env.LAGRINGSHOTELL) {
-          basePath = process.env.LAGRINGSHOTELL;
-        }
-        else { basePath = '/Users/sharanya/Projects/sidok/videos' + '/' }
-        const regex = / /g
-        if (data.storage.groupId)
-          store.path = basePath + data.storage.groupId + '/' + paths[0]
-        else
-          store.path = basePath + paths[0]
-        store.path = store.path.replace(regex, "");
-        store.type = 'lagringshotell';
-        store.fileName = paths[1].replace(slashes, "-");
-      } else if (data.storage.name == 'google') {
-        store.path = paths[0]
-        store.type = 'google'
-      } else {
-        store.path = ''
-        store.type = 'unknownStorageType'
-      }
-      resolve(store)
-    })
-   })
-} */
-
 module.exports = {
   uploadS3File,
   downloadS3File,
-  getSignedUrlS3File,
+  getSignedUrlS3URL,
   fetchStorage,
   sendToEducloud,
   sendToLagringshotell,

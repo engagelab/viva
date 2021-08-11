@@ -2,7 +2,7 @@
   <div
     class="flex flex-col flex-grow min-h-0 w-full"
     v-if="selectedVideo"
-    :key="selectedVideo.id"
+    :key="selectedVideo.details.id"
   >
     <div
       class="flex flex-col flex-grow min-h-o overflow-y-auto scrolling-touch w-full relative"
@@ -13,6 +13,7 @@
           ref="playbackVideo"
           id="playbackVideo"
           oncontextmenu="return false;"
+          :src="`https://localhost:8000/api/videoURL?videoref=${selectedVideo.details.id}`"
           playsinline
           webkit-playsinline
           preload="metadata"
@@ -68,9 +69,7 @@
 <script lang="ts">
 import { defineComponent, ref, Ref, computed, onMounted, watch } from 'vue'
 import { Video } from '@/types/main'
-import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
-const { actions: appActions } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
@@ -92,7 +91,7 @@ export default defineComponent({
     const selectedVideo = videoGetters.selectedVideo
     const selectedVideoURL = videoGetters.selectedVideoURL
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
-    const video = ref(new Video(selectedVideo.value))
+    const video = ref(new Video().updateFromVideo(selectedVideo.value))
     const fullScreenMode = ref(true)
     const stateToChildren = ref({
       playerCurrentTime: '0',
@@ -104,14 +103,6 @@ export default defineComponent({
     let playerUpperBound = 0 // Time <= player end time when video should stop playing, when using the scrubber
     let currentVolume = 0
     let playerCurrentTime = ref('0')
-    let videoWasReplaced = false
-
-    document.addEventListener('fullscreenchange', () => {
-      // document.fullscreenElement will point to the element that
-      // is in fullscreen mode if there is one. If not, the value
-      // of the property is null.
-      appActions.setFullScreen(!!document.fullscreenElement)
-    })
 
     // Lifecycle Hooks
 
@@ -191,11 +182,10 @@ export default defineComponent({
     function setupVideo(chosenVideo: Video): void {
       // reset states
       videoDataLoaded.value = false
-      videoWasReplaced = false
 
       // Create a video placeholder that can be modifed by the user
       const player: HTMLVideoElement | null = playbackVideo.value
-      video.value = new Video(chosenVideo)
+      video.value = new Video().updateFromVideo(chosenVideo)
       if (chosenVideo && player) {
         video.value.updateFromVideo(chosenVideo)
         setPlayerBounds()
@@ -296,11 +286,7 @@ export default defineComponent({
           playerUpperBound = player.duration
           video.value.details.duration = player.duration
           // We need to save the latest duration
-          videoActions.updateMetadata(video.value).then(() => {
-            // But if this is new video replacing an old, the unsavedChanges must be set true to request 'samtykker' acceptance
-            if (videoWasReplaced)
-              videoActions.setUnsavedChanges(video.value.details.id)
-          })
+          videoActions.updateMetadata(video.value)
           setPlayerBounds()
           player.removeEventListener('loadeddata', dataLoaded)
           videoDataLoaded.value = true
@@ -310,8 +296,47 @@ export default defineComponent({
         player.addEventListener('ended', stopPlaying, false)
 
         if (selectedVideoURL.value) {
-          player.setAttribute('src', selectedVideoURL.value + '#t=0.1')
-          player.load()
+          const headers = {
+            Accept: 'application/octet-stream',
+            'x-amz-server-side-encryption-customer-key': 'AES256',
+          }
+          window
+            .fetch(selectedVideoURL.value, { headers, mode: 'no-cors' })
+            .then((response) => {
+              const blob_uri = URL.createObjectURL(response)
+              player.setAttribute('src', blob_uri)
+              player.load()
+            })
+            .catch((error) => console.log(error))
+          /*           const xhr = new XMLHttpRequest()
+          // Event listener must be added before calling open()
+          xhr.addEventListener('loadend', () => {
+            if (xhr.status > 299) {
+              console.log(xhr.response ? xhr.response : xhr)
+            } else {
+              const blob_uri = URL.createObjectURL(xhr.response)
+              player.setAttribute('src', blob_uri)
+              player.load()
+            }
+          })
+
+          xhr.addEventListener('error', (error) => {
+            console.log(error)
+          })
+
+          xhr.open('GET', selectedVideoURL.value)
+          xhr.responseType = 'blob'
+          xhr.setRequestHeader(
+            'x-amz-server-side-encryption-customer-algorithm',
+            'AES256'
+          )
+          xhr.setRequestHeader('x-amz-acl', 'public-read')
+
+          try {
+            xhr.send()
+          } catch (error) {
+            console.log(error)
+          } */
         }
       }
     }

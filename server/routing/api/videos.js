@@ -2,9 +2,10 @@
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
 
+// const https = require('https')
 const router = require('express').Router()
 const utilities = require('../../utilities')
-const { getSignedUrlS3File } = require('../../services/storage')
+const { downloadS3File } = require('../../services/storage')
 const { userRoles } = require('../../constants')
 const videoStatusTypes = require('../../constants').videoStatusTypes
 const Video = require('../../models/Video')
@@ -54,17 +55,18 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 
 // Get a signed URL to the video
 router.get('/videoURL', utilities.authoriseUser, (request, response) => {
-  Video.findOne({ 'details.id': request.query.videoref }, (error, v) => {
-    if (error) {
-      return response.status(403).end()
-    } else if (!v) {
-      return response.status(200).end()
-    } else {
-      getSignedUrlS3File({ keyname: v.details.id, timer: 60 })
-        .then((res) => {
-          response.send({ url: res }).status(200).end()
+  Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
+    if (error) return response.status(403).end()
+    else if (!video) return response.status(200).end()
+    else {
+      const keyname = `${video.users.owner.toString()}/${video.file.name}.${video.file.extension}`
+      const sseKey = video.file.encryptionKey
+      const sseMD5 = video.file.encryptionMD5
+      downloadS3File({ keyname, sseKey, sseMD5 })
+        .then((file) => {
+          response.setHeader("content-type", "video/mp4");
+          file.Body.pipe(response)
         })
-        .catch((error) => response.send(error).status(200).end())
     }
   })
 })
