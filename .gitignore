@@ -4,6 +4,7 @@ package-lock.json
 
 # local env files
 .env
+.env.old
 
 # Log files
 npm-debug.log*
