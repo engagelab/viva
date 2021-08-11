@@ -118,8 +118,8 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
       switch (p) {
         case 'datasettName':
           return dataset.name.replace(whitespace, '')
-        case 'fileId':
-          return video.details.id.substring(0, 7)
+        case 'fileName':
+          return video.file.name
         case 'timeStamp':
           return moment(video.details.created).format('dd-mmm-YYYY-h-mm-ss')
         case 'owner':
@@ -150,7 +150,7 @@ const fetchStorage = (video) => {
         )
         // TODO: Can 'groupId' be integrated into storage.file.path ?
         if (storage.kind === videoStorageTypes.lagringshotell) {
-          const basePath = process.env.LAGRINGSHOTELL || '/tmp'
+          const basePath = process.env.LAGRINGSHOTELL || '/tmp/'
           if (storage.groupId) path = storage.groupId + '/' + path
           path = basePath + path
         }
@@ -173,9 +173,9 @@ function sendToEducloud({ video, subDirSrc }) {
   const sseMD5 = crypto.createHash('md5').update(sseKey).digest('base64');
   video.file.encryptionKey = sseKey
   video.file.encryptionMD5 = sseMD5
-  return uploadS3File({ path, keyname, sseKey, sseMD5 }).then((result) => {
+  return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
     console.log('Video sent to Educloud')
-    video.storages.push({ path: result.Key, kind: videoStorageTypes.educloud })
+    video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
   }).catch((error) => {
     console.log(error)
     return Promise.reject(error)

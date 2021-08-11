@@ -53,8 +53,8 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
   })
 })
 
-// Get a signed URL to the video
-router.get('/videoURL', utilities.authoriseUser, (request, response) => {
+// Get a video file from S3 (Educloud)
+router.get('/video/file', utilities.authoriseUser, (request, response) => {
   Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) return response.status(200).end()

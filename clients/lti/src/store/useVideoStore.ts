@@ -97,7 +97,7 @@ const actions = {
       query: {
         videoref: videoId,
       },
-      route: '/api/videoURL',
+      route: '/api/video/file',
     }
     return apiRequest<{ url: string }>(payload)
   },

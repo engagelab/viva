@@ -13,7 +13,7 @@
           ref="playbackVideo"
           id="playbackVideo"
           oncontextmenu="return false;"
-          :src="`https://localhost:8000/api/videoURL?videoref=${selectedVideo.details.id}`"
+          :src="`https://localhost:8000/api/video/file?videoref=${selectedVideo.details.id}`"
           playsinline
           webkit-playsinline
           preload="metadata"
@@ -89,7 +89,6 @@ export default defineComponent({
   },
   setup() {
     const selectedVideo = videoGetters.selectedVideo
-    const selectedVideoURL = videoGetters.selectedVideoURL
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
     const video = ref(new Video().updateFromVideo(selectedVideo.value))
     const fullScreenMode = ref(true)
@@ -294,50 +293,6 @@ export default defineComponent({
 
         player.addEventListener('loadeddata', dataLoaded)
         player.addEventListener('ended', stopPlaying, false)
-
-        if (selectedVideoURL.value) {
-          const headers = {
-            Accept: 'application/octet-stream',
-            'x-amz-server-side-encryption-customer-key': 'AES256',
-          }
-          window
-            .fetch(selectedVideoURL.value, { headers, mode: 'no-cors' })
-            .then((response) => {
-              const blob_uri = URL.createObjectURL(response)
-              player.setAttribute('src', blob_uri)
-              player.load()
-            })
-            .catch((error) => console.log(error))
-          /*           const xhr = new XMLHttpRequest()
-          // Event listener must be added before calling open()
-          xhr.addEventListener('loadend', () => {
-            if (xhr.status > 299) {
-              console.log(xhr.response ? xhr.response : xhr)
-            } else {
-              const blob_uri = URL.createObjectURL(xhr.response)
-              player.setAttribute('src', blob_uri)
-              player.load()
-            }
-          })
-
-          xhr.addEventListener('error', (error) => {
-            console.log(error)
-          })
-
-          xhr.open('GET', selectedVideoURL.value)
-          xhr.responseType = 'blob'
-          xhr.setRequestHeader(
-            'x-amz-server-side-encryption-customer-algorithm',
-            'AES256'
-          )
-          xhr.setRequestHeader('x-amz-acl', 'public-read')
-
-          try {
-            xhr.send()
-          } catch (error) {
-            console.log(error)
-          } */
-        }
       }
     }
 
@@ -353,7 +308,6 @@ export default defineComponent({
       edlUpdated,
       stateToChildren,
       playbackVideo,
-      selectedVideoURL,
       // booleans
       videoDataLoaded,
       playing,

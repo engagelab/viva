@@ -328,10 +328,6 @@ export class Video {
       selection: data.selection,
     })
     this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
-    this.storages = data.dataset.storages.map((storage) => ({
-      kind: storage.kind,
-      path: '',
-    }))
     this.file = {
       mimeType:
         data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
