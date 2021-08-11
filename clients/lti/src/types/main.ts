@@ -197,7 +197,7 @@ interface VideoStatus {
   hasUnsavedChanges: boolean
   hasNewDataAvailable: boolean
 }
-interface VideoSharing {
+export interface VideoSharing {
   users: string[]
   access: boolean
   description: string
@@ -235,6 +235,24 @@ export interface VideoSpec {
   deviceStatus: DeviceStatus
 }
 
+export interface NamesAndRolesData {
+  name: string
+  ltiUserID: string
+  email: string
+  roles: string[]
+}
+export class NamesAndRoles {
+  name: string
+  ltiUserID: string
+  email: string
+  roles: string[]
+  constructor(data?: NamesAndRolesData) {
+    this.name = data?.name || ''
+    this.ltiUserID = data?.name || ''
+    this.email = data?.email || ''
+    this.roles = data?.roles || []
+  }
+}
 export interface VideoData {
   file: {
     mimeType: string

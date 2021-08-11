@@ -21,13 +21,21 @@ import {
   VideoData,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
+  NamesAndRolesData,
+  NamesAndRoles,
+  VideoSharing,
 } from '../types/main'
 import { apiRequest } from '../api/apiRequest'
 //State
+interface ResponseData {
+  videos: VideoData[]
+  users: NamesAndRolesData[]
+}
 interface State {
   selectedVideo: Video | undefined
   selectedVideoURL: string
   videos: Map<string, Video>
+  allUsers: NamesAndRoles[]
 }
 
 const state: Ref<State> = ref({
@@ -37,17 +45,18 @@ const state: Ref<State> = ref({
   selectedVideo: undefined,
   videos: new Map<string, Video>(),
   selectedVideoURL: '',
+  allUsers: [],
 })
 
 //----------------- Server side functions----------------//
 
-async function fetchVideoMetadata(): Promise<VideoData[]> {
+async function fetchVideoMetadata(): Promise<ResponseData> {
   const payload: APIRequestPayload = {
     method: XHR_REQUEST_TYPE.GET,
     credentials: true,
     route: '/api/videos',
   }
-  return apiRequest<VideoData[]>(payload)
+  return apiRequest<ResponseData>(payload)
 }
 
 //Getters
@@ -55,6 +64,7 @@ interface Getters {
   videos: ComputedRef<Video[]>
   selectedVideo: ComputedRef<State['selectedVideo']>
   selectedVideoURL: ComputedRef<State['selectedVideoURL']>
+  allUsers: ComputedRef<NamesAndRoles[]>
 }
 const getters = {
   get videos(): ComputedRef<Video[]> {
@@ -66,6 +76,9 @@ const getters = {
   get selectedVideoURL(): ComputedRef<State['selectedVideoURL']> {
     return computed(() => state.value.selectedVideoURL)
   },
+  get allUsers(): ComputedRef<NamesAndRoles[]> {
+    return computed(() => state.value.allUsers)
+  },
 }
 
 //Actions
@@ -74,6 +87,7 @@ interface Actions {
   selectVideo: (video: Video) => Promise<void>
   updateMetadata: (video: Video) => Promise<void>
   fetchVideoData: (videoId: string) => Promise<{ url: string }>
+  addGroupShare: (value: VideoSharing) => Promise<void>
 }
 
 const actions = {
@@ -102,13 +116,24 @@ const actions = {
     return apiRequest<{ url: string }>(payload)
   },
 
+  // AddGroupShare for a selected video
+  addGroupShare: async function (newShare: VideoSharing): Promise<void> {
+    state.value.selectedVideo?.users.sharing.push(newShare)
+  },
+
   //Fetch videometadata from mongoDB
   getVideoMetadata: async function (): Promise<void> {
     const response = await fetchVideoMetadata()
-    response.forEach((video) => {
+    response.videos.forEach((video) => {
       const v = new Video(video)
       state.value.videos.set(v.details.id, v)
     })
+    console.log(state.value.videos)
+    response.users.forEach((user) => {
+      const u = new NamesAndRoles(user)
+      state.value.allUsers.push(u)
+    })
+    console.log(state.value.allUsers)
     return Promise.resolve()
   },
 

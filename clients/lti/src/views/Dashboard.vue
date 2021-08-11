@@ -1,5 +1,5 @@
 <template>
-  <div class="relative w-screen h-screen overflow-hidden">
+  <div class="relative w-screen h-screen">
     <!-- <div
       class="relative flex md:flex-row flex-col h-full justify-center bg-blue-button"
     >

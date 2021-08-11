@@ -63,23 +63,34 @@
 
       <Edit :stateFromParent="stateToChildren" @edl-updated="edlUpdated" />
     </div>
+    <SlButton
+      class="bg-blue-400 self-center rounded-lg"
+      id="button-accept"
+      @click="addGroupShare"
+      >+ Add new group share
+    </SlButton>
+    <div v-for="(share, index) in selectedVideo.users.sharing" :key="index">
+      <Sharing :selectedShare="share"></Sharing>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, Ref, computed, onMounted, watch } from 'vue'
-import { Video } from '@/types/main'
+import { Video, VideoSharing } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import Edit from './pages/edit.vue'
+import Sharing from './pages/sharing.vue'
 
 export default defineComponent({
   name: 'editor',
   components: {
     SVGSymbol,
     Edit,
+    Sharing,
   },
   props: {
     page: {
@@ -154,7 +165,19 @@ export default defineComponent({
     )
 
     // METHODS
+    const addGroupShare = () => {
+      const newShare: VideoSharing = {
+        users: [],
+        access: false,
+        description: '',
+        edl: {
+          trim: [],
+          blur: [],
+        },
+      }
 
+      videoActions.addGroupShare(newShare)
+    }
     function toggleScreenMode(): void {
       fullScreenMode.value = !fullScreenMode.value
     }
@@ -346,6 +369,7 @@ export default defineComponent({
       stopPlaying,
       startPlaying,
       toggleScreenMode,
+      addGroupShare,
       // data
       selectedVideo,
       playerTime,
