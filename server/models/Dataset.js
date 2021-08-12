@@ -27,7 +27,7 @@ const datasetSchema = new mongoose.Schema({
   formId: { type: String }, // Nettskjema form ID
   status: {
     lastUpdated: { type: Date, default: Date.now }, // Last time this Dataset was changed
-    active: { type: Boolean }, // Only active datasetts who will be fetched
+    active: { type: Boolean, default: true }, // Only active datasetts who will be fetched
     lockedBy: { type: mongoose.Schema.ObjectId, ref: 'User' }, // Who has locked the datasett for editing
   },
   consent: {
@@ -41,8 +41,7 @@ const datasetSchema = new mongoose.Schema({
   users: {
     owner: { type: mongoose.Schema.ObjectId, ref: 'User' }, // The 'creator' of this dataset
     adminGroup: { type: String },
-    dataportenGroups: { type: Array, of: String }, // Dataporten Group IDs (groups of users) who will receive this dataset
-    canvasGroups: { type: Array, of: String }, // Canvas Course IDs (groups of users) who will receive this dataset
+    groups: { type: Array, of: String }, // Canvas or Dataporten Course/Group IDs (groups of users) who will receive this dataset
   },
   selectionPriority: { type: Array, default: [] }, // Order of appearance of the utvalg categories
   selection: { type: Object, default: {} }, //  'utvalg' selection
@@ -56,7 +55,7 @@ const datasetSchema = new mongoose.Schema({
 // ** These attributes should be matched in the front end model **
 datasetSchema.methods.redacted = function () {
   const data = this.toObject()
-  const d = {
+  return {
     _id: this._id.toString(),
     name: data.name,
     description: data.description,
@@ -67,14 +66,14 @@ datasetSchema.methods.redacted = function () {
     status: {
       lastUpdated: data.status.lastUpdated,
       lockedBy: data.status.lockedBy,
+      active: data.status.active,
     },
     consent: {
-      kind: data.consent.kind,
+      kind: data.consent ? data.consent.kind : undefined,
     },
     users: {
       owner: data.users.owner,
-      dataportenGroups: data.users.dataportenGroups,
-      canvasGroups: data.users.canvasGroups,
+      groups: data.users.groups,
     },
     storages: data.storages.map((store) => {
       const s = { ...store }
@@ -82,8 +81,6 @@ datasetSchema.methods.redacted = function () {
       return s
     }),
   }
-
-  return d
 }
 // Duplicate the ID field.
 // eslint-disable-next-line

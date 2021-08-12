@@ -5,29 +5,7 @@ import { globalTranslations } from './translations'
 import router from './router'
 import App from './App.vue'
 
-import { useAppStore } from './store/useAppStore'
-
-const { actions: appActions } = useAppStore()
-
 const app = createApp(App)
-// Redirected OAuth login for mobile devices
-// Using cordova-plugin-oauth
-// Called from a callback URL like
-// com.example.foo://oauth_callback?code=b10a8db164e0754105b7a99be72e3fe5
-// it would be received in JavaScript like this:
-window.addEventListener('message', function (event) {
-  if (event.origin) console.log(`Login callback event origin: ${event.origin}`)
-  if (typeof event.data === 'string' && event.data.match(/^oauth::/)) {
-    const data = JSON.parse(event.data.substring(7))
-    if (data.mode == 'login' && data.code && data.code !== 'undefined') {
-      // The JWT will be sent with future requests to authenticate Mobile users in case the session has expired
-      localStorage.setItem('jwt', data.code)
-      appActions.tokenLogin()
-    } else {
-      router.push('/')
-    }
-  }
-})
 
 const i18n = createI18n({
   locale: navigator.language || 'nb_NO',

@@ -528,6 +528,7 @@ export interface DatasetSelection {
 interface DatasetStatus {
   lastUpdated: Date
   lockedBy: string
+  active: boolean
 }
 interface DatasetConsent {
   kind: CONSENT_TYPES
@@ -538,8 +539,7 @@ interface DatasetUsers {
       username: string
     }
   }
-  dataportenGroups: string[]
-  canvasGroups: string[]
+  groups: string[]
 }
 export interface DatasetStorage {
   _id?: string
@@ -580,6 +580,7 @@ export class Dataset {
     this.created = new Date()
     this.formId = ''
     this.status = {
+      active: true,
       lastUpdated: new Date(),
       lockedBy: '',
     }
@@ -592,8 +593,7 @@ export class Dataset {
           username: '',
         },
       },
-      dataportenGroups: [],
-      canvasGroups: [],
+      groups: [],
     }
     this.selection = {}
     this.selectionPriority = []
@@ -605,6 +605,7 @@ export class Dataset {
       this.created = new Date(data.created)
       this.formId = data.formId
       this.status = {
+        active: data.status?.active,
         lastUpdated: data.status?.lastUpdated
           ? new Date(data.status.lastUpdated)
           : new Date(),
@@ -615,14 +616,10 @@ export class Dataset {
       }
 
       this.users.owner.profile.username = data.users?.owner?.profile?.username
-      this.users.dataportenGroups = data.users?.dataportenGroups || []
-
-      this.users.canvasGroups = data.users?.canvasGroups
-        ? data.users?.canvasGroups
-        : []
+      this.users.groups = data.users?.groups || []
 
       this.selection = data?.selection ? data.selection : {}
-      this.selectionPriority = data.selectionPriority
+      this.selectionPriority = data.selectionPriority || []
 
       this.storages =
         data?.storages?.map((s: DatasetStorage) => {
@@ -667,7 +664,7 @@ interface UserStatus {
 interface UserProfileGroup {
   id: string
   name: string
-  isAdmin: boolean
+  role: string
 }
 interface UserProfile {
   username: string

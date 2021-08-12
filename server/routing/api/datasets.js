@@ -72,32 +72,26 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
     userRoles.admin
   )
   let query = {}
-  query.$and = [
-    {
-      $or: [
-        { 'users.dataportenGroups': { $in: groupIds } },
-        { 'users.canvasGroups': { $in: groupIds } },
-      ],
-    },
-    { 'status.active': true },
-  ]
   if (isAdmin) {
-    query.$and[0].$or.push({ 'users.owner': u._id })
-  }
-
-  function populateDatasets(datasets) {
-    const opts = [{ path: 'users.owner', select: 'profile.username' }]
-    return Dataset.populate(datasets, opts)
+    query = {
+      $or: [
+        { 'users.groups': { $in: groupIds } },
+        { 'users.owner': u._id }
+      ]
+    }
+  } else {
+    query = {
+      $and: [
+        { 'users.groups': { $in: groupIds } },
+        { 'status.active': true },
+      ]
+    }
   }
 
   Dataset.find(query, async (error, ds) => {
     if (error) return next(error)
     const datasets = ds.map((d) => d.redacted())
-    if (isAdmin) {
-      const populatedDatasets = await populateDatasets(ds)
-      const pdatasets = populatedDatasets.map((d) => d.redacted())
-      return response.send(pdatasets)
-    } else response.send(datasets)
+    response.send(datasets)
   })
 })
 
@@ -109,18 +103,10 @@ router.post('/dataset', utilities.authoriseUser, (request, response, next) => {
 
     Dataset.create({ name: datasetName, 'users.owner': u._id })
       .then((newDataset) => {
-        newDataset
-          .populate('users.owner')
-          .execPopulate()
-          .then((newDataset) => {
-            newDataset = newDataset.redacted()
-            response.send(newDataset)
-          })
+        response.send(newDataset)
       })
       .catch((error) => next(error))
-  } else {
-    return next(new Error('Empty name '))
-  }
+  } else return next(new Error('Empty name '))
 })
 
 // UPDATE dataset selection (for all users)
@@ -159,7 +145,6 @@ router.put('/dataset', utilities.authoriseUser, (request, response, next) => {
     response.locals.user,
     userRoles.admin
   )
-  isAdmin = true
   if (!isAdmin) return next(new Error('Unauthorised'))
   Dataset.findById(updatedDataset._id, async (error, d) => {
     if (error || !d)

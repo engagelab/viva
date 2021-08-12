@@ -101,7 +101,7 @@ export default defineComponent({
     }
 
     const restart = () => {
-      router.push(`/dashboard`)
+      router.push(`/`)
     }
 
     return {

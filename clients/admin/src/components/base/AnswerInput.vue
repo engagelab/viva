@@ -84,6 +84,17 @@
         />
       </div>
     </template>
+    <template v-if="mode === 'textarea'">
+      <textarea
+        class="w-full"
+        :id="elementId"
+        :rows="rows"
+        :placeholder="placeholder"
+        v-model="selectedValue"
+        @input="valueInput"
+        @keyup.enter="enterKey"
+      />
+    </template>
     <template v-if="mode == 'email'">
       <div
         class="w-full bg-white flex items-center p-4"
@@ -176,42 +187,19 @@
         </div>
       </div>
     </template>
-    <template v-if="mode == 'select'">
-      <div class="flex flex-col" :id="elementId">
-        <select
-          class="
-            block
-            appearance-none
-            w-full
-            cursor-pointer
-            bg-gray-200
-            border border-gray-200
-            text-gray-700
-            py-3
-            px-4
-            pr-8
-            rounded
-            leading-tight
-            focus:outline-none focus:bg-white focus:border-gray-500
-          "
-          id="grid-state"
-          v-model="selection"
-          @change="updateSelect($event)"
-        >
-          <option value="" disabled selected>Choose..</option>
-          <option v-for="(o, i) in options" :key="i" :value="o.item">
-            {{ o.itemName }}
-          </option>
-        </select>
-      </div>
-    </template>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRefs, Ref, watch } from 'vue'
+import { defineComponent, ref, toRefs, Ref, watch, PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+interface OptionItem {
+  id: string
+  title: string
+  itemName: string
+  item: unknown
+}
 const messages = {
   nb_NO: {
     invalidEntry: 'ugyldig verdi',
@@ -239,12 +227,16 @@ export default defineComponent({
       default: false,
     },
     options: {
-      type: Array,
+      type: Array as PropType<OptionItem[]>,
       default: () => [],
     },
     label: {
       type: String,
       default: '',
+    },
+    rows: {
+      type: Number,
+      default: 5,
     },
     description: {
       type: String,

@@ -154,7 +154,7 @@ enum CONSENT_SELECTION {
   article6 = 'article6',
 }
 
-enum SELECTION {
+enum UTVALG_SELECTION {
   skole = 'skole',
   trinn = 'trinn',
   klasse = 'klasse',
@@ -187,7 +187,7 @@ export {
   VIDEO_STORAGE_TYPES,
   VIDEO_STATUS_TYPES,
   CONSENT_SELECTION,
-  SELECTION,
+  UTVALG_SELECTION,
   FILEGROUPS,
   appVersion,
   taskColours,

@@ -19,19 +19,6 @@
       <!--div> FORM ID INPUT </div-->
     </div>
 
-    <div>
-      <SlButton
-        class="self-center rounded-lg"
-        id="button-accept"
-        @click="showGroups = false"
-      >
-        Show groups
-      </SlButton>
-      <div v-for="(group, index) in allGroups" :value="group" :key="index">
-        {{ group }}
-      </div>
-    </div>
-
     <!-- <AnswerInput
       class="m-2"
       mode="singleChoice"
@@ -48,15 +35,10 @@ import { defineComponent, ref } from 'vue'
 import { behandlings } from '@/constants'
 //import { DatasetSelection, DataPath } from '@/types/main'
 // import AnswerInput from '@/components/base/AnswerInput.vue'
-import SlButton from '@/components/base/SlButton.vue'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useAppStore } from '@/store/useAppStore'
 export default defineComponent({
   name: 'consent',
-  components: {
-    // AnswerInput,
-    SlButton,
-  },
   setup() {
     const { getters: datasetGetters /*, actions: datasetActions*/ } =
       useDatasetStore()
@@ -72,7 +54,6 @@ export default defineComponent({
       theDataset,
       behandlings,
       showGroups,
-      allGroups: appGetters.user.value.profile.groups,
       g: appGetters.user.value.profile,
       //Methods
       addGroup,

@@ -10,7 +10,7 @@
           :border="false"
           :label="t('name')"
           :required="true"
-          v-model="theDataset.name"
+          v-model="dataset.name"
         ></AnswerInput>
         <AnswerInput
           class="m-2"
@@ -18,7 +18,7 @@
           :border="false"
           :label="t('owner')"
           :required="true"
-          v-model="theDataset.users.owner.profile.username"
+          v-model="dataset.users.owner.profile.username"
         ></AnswerInput>
         <AnswerInput
           class="m-2"
@@ -26,25 +26,36 @@
           :border="false"
           :label="t('description')"
           :required="true"
-          v-model="theDataset.description"
+          v-model="dataset.description"
+        ></AnswerInput>
+        <AnswerInput
+          class="m-2"
+          mode="binary"
+          :border="false"
+          label="active"
+          :required="true"
+          v-model="dataset.status.active"
         ></AnswerInput>
       </div>
       <div>
-        <p
-          v-if="theDataset.users.canvasGroups.length"
-          class="text-red-600 mt-4 ml-2"
-        >
-          Canvas Data collectors:
-        </p>
-        <div
-          v-for="(group, index) in theDataset.users.canvasGroups"
-          :value="group"
-          :key="index"
-        >
-          {{ group }}
+        <p class="text-red-600 mt-4 ml-2">Data collection groups in use</p>
+        <div class="flex flex-col">
+          <div v-for="g in groups" :key="g.item" class="py-1 ml-2">
+            <input
+              class="mr-1 mb-1"
+              type="checkbox"
+              :id="`group-option-${g.item}`"
+              :value="g.item"
+              v-model="dataset.users.groups"
+            />
+            <label class="mr-2" :for="`group-option-${g.item}`">{{
+              g.itemName
+            }}</label>
+          </div>
         </div>
       </div>
       <div>
+        <p class="text-red-600 mt-4 ml-2">Selection Priority</p>
         <select
           span
           ref="selects"
@@ -72,18 +83,14 @@
         ></SelectionBox>
       </div>
       <div class="flex justify-start ...">
-        <p>Selection Priority:</p>
         <div
-          v-for="(selection, index) in theDataset.selectionPriority"
+          v-for="(selection, index) in dataset.selectionPriority"
           :key="index"
           class="flex"
         >
           <p class="ml-4">{{ selection }}</p>
           <p>*</p>
-          <p
-            class="ml-2"
-            v-if="theDataset?.selectionPriority.length != index + 1"
-          >
+          <p class="ml-2" v-if="dataset?.selectionPriority.length != index + 1">
             >
           </p>
         </div>
@@ -97,43 +104,40 @@
       <!-- <Storage></Storage> -->
       <div
         class="m-2"
-        v-for="(storage, index) in theDataset.storages"
+        v-for="(storage, index) in dataset.storages"
         :key="index"
       >
         <Storage :selectedStorage="storage" v-if="storage._id != ''"></Storage>
       </div>
-      <SlButton
+      <Button
         class="ml-2 p-0 self-center rounded-lg"
         id="button-accept"
         @click="addStorage"
         >+ Add new storage
-      </SlButton>
+      </Button>
 
-      <SlButton
+      <Button
         class="ml-4 p-2 self-center capitalize bg-green-highlight rounded-lg"
         id="button-accept"
         @click="updateDataset"
         >{{ t('save') }}
-      </SlButton>
+      </Button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, computed /*watch*/ } from 'vue'
+import { defineComponent, ref, Ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-
-import { SELECTION } from '@/constants'
-// import { useAppStore } from '@/store/useAppStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import { DatasetSelection, DatasetStorage } from '@/types/main'
+import { Dataset, DatasetSelection, DatasetStorage } from '@/types/main'
 import SelectionItem from '@/components/SelectionItem.vue'
 import AnswerInput from '@/components/base/AnswerInput.vue'
 import SelectionBox from '@/components/base/SelectionBox.vue'
 import ConsentHandling from '@/components/ConsentHandling.vue'
+import Button from '@/components/base/Button.vue'
 import Storage from '@/components/Storage.vue'
-import SlButton from '@/components/base/SlButton.vue'
-import { VIDEO_STORAGE_TYPES } from '@/constants'
+import { VIDEO_STORAGE_TYPES, UTVALG_SELECTION } from '@/constants'
 import { useAppStore } from '@/store/useAppStore'
 const messages = {
   nb_NO: {
@@ -155,7 +159,7 @@ const messages = {
   },
 }
 
-interface SelectionOptionListItem {
+interface OptionListItem {
   itemName: string
   item: string
 }
@@ -164,7 +168,7 @@ interface SelectionOptionListItem {
 export default defineComponent({
   name: 'DatasetItem',
   components: {
-    SlButton,
+    Button,
     SelectionBox,
     AnswerInput,
     SelectionItem,
@@ -180,22 +184,37 @@ export default defineComponent({
 
     const { getters: appGetters } = useAppStore()
     const currentSubset = ref('')
+    const groups: OptionListItem[] = []
+    let dataset: Ref<Dataset> = ref(new Dataset())
+    let selectionOptionList: OptionListItem[] = []
 
-    const d = datasetGetters.selectedDataset
-    const theDataset = ref(d)
-
-    const currentSelection: Ref<SelectionOptionListItem> = ref({
-      item: '',
-      itemName: '',
-    })
-    console.log(appGetters.user.value.profile.groups)
-    let selectionOptionList: SelectionOptionListItem[] = computed(() => {
-      return Object.values(SELECTION)
-        .filter((r) => !theDataset.value.selectionPriority.includes(r))
+    const resetData = (d: Dataset) => {
+      groups.length = 0
+      dataset.value = new Dataset(d)
+      // Put current groups into a selection list
+      appGetters.user.value.profile.groups.forEach((g) => {
+        groups.push({
+          itemName: g.name,
+          item: g.id,
+        })
+      })
+      selectionOptionList = Object.values(UTVALG_SELECTION)
+        .filter((r) => dataset.value.selectionPriority.includes(r))
         .map((r) => ({
           item: r,
           itemName: r,
         }))
+    }
+
+    watch(
+      () => datasetGetters.selectedDataset.value,
+      (d) => resetData(d)
+    )
+    resetData(datasetGetters.selectedDataset.value)
+
+    const currentSelection: Ref<OptionListItem> = ref({
+      item: '',
+      itemName: '',
     })
 
     //Methods
@@ -218,25 +237,24 @@ export default defineComponent({
     }
     // Save updated dataset
     const updateDataset = () => {
-      datasetActions.updateDataset()
+      datasetActions.updateDataset(dataset.value)
     }
     const addSubset = () => {
       let subset: DatasetSelection = {
         title: currentSubset.value,
+        selection: {},
       }
 
-      datasetActions.addSelection(theDataset.value.selectionPriority[0], subset)
+      datasetActions.addSelection(dataset.value.selectionPriority[0], subset)
     }
     return {
       t,
-      theDataset,
+      dataset,
+      groups,
       selectionOptionList,
       currentSelection,
       showInput,
       currentSubset,
-      groups: appGetters.user.value.profile.groups,
-      // Computed
-      // Methods
       addStorage,
       addSubset,
       addSelectionPriority,

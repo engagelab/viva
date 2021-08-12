@@ -565,7 +565,7 @@ interface UserStatus {
 interface UserProfileGroup {
   id: string
   name: string
-  isAdmin: boolean
+  role: string
 }
 interface UserProfile {
   username: string

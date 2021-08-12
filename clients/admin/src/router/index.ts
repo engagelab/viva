@@ -44,29 +44,17 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/postlogin',
     name: 'afterlogin',
-    /*    component: MyRecordings, */
-    redirect: '/monitor',
-    /*  beforeEnter: () => {
+    component: Landing,
+    beforeEnter: () => {
       appActions
         .redirectedLogin()
         .then(() => {
-          if (appGetters.isLoggedIn.value) {
-            return datasetActions
-              .fetchDatasets()
-              .then(() => {
-                return { path: '/videos/list' }
-              })
-              .catch((error) => {
-                console.log(error)
-              })
-          } else {
-            return { path: '/login?page=0' }
-          }
+          router.push('/monitor')
         })
         .catch((error) => {
           console.log(error)
         })
-    }, */
+    },
   },
   // --------------------------------------------------------
   {
@@ -132,7 +120,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const idleTime = Math.floor(
-    new Date().getTime() - appGetters.lastActive.value / 1000
+    (new Date().getTime() - appGetters.lastActive.value) / 1000
   )
   const isLoggedIn = appGetters.isLoggedIn.value
   const uploadingData = videoGetters.uploadingData.value

@@ -21,9 +21,14 @@
       src="../../assets/icons/svg/feide.svg"
     />
     <img
-      class="pl-2 w-6"
+      class="pl-2 w-24"
       v-if="logo == 'google'"
       src="../../assets/icons/svg/google_drive.svg"
+    />
+    <img
+      class="w-24"
+      v-if="logo == 'canvas'"
+      src="../../assets/icons/svg/canvas.svg"
     />
   </button>
 </template>
@@ -50,10 +55,11 @@ export default defineComponent({
       default: '14rem',
     },
   },
+  emits: ['vclick'],
   setup(props, context) {
     function click($event: Event) {
       if (!props.disabled) {
-        context.emit('click', $event)
+        context.emit('vclick', $event)
       }
     }
     return {

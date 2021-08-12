@@ -28,8 +28,7 @@ Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
       },
       users: {
         adminGroup: 'test',
-        dataportenGroups: ['23222'],
-        canvasGroups: [], // Canvas course IDs
+        groups: ['23222'],
       },
       selectionPriority: [], // Order of appearance of the utvalg categories
       selection: {}, //  'utvalg' selection

@@ -65,7 +65,7 @@ interface Actions {
   fetchDatasets: () => Promise<void>
   // fetchDataportenGroups: () => Promise<void>
   addDataset: (datasetName: string) => Promise<void>
-  updateDataset: () => Promise<void>
+  updateDataset: (d?: Dataset) => Promise<void>
   addSelectionPriority: (selectionPriority: string) => void
   addStorageFields: (
     storageId: string,
@@ -133,13 +133,13 @@ const actions = {
         appActions.errorMessage(error)
       })
   },
-  // Save selected dataset
-  updateDataset: async function (): Promise<void> {
+  // Save given or selected dataset
+  updateDataset: async function (d?: Dataset): Promise<void> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.PUT,
       credentials: true,
       route: '/api/dataset',
-      body: state.value.selectedDataset,
+      body: d || state.value.selectedDataset,
     }
     return apiRequest<Dataset>(payload)
       .then((dataset) => {
