@@ -116,15 +116,16 @@ Set to 'none' if no such course exists
 MobileApp
 
 
-  *Groups (courses) for a User*
+  *Groups (courses) for a User*   (**DONE**)
   To know which Datasets (based on courses) a user is allowed to receive
+  see server/routing/auth/helpers.js > `getUserGroups()` and `setUserGroups()`
   see server/services/canvas.js > `coursesForUser()`
 
-```
-  Progress for a course - To grant access to VIVA depending on completion of a particular course e.g. Ethics course
-  Set CANVAS_DEPENDENT_COURSE_ID to the course_id
-  Set to 'none' if no such course exists
-```
+
+  *Progress for a course*   (**DONE**)
+  To grant access to VIVA depending on completion of a particular course e.g. Ethics course
+  Set CANVAS_DEPENDENT_COURSE_ID to the course_id. Set it to 'none' if no such course exists
+  see server/routing/auth/helpers.js > `setPrerequisiteCourseProgress()`
 
 LTI for Video Sharing
 
