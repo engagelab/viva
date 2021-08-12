@@ -1,5 +1,5 @@
 <template>
-  <div class="relative w-screen h-screen overflow-hidden">
+  <div class="relative w-screen h-screen">
     <!-- <div
       class="relative flex md:flex-row flex-col h-full justify-center bg-blue-button"
     >
@@ -7,10 +7,10 @@
       <SlButton class="m-4" @click="monitor()">Monitor</SlButton>
     </div> -->
     <div class="flex flex-wrap w-full border-2 h-full">
-      <div class="w-1/2">
+      <div class="w-1/6">
         <RecordingsComponent />
       </div>
-      <div class="w-1/2">
+      <div class="w-5/6">
         <VideoComponent :key="video ? video.details.id : 'video component'" />
       </div>
     </div>

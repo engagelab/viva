@@ -4,8 +4,7 @@
 const router = require('express').Router()
 const utilities = require('../../utilities')
 const Dataset = require('../../models/Dataset')
-/* const Video = require('../../models/Video')
-const User = require('../../models/User') */
+
 const { userRoles, consentTypes } = require('../../constants')
 
 /* ---------------- Setting activities ---------------- */

@@ -35,7 +35,13 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
       return response.status(400).end()
     } else {
       videosToReturn = videos.map((v) => v.redacted())
-      response.send(videosToReturn).status(200).end()
+      response
+        .send({
+          videos: videosToReturn,
+          users: request.session.canvasData.namesAndRoles,
+        })
+        .status(200)
+        .end()
     }
   })
 })
@@ -55,18 +61,20 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 
 // Get a video file from S3 (Educloud)
 router.get('/video/file', utilities.authoriseUser, (request, response) => {
+  console.log(request.session.canvasData.namesAndRoles)
   Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) return response.status(200).end()
     else {
-      const keyname = `${video.users.owner.toString()}/${video.file.name}.${video.file.extension}`
+      const keyname = `${video.users.owner.toString()}/${video.file.name}.${
+        video.file.extension
+      }`
       const sseKey = video.file.encryptionKey
       const sseMD5 = video.file.encryptionMD5
-      downloadS3File({ keyname, sseKey, sseMD5 })
-        .then((file) => {
-          response.setHeader("content-type", "video/mp4");
-          file.Body.pipe(response)
-        })
+      downloadS3File({ keyname, sseKey, sseMD5 }).then((file) => {
+        response.setHeader('content-type', 'video/mp4')
+        file.Body.pipe(response)
+      })
     }
   })
 })
@@ -82,9 +90,31 @@ router.post('/video', utilities.authoriseUser, async (request, response) => {
       update.status.main = videoStatusTypes.uploaded
       update.file.name = v.file.name
       update.file.extension = v.file.extension
+      update.users.sharing = v.users.sharing
       v.updateOne(update, {}, () => response.status(200).end())
     }
   })
 })
 
+// To update the sharing info for a selected video
+router.put(
+  '/video/share',
+  utilities.authoriseUser,
+  async (request, response, next) => {
+    const query = { 'details.id': request.body.details.id }
+    Video.findOne(query, (error, v) => {
+      if (error || !v) {
+        return response.status(400).end()
+      } else {
+
+        const video = { ...request.body }
+        v.users = video.users
+        v.save((saveError) => {
+          if (saveError) return next(saveError)
+          response.end()
+        })
+      }
+    })
+  }
+)
 module.exports = router
