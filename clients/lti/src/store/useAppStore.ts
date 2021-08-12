@@ -128,7 +128,6 @@ const actions = {
   },
   // Called after successful login to retieve user and mark as 'logged in'
   redirectedLogin(): Promise<void> {
-    console.log('Hello')
     const completeLogin = () => {
       const payload: APIRequestPayload = {
         method: XHR_REQUEST_TYPE.GET,

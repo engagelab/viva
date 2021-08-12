@@ -182,7 +182,7 @@ export default defineComponent({
         access: false,
         description: '',
         edl: {
-          trim: [],
+          trim: [0, 0],
           blur: [],
         },
       }

@@ -89,7 +89,7 @@ interface Actions {
   fetchVideoData: (videoId: string) => Promise<{ url: string }>
   addGroupShareInfo: (
     selectedShare: VideoSharing | undefined,
-    value: string | VideoSharing | string[],
+    value: string | VideoSharing | string[] | boolean | number[],
     mode: string
   ) => Promise<void>
   updateVideoMetaData: (selectedVideo: Video) => Promise<Video>
@@ -133,7 +133,7 @@ const actions = {
   // Add share info for a selected video
   addGroupShareInfo: async function (
     selectedShare: VideoSharing | undefined,
-    value: string | VideoSharing | string[],
+    value: string | VideoSharing | string[] | boolean | number[],
     mode: string
   ): Promise<void> {
     if (mode == 'new') {
@@ -145,6 +145,11 @@ const actions = {
           share.description = value as string
         } else if (share._id == selectedShare?._id && mode == 'user') {
           share.users = value as string[]
+        } else if (share._id == selectedShare?._id && mode == 'access') {
+          share.access = value as boolean
+        } else if (share._id == selectedShare?._id && mode == 'trim') {
+          share.edl.trim = value as number[]
+          console.log(value)
         }
         return share
       })
@@ -158,12 +163,10 @@ const actions = {
       const v = new Video(video)
       state.value.videos.set(v.details.id, v)
     })
-    console.log(state.value.videos)
     response.users.forEach((user) => {
       const u = new NamesAndRoles(user)
       state.value.allUsers.push(u)
     })
-    console.log(state.value.allUsers)
     return Promise.resolve()
   },
 
