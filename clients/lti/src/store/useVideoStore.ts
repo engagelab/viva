@@ -87,9 +87,13 @@ interface Actions {
   selectVideo: (video: Video) => Promise<void>
   updateMetadata: (video: Video) => Promise<void>
   fetchVideoData: (videoId: string) => Promise<{ url: string }>
-  addGroupShare: (value: VideoSharing) => Promise<void>
+  addGroupShareInfo: (
+    selectedShare: VideoSharing | undefined,
+    value: string | VideoSharing | string[],
+    mode: string
+  ) => Promise<void>
+  updateVideoMetaData: (selectedVideo: Video) => Promise<Video>
 }
-
 const actions = {
   // fetch a specific video with draft id
   fetchVideo: async function (videoId: string): Promise<Video> {
@@ -104,6 +108,16 @@ const actions = {
     return apiRequest<Video>(payload)
   },
 
+  // Update sharing for a selected video
+  updateVideoMetaData: async function (selectedVideo: Video): Promise<Video> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.PUT,
+      credentials: true,
+      body: selectedVideo,
+      route: '/api/video/share',
+    }
+    return apiRequest<Video>(payload)
+  },
   fetchVideoData: async function (videoId: string): Promise<{ url: string }> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
@@ -116,9 +130,25 @@ const actions = {
     return apiRequest<{ url: string }>(payload)
   },
 
-  // AddGroupShare for a selected video
-  addGroupShare: async function (newShare: VideoSharing): Promise<void> {
-    state.value.selectedVideo?.users.sharing.push(newShare)
+  // Add share info for a selected video
+  addGroupShareInfo: async function (
+    selectedShare: VideoSharing | undefined,
+    value: string | VideoSharing | string[],
+    mode: string
+  ): Promise<void> {
+    if (mode == 'new') {
+      state.value.selectedVideo?.users.sharing.push(value as VideoSharing)
+      actions.updateVideoMetaData(state.value.selectedVideo as Video)
+    } else {
+      state.value.selectedVideo?.users.sharing.map((share) => {
+        if (share._id == selectedShare?._id && mode == 'description') {
+          share.description = value as string
+        } else if (share._id == selectedShare?._id && mode == 'user') {
+          share.users = value as string[]
+        }
+        return share
+      })
+    }
   },
 
   //Fetch videometadata from mongoDB

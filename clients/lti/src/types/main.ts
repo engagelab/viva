@@ -198,6 +198,7 @@ interface VideoStatus {
   hasNewDataAvailable: boolean
 }
 export interface VideoSharing {
+  _id?: string
   users: string[]
   access: boolean
   description: string

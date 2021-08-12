@@ -63,14 +63,23 @@
 
       <Edit :stateFromParent="stateToChildren" @edl-updated="edlUpdated" />
     </div>
-    <SlButton
-      class="bg-blue-400 self-center rounded-lg"
-      id="button-accept"
-      @click="addGroupShare"
-      >+ Add new group share
-    </SlButton>
+
     <div v-for="(share, index) in selectedVideo.users.sharing" :key="index">
-      <Sharing :selectedShare="share"></Sharing>
+      <Sharing class="bg-blue-200 p-2" :selectedShare="share"></Sharing>
+    </div>
+    <div class="flex">
+      <SlButton
+        class="bg-blue-400 self-center rounded-lg"
+        id="button-accept"
+        @click="addGroupShare"
+        >+ Add new group share
+      </SlButton>
+      <SlButton
+        class="bg-blue-400 self-center rounded-lg"
+        id="button-accept"
+        @click="saveMetaData"
+        >Save
+      </SlButton>
     </div>
   </div>
 </template>
@@ -165,6 +174,8 @@ export default defineComponent({
     )
 
     // METHODS
+
+    // Add new group share
     const addGroupShare = () => {
       const newShare: VideoSharing = {
         users: [],
@@ -175,9 +186,13 @@ export default defineComponent({
           blur: [],
         },
       }
-
-      videoActions.addGroupShare(newShare)
+      videoActions.addGroupShareInfo(undefined, newShare, 'new')
     }
+    // Save meta for a selected video
+    const saveMetaData = () => {
+      videoActions.updateVideoMetaData(selectedVideo.value as Video)
+    }
+
     function toggleScreenMode(): void {
       fullScreenMode.value = !fullScreenMode.value
     }
@@ -370,6 +385,7 @@ export default defineComponent({
       startPlaying,
       toggleScreenMode,
       addGroupShare,
+      saveMetaData,
       // data
       selectedVideo,
       playerTime,

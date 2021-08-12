@@ -90,9 +90,31 @@ router.post('/video', utilities.authoriseUser, async (request, response) => {
       update.status.main = videoStatusTypes.uploaded
       update.file.name = v.file.name
       update.file.extension = v.file.extension
+      update.users.sharing = v.users.sharing
       v.updateOne(update, {}, () => response.status(200).end())
     }
   })
 })
 
+// To update the sharing info for a selected video
+router.put(
+  '/video/share',
+  utilities.authoriseUser,
+  async (request, response, next) => {
+    const query = { 'details.id': request.body.details.id }
+    Video.findOne(query, (error, v) => {
+      if (error || !v) {
+        return response.status(400).end()
+      } else {
+
+        const video = { ...request.body }
+        v.users = video.users
+        v.save((saveError) => {
+          if (saveError) return next(saveError)
+          response.end()
+        })
+      }
+    })
+  }
+)
 module.exports = router

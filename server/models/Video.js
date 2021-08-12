@@ -10,13 +10,20 @@ const editDecriptionList = {
   blur: { type: Array, default: [] },
 }
 
+const sharingSchema = {
+  users: { type: Array },
+  access: { type: Boolean, default: false },
+  description: { type: String },
+  edl: editDecriptionList,
+}
 const videoSchema = new mongoose.Schema({
-  file: { // For Back-End use only
+  file: {
+    // For Back-End use only
     extension: { type: String }, // File extension to use e.g. mp4  Assigned by FFMPEG, back end only.
     name: { type: String }, // The name of the file stored server-side by TUS
     mimeType: { type: String }, // mime type e.g. video/mp4  Assigned by recorder at front end.
     encryptionKey: { type: String },
-    encryptionMD5: { type: String }
+    encryptionMD5: { type: String },
   },
   details: {
     id: { type: String }, // Used instead of video._id front end, and for QR Code.
@@ -47,16 +54,21 @@ const videoSchema = new mongoose.Schema({
   },
   users: {
     owner: { type: mongoose.Schema.ObjectId, ref: 'User' },
-    sharedWith: [{ type: mongoose.Schema.ObjectId, ref: 'User' }], // Users who can see this video. Used for easier searching
-    sharing: [
+    sharing: {
+      type: Array,
+      of: sharingSchema,
+    },
+    // sharedWith: [{ type: mongoose.Schema.ObjectId, ref: 'User' }], // Users who can see this video. Used for easier searching
+    /*sharing: [
       // Each entry is a share for a particular set of users, and particular EDL of this video
       {
-        users: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
+        // users: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
+        users: { type: Array },
         access: { type: Boolean, default: false },
         description: { type: String },
         edl: editDecriptionList,
       },
-    ],
+    ],*/
   },
   dataset: {
     id: { type: mongoose.Schema.ObjectId, ref: 'Dataset' },

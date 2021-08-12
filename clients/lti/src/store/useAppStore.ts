@@ -119,7 +119,7 @@ const actions = {
       .then((response: Record<string, string>) => {
         if (response) {
           _appState.value.canvasData = response
-          console.dir(response)
+          // console.dir(response)
         }
       })
       .catch((error: Error) => {

@@ -1,14 +1,14 @@
 <template>
-  <div>
+  <div class="my-2">
     <div>
-      <!-- <AnswerInput
+      <AnswerInput
         class="m-2 w-32"
         mode="text"
         :border="false"
         :label="'Description'"
         :required="true"
-        v-model="selectedShare.description"
-      ></AnswerInput> -->
+        v-model="description"
+      ></AnswerInput>
     </div>
     <div class="grid grid-cols-2">
       <div>
@@ -49,21 +49,22 @@ import {
   defineComponent,
   ref,
   // computed,
+  // props,
   // onMounted,
-  // watch,
+  watch,
   PropType,
   // toRefs,
 } from 'vue'
 import { useVideoStore } from '@/store/useVideoStore'
 import SlButton from '@/components/base/SlButton.vue'
 import { VideoSharing } from '@/types/main'
-// import AnswerInput from '@/components/base/AnswerInput.vue'
+import AnswerInput from '@/components/base/AnswerInput.vue'
+const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
-const { getters: videoGetters } = useVideoStore()
 export default defineComponent({
   components: {
     SlButton,
-    // AnswerInput,
+    AnswerInput,
   },
   props: {
     selectedShare: {
@@ -71,12 +72,40 @@ export default defineComponent({
       required: true,
     },
   },
-  setup() {
+  setup(props) {
     const showUsers = ref(false)
+    const description = ref(props.selectedShare.description)
+    const sharedUsers = ref(props.selectedShare.users)
+    const addDescription = (value: string) => {
+      if (value)
+        videoActions.addGroupShareInfo(
+          props.selectedShare,
+          value,
+          'description'
+        )
+    }
+    const addUser = (value: string[]) => {
+      if (value)
+        videoActions.addGroupShareInfo(props.selectedShare, value, 'user')
+    }
+    watch(
+      () => description.value,
+      (newValue: string) => {
+        if (newValue) addDescription(newValue)
+      }
+    )
+    watch(
+      () => sharedUsers.value,
+      (newValue: string[]) => {
+        if (newValue) addUser(newValue)
+      }
+    )
     return {
       users: videoGetters.allUsers,
-      sharedUsers: videoGetters.selectedVideo.value?.users.sharedWith,
+      sharedUsers,
+      description,
       showUsers,
+      
     }
   },
 })
