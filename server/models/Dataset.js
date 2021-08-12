@@ -39,10 +39,10 @@ const datasetSchema = new mongoose.Schema({
   },
 
   users: {
-    owner: { type: mongoose.Schema.ObjectId, ref: 'User' },
+    owner: { type: mongoose.Schema.ObjectId, ref: 'User' }, // The 'creator' of this dataset
     adminGroup: { type: String },
-    dataportenGroups: { type: Array, of: String },
-    canvasGroups: { type: Array, of: String }, // Canvas course IDs
+    dataportenGroups: { type: Array, of: String }, // Dataporten Group IDs (groups of users) who will receive this dataset
+    canvasGroups: { type: Array, of: String }, // Canvas Course IDs (groups of users) who will receive this dataset
   },
   selectionPriority: { type: Array, default: [] }, // Order of appearance of the utvalg categories
   selection: { type: Object, default: {} }, //  'utvalg' selection

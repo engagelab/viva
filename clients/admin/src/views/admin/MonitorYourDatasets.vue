@@ -22,7 +22,7 @@
     <div
       class="
         px-4
-        h-10 h-6
+        h-10
         rounded-full
         bg-blue-500
         text-white

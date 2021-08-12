@@ -23,7 +23,7 @@ Sample profile = {
             organization: ''
           }
 */
-async function setUserAttributes(user, profile, tokenSet) {
+function setUserAttributes(user, profile, tokenSet) {
   user.profile.username = profile.login_id
   user.profile.provider_id = profile.provider_id
   user.profile.reference = createReference(user.profile.provider_id)
@@ -47,52 +47,56 @@ async function setUserAttributes(user, profile, tokenSet) {
 
 // Check the 'prerequisite' course has been completed
 // This is the course id environment variable: CANVAS_DEPENDENT_COURSE_ID
-function getPrerequisiteCourseProgress(user) {
-  if (process.env.CANVAS_DEPENDENT_COURSE_ID === 'none') {
+// Set the env var to 'none' to skip this step
+// If the user is an admin, also skip this step
+function setPrerequisiteCourseProgress(user) {
+  if (process.env.CANVAS_DEPENDENT_COURSE_ID === 'none' || user.status.role === userRoles.admin) {
     user.status.prerequisiteCompleted = true
     return Promise.resolve()
   }
-  // TODO: Fix this for superToken..
-  return canvas.courseProgress(user.tokens.access_token, user.profile.oauthId, process.env.CANVAS_DEPENDENT_COURSE_ID).then((progress) => {
-    user.status.prerequisiteCompleted = progress.requirement_count == progress.requirement_completed_count
+  return canvas.courseProgress(`sis_login_id:${user.profile.username}`, process.env.CANVAS_DEPENDENT_COURSE_ID)
+    .then((progress) => {
+      user.status.prerequisiteCompleted = progress.requirement_count == progress.requirement_completed_count
+      console.log(`Depended course was completed: ${user.status.prerequisiteCompleted}`)
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+}
+
+// Configure the User model with the list of courses
+async function setUserGroups(user, coursesInAccount) {
+  let courses = []
+  if (user.status.role === userRoles.admin) courses = coursesInAccount
+  else {
+    for (let c of coursesInAccount) {
+      const users = await canvas.usersForCourse(c.id)
+      const t = users.some((u) => u.login_id === user.profile.username)
+      if (t) courses.push(c)
+    }
+  }
+  user.profile.groups = courses.map((c) => {
+    return { id: c.id, name: c.course_code }
   })
 }
 
-function setUserGroups(user) {
+function getUserGroups(user) {
   // The 'organization' determines what system takes care of groups
-  const platform = organizations[user.profile.organization]
-  if (platform === platforms.dataporten) {
+  const config = organizations[user.profile.organization]
+  if (config.platform === platforms.dataporten) {
        return dataporten.groupsForUser(user).then((groups) => {
         user.profile.groups = groups.map((g) => ({ id: g.id, name: g.displayName }))
        })
-  } else if (platform === platforms.canvas) {
+  } else if (config.platform === platforms.canvas) {
     return canvas.coursesInAccount(process.env.CANVAS_VIVA_ACCOUNT_ID)
-    .then(async (coursesInAccount) => {
-      const courses = []
-      for (let c of coursesInAccount) {
-        canvas.usersForCourse(c.id).then((users) => {
-          const t = users.some((u) => u.login_id === user.profile.username)
-          if (t) courses.push(c)
-        })
-      }
-      user.profile.groups = courses.map((c) => {
-        let isAdmin = c.enrollments.length && c.enrollments.some((e) => e.role === process.env.CANVAS_ADMIN_ROLE)
-        return { id: c.id, name: c.course_code, isAdmin }
-      })
-      return getPrerequisiteCourseProgress(user)
-    })
-    .catch((error) => console.log(error))
+      .then((coursesInAccount) => setUserGroups(user, coursesInAccount))
+      .catch((error) => console.log(error))
   } else {
     return Promise.resolve()
   }
 }
 
 function setUserRole(user) {
-  // TESTING
-  canvas.coursesForUser(`sis_login_id:${user.profile.username}`)
-    .then((courses) => console.log(courses))
-    .catch((error) => console.log(error))
-
   return canvas.usersForGroup(process.env.CANVAS_ADMIN_GROUP_ID).then((users) => {
     if (users.some((u) => u.login_id === user.profile.username)) {
       user.status.role = userRoles.admin
@@ -111,11 +115,11 @@ function createOrUpdateUser(tokenSet, profile) {
       if (err) return reject(`Error checking user ${err}`)
       user = usr || new User()
       setUserAttributes(user, profile, tokenSet)
-      if (profile.client === 'mobileApp' || profile.client === 'lti') {
-        await setUserGroups(user)
-      } else if (profile.client === 'admin') {
+      if (profile.client === 'admin') {
         await setUserRole(user)
       }
+      await getUserGroups(user)
+      await setPrerequisiteCourseProgress(user)
       try {
         const savedUser = await user.save()
         resolve(savedUser)

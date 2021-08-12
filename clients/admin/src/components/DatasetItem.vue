@@ -2,52 +2,46 @@
   <div>
     <h2>{{ t('dataset') }}</h2>
 
-    <div class="flex flex-col ...">
-      <div>
-        <div class="w-4/5 flex justify-between ...">
-          <div>
-            <AnswerInput
-              class="m-2 w-32"
-              mode="text"
-              :border="false"
-              :label="t('name')"
-              :required="true"
-              v-model="theDataset.name"
-            ></AnswerInput>
-          </div>
-          <div>
-            <AnswerInput
-              class="m-2"
-              mode="text"
-              :border="false"
-              :label="t('owner')"
-              :required="true"
-              v-model="theDataset.users.owner.profile.username"
-            ></AnswerInput>
-          </div>
-        </div>
+    <div class="flex flex-col">
+      <div class="w-4/5 flex flex-col">
+        <AnswerInput
+          class="m-2"
+          mode="text"
+          :border="false"
+          :label="t('name')"
+          :required="true"
+          v-model="theDataset.name"
+        ></AnswerInput>
+        <AnswerInput
+          class="m-2"
+          mode="text"
+          :border="false"
+          :label="t('owner')"
+          :required="true"
+          v-model="theDataset.users.owner.profile.username"
+        ></AnswerInput>
+        <AnswerInput
+          class="m-2"
+          mode="text"
+          :border="false"
+          :label="t('description')"
+          :required="true"
+          v-model="theDataset.description"
+        ></AnswerInput>
       </div>
       <div>
-        <div class="w-4/5 flex justify-between ...">
-          <div>
-            <AnswerInput
-              class="m-2 w-32"
-              mode="text"
-              :border="false"
-              :label="t('description')"
-              :required="true"
-              v-model="theDataset.description"
-            ></AnswerInput>
-          </div>
-          <div>
-            <!-- TODO: should be canvas course Ids -->
-            <!-- <SelectionBox
-              id="select-kind"
-              :label="t('data controller group')"
-              :options="SelectionOptionList"
-              v-model="theDataset.users.adminGroup"
-            ></SelectionBox> -->
-          </div>
+        <p
+          v-if="theDataset.users.canvasGroups.length"
+          class="text-red-600 mt-4 ml-2"
+        >
+          Canvas Data collectors:
+        </p>
+        <div
+          v-for="(group, index) in theDataset.users.canvasGroups"
+          :value="group"
+          :key="index"
+        >
+          {{ group }}
         </div>
       </div>
       <div>
@@ -62,7 +56,7 @@
         >
           <option :value="0">{{ $t('add-subject') }}</option>
           <option
-            v-for="(selection, index) in SelectionOptionList"
+            v-for="(selection, index) in selectionOptionList"
             :value="selection"
             :key="index"
           >
@@ -72,7 +66,7 @@
         <SelectionBox
           id="select-kind"
           :label="t('selection')"
-          :options="SelectionOptionList"
+          :options="selectionOptionList"
           v-model="currentSelection"
           @change="addSelectionPriority"
         ></SelectionBox>
@@ -80,7 +74,7 @@
       <div class="flex justify-start ...">
         <p>Selection Priority:</p>
         <div
-          v-for="(selection, index) in theDataset?.selectionPriority"
+          v-for="(selection, index) in theDataset.selectionPriority"
           :key="index"
           class="flex"
         >
@@ -195,7 +189,7 @@ export default defineComponent({
       itemName: '',
     })
     console.log(appGetters.user.value.profile.groups)
-    let SelectionOptionList: SelectionOptionListItem[] = computed(() => {
+    let selectionOptionList: SelectionOptionListItem[] = computed(() => {
       return Object.values(SELECTION)
         .filter((r) => !theDataset.value.selectionPriority.includes(r))
         .map((r) => ({
@@ -236,7 +230,7 @@ export default defineComponent({
     return {
       t,
       theDataset,
-      SelectionOptionList,
+      selectionOptionList,
       currentSelection,
       showInput,
       currentSubset,

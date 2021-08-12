@@ -28,12 +28,12 @@ const userSchema = new mongoose.Schema({
     email: { type: String },
     reference: { type: String }, // This should be sent to the client rather than _id
     organization: { type: String },
-    groups: [{
+    groups: [{  // Canvas Courses or Dataporten Groups this User is a member of
       _id: false,
       id: { type: String },
       name: { type: String },
-      isAdmin: { type: Boolean, default: false },
-     }], // Groups that this user is a member of ('courses' for Canvas)
+      role: { type: String },
+     }],
   },
   tokens: {
     access_token: { type: String },

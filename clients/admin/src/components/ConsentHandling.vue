@@ -16,16 +16,7 @@
       <p class="text-red-600" v-if="theDataset.consent.kind == consentKey">
         {{ consent.description }}
       </p>
-    </div>
-    <div class="flex flex-col w-3/6">
-      <p class="text-red-600 mt-4 ml-2">Data collectors :</p>
-      <div
-        v-for="(group, index) in theDataset.users.canvasGroups"
-        :value="group"
-        :key="index"
-      >
-        {{ group }}
-      </div>
+      <!--div> FORM ID INPUT </div-->
     </div>
 
     <div>

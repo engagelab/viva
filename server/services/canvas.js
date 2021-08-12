@@ -28,7 +28,7 @@ const usersForCourse = (courseId, canvasAccessToken) => {
   let options = {
     host,
     port: 443,
-    path: `/api/v1/courses/${courseId}/users`,
+    path: `/api/v1/courses/${courseId}/users?per_page=1000`,
     method: 'GET',
     headers: {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
@@ -72,7 +72,7 @@ const usersForGroup = (groupId, canvasAccessToken) => {
 // Get list of user's CourseProgress (including enrolment roles) from Canvas
 // https://canvas.instructure.com/doc/api/courses.html#method.courses.user_progress
 // Returns a Promise
-const courseProgress = (canvasAccessToken, canvasUserId, canvasCourseId) => {
+const courseProgress = (canvasUserId, canvasCourseId, canvasAccessToken) => {
   let options = {
     host,
     port: 443,
