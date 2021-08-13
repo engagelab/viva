@@ -60,7 +60,10 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 router.get('/video/file', utilities.authoriseUser, (request, response) => {
   Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
     if (error) return response.status(403).end()
-    else if (!video) return response.status(200).end()
+    else if (!video) {
+      console.log(`DB video not found. "details.id": "${request.query.videoref}"`)
+      return response.status(200).end()
+    }
     else {
       const keyname = `${video.users.owner.toString()}/${video.file.name}.${
         video.file.extension
