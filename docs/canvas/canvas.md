@@ -22,14 +22,16 @@ Public JWK URL:   https://engagelab.uio.no/.well-known/testing/jwks.json (must b
 Viva requires a custom variable to match a user login via API with a user login via LTI
 The LTI settings has a section called 'custom fields' enter the following:
 
-    user_username=$User.username
     user_id=$Canvas.user.id
     login_id=$Canvas.user.loginId      <--- username@uio.no
-    account_id=$Canvas.account.id
     user_email=$Person.email.primary
     person_name=$Person.name.full
-    api_domain=$Canvas.api.domain
     course_id=$Canvas.course.id
+
+  Tested but currently unused:
+    user_username=$User.username
+    account_id=$Canvas.account.id
+    api_domain=$Canvas.api.domain
 
 
 ##### Administrator Role

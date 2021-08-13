@@ -26,7 +26,8 @@ Sample profile = {
 function setUserAttributes(user, profile, tokenSet) {
   user.profile.username = profile.login_id
   user.profile.provider_id = profile.provider_id
-  user.profile.reference = createReference(user.profile.provider_id || user.profile.username)
+  user.profile.lti_id = profile.lti_id
+  user.profile.reference = createReference(user.profile.provider_id || user.profile.lti_id || user.profile.username)
   user.profile.fullName = profile.fullName
   user.profile.email = profile.email
   user.profile.organization = profile.organization
