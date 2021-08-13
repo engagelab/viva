@@ -58,6 +58,7 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 
 // Get a video file from S3 (Educloud)
 router.get('/video/file', utilities.authoriseUser, (request, response) => {
+  console.log('Getting video from S3...')
   Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) {
