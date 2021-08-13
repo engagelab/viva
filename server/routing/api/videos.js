@@ -68,6 +68,7 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
       const sseKey = video.file.encryptionKey
       const sseMD5 = video.file.encryptionMD5
       downloadS3File({ keyname, sseKey, sseMD5 }).then((file) => {
+        console.log(`Found S3 video: ${keyname}`)
         // These headers are required to enable seeking `currentTime` in Chrome browser
         response.setHeader('content-type', 'video/mp4')
         response.setHeader('Accept-Ranges', 'bytes')
