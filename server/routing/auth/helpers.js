@@ -142,8 +142,10 @@ function completeCallback(request, response, user) {
 
   if (client === 'lti') {
     redirectUrl = process.env.NODE_ENV === 'development' ? `${host}:8080` : `${host}/lti`
+    s = `${new Date().toLocaleString()}: LTI Login: ${user.profile.username}`
   } else if (client === 'admin') {
     redirectUrl = process.env.NODE_ENV === 'development' ? `${host}:8081` : `${host}`
+    s = `${new Date().toLocaleString()}: Admin Login: ${user.profile.username}`
   }
   // Mobile app will be passed a token via Apple's ASWebAuthenticationSession / Google Custom Tabs
   // which must then be passed back to the /token route obtain a Session
@@ -165,7 +167,6 @@ function completeCallback(request, response, user) {
   // Set the session here at last!
   // Web app receives a Session immediately, does not need to pass a token
   request.session.ref = user.id
-  s = `${new Date().toLocaleString()}: Mobile App Login: ${user.profile.username}`
   console.log(s)
   console.log(`Session: ${request.session.ref}`)
   return response.redirect(redirectUrl)
