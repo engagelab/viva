@@ -123,6 +123,7 @@ router.post('/canvas/callback', function (request, response) {
       organization: organization || '',
       client,
     }
+    console.dir(profile)
 
     // Note the course we are launching from
     if (custom_vars.course_id)
