@@ -25,6 +25,8 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
   if (isAdmin) {
     query = {}
   } else {
+    // to fetch shared videos , users.owners.sharing.users
+    // user.profile.username
     query = { 'users.owner': response.locals.user._id }
   }
 
@@ -38,7 +40,9 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
       response
         .send({
           videos: videosToReturn,
-          users: request.session.canvasData.namesAndRoles,
+          users: request.session.canvasData
+            ? request.session.canvasData.namesAndRoles
+            : [],
         })
         .status(200)
         .end()
@@ -106,7 +110,6 @@ router.put(
       if (error || !v) {
         return response.status(400).end()
       } else {
-
         const video = { ...request.body }
         v.users = video.users
         v.save((saveError) => {

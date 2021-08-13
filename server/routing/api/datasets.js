@@ -5,7 +5,7 @@ const router = require('express').Router()
 const utilities = require('../../utilities')
 const Dataset = require('../../models/Dataset')
 
-const { userRoles, consentTypes } = require('../../constants')
+const { userRoles /*, consentTypes */ } = require('../../constants')
 
 /* ---------------- Setting activities ---------------- */
 
@@ -73,17 +73,11 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
   let query = {}
   if (isAdmin) {
     query = {
-      $or: [
-        { 'users.groups': { $in: groupIds } },
-        { 'users.owner': u._id }
-      ]
+      $or: [{ 'users.groups': { $in: groupIds } }, { 'users.owner': u._id }],
     }
   } else {
     query = {
-      $and: [
-        { 'users.groups': { $in: groupIds } },
-        { 'status.active': true },
-      ]
+      $and: [{ 'users.groups': { $in: groupIds } }, { 'status.active': true }],
     }
   }
 
@@ -162,10 +156,10 @@ router.put('/dataset', utilities.authoriseUser, (request, response, next) => {
       d.storages = updatedDataset.storages
       d.consent = updatedDataset.consent
       d.status.active = updatedDataset.status.active
-      d.formId =
-        updatedDataset.consent == consentTypes.samtykke
-          ? updatedDataset.formId
-          : ''
+      // d.formId =
+      //   updatedDataset.consent == consentTypes.samtykke
+      //     ? updatedDataset.formId
+      //     : ''
       d.selectionPriority = updatedDataset.selectionPriority
       d.selection = updatedDataset.selection
       d.save((saveError, savedDataset) => {

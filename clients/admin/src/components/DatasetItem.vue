@@ -98,10 +98,11 @@
       <div><p class="text-red-600 mt-4 ml-2">Instances</p></div>
       <SelectionItem></SelectionItem>
 
+      <!-- <ConsentHandling @consent-updated="consentUpdated"></ConsentHandling> -->
       <ConsentHandling></ConsentHandling>
 
       <div><p class="text-red-600 mt-4 ml-2">Storage options</p></div>
-      <!-- <Storage></Storage> -->
+
       <div
         class="m-2"
         v-for="(storage, index) in dataset.storages"
@@ -235,6 +236,7 @@ export default defineComponent({
       }
       datasetActions.addStorageFields('', newStorage, 'new')
     }
+
     // Save updated dataset
     const updateDataset = () => {
       datasetActions.updateDataset(dataset.value)
