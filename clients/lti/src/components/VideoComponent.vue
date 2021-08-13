@@ -11,7 +11,7 @@
           ref="playbackVideo"
           id="playbackVideo"
           oncontextmenu="return false;"
-          :src="`https://localhost:8000/api/video/file?videoref=${selectedVideo.details.id}`"
+          :src="`${baseUrl}/api/video/file?videoref=${selectedVideo.details.id}`"
           playsinline
           webkit-playsinline
           preload="metadata"
@@ -87,7 +87,7 @@ import { defineComponent, ref, Ref, computed, onMounted, watch } from 'vue'
 import { Video, VideoSharing } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
-
+import { baseUrl } from '@/constants'
 import Button from '@/components/base/Button.vue'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import Scrubber from '@/components/base/Scrubber.vue'
@@ -364,6 +364,7 @@ export default defineComponent({
       updateShare,
       deleteShare,
       // data
+      baseUrl,
       selectedVideo,
       video,
       playerTime,
