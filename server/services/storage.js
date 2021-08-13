@@ -174,7 +174,7 @@ function sendToEducloud({ video, subDirSrc }) {
   video.file.encryptionKey = sseKey
   video.file.encryptionMD5 = sseMD5
   return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
-    console.log('Video sent to Educloud')
+    console.log(`Video sent to Educloud at key: ${keyname}`)
     video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
   }).catch((error) => {
     console.log(error)
