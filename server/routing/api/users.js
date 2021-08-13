@@ -62,15 +62,16 @@ router.get('/user', authoriseUser, async (request, response) => {
 // Get all users
 router.get('/users', authoriseUser, async (request, response, next) => {
   const u = response.locals.user
+  const mode = request.query.mode
   const isAdmin = hasMinimumUserRole(u, userRoles.admin)
-  if (isAdmin) {
+  if (isAdmin && mode !== 'namesandroles') {
     User.find({}, (error, users) => {
       if (error) next(error)
       else {
-        const usersRedacted = users.map((u) => {
+        const usersRedacted = users.map((u2) => {
           return {
-            name: u.profile.username,
-            videos: u.videos.draftIDs,
+            name: u2.profile.username,
+            videos: u2.videos.draftIDs,
           }
         })
         response.send(usersRedacted)

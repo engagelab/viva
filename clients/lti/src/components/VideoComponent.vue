@@ -1,12 +1,10 @@
 <template>
   <div
-    class="flex flex-col flex-grow min-h-0 w-full"
+    class="flex flex-col flex-grow w-full"
     v-if="selectedVideo"
     :key="selectedVideo.details.id"
   >
-    <div
-      class="flex flex-col flex-grow min-h-o overflow-y-auto scrolling-touch w-full relative"
-    >
+    <div class="flex flex-col flex-grow scrolling-touch w-full relative">
       <div class="flex-none bg-black" @click="toggleScreenMode()">
         <video
           :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
@@ -51,35 +49,35 @@
         </div>
       </div>
 
-      <div
-        class="absolute p-4 top-0 z-10 text-white w-full flex flex-row justify-between"
-      >
-        <div>
-          <p v-if="selectedVideo" class="font-vagBold">
-            {{ selectedVideo.details.name }}
-          </p>
-        </div>
+      <div class="flex bg-black p-4 md:p-4">
+        <Scrubber
+          type="range"
+          v-model="moveScrubber"
+          :max="scrubberMax"
+          :min="scrubberMin"
+          :step="step"
+          @input="(newValue) => edlUpdated('move', [newValue])"
+        />
       </div>
-
-      <Edit :stateFromParent="stateToChildren" @edl-updated="edlUpdated" />
     </div>
 
-    <div v-for="(share, index) in selectedVideo.users.sharing" :key="index">
-      <Sharing class="bg-blue-200 p-2" :selectedShare="share"></Sharing>
+    <div v-for="(share, index) in video.users.sharing" :key="index">
+      <Share
+        class="bg-blue-200 p-2"
+        :share="share"
+        :videoCurrentTime="playerCurrentTime"
+        :videoDuration="duration"
+        @updated="(share) => updateShare(share, index)"
+        @deleted="deleteShare(index)"
+      ></Share>
     </div>
-    <div class="flex">
-      <SlButton
+    <div class="flex m-4">
+      <Button
         class="bg-blue-400 self-center rounded-lg"
         id="button-accept"
         @click="addGroupShare"
         >+ Add new group share
-      </SlButton>
-      <SlButton
-        class="bg-blue-400 self-center rounded-lg"
-        id="button-accept"
-        @click="saveMetaData"
-        >Save
-      </SlButton>
+      </Button>
     </div>
   </div>
 </template>
@@ -90,16 +88,18 @@ import { Video, VideoSharing } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 
+import Button from '@/components/base/Button.vue'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
-import Edit from './pages/edit.vue'
-import Sharing from './pages/sharing.vue'
+import Scrubber from '@/components/base/Scrubber.vue'
+import Share from '@/components/Share.vue'
 
 export default defineComponent({
-  name: 'editor',
+  name: 'videoComponent',
   components: {
+    Button,
+    Scrubber,
+    Share,
     SVGSymbol,
-    Edit,
-    Sharing,
   },
   props: {
     page: {
@@ -112,16 +112,15 @@ export default defineComponent({
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
     const video = ref(new Video().updateFromVideo(selectedVideo.value))
     const fullScreenMode = ref(true)
-    const stateToChildren = ref({
-      playerCurrentTime: '0',
-    })
+    const moveScrubber = ref(0)
+    const step = 0.01
     const playing = ref(false)
     const videoDataLoaded = ref(false)
 
     let playerLowerBound = 0 // Time >= 0 when video should start playing, when using the scrubber
     let playerUpperBound = 0 // Time <= player end time when video should stop playing, when using the scrubber
     let currentVolume = 0
-    let playerCurrentTime = ref('0')
+    let playerCurrentTime = ref(0)
 
     // Lifecycle Hooks
 
@@ -133,11 +132,23 @@ export default defineComponent({
       }
     })
 
+    const duration = computed(() => {
+      return selectedVideo.value ? selectedVideo.value.details.duration : 0
+    })
+
+    const scrubberMax = computed(() => {
+      return video.value.details.edl.trim[1] || duration.value
+    })
+
+    const scrubberMin = computed(() => {
+      return video.value.details.edl.trim[0] || 0
+    })
+
     const playerTime = computed(() => {
-      const timeAsInt = parseInt(playerCurrentTime.value)
+      const timeAsInt = playerCurrentTime.value
       let minutes = Math.floor(timeAsInt / 60)
       // prettier-ignore
-      let seconds = minutes > 0 ? timeAsInt % (60 * minutes) : timeAsInt;
+      let seconds = minutes > 0 ? timeAsInt % (60 * minutes) : Math.floor(timeAsInt)
       let milliseconds = timeAsInt.toFixed(2)
       milliseconds = milliseconds.substring(milliseconds.length - 2)
       const minutesString = minutes > 9 ? minutes : '0' + minutes
@@ -173,22 +184,28 @@ export default defineComponent({
     )
 
     // METHODS
-
-    // Add new group share
     const addGroupShare = () => {
       const newShare: VideoSharing = {
         users: [],
         access: false,
         description: '',
         edl: {
-          trim: [0, 0],
+          trim: [0, duration.value],
           blur: [],
         },
       }
-      videoActions.addGroupShareInfo(undefined, newShare, 'new')
+      video.value.users.sharing.push(newShare)
     }
-    // Save meta for a selected video
-    const saveMetaData = () => {
+    const updateShare = (share: VideoSharing, index: number) => {
+      const s = video.value.users.sharing[index]
+      s.users = share.users
+      s.access = share.access
+      s.description = share.description
+      s.edl = share.edl
+      videoActions.updateVideoMetaData(selectedVideo.value as Video)
+    }
+    const deleteShare = (index: number) => {
+      video.value.users.sharing.splice(index, 1)
       videoActions.updateVideoMetaData(selectedVideo.value as Video)
     }
 
@@ -197,21 +214,21 @@ export default defineComponent({
     }
 
     // Event handler for Edit Decision List updates
-    function edlUpdated(d: { type: string; newValue: number[] }) {
+    function edlUpdated(type: string, newValue: number[]) {
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
         if (
-          d.type == 'trim' &&
+          type == 'trim' &&
           !isNaN(player.duration) &&
-          player.duration >= d.newValue[1]
+          player.duration >= newValue[1]
         ) {
-          playerUpperBound = d.newValue[1]
-          playerLowerBound = d.newValue[0]
+          playerUpperBound = newValue[1]
+          playerLowerBound = newValue[0]
           player.currentTime = playerLowerBound
-        } else if (d.type == 'move' && player.duration >= d.newValue[0]) {
-          player.currentTime = d.newValue[0]
+        } else if (type == 'move' && player.duration >= newValue[0]) {
+          player.currentTime = newValue[0]
         }
-        playerCurrentTime.value = player.currentTime.toString()
+        playerCurrentTime.value = player.currentTime
       }
     }
 
@@ -258,8 +275,8 @@ export default defineComponent({
       let trim = video.value.details.edl.trim.length > 0
       let mask = video.value.details.edl.blur.length > 0
       if (player) {
-        playerCurrentTime.value = player.currentTime.toString()
-        stateToChildren.value.playerCurrentTime = playerCurrentTime.value
+        playerCurrentTime.value = player.currentTime
+        moveScrubber.value = playerCurrentTime.value
         if (
           player.currentTime >= playerUpperBound ||
           (trim && player.currentTime >= video.value.details.edl.trim[1])
@@ -301,8 +318,8 @@ export default defineComponent({
         player.volume = currentVolume
         playing.value = false
         player.currentTime = playerLowerBound
-        playerCurrentTime.value = player.currentTime.toString()
-        stateToChildren.value.playerCurrentTime = playerCurrentTime.value
+        playerCurrentTime.value = player.currentTime
+        moveScrubber.value = playerCurrentTime.value
         if (timeIsMasked(player.currentTime)) {
           player.style.filter = 'blur(15px)'
         } else {
@@ -335,19 +352,27 @@ export default defineComponent({
     }
 
     return {
+      // computed
+      duration,
+      scrubberMax,
+      scrubberMin,
       // methods
       stopPlaying,
       startPlaying,
       toggleScreenMode,
       addGroupShare,
-      saveMetaData,
+      updateShare,
+      deleteShare,
       // data
       selectedVideo,
+      video,
       playerTime,
       videoMimeType,
       edlUpdated,
-      stateToChildren,
       playbackVideo,
+      playerCurrentTime,
+      moveScrubber,
+      step,
       // booleans
       videoDataLoaded,
       playing,

@@ -17,7 +17,7 @@ import { defineComponent, toRefs, watch, ref } from 'vue'
 export default defineComponent({
   props: {
     modelValue: {
-      type: [String],
+      type: Number,
       required: true,
     },
     min: {
@@ -39,9 +39,12 @@ export default defineComponent({
     const currentValue = ref('0')
     const name = Math.random()
 
-    watch(modelValue, (newValue) => {
-      currentValue.value = String(newValue)
-    })
+    watch(
+      () => modelValue.value,
+      (newValue) => {
+        currentValue.value = newValue.toString()
+      }
+    )
 
     function emitUpdate(value: string) {
       const parsedValue = parseFloat(value)

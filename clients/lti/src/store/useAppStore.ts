@@ -7,6 +7,7 @@ import {
   APIRequestPayload,
   XHR_REQUEST_TYPE,
   User,
+  NameAndRole,
 } from '../types/main'
 
 import { appVersion } from '../constants'
@@ -17,13 +18,16 @@ interface AppStatus {
   loading: boolean
   isMobileApp: boolean
 }
+interface CanvasData {
+  namesAndRoles: NameAndRole[]
+}
 export interface AppState {
   validToken: boolean
   errorMessage: string
   loading: boolean
   isLoggedIn: boolean
   selectedUser: User
-  canvasData: Record<string, string>
+  canvasData: CanvasData
   isAuthorised: boolean
   fade: boolean
   lastLogin: Date
@@ -38,7 +42,9 @@ const _appState: Ref<AppState> = ref({
   loading: false,
   isLoggedIn: false,
   selectedUser: new User(),
-  canvasData: {},
+  canvasData: {
+    namesAndRoles: [],
+  },
   isAuthorised: false,
   fade: false,
   lastLogin: new Date(),
@@ -60,7 +66,7 @@ interface Getters {
   currentLocalUser: ComputedRef<LocalUser | undefined>
   persistedLocalUsers: ComputedRef<Record<string, LocalUser>>
   user: ComputedRef<User>
-  canvasData: ComputedRef<Record<string, string>>
+  canvasData: ComputedRef<CanvasData>
 }
 const getters = {
   get status(): ComputedRef<AppStatus> {
@@ -91,7 +97,7 @@ const getters = {
   get user(): ComputedRef<User> {
     return computed(() => _appState.value.selectedUser)
   },
-  get canvasData(): ComputedRef<Record<string, string>> {
+  get canvasData(): ComputedRef<CanvasData> {
     return computed(() => _appState.value.canvasData)
   },
 }
@@ -113,13 +119,14 @@ const actions = {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/api/users',
+      query: { mode: 'namesandroles' },
       credentials: true,
     }
-    return apiRequest<Record<string, string>>(payload)
-      .then((response: Record<string, string>) => {
-        if (response) {
-          _appState.value.canvasData = response
-          // console.dir(response)
+    return apiRequest<NameAndRole[]>(payload)
+      .then((response: NameAndRole[]) => {
+        if (response && response.length) {
+          _appState.value.canvasData.namesAndRoles = response
+          console.dir(response)
         }
       })
       .catch((error: Error) => {
@@ -237,4 +244,3 @@ export function useAppStore(): ServiceInterface {
 }
 
 export type AppStoreType = ReturnType<typeof useAppStore>
-//export const AppKey: InjectionKey<UseApp> = Symbol('UseApp')

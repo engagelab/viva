@@ -1,11 +1,5 @@
 <template>
-  <div id="app" class="fadeInOut h-screen" :style="fadeState">
-    <div
-      v-if="disableDelays"
-      class="absolute top-0 right-0 pr-20 text-red-600 text-xs"
-    >
-      Delays & locks disabled
-    </div>
+  <div id="app" class="fadeInOut" :style="fadeState">
     <router-view />
   </div>
 </template>
@@ -107,31 +101,4 @@ html {
 .slideup-leave-to {
   transform: translateY(-100%);
 }
-/* @media screen and (prefers-reduced-motion: reduce) {
-  .next-enter {
-    opacity: 0;
-    transform: translate3d(100px, 0, 0);
-  }
-  .next-enter-active,
-  .next-leave-active {
-    transition: 0.5s;
-  }
-  .next-leave-to {
-    opacity: 0;
-    transform: translate3d(-100px, 0, 0);
-  }
-
-  .prev-enter {
-    opacity: 0;
-    transform: translate3d(-100px, 0, 0);
-  }
-  .prev-enter-active,
-  .prev-leave-active {
-    transition: 0.5s;
-  }
-  .prev-leave-to {
-    opacity: 0;
-    transform: translate3d(100px, 0, 0);
-  }
-} */
 </style>

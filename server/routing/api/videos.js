@@ -36,10 +36,7 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
     } else {
       videosToReturn = videos.map((v) => v.redacted())
       response
-        .send({
-          videos: videosToReturn,
-          users: request.session.canvasData.namesAndRoles,
-        })
+        .send(videosToReturn)
         .status(200)
         .end()
     }
@@ -61,7 +58,6 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 
 // Get a video file from S3 (Educloud)
 router.get('/video/file', utilities.authoriseUser, (request, response) => {
-  console.log(request.session.canvasData.namesAndRoles)
   Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) return response.status(200).end()
@@ -72,7 +68,11 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
       const sseKey = video.file.encryptionKey
       const sseMD5 = video.file.encryptionMD5
       downloadS3File({ keyname, sseKey, sseMD5 }).then((file) => {
+        // These headers are required to enable seeking `currentTime` in Chrome browser
         response.setHeader('content-type', 'video/mp4')
+        response.setHeader('Accept-Ranges', 'bytes')
+        response.setHeader('Content-Length', file.ContentLength)
+        response.setHeader('Content-Range', `0-${file.ContentLength}`)
         file.Body.pipe(response)
       })
     }

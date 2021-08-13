@@ -7,7 +7,6 @@ import {
 } from 'vue-router'
 
 import Landing from '@/views/landing/Landing.vue'
-import Dataset from '@/components/Dataset.vue'
 
 import Editor from '@/views/video/Editor.vue'
 import Privacy from '@/views/Privacy.vue'
@@ -80,12 +79,6 @@ const routes: Array<RouteRecordRaw> = [
         component: MonitorRecordingsInProcess,
       },
     ],
-  },
-  {
-    path: '/dataset',
-    name: 'datasett',
-    component: Dataset,
-    props: (route) => ({ page: route.query.page }),
   },
   {
     path: '/videos/list',
