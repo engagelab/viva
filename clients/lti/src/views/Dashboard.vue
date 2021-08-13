@@ -1,12 +1,6 @@
 <template>
-  <div class="relative w-screen h-screen">
-    <!-- <div
-      class="relative flex md:flex-row flex-col h-full justify-center bg-blue-button"
-    >
-      Welcome to the Dashboard. Your username is: {{ user }}
-      <SlButton class="m-4" @click="monitor()">Monitor</SlButton>
-    </div> -->
-    <div class="flex flex-wrap w-full border-2 h-full">
+  <div>
+    <div class="flex flex-wrap my-2">
       <div class="w-1/6">
         <RecordingsComponent />
       </div>

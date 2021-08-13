@@ -133,7 +133,7 @@ export interface DeviceStatus {
 }
 
 //------------------------- Video and Dataset models -----------------
-interface EditDecriptionList {
+export interface EditDecriptionList {
   trim: number[]
   blur: number[][]
 }
@@ -236,23 +236,11 @@ export interface VideoSpec {
   deviceStatus: DeviceStatus
 }
 
-export interface NamesAndRolesData {
+export interface NameAndRole {
   name: string
   ltiUserID: string
   email: string
   roles: string[]
-}
-export class NamesAndRoles {
-  name: string
-  ltiUserID: string
-  email: string
-  roles: string[]
-  constructor(data?: NamesAndRolesData) {
-    this.name = data?.name || ''
-    this.ltiUserID = data?.name || ''
-    this.email = data?.email || ''
-    this.roles = data?.roles || []
-  }
 }
 export interface VideoData {
   file: {

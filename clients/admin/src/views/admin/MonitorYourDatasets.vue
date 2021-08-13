@@ -121,15 +121,6 @@ export default defineComponent({
     // validate the dataset name for allowing only alpha numeric variable
     const restrict = (event: KeyboardEvent) => {
       console.log(String.fromCharCode(event.charCode))
-      /* if (
-        event.charCode === 0 ||
-        (/[\wÆØÅæøå]$/g.test(String.fromCharCode(event.charCode)) &&
-          newDatasetName.value.length <= 100)
-      ) {
-        return true
-      } else {
-        return event.preventDefault()
-      }*/
       return event.charCode === 0 ||
         (/[\wÆØÅæøå]$/g.test(String.fromCharCode(event.charCode)) &&
           newDatasetName.value.length <= 100)
