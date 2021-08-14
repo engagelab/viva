@@ -144,15 +144,21 @@ router.post('/canvas/callback', function (request, response) {
     }
     httpRequest(options).then((namesAndRoles) => {
       if (namesAndRoles) {
-        request.session.canvasData.namesAndRoles = namesAndRoles.members.map((m) => {
-          return {
-            name: m.name || 'unknown',
-            ltiUserID: m.user_id || 'unknown',
-            email: m.email || 'unknown',
-            roles: m.roles,
+        request.session.canvasData.namesAndRoles = namesAndRoles.members.map(
+          (m) => {
+            return {
+              name: m.name || 'unknown',
+              ltiUserID: m.user_id || 'unknown',
+              email: m.email || 'unknown',
+              roles: m.roles,
+            }
           }
-        })
+        )
       }
+      const user = namesAndRoles.members.find(
+        (user) => user.name === profile.fullName
+      )
+      profile.ltiUserId = user.user_id
       createOrUpdateUser({ id_token: idToken }, profile).then((user) => {
         return completeCallback(request, response, user)
       })
