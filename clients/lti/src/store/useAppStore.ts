@@ -126,7 +126,7 @@ const actions = {
       .then((response: NameAndRole[]) => {
         if (response && response.length) {
           _appState.value.canvasData.namesAndRoles = response
-          console.dir(response)
+          // console.dir(response)
         }
       })
       .catch((error: Error) => {
