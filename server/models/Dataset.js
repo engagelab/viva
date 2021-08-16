@@ -36,6 +36,8 @@ const datasetSchema = new mongoose.Schema({
       enum: Object.values(consentTypes),
       default: consentTypes.manual,
     },
+    value: { type: String },
+    formId: { type: Number },
   },
 
   users: {
@@ -70,6 +72,8 @@ datasetSchema.methods.redacted = function () {
     },
     consent: {
       kind: data.consent ? data.consent.kind : undefined,
+      value: data.consent ? data.consent.value : undefined,
+      formId: data.consent ? data.consent.formId : undefined,
     },
     users: {
       owner: data.users.owner,

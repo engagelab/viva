@@ -7,7 +7,7 @@ const {
 
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const fs = require('fs')
-const crypto = require("crypto")
+const crypto = require('crypto')
 const Dataset = require('../models/Dataset')
 const moment = require('moment')
 
@@ -31,7 +31,7 @@ const s3Configuration = {
   endpoint: {
     hostname: process.env.AWS_BUCKET_ENDPOINT,
   },
-};
+}
 
 const s3 = new S3Client(s3Configuration)
 
@@ -63,10 +63,10 @@ const uploadS3File = async ({ path, keyname, sseKey, sseMD5 }) => {
     // ServerSideEncryption: 'AES256', // must be "AES256",
     SSECustomerAlgorithm: 'AES256',
     SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
-    SSECustomerKeyMD5: sseMD5
+    SSECustomerKeyMD5: sseMD5,
   }
-  return s3.send(new PutObjectCommand(objectParams));
-};
+  return s3.send(new PutObjectCommand(objectParams))
+}
 
 /**
  * Download a file from S3
@@ -82,7 +82,7 @@ const downloadS3File = async ({ keyname, sseKey, sseMD5 }) => {
     // ServerSideEncryption: 'AES256', // must be "AES256",
     SSECustomerAlgorithm: 'AES256',
     SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
-    SSECustomerKeyMD5: sseMD5
+    SSECustomerKeyMD5: sseMD5,
   }
   return s3.send(new GetObjectCommand(objectParams))
 }
@@ -168,9 +168,15 @@ const fetchStorage = (video) => {
 // Using user(owner) ID as a containing folder
 function sendToEducloud({ video, subDirSrc }) {
   const path = getPath(video, subDirSrc)
-  const keyname = `${video.users.owner.toString()}/${video.file.name}.${video.file.extension}`
-  const sseKey = Buffer.alloc(32, crypto.randomBytes(32).toString("hex").slice(0, 32))
-  const sseMD5 = crypto.createHash('md5').update(sseKey).digest('base64');
+  const keyname = `${video.users.owner.toString()}/${video.file.name}.${
+    video.file.extension
+  }`
+  console.log(keyname)
+  const sseKey = Buffer.alloc(
+    32,
+    crypto.randomBytes(32).toString('hex').slice(0, 32)
+  )
+  const sseMD5 = crypto.createHash('md5').update(sseKey).digest('base64')
   video.file.encryptionKey = sseKey
   video.file.encryptionMD5 = sseMD5
   return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {

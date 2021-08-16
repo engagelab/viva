@@ -29,14 +29,12 @@ interface DatasetState {
 const state: Ref<DatasetState> = ref({
   selectedDataset: new Dataset(),
   datasets: new Map(),
-  // dataportenGroups: new Map(),
 })
 
 //Getters
 interface Getters {
   datasets: ComputedRef<Map<string, Dataset>>
   selectedDataset: ComputedRef<DatasetState['selectedDataset']>
-  // dataportenGroups:ComputedRef<Map<string,DataportenGroups>
 }
 const getters = {
   get datasets(): ComputedRef<Map<string, Dataset>> {
@@ -46,10 +44,6 @@ const getters = {
   get selectedDataset(): ComputedRef<DatasetState['selectedDataset']> {
     return computed(() => state.value.selectedDataset)
   },
-
-  // get dataportenGroups(): ComputedRef<Map<string, DataportenGroups>> {
-  //   return computed(() => state.value.dataportenGroups)
-  // },
 }
 //Actions
 interface Actions {
@@ -74,6 +68,7 @@ interface Actions {
   ) => void
   selectDatasetById: (datasetId: string) => void
   addSelection: (currentDataPath: DataPath) => void
+  addConsentField: (value: string) => void
 }
 
 const actions = {
@@ -139,8 +134,9 @@ const actions = {
       method: XHR_REQUEST_TYPE.PUT,
       credentials: true,
       route: '/api/dataset',
-      body: d || state.value.selectedDataset,
+      body: state.value.selectedDataset ? state.value.selectedDataset : d,
     }
+
     return apiRequest<Dataset>(payload)
       .then((dataset) => {
         state.value.datasets.set(dataset._id, dataset)
@@ -151,6 +147,10 @@ const actions = {
   },
   addSelectionPriority: function (selectionPriority: string): void {
     state.value.selectedDataset?.selectionPriority.push(selectionPriority)
+  },
+  addConsentField: function (value: string): void {
+    state.value.selectedDataset.consent.value = value
+    console.log(state.value.selectedDataset.consent)
   },
   addStorageFields: function (
     storageId: string,

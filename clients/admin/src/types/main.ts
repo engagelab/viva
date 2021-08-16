@@ -3,6 +3,7 @@ import {
   CONSENT_TYPES,
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
+  // behandlings,
 } from '../constants'
 import { uuid } from '../utilities'
 
@@ -491,29 +492,10 @@ export class Video {
     this.status.hasUnsavedChanges = false
   }
 }
-
-// // Dataporten groups
-// export interface DataportenGroupsData {
-//   type: string
-//   displayName: string
-//   id: string
-//   membership: {
-//     basic: string
-//   }
-// }
-// export class DataportenGroups {
-//   type: string
-//   displayName: string
-//   id: string
-//   membership: {
-//     basic: string
-//   }
-//   constructor(data?: DataportenGroupsData) {
-//     this.type = data?.type
-//     this.displayName = data?.displayName
-//     this.id = data?.id
-//     this.membership = data?.membership.basic
-//   }
+// const fetchValue = (consent: DatasetConsent) => {
+//   if (consent.value) return consent.value
+//   //else if (consent.kind) return behandlings[consent.kind].description
+//   else return ''
 // }
 export interface DataPath {
   path: string
@@ -530,8 +512,10 @@ interface DatasetStatus {
   lockedBy: string
   active: boolean
 }
-interface DatasetConsent {
+export interface DatasetConsent {
   kind: CONSENT_TYPES
+  value: string
+  formId: number
 }
 interface DatasetUsers {
   owner: {
@@ -585,7 +569,9 @@ export class Dataset {
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manuel,
+      kind: CONSENT_TYPES.manual,
+      value: '',
+      formId: 0,
     }
     this.users = {
       owner: {
@@ -612,7 +598,10 @@ export class Dataset {
         lockedBy: data.status?.lockedBy ? data.status.lockedBy : '',
       }
       this.consent = {
-        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
+        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manual,
+        // value: fetchValue(data.consent),
+        value: data.consent?.value ? data.consent.value : '',
+        formId: data.consent?.formId ? data.consent.formId : 0,
       }
 
       this.users.owner.profile.username = data.users?.owner?.profile?.username

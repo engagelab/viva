@@ -31,7 +31,7 @@ function setUserAttributes(user, profile, tokenSet) {
   user.profile.fullName = profile.fullName
   user.profile.email = profile.email
   user.profile.organization = profile.organization
-
+  user.profile.ltiUserId = profile.ltiUserId
   // Tokens from Issuer service
   if (tokenSet.access_token) user.tokens.access_token = tokenSet.access_token
   if (tokenSet.id_token) user.tokens.id_token = tokenSet.id_token
@@ -51,14 +51,24 @@ function setUserAttributes(user, profile, tokenSet) {
 // Set the env var to 'none' to skip this step
 // If the user is an admin, also skip this step
 function setPrerequisiteCourseProgress(user) {
-  if (process.env.CANVAS_DEPENDENT_COURSE_ID === 'none' || user.status.role === userRoles.admin) {
+  if (
+    process.env.CANVAS_DEPENDENT_COURSE_ID === 'none' ||
+    user.status.role === userRoles.admin
+  ) {
     user.status.prerequisiteCompleted = true
     return Promise.resolve()
   }
-  return canvas.courseProgress(`sis_login_id:${user.profile.username}`, process.env.CANVAS_DEPENDENT_COURSE_ID)
+  return canvas
+    .courseProgress(
+      `sis_login_id:${user.profile.username}`,
+      process.env.CANVAS_DEPENDENT_COURSE_ID
+    )
     .then((progress) => {
-      user.status.prerequisiteCompleted = progress.requirement_count == progress.requirement_completed_count
-      console.log(`Depended course was completed: ${user.status.prerequisiteCompleted}`)
+      user.status.prerequisiteCompleted =
+        progress.requirement_count == progress.requirement_completed_count
+      console.log(
+        `Depended course was completed: ${user.status.prerequisiteCompleted}`
+      )
     })
     .catch((error) => {
       console.log(error)
@@ -85,11 +95,15 @@ function getUserGroups(user) {
   // The 'organization' determines what system takes care of groups
   const config = organizations[user.profile.organization]
   if (config.platform === platforms.dataporten) {
-       return dataporten.groupsForUser(user).then((groups) => {
-        user.profile.groups = groups.map((g) => ({ id: g.id, name: g.displayName }))
-       })
+    return dataporten.groupsForUser(user).then((groups) => {
+      user.profile.groups = groups.map((g) => ({
+        id: g.id,
+        name: g.displayName,
+      }))
+    })
   } else if (config.platform === platforms.canvas) {
-    return canvas.coursesInAccount(process.env.CANVAS_VIVA_ACCOUNT_ID)
+    return canvas
+      .coursesInAccount(process.env.CANVAS_VIVA_ACCOUNT_ID)
       .then((coursesInAccount) => setUserGroups(user, coursesInAccount))
       .catch((error) => console.log(error))
   } else {
@@ -99,8 +113,6 @@ function getUserGroups(user) {
 
 function setUserRole(user) {
   return canvas.usersForGroup(process.env.CANVAS_ADMIN_GROUP_ID).then((users) => {
-    console.dir(users)
-    console.log(user.profile.username)
     if (users.some((u) => u.login_id === user.profile.username)) {
       user.status.role = userRoles.admin
       console.log(`User ${user.profile.username} was set to 'admin' role`)
@@ -127,7 +139,7 @@ function createOrUpdateUser(tokenSet, profile) {
         const savedUser = await user.save()
         resolve(savedUser)
       } catch (e) {
-        console.error(e);
+        console.error(e)
       }
     })
   })
@@ -154,15 +166,15 @@ function completeCallback(request, response, user) {
       redirectUrl = `viva://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
       s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
     } else {
-      redirectUrl = process.env.NODE_ENV === 'development' ? `${host}:8082` : `${host}/app`
+      redirectUrl =
+        process.env.NODE_ENV === 'development' ? `${host}:8082` : `${host}/app`
     }
   }
 
   // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
   if (process.env.NODE_ENV === 'testing') {
     redirectUrl = redirectUrl + '/#/postlogin'
-  }
-  else redirectUrl = redirectUrl + '/postlogin'
+  } else redirectUrl = redirectUrl + '/postlogin'
 
   // Set the session here at last!
   // Web app receives a Session immediately, does not need to pass a token

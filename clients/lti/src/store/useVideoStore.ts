@@ -23,6 +23,8 @@ import {
   XHR_REQUEST_TYPE,
 } from '../types/main'
 import { apiRequest } from '../api/apiRequest'
+import { useAppStore } from './useAppStore'
+const { getters: appGetters } = useAppStore()
 //State
 interface State {
   selectedVideo: Video | undefined
@@ -119,6 +121,26 @@ const actions = {
       const v = new Video(video)
       state.value.videos.set(v.details.id, v)
     })
+    const filtershareVideo = (video: Video) => {
+      const shares = video.users.sharing.filter((share) => {
+        if (share.users.indexOf(appGetters.user.value.profile.ltiUserId) >= 0)
+          return share
+      })
+
+      return shares
+    }
+    // filter shared videos and own videos
+    const allVideos = Array.from(state.value.videos.values())
+
+    const ownVideos = allVideos.filter(
+      (video) => video.users.owner == appGetters.user.value?._id
+    )
+    console.log('ownVideo', ownVideos)
+    const shareVideos = allVideos.filter((video) => {
+      const v = filtershareVideo(video)
+      if (v.length && v.length > 0) return v
+    })
+    console.log('sharedVideos', shareVideos)
     return Promise.resolve()
   },
 

@@ -9,8 +9,8 @@ const userSchema = new mongoose.Schema({
   status: {
     role: {
       type: String,
-      enum : Object.values(userRoles),
-      default: userRoles.user
+      enum: Object.values(userRoles),
+      default: userRoles.user,
     },
     created: { type: Date, default: Date.now },
     provider: { type: String }, // Dataporten or Canvas ?
@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
     totalDrafts: { type: Number, default: 0 },
     totalUploads: { type: Number, default: 0 },
     totalTransfers: { type: Number, default: 0 },
-    prerequisiteCompleted: { type: Boolean, default: false }
+    prerequisiteCompleted: { type: Boolean, default: false },
   },
   profile: {
     username: { type: String, default: '' },
@@ -29,12 +29,16 @@ const userSchema = new mongoose.Schema({
     email: { type: String },
     reference: { type: String }, // This should be sent to the client rather than _id
     organization: { type: String },
-    groups: [{  // Canvas Courses or Dataporten Groups this User is a member of
-      _id: false,
-      id: { type: String },
-      name: { type: String },
-      role: { type: String },
-     }],
+    groups: [
+      {
+        // Canvas Courses or Dataporten Groups this User is a member of
+        _id: false,
+        id: { type: String },
+        name: { type: String },
+        role: { type: String },
+      },
+    ],
+    ltiUserId: { type: String },
   },
   tokens: {
     access_token: { type: String },
@@ -46,13 +50,12 @@ const userSchema = new mongoose.Schema({
   datasetConfig: {
     id: { type: String }, // Currently selected dataset
     currentSelection: { type: Array }, // Currently selected 'utvalg'
-    locks: { type: mongoose.Mixed, default: {} } // { [datasetID]: { date: Date.now(), keyName: String }
+    locks: { type: mongoose.Mixed, default: {} }, // { [datasetID]: { date: Date.now(), keyName: String }
   },
   videos: {
     draftIDs: { type: Array, default: [] },
-  }
+  },
 })
-
 
 // Choose what attributes will be returned with the user object
 // ** These attributes should be matched in the front end model **
@@ -68,11 +71,11 @@ userSchema.methods.redacted = function () {
 // Ensure virtual fields are serialised.
 userSchema.set('toJSON', {
   getters: true,
-  virtuals: true
+  virtuals: true,
 })
 userSchema.set('toObject', {
   getters: true,
-  virtuals: true
+  virtuals: true,
 })
 
 module.exports = mongoose.model('User', userSchema)

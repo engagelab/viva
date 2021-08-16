@@ -19,13 +19,23 @@ const Video = require('../../models/Video')
  */
 router.get('/videos', utilities.authoriseUser, (request, response) => {
   const u = response.locals.user
+  //const users = request.session.canvasData.namesAndRoles
   const isAdmin = utilities.hasMinimumUserRole(u, userRoles.admin)
-
+  //  console.log(request.session.canvasData)
   let query = {}
   if (isAdmin) {
     query = {}
   } else {
-    query = { 'users.owner': response.locals.user._id }
+    query = {
+      $or: [
+        {
+          'users.sharing.users': {
+            $in: [response.locals.user.profile.ltiUserId],
+          },
+        },
+        { 'users.owner': response.locals.user._id },
+      ],
+    }
   }
 
   Video.find(query, (error, videos) => {
@@ -35,10 +45,7 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
       return response.status(400).end()
     } else {
       videosToReturn = videos.map((v) => v.redacted())
-      response
-        .send(videosToReturn)
-        .status(200)
-        .end()
+      response.send(videosToReturn).status(200).end()
     }
   })
 })
@@ -111,7 +118,6 @@ router.put(
       if (error || !v) {
         return response.status(400).end()
       } else {
-
         const video = { ...request.body }
         v.users = video.users
         v.save((saveError) => {

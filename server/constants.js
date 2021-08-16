@@ -5,8 +5,8 @@ const videoStatusTypes = {
   edited: 'edited', // Video was converted by FFMPEG, ready to be sent to storage(s)
   stored: 'stored', // If Google storage exists, video is ready to be transferred there. If not, video changes to 'complete'
   complete: 'complete', // Video has now been uploaded, decrypted, trimmed/watermarked, saved and transferred to another location.
-                        //This state means there is no more work to do, so the video should finally be removed here
-  error: 'error' // Something went wrong. Videos in this state will not move further in the pipeline until attended to
+  //This state means there is no more work to do, so the video should finally be removed here
+  error: 'error', // Something went wrong. Videos in this state will not move further in the pipeline until attended to
 }
 
 // Used to ensure correct folders exist for moving videos through the pipeline
@@ -16,7 +16,7 @@ const videoFolderNames = {
   edited: 'edited',
   stored: 'stored',
   complete: 'complete',
-  error: 'error'
+  error: 'error',
 }
 
 const userRolesAsArray = process.env.VUE_APP_USER_ROLES.split(',')
@@ -26,8 +26,9 @@ const userRoles = {
   admin: 'admin',
 }
 // Constants used both front and back end should be checked for consistency like this:
-userRolesAsArray.forEach(ur => {
-  if (!userRoles[ur]) console.error('constants.js > userRoles mismatch with env file')
+userRolesAsArray.forEach((ur) => {
+  if (!userRoles[ur])
+    console.error('constants.js > userRoles mismatch with env file')
 })
 
 // The pipeline does work on a video when the video has the following status:
@@ -46,10 +47,10 @@ userRolesAsArray.forEach(ur => {
 const pipelineStates = ['uploaded', 'decrypted', 'edited', 'stored'] // Subset of videoStatusTypes
 
 const pipelineErrorMessages = {
-  'uploaded': 'Error decrypting video',
-  'decrypted': 'Error editing video',
-  'edited': 'Error storing video',
-  'stored': 'Error cleaning up video'
+  uploaded: 'Error decrypting video',
+  decrypted: 'Error editing video',
+  edited: 'Error storing video',
+  stored: 'Error cleaning up video',
 }
 
 const videoStorageTypes = {
@@ -57,18 +58,18 @@ const videoStorageTypes = {
   google: 'google',
   onedrive: 'onedrive',
   educloud: 'educloud',
-  lagringshotell: 'lagringshotell'
+  lagringshotell: 'lagringshotell',
 }
 
 const consentTypes = {
   samtykke: 'samtykke',
-  manuel: 'manuel',
+  manual: 'manual',
   article6: 'article6',
 }
 
 const executables = {
   ffmpeg: 'ffmpeg',
-  rm: 'rm'
+  rm: 'rm',
 }
 
 const adminUsers = [
@@ -77,7 +78,7 @@ const adminUsers = [
   'tkthores',
   'sharanym',
   'Jan ElevVGS Olsen',
-  'olesm'
+  'olesm',
 ]
 
 const platforms = {
@@ -108,7 +109,7 @@ const organizations = {
     dc: ['uio'], // Explicit list of names to match against   https://innsyn.feide.no/aboutme
     ou: [], // List of sub-org names to match against
     platform: platforms.dataporten,
-  }
+  },
 }
 
 const pilotDataset = []
@@ -121,8 +122,9 @@ const pilotUsers = [
   {
     id: '560091',
     username: 's.j.blokkhus',
-    email: 's.j.blokkhus@admin.uio.no'
-  },{ id: '1', username: 'eva_student', email: 'eva_student@.uio.no' },
+    email: 's.j.blokkhus@admin.uio.no',
+  },
+  { id: '1', username: 'eva_student', email: 'eva_student@.uio.no' },
   { id: '2', username: 'richarne', email: 'richarne@uio.no' },
   { id: '3', username: 'sharanym', email: 'sharanym@uio.no' },
   { id: '4', username: 'hoangbn', email: 'hoangbn@uio.no' },
@@ -138,19 +140,19 @@ const pilotUsers = [
   {
     id: '10',
     username: 'anne_laerervgs',
-    email: 'anne_laerervgs@test.feide.no'
+    email: 'anne_laerervgs@test.feide.no',
   },
   {
     id: '10',
     username: 'daniel_laerervgs',
-    email: 'daniel_laerervgs@test.feide.no'
+    email: 'daniel_laerervgs@test.feide.no',
   },
   { id: '11', username: 'tkthores', email: 'tkthores@uio.no' },
   { id: '12', username: 'janad', email: 'janad@uio.no' },
   { id: '13', username: 'olesm', email: 'olesm@uio.no' },
   { id: '14', username: 'torunna', email: 'torunna@uio.no' },
   { id: '15', username: 'simenjb', email: 'simenjb@uio.no' },
-  { id: '16', username: 'mariesth', email: 'mariesth@uio.no' }
+  { id: '16', username: 'mariesth', email: 'mariesth@uio.no' },
 ]
 
 module.exports = {
@@ -166,5 +168,5 @@ module.exports = {
   consentTypes,
   userRoles,
   platforms,
-  organizations
+  organizations,
 }

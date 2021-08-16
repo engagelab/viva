@@ -118,7 +118,7 @@ if (
 
 enum CONSENT_TYPES {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
 // Ensure enums match those defined in env file

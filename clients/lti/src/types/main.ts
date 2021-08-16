@@ -516,7 +516,7 @@ export class Dataset {
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manuel,
+      kind: CONSENT_TYPES.manual,
     }
     this.users = { owner: '' }
     this.selection = {}
@@ -534,7 +534,7 @@ export class Dataset {
         lockedBy: data.status.lockedBy,
       }
       this.consent = {
-        kind: data.consent.kind || CONSENT_TYPES.manuel,
+        kind: data.consent.kind || CONSENT_TYPES.manual,
       }
       this.users = {
         owner: data.users.owner,
@@ -582,6 +582,7 @@ interface UserProfile {
   oauthId: string
   reference: string // This should be sent to the client rather than _id
   groups: UserProfileGroup[] // Groups this user is a member of
+  ltiUserId: string
 }
 export interface UserDatasetSelection {
   title: string
@@ -623,6 +624,7 @@ export class User {
       oauthId: '',
       reference: '', // This should be sent to the client rather than _id
       groups: [],
+      ltiUserId: '',
     }
     this.datasetConfig = {
       id: '',
