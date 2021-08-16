@@ -137,7 +137,7 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
 const fetchStorage = (video) => {
   return new Promise((resolve, reject) => {
     Dataset.findById(video.dataset.id, (error, dataset) => {
-      if (error) return reject(error)
+      if (error || !dataset) return reject(error)
       let stores = []
       dataset.storages.forEach((storage) => {
         let path = generatePath(

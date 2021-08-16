@@ -242,7 +242,7 @@ const runProcessing = () => {
       if (nextVideo) {
         activelyProcessing[pStatus] = nextVideo
         console.log(
-          `Now processing video status: ${nextVideo.status} filename: ${nextVideo.filename}`
+          `Now processing video ${nextVideo.details.name} at status '${nextVideo.status.main}'`
         )
         beginProcessingVideo(pStatus)
       }
