@@ -47,10 +47,6 @@ const findVideosToProcess = () => {
         console.log(
           `Queued ${videoBacklog[state].length} video(s) with status: ${state}`
         )
-      } else {
-        console.log(
-          `${new Date().toLocaleString()} Video scan: nothing new found`
-        )
       }
     })
   })
