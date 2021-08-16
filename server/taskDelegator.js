@@ -196,6 +196,10 @@ const beginProcessingVideo = (pStatus) => {
               errorProcessingVideo(err, pStatus)
             })
         })
+        .catch((err) => {
+          console.log(`Error finding dataset for video ${nextVideo.details.name}: ${err}`)
+          errorProcessingVideo(err, pStatus)
+        })
         break
       }
       // Decide if we keep the video ready for user-authenticated transfer to a third party
