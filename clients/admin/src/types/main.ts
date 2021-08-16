@@ -680,7 +680,7 @@ interface UserVideos {
 
 export interface UserRecordingInProcess {
   name: string
-  videos: Array<string>
+  videos: string[]
 }
 
 export class User {

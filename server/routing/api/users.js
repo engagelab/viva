@@ -84,11 +84,15 @@ router.get('/users', authoriseUser, async (request, response, next) => {
   }
 })
 
-// Respond with data saved for the current LTI session
-router.get('/ltidata', authoriseUser, async (request, response) => {
-  let data = {}
-  if (request.session.canvasData) data = request.session.canvasData
-  response.send(data)
+// Respond with 'draft' videos from all user accounts
+router.get('/users/drafts', authoriseUser, async (request, response) => {
+  const isAdmin = hasMinimumUserRole(response.locals.user, userRoles.admin)
+  if (isAdmin) {
+    User.find({ 'videos.draftIDs': { $exists: true, $ne: [] } }, { 'profile.username': 1, 'videos.draftIDs': 1 }, (error, users) => {
+      if (error) return response.status(500).send(error)
+      return response.send(users)
+    })
+  } else response.send(403).end()
 })
 
 router.get('/groups', authoriseUser, async (request, response, next) => {
