@@ -1,10 +1,9 @@
 <template>
   <div class="flex flex-row flex-wrap">
-    <div class="w-full flex justify-center">{{ t('Your datasets') }}</div>
     <!-- Sidebar -->
-    <div class="border-2 h-full w-1/6">
-      <p>Datasets</p>
-      <ul style="list-style-type: none">
+    <div class="h-full w-1/6">
+      <h2 class="font-bold">Datasets</h2>
+      <ul class="mt-2" style="list-style-type: none">
         <li
           v-for="(dataset, datasetIndex) in datasets"
           :key="datasetIndex"

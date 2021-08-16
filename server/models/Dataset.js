@@ -21,7 +21,7 @@ const storageSchema = {
 }
 
 const datasetSchema = new mongoose.Schema({
-  name: { type: String },
+  name: { type: String, required: true, unique: true }, // name of dataset must be unique
   description: { type: String, default: '' },
   created: { type: Date, default: Date.now },
   formId: { type: String }, // Nettskjema form ID

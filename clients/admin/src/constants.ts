@@ -35,23 +35,6 @@ const device = 'mobile'
 const videoStorageTypes = ['none', 'google', 'onedrive', 'lagringshotell']
 const utvalger = ['Feltsted', 'Klasse', 'Fag', 'Lærer']
 
-const behandlings = {
-  samtykke: {
-    name: 'Digital Samtykke',
-    description:
-      'Opptak er basert på samtykker som er gitt digitalt i UiOs samtykkeportal.',
-  },
-  manual: {
-    name: 'Manuelt samtykke',
-    description: 'Opptak er basert på samtykker som er håndtert manuelt.',
-  },
-  article6: {
-    name: 'Ikke Samtykke',
-    description:
-      'Opptak er basert på GDPR §6(behandling som er nødvendig for å utføre en oppgave i allmennhetens interesse).',
-  },
-}
-
 const stores = {
   metadataStore: {
     name: 'metadataStore',
@@ -118,7 +101,7 @@ if (
 
 enum CONSENT_TYPES {
   samtykke = 'samtykke',
-  manual = 'manual',
+  manuel = 'manuel',
   article6 = 'article6',
 }
 // Ensure enums match those defined in env file
@@ -172,6 +155,28 @@ const FILE = {
   path: ['DatasetName', 'fileId', 'ataManager', 'UserID', 'timeStamp'],
 }
 const GROUPS = ['uv-ils-viva-diva1', 'uv-ils-viva-proto1']
+
+interface Behandling {
+  name: string
+  description: string
+}
+
+const behandlings: Record<CONSENT_TYPES, Behandling> = {
+  [CONSENT_TYPES.samtykke]: {
+    name: 'Digital Samtykke',
+    description:
+      'Opptak er basert på samtykker som er gitt digitalt i UiOs samtykkeportal.',
+  },
+  [CONSENT_TYPES.manuel]: {
+    name: 'Manuelt samtykke',
+    description: 'Opptak er basert på samtykker som er håndtert manuelt.',
+  },
+  [CONSENT_TYPES.article6]: {
+    name: 'Ikke Samtykke',
+    description:
+      'Opptak er basert på GDPR §6(behandling som er nødvendig for å utføre en oppgave i allmennhetens interesse).',
+  },
+}
 
 export {
   deviceType,

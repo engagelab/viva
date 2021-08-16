@@ -37,30 +37,6 @@ const updateSelection = ({
   selection[currentUtvalgKey].push(newItem)
 }
 
-/* const fetchVideosForDatasets = (datasets) => {
-  const datasetIds = datasets.map((d) => d._id)
-  const query = { datasetId: { $in: datasetIds } }
-  const populateUser = [{ path: 'userId', select: ['profile.username'] }]
-  return new Promise((resolve, reject) => {
-    Video.find(query, (error, videos) => {
-      if (error) reject(error)
-      resolve(videos)
-    }).populate(populateUser)
-  })
-}
-
-const fetchUsersWithDraftVideos = () => {
-  return new Promise((resolve, reject) => {
-    const query = {
-      'videos.draftIDs': { $exists: true, $ne: [] },
-    }
-    User.find(query, 'profile.username videos.draftIDs', (error, users) => {
-      if (error) reject(error)
-      resolve(users)
-    })
-  })
-} */
-
 // Get datasets for the current user
 // If admin, also get Users with outstanding drafts, and video listing
 router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
@@ -98,8 +74,11 @@ router.post('/dataset', utilities.authoriseUser, (request, response, next) => {
       .then((newDataset) => {
         response.send(newDataset)
       })
-      .catch((error) => next(error))
-  } else return next(new Error('Empty name '))
+      .catch((error) => {
+        if (error.code === 11000) return response.status(400).json({ error: 'Name must be unique' })
+        else next(error)
+      })
+  } else return next(new Error('Dataset name is required'))
 })
 
 // UPDATE dataset selection (for all users)

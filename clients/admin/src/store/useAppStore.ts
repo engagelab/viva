@@ -20,9 +20,6 @@ interface Dialog {
   data: Record<string, unknown>
   doneCallback: (d: boolean) => void
 }
-// interface ServerStatus {
-//   cpuload: Record<string, unknown>
-// }
 interface Snackbar {
   type: string
   visibility: boolean // A toggle for showing error messages to the user
@@ -272,8 +269,6 @@ const actions = {
         credentials: true,
         body: u,
       }
-      // if (datasetGetters.presetDatasetConfig.value)
-      //   u.datasetConfig = datasetGetters.presetDatasetConfig.value
       return apiRequest<User>(payload)
         .then((su: User) => {
           _appState.value.selectedUser = su
