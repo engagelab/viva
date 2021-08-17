@@ -736,15 +736,6 @@ export class User {
     }
   }
 
-  /*
-  public static columnDefs(): ColumnDef[] {
-    return [
-      { headerName: 'Datainnsamler', field: 'Datainnsamler' },
-      { headerName: 'Antall opptakk', field: 'Antall opptakk' }
-    ]
-  }
-  */
-
   public static columnDefs(): string[] {
     return ['Datainnsamler', 'Antall opptakk']
   }

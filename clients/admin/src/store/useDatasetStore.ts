@@ -9,22 +9,16 @@ import {
   Dataset,
   DatasetSelection,
   DataPath,
-  // Video,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
-  DatasetStorage,
-  // DataportenGroupsData,
-  // DataportenGroups,
 } from '../types/main'
 import { apiRequest } from '../api/apiRequest'
 import { useAppStore } from './useAppStore'
-import { VIDEO_STORAGE_TYPES } from '../constants'
 const { actions: appActions } = useAppStore()
 //State
 interface DatasetState {
   selectedDataset: Dataset
   datasets: Map<string, Dataset>
-  // dataportenGroups: Map<string, DataportenGroups>
 }
 const state: Ref<DatasetState> = ref({
   selectedDataset: new Dataset(),
@@ -38,7 +32,6 @@ interface Getters {
 }
 const getters = {
   get datasets(): ComputedRef<Map<string, Dataset>> {
-    // return computed(() => Array.from(state.value.datasets.values()))
     return computed(() => state.value.datasets)
   },
   get selectedDataset(): ComputedRef<DatasetState['selectedDataset']> {
@@ -47,25 +40,10 @@ const getters = {
 }
 //Actions
 interface Actions {
-  // datasetById: (id: string) => ComputedRef<Dataset | undefined>
-  // errorMessage: (error: Error) => void
-  // selectDataset: (dataset: Dataset | undefined) => void
-  // selectDatasetById: (datasetId: string) => void
-  // lockSelection: (d: { datasetId: string; lock: DatasetLock }) => void
-  // unlockSelection: (datasetId: string) => void
-  // setPresetDatasetConfig: (config: UserDatasetConfig) => void
-  // addSelectionToDataset: (data: SelectionOptions) => void
-  // fetchConsents: (video: Video) => void
   fetchDatasets: () => Promise<void>
-  // fetchDataportenGroups: () => Promise<void>
   addDataset: (datasetName: string) => Promise<void>
   updateDataset: (d?: Dataset) => Promise<void>
   addSelectionPriority: (selectionPriority: string) => void
-  addStorageFields: (
-    storageId: string,
-    value: string | DatasetStorage,
-    mode: string
-  ) => void
   selectDatasetById: (datasetId: string) => void
   addSelection: (currentDataPath: DataPath) => void
   addConsentField: (value: string) => void
@@ -134,12 +112,13 @@ const actions = {
       method: XHR_REQUEST_TYPE.PUT,
       credentials: true,
       route: '/api/dataset',
-      body: state.value.selectedDataset ? state.value.selectedDataset : d,
+      body: d ? d : state.value.selectedDataset,
     }
 
     return apiRequest<Dataset>(payload)
       .then((dataset) => {
         state.value.datasets.set(dataset._id, dataset)
+        actions.selectDatasetById(dataset._id)
       })
       .catch((error: Error) => {
         appActions.errorMessage(error)
@@ -152,42 +131,9 @@ const actions = {
     state.value.selectedDataset.consent.value = value
     console.log(state.value.selectedDataset.consent)
   },
-  addStorageFields: function (
-    storageId: string,
-    value: string | DatasetStorage,
-    mode: string
-  ): void {
-    if (mode == 'new') {
-      state.value.selectedDataset?.storages.push(value as DatasetStorage)
-      actions.updateDataset()
-    } else {
-      state.value.selectedDataset?.storages.filter((storage) => {
-        if (storage._id == storageId) {
-          // storage.file[mode].push(value)
-          switch (mode) {
-            case 'name':
-              storage.file.name.push(value as string)
-              break
-            case 'path':
-              storage.file.path.push(value as string)
-              break
-            case 'kind':
-              storage.kind = value as VIDEO_STORAGE_TYPES
-              break
-            case 'groupId':
-              storage.groupId = value as string
-              break
-          }
-        }
-      })
-    }
-  },
-
   selectDatasetById(datasetId: string): void {
-    if (state.value.datasets.get(datasetId))
-      state.value.selectedDataset = state.value.datasets.get(
-        datasetId
-      ) as Dataset
+    const d = state.value.datasets.get(datasetId)
+    if (d) state.value.selectedDataset = d
   },
 
   addSelection(currentDataPath: DataPath): void {
@@ -244,5 +190,4 @@ export function useDatasetStore(): ServiceInterface {
     actions,
   }
 }
-
 export type DatasetStoreType = ReturnType<typeof useDatasetStore>

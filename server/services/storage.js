@@ -124,7 +124,7 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
           return moment(video.details.created).format('dd-mmm-YYYY-h-mm-ss')
         case 'owner':
           return dataset.users.owner.replace(whitespace, '')
-        case 'UserID':
+        case 'userID':
           return video.users.owner
         default:
           return ''

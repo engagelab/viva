@@ -44,16 +44,15 @@ export default defineComponent({
     },
     modelValue: {
       type: Object as PropType<OptionItem>,
-      // default: {},
-      required: true,
+      default: () => ({}),
     },
     id: {
       type: String,
     },
     options: {
       // SelectionBox should take options as: [{ item: any, itemName: string }]
-      type: Object as PropType<OptionItem[]>,
-      // default: () => [],
+      type: Array as PropType<OptionItem[]>,
+      default: () => [],
     },
     resetOnChoose: {
       type: Boolean,
@@ -83,8 +82,8 @@ export default defineComponent({
       )
       if (selection) {
         displayValue.value = selection
-        context.emit('change', selection)
         context.emit('update:modelValue', selection)
+        context.emit('change', selection)
         if (props.resetOnChoose) {
           displayValue.value = { item: undefined, itemName: '' }
         }

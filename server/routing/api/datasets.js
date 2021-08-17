@@ -4,6 +4,7 @@
 const router = require('express').Router()
 const utilities = require('../../utilities')
 const Dataset = require('../../models/Dataset')
+const videoStorageTypes = require('../../constants').videoStorageTypes
 
 const { userRoles /*, consentTypes */ } = require('../../constants')
 
@@ -70,7 +71,7 @@ router.post('/dataset', utilities.authoriseUser, (request, response, next) => {
     let datasetName = request.body.name
     const u = response.locals.user
 
-    Dataset.create({ name: datasetName, 'users.owner': u._id })
+    Dataset.create({ name: datasetName, 'users.owner': u._id, 'storages': [{ kind: videoStorageTypes.educloud }] })
       .then((newDataset) => {
         response.send(newDataset)
       })
@@ -122,7 +123,7 @@ router.put('/dataset', utilities.authoriseUser, (request, response, next) => {
     if (error || !d)
       next(error || new Error({ status: 400, message: 'datasett not found' }))
     updatedDataset.storages.forEach((storage) => {
-      if (storage._id == '') delete storage._id
+      if (storage._id) delete storage._id
     })
     const updateIsNewer =
       Date(updatedDataset.status.lastUpdated) >= Date(d.status.lastUpdated)

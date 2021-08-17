@@ -1,8 +1,7 @@
 <template>
   <div>
-    <h2>{{ t('dataset') }}</h2>
-
-    <div class="flex flex-col">
+    <p class="text-red-600 ml-2">{{ t('dataset') }}</p>
+    <div class="flex flex-col flex-grow">
       <div class="w-4/5 flex flex-col">
         <AnswerInput
           class="m-2"
@@ -12,14 +11,14 @@
           :required="true"
           v-model="dataset.name"
         ></AnswerInput>
-        <AnswerInput
+        <!--AnswerInput
           class="m-2"
           mode="text"
           :border="false"
           :label="t('owner')"
           :required="true"
           v-model="dataset.users.owner.profile.username"
-        ></AnswerInput>
+        ></AnswerInput-->
         <AnswerInput
           class="m-2"
           mode="text"
@@ -37,8 +36,10 @@
           v-model="dataset.status.active"
         ></AnswerInput>
       </div>
+
+      <!-- Display of groups -->
       <div>
-        <p class="text-red-600 mt-4 ml-2">Data collection groups in use</p>
+        <p class="text-red-600 mt-4 ml-2">Data collection groups</p>
         <div class="flex flex-col">
           <div v-for="g in groups" :key="g.item" class="py-1 ml-2">
             <input
@@ -54,75 +55,35 @@
           </div>
         </div>
       </div>
+
+      <!--SelectionHandling></SelectionHandling-->
+
+      <ConsentHandling @updated="consentUpdated"></ConsentHandling>
+
       <div>
-        <p class="text-red-600 mt-4 ml-2">Selection Priority</p>
-        <select
-          span
-          ref="selects"
-          @change="addSelectionPriority"
-          class="select"
-          style="width: 150px"
-          placeholder
-          v-model="currentSelection"
-        >
-          <option :value="0">{{ $t('add-subject') }}</option>
-          <option
-            v-for="(selection, index) in selectionOptionList"
-            :value="selection"
-            :key="index"
+        <p class="text-red-600 mt-4 ml-2">
+          Storage
+          <span class="mt-4 ml-6 text-xs text-black"
+            >*Note: EduCloud storage not configurable here</span
           >
-            {{ selection.item }}
-          </option>
-        </select>
-        <SelectionBox
-          id="select-kind"
-          :label="t('selection')"
-          :options="selectionOptionList"
-          v-model="currentSelection"
-          @change="addSelectionPriority"
-        ></SelectionBox>
-      </div>
-      <div class="flex justify-start ...">
-        <div
-          v-for="(selection, index) in dataset.selectionPriority"
-          :key="index"
-          class="flex"
-        >
-          <p class="ml-4">{{ selection }}</p>
-          <p>*</p>
-          <p class="ml-2" v-if="dataset?.selectionPriority.length != index + 1">
-            >
-          </p>
+        </p>
+        <div v-for="s in dataset.storages" :key="s._id">
+          <StorageHandling :storage="s" @updated="storageUpdated" />
         </div>
+        <Button
+          class="mt-2 p-0 rounded-lg"
+          id="button-accept"
+          @click="addStorage"
+          >+ Add new storage
+        </Button>
       </div>
-      <div><p class="text-red-600 mt-4 ml-2">Instances</p></div>
-      <SelectionItem></SelectionItem>
 
-      <!-- <ConsentHandling @consent-updated="consentUpdated"></ConsentHandling> -->
-      <ConsentHandling></ConsentHandling>
-
-      <div><p class="text-red-600 mt-4 ml-2">Storage options</p></div>
-
-      <div
-        class="m-2"
-        v-for="(storage, index) in dataset.storages"
-        :key="index"
+      <Button
+        class="mt-4 bg-green-highlight"
+        v-if="unsavedData"
+        @vclick="save()"
+        >{{ t('save') }}</Button
       >
-        <Storage :selectedStorage="storage" v-if="storage._id != ''"></Storage>
-      </div>
-      <Button
-        class="ml-2 p-0 self-center rounded-lg"
-        id="button-accept"
-        @click="addStorage"
-        >+ Add new storage
-      </Button>
-
-      <Button
-        class="ml-4 p-2 self-center capitalize bg-green-highlight rounded-lg"
-        id="button-accept"
-        @click="updateDataset"
-        >{{ t('save') }}
-      </Button>
     </div>
   </div>
 </template>
@@ -130,14 +91,14 @@
 <script lang="ts">
 import { defineComponent, ref, Ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { uuid } from '@/utilities'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import { Dataset, DatasetSelection, DatasetStorage } from '@/types/main'
-import SelectionItem from '@/components/SelectionItem.vue'
+import { Dataset, DatasetStorage, DatasetConsent } from '@/types/main'
+//import SelectionHandling from '@/components/SelectionItem.vue'
 import AnswerInput from '@/components/base/AnswerInput.vue'
-import SelectionBox from '@/components/base/SelectionBox.vue'
 import ConsentHandling from '@/components/ConsentHandling.vue'
 import Button from '@/components/base/Button.vue'
-import Storage from '@/components/Storage.vue'
+import StorageHandling from '@/components/StorageHandling.vue'
 import { VIDEO_STORAGE_TYPES, UTVALG_SELECTION } from '@/constants'
 import { useAppStore } from '@/store/useAppStore'
 const messages = {
@@ -170,15 +131,14 @@ export default defineComponent({
   name: 'DatasetItem',
   components: {
     Button,
-    SelectionBox,
     AnswerInput,
-    SelectionItem,
+    // SelectionHandling,
     ConsentHandling,
-    Storage,
+    StorageHandling,
   },
   setup() {
     const { t } = useI18n({ messages })
-
+    const unsavedData = ref(false)
     const showInput = ref(false)
     const { getters: datasetGetters, actions: datasetActions } =
       useDatasetStore()
@@ -213,20 +173,10 @@ export default defineComponent({
     )
     resetData(datasetGetters.selectedDataset.value)
 
-    const currentSelection: Ref<OptionListItem> = ref({
-      item: '',
-      itemName: '',
-    })
-
-    //Methods
-    // Add selection priority
-    const addSelectionPriority = () => {
-      if (currentSelection.value)
-        datasetActions.addSelectionPriority(currentSelection.value.itemName)
-    }
     const addStorage = () => {
       const newStorage: DatasetStorage = {
-        kind: VIDEO_STORAGE_TYPES.educloud,
+        _id: uuid(),
+        kind: VIDEO_STORAGE_TYPES.lagringshotell,
         groupId: '',
         file: {
           name: [],
@@ -234,33 +184,41 @@ export default defineComponent({
         },
         category: [],
       }
-      datasetActions.addStorageFields('', newStorage, 'new')
+      dataset.value.storages.push(newStorage)
+    }
+
+    const consentUpdated = (c: DatasetConsent) => {
+      dataset.value.consent = c
+      unsavedData.value = true
+    }
+    const storageUpdated = (s: DatasetStorage) => {
+      const storage = dataset.value.storages.find((st) => st._id === s._id)
+      if (storage) {
+        storage.kind = s.kind
+        storage.groupId = s.groupId
+        storage.file = s.file
+        storage.category = s.category
+      }
+      unsavedData.value = true
     }
 
     // Save updated dataset
-    const updateDataset = () => {
+    const save = () => {
       datasetActions.updateDataset(dataset.value)
-    }
-    const addSubset = () => {
-      let subset: DatasetSelection = {
-        title: currentSubset.value,
-        selection: {},
-      }
-
-      datasetActions.addSelection(dataset.value.selectionPriority[0], subset)
+      unsavedData.value = false
     }
     return {
       t,
       dataset,
       groups,
       selectionOptionList,
-      currentSelection,
       showInput,
       currentSubset,
+      consentUpdated,
+      storageUpdated,
+      unsavedData,
       addStorage,
-      addSubset,
-      addSelectionPriority,
-      updateDataset,
+      save,
     }
   },
 })

@@ -1,6 +1,6 @@
 <template>
   <div class="ml-2">
-    <div><p class="text-red-600 my-4">Legal grounds</p></div>
+    <p class="text-red-600 my-4">Legal grounds</p>
 
     <div
       class="flex-flex-col"
@@ -14,6 +14,7 @@
         :id="`consent-option-${consentKey}`"
         :value="consentKey"
         v-model="consentData.kind"
+        @change="updatedConsent"
       />
       <label class="mr-2" :for="`consent-option-${consentKey}`">{{
         consent.name
@@ -26,6 +27,7 @@
         label="Description"
         :placeholder="behandlings[consentData.kind].description"
         v-model="consentData.value"
+        @change="updatedConsent"
       ></AnswerInput>
       <AnswerInput
         v-if="
@@ -38,6 +40,7 @@
         label="Nettskjema Form ID"
         placeholder="Nettskjema form ID eg. 12345678"
         v-model="consentData.formId"
+        @change="updatedConsent"
       ></AnswerInput>
     </div>
   </div>
@@ -49,17 +52,15 @@ import { behandlings, CONSENT_TYPES } from '@/constants'
 import { DatasetConsent } from '@/types/main'
 
 import AnswerInput from '@/components/base/AnswerInput.vue'
-import { useDatasetStore } from '@/store/useDatasetStore'
 import { useAppStore } from '@/store/useAppStore'
 
 export default defineComponent({
-  name: 'consent',
+  name: 'consentHandling',
   components: {
     AnswerInput,
   },
-  setup() {
-    const { getters: datasetGetters, actions: datasetActions } =
-      useDatasetStore()
+  emits: ['updated'],
+  setup(props, context) {
     const { getters: appGetters } = useAppStore()
 
     const consentData: Ref<DatasetConsent> = ref({
@@ -68,28 +69,16 @@ export default defineComponent({
       formId: 0,
     })
 
-    console.log(appGetters.user.value.profile.groups)
-    const d = datasetGetters.selectedDataset
-    const theDataset = ref(d)
-    const showGroups = ref(false)
-    const consentDescription = ref(theDataset.value.consent.value)
-
-    const addConsentValue = ($event: InputEvent) => {
-      const ie = $event.target as HTMLInputElement
-      if (ie.value) {
-        datasetActions.addConsentField(ie.value)
-      }
+    function updatedConsent() {
+      context.emit('updated', consentData.value)
     }
+
     return {
-      theDataset,
       consentData,
       CONSENT_TYPES,
       behandlings,
-      showGroups,
       g: appGetters.user.value.profile,
-      consentDescription,
-      //Methods
-      addConsentValue,
+      updatedConsent,
     }
   },
 })

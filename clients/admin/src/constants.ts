@@ -118,8 +118,6 @@ enum VIDEO_STORAGE_TYPES {
   lagringshotell = 'lagringshotell',
 }
 
-const FILEGROUPS = ['uv-ils-viva-diva1', 'uv-ils-viva-proto1']
-
 enum VIDEO_STATUS_TYPES {
   draft = 'draft', // Before upload has been attempted
   premeta = 'premeta', // Pre-stage when awaiting linking of file upload to complete uploaded metadata in DB
@@ -150,11 +148,11 @@ enum UTVALG_SELECTION {
   bedrift = 'bedrift',
 }
 
-const FILE = {
-  name: ['fileId', 'timeStamp'],
-  path: ['DatasetName', 'fileId', 'ataManager', 'UserID', 'timeStamp'],
+const storageKeys = {
+  name: ['fileName', 'timeStamp'],
+  path: ['datasettName', 'fileName', 'owner', 'userID', 'timeStamp'],
+  groups: ['uv-ils-viva-diva1', 'uv-ils-viva-proto1'],
 }
-const GROUPS = ['uv-ils-viva-diva1', 'uv-ils-viva-proto1']
 
 interface Behandling {
   name: string
@@ -185,15 +183,13 @@ export {
   userRoles,
   USER_ROLE,
   consentTypes,
-  behandlings,
   CONSENT_TYPES,
-  FILE,
-  GROUPS,
   VIDEO_STORAGE_TYPES,
   VIDEO_STATUS_TYPES,
   CONSENT_SELECTION,
   UTVALG_SELECTION,
-  FILEGROUPS,
+  behandlings,
+  storageKeys,
   appVersion,
   taskColours,
   vivaServer,

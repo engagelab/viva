@@ -1,59 +1,43 @@
 <template>
-  <div class="flex flex-row flex-wrap">
-    <!-- Sidebar -->
-    <div class="h-full w-1/6">
-      <h2 class="font-bold">Datasets</h2>
-      <ul class="mt-2" style="list-style-type: none">
-        <li
-          v-for="(dataset, datasetIndex) in datasets"
-          :key="datasetIndex"
-          class="cursor-pointer"
-          @click="setSelectedDataset(dataset._id)"
-        >
-          {{ dataset.name }}
-        </li>
-      </ul>
+  <div class="flex flex-col">
+    <div class="flex flex-row flex-wrap mb-4">
+      <!-- Sidebar -->
+      <div class="h-full w-1/4">
+        <h2 class="font-bold">Datasets</h2>
+        <ul class="mt-2" style="list-style-type: none">
+          <li
+            v-for="(dataset, datasetIndex) in datasets"
+            :key="datasetIndex"
+            class="cursor-pointer"
+            @click="setSelectedDataset(dataset._id)"
+          >
+            {{ dataset.name }}
+          </li>
+        </ul>
+      </div>
+      <!-- Table -->
+      <div class="w-3/4">
+        <DatasetItem v-if="selectedDataset._id != ''"> </DatasetItem>
+      </div>
     </div>
-    <!-- Table -->
-    <div class="w-5/6">
-      <DatasetItem v-if="selectedDataset._id != ''"> </DatasetItem>
-    </div>
-    <div
-      class="
-        px-4
-        h-10
-        rounded-full
-        bg-blue-500
-        text-white
-        hover:bg-blue-700
-        font-medium
-        leading-relaxed
-        flex
-        items-center
-        justify-center
-      "
-      style="font-family: 'Inter-Medium', 'Inter', sans-serif"
-      v-if="!showInput"
-      @click="showInput = !showInput"
-    >
-      Add new dataset
-    </div>
-    <div class="flex flex-row" v-if="showInput">
-      <input
-        v-model="newDatasetName"
-        type="String"
-        class="border-2 text-center rounded-full"
-        placeholder="Navn på dataset"
-        @keypress="restrict($event)"
-      />
-      <button
-        class="px-2 text-center h-6 rounded-full bg-blue-300 hover:bg-blue-500"
-        @click="createDataset()"
-      >
-        Legg til
-      </button>
-      <div v-if="errorMessage" class="text-red-600">
-        {{ errorMessage }}
+    <div class="flex flex-row mt-8">
+      <Button v-if="!showInput" @vclick="showInput = !showInput">
+        Create new dataset
+      </Button>
+      <div class="flex flex-row" v-if="showInput">
+        <input
+          v-model="newDatasetName"
+          type="String"
+          class="border-2 text-center"
+          placeholder="Navn på dataset"
+          @keypress="restrict($event)"
+        />
+        <Button class="ml-4 text-white bg-blue-600" @vclick="createDataset()">
+          Create
+        </Button>
+        <div v-if="errorMessage" class="text-red-600">
+          {{ errorMessage }}
+        </div>
       </div>
     </div>
   </div>
@@ -73,6 +57,7 @@ import { Dataset } from '@/types/main'
 import { useDatasetStore } from '../../store/useDatasetStore'
 const { actions: datasetActions, getters: datasetGetters } = useDatasetStore()
 import DatasetItem from '@/components/DatasetItem.vue'
+import Button from '@/components/base/Button.vue'
 // i18n
 import { useI18n } from 'vue-i18n'
 const messages = {
@@ -96,6 +81,7 @@ export default defineComponent({
   name: 'MonitorYourDatasets',
   components: {
     DatasetItem,
+    Button,
   },
   setup() {
     const { t } = useI18n({ messages })
@@ -128,9 +114,11 @@ export default defineComponent({
     }
     const createDataset = () => {
       datasetActions.addDataset(newDatasetName.value)
+      showInput.value = false
     }
-    const setSelectedDataset = (datasetIndex: string) => {
-      datasetActions.selectDatasetById(datasetIndex)
+    const setSelectedDataset = (datasetID: string) => {
+      datasetActions.selectDatasetById(datasetID)
+      showInput.value = false
     }
     return {
       t,

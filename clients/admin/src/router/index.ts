@@ -9,7 +9,6 @@ import {
 import Landing from '@/views/landing/Landing.vue'
 
 import Privacy from '@/views/Privacy.vue'
-import ErrorDisplay from '@/views/video/ErrorDisplay.vue'
 import Monitor from '@/views/admin/Monitor.vue'
 import MonitorRecordingLog from '@/views/admin/MonitorRecordingLog.vue'
 import MonitorYourDatasets from '@/views/admin/MonitorYourDatasets.vue'
@@ -76,11 +75,6 @@ const routes: Array<RouteRecordRaw> = [
         component: MonitorRecordingsInProcess,
       },
     ],
-  },
-  {
-    path: '/videos/error',
-    name: 'videoError',
-    component: ErrorDisplay,
   },
   {
     path: '/privacy',
