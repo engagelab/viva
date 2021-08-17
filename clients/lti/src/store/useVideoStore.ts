@@ -30,6 +30,7 @@ interface State {
   selectedVideo: Video | undefined
   selectedVideoURL: string
   videos: Map<string, Video>
+  videosSharedWithMe: Video[]
 }
 
 const state: Ref<State> = ref({
@@ -39,6 +40,7 @@ const state: Ref<State> = ref({
   selectedVideo: undefined,
   videos: new Map<string, Video>(),
   selectedVideoURL: '',
+  videosSharedWithMe: [],
 })
 
 //----------------- Server side functions----------------//
@@ -57,6 +59,7 @@ interface Getters {
   videos: ComputedRef<Video[]>
   selectedVideo: ComputedRef<State['selectedVideo']>
   selectedVideoURL: ComputedRef<State['selectedVideoURL']>
+  videosSharedWithMe: ComputedRef<State['videosSharedWithMe']>
 }
 const getters = {
   get videos(): ComputedRef<Video[]> {
@@ -67,6 +70,9 @@ const getters = {
   },
   get selectedVideoURL(): ComputedRef<State['selectedVideoURL']> {
     return computed(() => state.value.selectedVideoURL)
+  },
+  get videosSharedWithMe(): ComputedRef<State['videosSharedWithMe']> {
+    return computed(() => state.value.videosSharedWithMe)
   },
 }
 
@@ -131,7 +137,6 @@ const actions = {
     }
     // filter shared videos and own videos
     const allVideos = Array.from(state.value.videos.values())
-
     const ownVideos = allVideos.filter(
       (video) => video.users.owner == appGetters.user.value?._id
     )
@@ -140,7 +145,12 @@ const actions = {
       const v = filtershareVideo(video)
       if (v.length && v.length > 0) return v
     })
-    console.log('sharedVideos', shareVideos)
+
+    state.value.videosSharedWithMe = shareVideos
+    // shareVideos.forEach((video) => {
+    //   state.value.videosSharedWithMe.set(video.details.id, video)
+    // })
+    console.log('sharedVideos', state.value.videosSharedWithMe)
     return Promise.resolve()
   },
 

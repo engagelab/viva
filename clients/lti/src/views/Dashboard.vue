@@ -1,8 +1,25 @@
 <template>
   <div>
+    <div class="flex flex-col p-4">
+      <ul class="flex border-b space-x-2">
+        <div class="hover:bg-blue-300 cursor-pointer" @click="showTab = 'all'">
+          AllVideos
+        </div>
+        <div class="hover:bg-blue-300 cursor-pointer" @click="showTab = 'own'">
+          My Recordings
+        </div>
+        <div
+          class="hover:bg-blue-300 cursor-pointer"
+          @click="showTab = 'shared'"
+        >
+          Shared Videos
+        </div>
+      </ul>
+    </div>
     <div class="flex flex-wrap my-2">
       <div class="w-1/6">
-        <RecordingsComponent />
+        <RecordingsComponent :videos="videos" />
+        <!-- <RecordingsComponent /> -->
       </div>
       <div class="w-5/6">
         <VideoComponent :key="video ? video.details.id : 'video component'" />
@@ -13,7 +30,7 @@
 
 <script lang="ts">
 // @ is an alias to /src
-import { defineComponent } from 'vue'
+import { defineComponent, ref, computed } from 'vue'
 /* import router from '../router' */
 
 import { useAppStore } from '../store/useAppStore'
@@ -35,12 +52,26 @@ export default defineComponent({
     const { getters: videoGetters } = useVideoStore()
     const user = appGetters.user.value
     appActions.fetchLTIData()
+    const showTab = ref('all')
 
     const video = videoGetters.selectedVideo
+
+    const videos = computed(() => {
+      console.log(videoGetters.videos.value)
+      if (showTab.value == 'all') return videoGetters.videos.value
+      else if (showTab.value == 'shared')
+        return videoGetters.videosSharedWithMe.value
+      else
+        return videoGetters.videos.value.filter(
+          (video) => video.users.owner == appGetters.user.value._id
+        )
+    })
 
     return {
       user,
       video,
+      showTab,
+      videos,
     }
   },
 })
