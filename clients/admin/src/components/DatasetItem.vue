@@ -56,7 +56,7 @@
         </div>
       </div>
 
-      <!--SelectionHandling></SelectionHandling-->
+      <SelectionHandling></SelectionHandling>
 
       <ConsentHandling @updated="consentUpdated"></ConsentHandling>
 
@@ -94,12 +94,12 @@ import { useI18n } from 'vue-i18n'
 import { uuid } from '@/utilities'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { Dataset, DatasetStorage, DatasetConsent } from '@/types/main'
-//import SelectionHandling from '@/components/SelectionItem.vue'
+import SelectionHandling from '@/components/SelectionHandling.vue'
 import AnswerInput from '@/components/base/AnswerInput.vue'
 import ConsentHandling from '@/components/ConsentHandling.vue'
 import Button from '@/components/base/Button.vue'
 import StorageHandling from '@/components/StorageHandling.vue'
-import { VIDEO_STORAGE_TYPES, UTVALG_SELECTION } from '@/constants'
+import { VIDEO_STORAGE_TYPES } from '@/constants'
 import { useAppStore } from '@/store/useAppStore'
 const messages = {
   nb_NO: {
@@ -132,7 +132,7 @@ export default defineComponent({
   components: {
     Button,
     AnswerInput,
-    // SelectionHandling,
+    SelectionHandling,
     ConsentHandling,
     StorageHandling,
   },
@@ -147,7 +147,6 @@ export default defineComponent({
     const currentSubset = ref('')
     const groups: OptionListItem[] = []
     let dataset: Ref<Dataset> = ref(new Dataset())
-    let selectionOptionList: OptionListItem[] = []
 
     const resetData = (d: Dataset) => {
       groups.length = 0
@@ -159,12 +158,6 @@ export default defineComponent({
           item: g.id,
         })
       })
-      selectionOptionList = Object.values(UTVALG_SELECTION)
-        .filter((r) => dataset.value.selectionPriority.includes(r))
-        .map((r) => ({
-          item: r,
-          itemName: r,
-        }))
     }
 
     watch(
@@ -211,7 +204,6 @@ export default defineComponent({
       t,
       dataset,
       groups,
-      selectionOptionList,
       showInput,
       currentSubset,
       consentUpdated,

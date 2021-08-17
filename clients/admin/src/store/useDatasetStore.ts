@@ -43,7 +43,6 @@ interface Actions {
   fetchDatasets: () => Promise<void>
   addDataset: (datasetName: string) => Promise<void>
   updateDataset: (d?: Dataset) => Promise<void>
-  addSelectionPriority: (selectionPriority: string) => void
   selectDatasetById: (datasetId: string) => void
   addSelection: (currentDataPath: DataPath) => void
   addConsentField: (value: string) => void
@@ -123,9 +122,6 @@ const actions = {
       .catch((error: Error) => {
         appActions.errorMessage(error)
       })
-  },
-  addSelectionPriority: function (selectionPriority: string): void {
-    state.value.selectedDataset?.selectionPriority.push(selectionPriority)
   },
   addConsentField: function (value: string): void {
     state.value.selectedDataset.consent.value = value
