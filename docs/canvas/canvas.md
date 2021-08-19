@@ -35,8 +35,9 @@ The LTI settings has a section called 'custom fields' enter the following:
 
 
 ##### Administrator Role
-Viva for Canvas requires a special "course enrolment" type role to recognise which User(s) in a Course is the Administrator
-The name of this role (e.g. 'Viva Administrator') should be noted in `.env` at `CANVAS_ADMIN_ROLE=`
+Viva for Canvas requires creating inside Canvas a special Group to recognise which User(s) in a Course are Administrators
+This determines which Viva uses can log into the Viva admin pages
+The ID of this Group should be entered in `.env` at `CANVAS_ADMIN_GROUP_ID=`
 
 ##### Ethics Course
 At UiO, an ethics course must be completed before a user is allowed to use Viva.
