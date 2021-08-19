@@ -26,7 +26,8 @@ Sample profile = {
 function setUserAttributes(user, profile, tokenSet) {
   user.profile.username = profile.login_id
   user.profile.provider_id = profile.provider_id
-  user.profile.reference = createReference(user.profile.provider_id)
+  user.profile.lti_id = profile.lti_id
+  user.profile.reference = createReference(user.profile.provider_id || user.profile.lti_id || user.profile.username)
   user.profile.fullName = profile.fullName
   user.profile.email = profile.email
   user.profile.organization = profile.organization
@@ -111,17 +112,15 @@ function getUserGroups(user) {
 }
 
 function setUserRole(user) {
-  return canvas
-    .usersForGroup(process.env.CANVAS_ADMIN_GROUP_ID)
-    .then((users) => {
-      if (users.some((u) => u.login_id === user.profile.username)) {
-        user.status.role = userRoles.admin
-        console.log(`User ${user.profile.username} was set to 'admin' role`)
-      } else user.status.role = userRoles.user
-    })
-    .catch((err) => {
-      console.error(err)
-    })
+  return canvas.usersForGroup(process.env.CANVAS_ADMIN_GROUP_ID).then((users) => {
+    if (users.some((u) => u.login_id === user.profile.username)) {
+      user.status.role = userRoles.admin
+      console.log(`User ${user.profile.username} was set to 'admin' role`)
+    }
+    else user.status.role = userRoles.user
+  }).catch((err) => {
+    console.error(err)
+  })
 }
 
 function createOrUpdateUser(tokenSet, profile) {
@@ -154,11 +153,11 @@ function completeCallback(request, response, user) {
   const host = process.env.VUE_APP_SERVER_HOST
 
   if (client === 'lti') {
-    redirectUrl =
-      process.env.NODE_ENV === 'development' ? `${host}:8080` : `${host}/lti`
+    redirectUrl = process.env.NODE_ENV === 'development' ? `${host}:8080` : `${host}/lti`
+    s = `${new Date().toLocaleString()}: LTI Login: ${user.profile.username}`
   } else if (client === 'admin') {
-    redirectUrl =
-      process.env.NODE_ENV === 'development' ? `${host}:8081` : `${host}`
+    redirectUrl = process.env.NODE_ENV === 'development' ? `${host}:8081` : `${host}`
+    s = `${new Date().toLocaleString()}: Admin Login: ${user.profile.username}`
   }
   // Mobile app will be passed a token via Apple's ASWebAuthenticationSession / Google Custom Tabs
   // which must then be passed back to the /token route obtain a Session
@@ -180,9 +179,6 @@ function completeCallback(request, response, user) {
   // Set the session here at last!
   // Web app receives a Session immediately, does not need to pass a token
   request.session.ref = user.id
-  s = `${new Date().toLocaleString()}: Mobile App Login: ${
-    user.profile.username
-  }`
   console.log(s)
   console.log(`Session: ${request.session.ref}`)
   return response.redirect(redirectUrl)

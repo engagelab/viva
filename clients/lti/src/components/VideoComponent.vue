@@ -11,7 +11,7 @@
           ref="playbackVideo"
           id="playbackVideo"
           oncontextmenu="return false;"
-          :src="`https://localhost:8000/api/video/file?videoref=${selectedVideo.details.id}`"
+          :src="`${baseUrl}/api/video/file?videoref=${selectedVideo.details.id}`"
           playsinline
           webkit-playsinline
           preload="metadata"
@@ -93,7 +93,7 @@ import { defineComponent, ref, Ref, computed, onMounted, watch } from 'vue'
 import { Video, VideoSharing } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
-import videojs, { VideoJsPlayer } from 'video.js'
+import { baseUrl } from '@/constants'
 import Button from '@/components/base/Button.vue'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import Scrubber from '@/components/base/Scrubber.vue'
@@ -128,8 +128,6 @@ export default defineComponent({
     let currentVolume = 0
     let playerCurrentTime = ref(0)
 
-    const videoJsplayer: Ref<VideoJsPlayer | null> = ref(null)
-
     // Test
 
     // Lifecycle Hooks
@@ -140,16 +138,7 @@ export default defineComponent({
       } else {
         setupVideo(selectedVideo.value)
       }
-      const videoPlayer = document.getElementById('smplayer')
-      if (videoPlayer) {
-        videoJsplayer.value = videojs(
-          videoPlayer,
-          {},
-          function onPlayerReady() {
-            console.log('onPlayerReady', this)
-          }
-        )
-      }
+
     })
 
     const duration = computed(() => {
@@ -384,6 +373,7 @@ export default defineComponent({
       updateShare,
       deleteShare,
       // data
+      baseUrl,
       selectedVideo,
       video,
       playerTime,

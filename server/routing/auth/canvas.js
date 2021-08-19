@@ -121,6 +121,7 @@ router.post('/canvas/callback', function (request, response) {
       email: custom_vars.user_email || '',
       fullName: custom_vars.person_name || '',
       organization: organization || '',
+      lti_id: verified_decoded_id_token['sub'],
       client,
     }
 

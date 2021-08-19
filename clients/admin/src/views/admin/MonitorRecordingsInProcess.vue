@@ -10,7 +10,7 @@
     </div>
     <div
       class="w-full flex flex-wrap justify-center"
-      v-for="(user, userIndex) in users"
+      v-for="(user, userIndex) in usersDrafts"
       :key="userIndex"
     >
       <div class="w-full flex cursor-pointer" @click="toggleContent(userIndex)">
@@ -31,7 +31,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted } from 'vue'
+import { defineComponent, onMounted } from 'vue'
 import { useAppStore } from '@/store/useAppStore'
 import { User } from '@/types/main'
 
@@ -57,10 +57,8 @@ export default defineComponent({
     const headers = User.columnDefs()
     const { t } = useI18n({ messages })
 
-    const users = computed(() => appGetters.users.value)
-
     onMounted(() => {
-      appActions.getUsers()
+      appActions.getUsersDrafts()
     })
 
     const toggleContent = (userIndex: number) => {
@@ -76,7 +74,7 @@ export default defineComponent({
      * Total - user.videos.draftIDs.length
      */
 
-    return { t, headers, users, toggleContent }
+    return { t, headers, usersDrafts: appGetters.usersDrafts, toggleContent }
   },
 })
 </script>

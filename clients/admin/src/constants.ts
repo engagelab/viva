@@ -35,23 +35,6 @@ const device = 'mobile'
 const videoStorageTypes = ['none', 'google', 'onedrive', 'lagringshotell']
 const utvalger = ['Feltsted', 'Klasse', 'Fag', 'Lærer']
 
-const behandlings = {
-  samtykke: {
-    name: 'Digital Samtykke',
-    description:
-      'Opptak er basert på samtykker som er gitt digitalt i UiOs samtykkeportal.',
-  },
-  manual: {
-    name: 'Manuelt samtykke',
-    description: 'Opptak er basert på samtykker som er håndtert manuelt.',
-  },
-  article6: {
-    name: 'Ikke Samtykke',
-    description:
-      'Opptak er basert på GDPR §6(behandling som er nødvendig for å utføre en oppgave i allmennhetens interesse).',
-  },
-}
-
 const stores = {
   metadataStore: {
     name: 'metadataStore',
@@ -118,7 +101,7 @@ if (
 
 enum CONSENT_TYPES {
   samtykke = 'samtykke',
-  manual = 'manual',
+  manuel = 'manuel',
   article6 = 'article6',
 }
 // Ensure enums match those defined in env file
@@ -134,8 +117,6 @@ enum VIDEO_STORAGE_TYPES {
   educloud = 'educloud',
   lagringshotell = 'lagringshotell',
 }
-
-const FILEGROUPS = ['uv-ils-viva-diva1', 'uv-ils-viva-proto1']
 
 enum VIDEO_STATUS_TYPES {
   draft = 'draft', // Before upload has been attempted
@@ -167,11 +148,33 @@ enum UTVALG_SELECTION {
   bedrift = 'bedrift',
 }
 
-const FILE = {
-  name: ['fileId', 'timeStamp'],
-  path: ['DatasetName', 'fileId', 'ataManager', 'UserID', 'timeStamp'],
+const storageKeys = {
+  name: ['fileName', 'timeStamp'],
+  path: ['datasettName', 'fileName', 'owner', 'userID', 'timeStamp'],
+  groups: ['uv-ils-viva-diva1', 'uv-ils-viva-proto1'],
 }
-const GROUPS = ['uv-ils-viva-diva1', 'uv-ils-viva-proto1']
+
+interface Behandling {
+  name: string
+  description: string
+}
+
+const behandlings: Record<CONSENT_TYPES, Behandling> = {
+  [CONSENT_TYPES.samtykke]: {
+    name: 'Digital Samtykke',
+    description:
+      'Opptak er basert på samtykker som er gitt digitalt i UiOs samtykkeportal.',
+  },
+  [CONSENT_TYPES.manuel]: {
+    name: 'Manuelt samtykke',
+    description: 'Opptak er basert på samtykker som er håndtert manuelt.',
+  },
+  [CONSENT_TYPES.article6]: {
+    name: 'Ikke Samtykke',
+    description:
+      'Opptak er basert på GDPR §6(behandling som er nødvendig for å utføre en oppgave i allmennhetens interesse).',
+  },
+}
 
 export {
   deviceType,
@@ -180,15 +183,13 @@ export {
   userRoles,
   USER_ROLE,
   consentTypes,
-  behandlings,
   CONSENT_TYPES,
-  FILE,
-  GROUPS,
   VIDEO_STORAGE_TYPES,
   VIDEO_STATUS_TYPES,
   CONSENT_SELECTION,
   UTVALG_SELECTION,
-  FILEGROUPS,
+  behandlings,
+  storageKeys,
   appVersion,
   taskColours,
   vivaServer,

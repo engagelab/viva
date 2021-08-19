@@ -124,7 +124,7 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
           return moment(video.details.created).format('dd-mmm-YYYY-h-mm-ss')
         case 'owner':
           return dataset.users.owner.replace(whitespace, '')
-        case 'UserID':
+        case 'userID':
           return video.users.owner
         default:
           return ''
@@ -137,7 +137,7 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
 const fetchStorage = (video) => {
   return new Promise((resolve, reject) => {
     Dataset.findById(video.dataset.id, (error, dataset) => {
-      if (error) return reject(error)
+      if (error || !dataset) return reject(error)
       let stores = []
       dataset.storages.forEach((storage) => {
         let path = generatePath(
@@ -179,15 +179,13 @@ function sendToEducloud({ video, subDirSrc }) {
   const sseMD5 = crypto.createHash('md5').update(sseKey).digest('base64')
   video.file.encryptionKey = sseKey
   video.file.encryptionMD5 = sseMD5
-  return uploadS3File({ path, keyname, sseKey, sseMD5 })
-    .then(() => {
-      console.log('Video sent to Educloud')
-      video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
-    })
-    .catch((error) => {
-      console.log(error)
-      return Promise.reject(error)
-    })
+  return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
+    console.log(`Video sent to Educloud at key: ${keyname}`)
+    video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
+  }).catch((error) => {
+    console.log(error)
+    return Promise.reject(error)
+  })
 }
 
 // Create a copy of the uploaded video to the lagringshotell

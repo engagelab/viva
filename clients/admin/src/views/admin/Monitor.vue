@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col cursor-default relative h-screen">
+  <div class="flex flex-col cursor-default relative h-full">
     <div class="flex flex-col p-4">
-      <ul class="flex border-b">
+      <ul class="flex">
         <router-link to="/monitor/recordingLog">
           <li
             class="
@@ -62,7 +62,7 @@
       </ul>
     </div>
 
-    <div class="flex flex-col p-4 flex-grow-0">
+    <div class="flex flex-col p-4 flex-grow">
       <router-view></router-view>
     </div>
     <div class="absolute top-0 right-0 m-4">

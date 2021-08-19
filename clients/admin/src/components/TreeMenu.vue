@@ -2,7 +2,7 @@
   <div class="tree-menu">
     <!-- <div v-for="(priority, index) in theDataset.selectionPriority" :key="index"> -->
     <div v-if="nodes && selectedPriority">
-      <tree-menu
+      <TreeMenu
         v-for="node in nodes"
         :key="node"
         :nodes="node.selection ? node.selection : []"
@@ -15,7 +15,7 @@
             : ''
         "
       >
-      </tree-menu>
+      </TreeMenu>
 
       <!-- <div v-if="selectedPriority">
          <Subset :nodes="nodes[selectedPriority]"></Subset>
@@ -41,7 +41,7 @@ import { DatasetSelection } from '@/types/main'
 //   [key: string]: DatasetSelection[]
 // }
 export default defineComponent({
-  name: 'tree-menu',
+  name: 'treeMenu',
   components: {
     // Subset,
   },

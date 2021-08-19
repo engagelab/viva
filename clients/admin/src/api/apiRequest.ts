@@ -21,7 +21,7 @@ function xhrRequest<T>({
     // Event listener must be added before calling open()
     xhr.addEventListener('loadend', () => {
       if (xhr.status > 299) {
-        reject(xhr.response ? xhr.response : xhr)
+        reject(new Error(xhr.response ? xhr.response.error : xhr.statusText))
       } else {
         resolve(xhr.response)
       }

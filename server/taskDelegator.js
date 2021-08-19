@@ -47,10 +47,6 @@ const findVideosToProcess = () => {
         console.log(
           `Queued ${videoBacklog[state].length} video(s) with status: ${state}`
         )
-      } else {
-        console.log(
-          `${new Date().toLocaleString()} Video scan: nothing new found`
-        )
       }
     })
   })
@@ -196,6 +192,10 @@ const beginProcessingVideo = (pStatus) => {
               errorProcessingVideo(err, pStatus)
             })
         })
+        .catch((err) => {
+          console.log(`Error finding dataset for video ${nextVideo.details.name}: ${err}`)
+          errorProcessingVideo(err, pStatus)
+        })
         break
       }
       // Decide if we keep the video ready for user-authenticated transfer to a third party
@@ -242,7 +242,7 @@ const runProcessing = () => {
       if (nextVideo) {
         activelyProcessing[pStatus] = nextVideo
         console.log(
-          `Now processing video status: ${nextVideo.status} filename: ${nextVideo.filename}`
+          `Now processing video ${nextVideo.details.name} at status '${nextVideo.status.main}'`
         )
         beginProcessingVideo(pStatus)
       }

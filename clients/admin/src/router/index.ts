@@ -8,18 +8,14 @@ import {
 
 import Landing from '@/views/landing/Landing.vue'
 
-import Editor from '@/views/video/Editor.vue'
 import Privacy from '@/views/Privacy.vue'
-import ErrorDisplay from '@/views/video/ErrorDisplay.vue'
 import Monitor from '@/views/admin/Monitor.vue'
 import MonitorRecordingLog from '@/views/admin/MonitorRecordingLog.vue'
 import MonitorYourDatasets from '@/views/admin/MonitorYourDatasets.vue'
 import MonitorRecordingsInProcess from '@/views/admin/MonitorRecordingsInProcess.vue'
 
 import { useAppStore } from '../store/useAppStore'
-/* import { useDatasetStore } from '../store/useDatasetStore' */
 import { useVideoStore } from '../store/useVideoStore'
-/* const { actions: datasetActions } = useDatasetStore() */
 const { getters: appGetters, actions: appActions } = useAppStore()
 const { getters: videoGetters } = useVideoStore()
 import { idleTimeout } from '../constants'
@@ -79,22 +75,6 @@ const routes: Array<RouteRecordRaw> = [
         component: MonitorRecordingsInProcess,
       },
     ],
-  },
-  {
-    path: '/videos/list',
-    name: 'video',
-    component: Monitor,
-  },
-  {
-    path: '/videos/editor',
-    name: 'editor',
-    component: Editor,
-    props: (route) => ({ page: route.query.page }),
-  },
-  {
-    path: '/videos/error',
-    name: 'videoError',
-    component: ErrorDisplay,
   },
   {
     path: '/privacy',

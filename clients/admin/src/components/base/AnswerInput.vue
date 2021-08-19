@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col">
+  <div class="flex flex-col m-2">
     <label
       class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
       :class="{ 'pl-4': border }"
@@ -123,63 +123,73 @@
     </template>
     <template v-if="mode == 'multiChoice'">
       <div class="flex flex-col" :id="elementId">
-        <div v-for="o in options" :key="o.id" class="py-1">
+        <div
+          v-for="o in options"
+          :key="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+          class="py-1"
+        >
           <input
             class="mr-1 mb-1"
             type="checkbox"
-            :id="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            :value="o.title"
+            :id="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            :value="o.item"
             v-model="selectedMultiChoice"
             @change="valueInput"
           />
           <label
             class="mr-2"
-            :for="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            >{{ o.title }}</label
+            :for="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            >{{ o.itemName }}</label
           >
         </div>
       </div>
     </template>
     <template v-if="mode == 'singleChoice'">
       <div class="flex flex-col ml-2" :id="elementId">
-        <div v-for="o in options" :key="o.id">
+        <div
+          v-for="o in options"
+          :key="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+        >
           <input
             class="mr-1 mb-1"
             type="radio"
-            :id="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            :value="o.title"
+            :id="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            :value="o.item"
             v-model="selectedValue"
             @change="valueInput"
           />
           <label
             class="mr-2"
-            :for="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            >{{ o.title }}</label
+            :for="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            >{{ o.itemName }}</label
           >
         </div>
       </div>
     </template>
     <template v-if="mode == 'conditional'">
       <div class="flex flex-col py-1" :id="elementId">
-        <div v-for="(o, i) in options" :key="o.id">
+        <div
+          v-for="(o, i) in options"
+          :key="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+        >
           <input
             class="mr-1 mb-1"
             type="radio"
-            :id="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            :value="o.title"
+            :id="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            :value="o.item"
             v-model="selectedValue"
             @change="valueInput"
           />
           <label
             class="mr-2"
-            :for="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            >{{ o.title }}</label
+            :for="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            >{{ o.itemName }}</label
           >
           <AnswerInput
-            v-if="selectedValue === o.title"
+            v-if="selectedValue === o.item"
             class="pl-4"
             mode="multiChoice"
-            :id="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
+            :id="`${elementId}-cond-option-${o.itemName.replace(/\s/g, '')}`"
             v-model="selectedMultiChoice"
             @input="valueInput"
             :options="conditionals[i].options"
@@ -195,8 +205,6 @@ import { defineComponent, ref, toRefs, Ref, watch, PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 interface OptionItem {
-  id: string
-  title: string
   itemName: string
   item: unknown
 }
@@ -212,7 +220,9 @@ export default defineComponent({
   name: 'AnswerInput',
   props: {
     modelValue: {
-      type: [String, Boolean, Number],
+      type: [String, Boolean, Number, Array] as PropType<
+        string | boolean | number | string[]
+      >,
       required: true,
     },
     id: {
@@ -271,7 +281,7 @@ export default defineComponent({
     const selectedValue: Ref<string> = modelValue
       ? ref(String(modelValue.value))
       : ref('')
-    const selectedMultiChoice = ref([])
+    const selectedMultiChoice: Ref<string[]> = ref([])
     const isValid = ref(true)
     const emailRegex = new RegExp(
       /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
@@ -285,10 +295,15 @@ export default defineComponent({
       context.emit('enterkey')
     }
 
-    watch(modelValue, (newValue) => {
+    function initialise(newValue: string | boolean | number | string[]) {
       selectedValue.value = String(newValue)
+      if (mode.value === 'multiChoice')
+        selectedMultiChoice.value = newValue as string[]
       if (!selectedValue.value) isValid.value = true
-    })
+    }
+
+    watch(modelValue, (newValue) => initialise(newValue))
+    initialise(modelValue.value)
 
     const valueInput = ($event: InputEvent): void => {
       const ie = $event.target as HTMLInputElement

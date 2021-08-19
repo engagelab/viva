@@ -1,13 +1,13 @@
 <template>
   <div>
     <div>
-      <Set
+      <TreeMenu
         v-if="theDataset.selection"
         :nodes="theDataset.selection"
         :selectedPriority="InitialSelectionPriority"
         :label="Object.keys(theDataset.selection)[0]"
         :title="''"
-      ></Set>
+      ></TreeMenu>
 
       <!-- <div v-for="(selections, key) in theDataset.selection" :key="key">
         Key: {{ key }}
@@ -109,7 +109,8 @@ import { computed, defineComponent, ref } from 'vue'
 
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { DatasetSelection } from '@/types/main'
-import Set from '@/components/TreeMenu.vue'
+import TreeMenu from '@/components/TreeMenu.vue'
+import Subset from './Subset.vue'
 // import AnswerInput from '@/components/base/AnswerInput.vue'
 // import SelectionBox from '@/components/base/SelectionBox.vue'
 // interface Tree {
@@ -117,11 +118,10 @@ import Set from '@/components/TreeMenu.vue'
 //   nodes: Tree[]
 // }
 import SlButton from '@/components/base/Button.vue'
-import Subset from './subset.vue'
 export default defineComponent({
   name: 'DatasetItem',
   components: {
-    Set,
+    TreeMenu,
     // SelectionBox,
     // AnswerInput,
     SlButton,
@@ -163,9 +163,41 @@ export default defineComponent({
         selection: {},
       }
 
-      datasetActions.addSelection(currentSelectionPriority.value, subset)
+      // datasetActions.addSelection(currentSelectionPriority.value, subset)
       showInput.value = !showInput.value
       currentSelectionPriority.value = ''
+    }
+
+    // SM: Consider keeping data changes in a local variable and emit them to the parent, rather than the store,
+    // because the jobs done by these components are not used elsewhere in the app
+    // Keep the methods specific, properly named and close to their own data
+    // This reduces the need for many functions in the datasetStore
+    // The below code is moved from the store into this component.. `addSelection` renamed to `addSubset2`
+    // refer to ConsentHandling.vue and StorageHandling.vue for examples
+    const addSubset2 = () => {
+      let subset: DatasetSelection = {
+        title: currentSubset.value,
+        selection: {},
+      }
+
+      const recurse = (nodes: DatasetSelection[], label: string) => {
+        nodes.forEach((node) => {
+          if (label) console.log('Label:' + label + 'Value:' + node.title)
+          if (node.selection) {
+            const subSet = Object.keys(node.selection)[0]
+            if (subSet)
+              recurse(
+                node.selection[Object.keys(node.selection)[0]],
+                Object.keys(node.selection)[0]
+              )
+          }
+        })
+      }
+
+      recurse(
+        d.value.selection[Object.keys(d.value.selection)[0]],
+        Object.keys(d.value.selection)[0]
+      )
     }
 
     return {

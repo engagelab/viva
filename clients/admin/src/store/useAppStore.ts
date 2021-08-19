@@ -8,16 +8,11 @@ import {
   APIRequestPayload,
   XHR_REQUEST_TYPE,
   Callback,
-  // UserRecordingInProcess,
+  UserRecordingInProcess,
 } from '../types/main'
-// import { useDeviceService } from './useDevice'
 
 import { useVideoStore } from './useVideoStore'
-// import { useDatasetStore } from './useDatasetStore'
-// const { actions: deviceActions } = useDeviceService()
 const { actions: videoActions } = useVideoStore()
-// const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
-// import { appVersion } from '../constants'
 
 // ------------  Types --------------
 interface Dialog {
@@ -25,9 +20,6 @@ interface Dialog {
   data: Record<string, unknown>
   doneCallback: (d: boolean) => void
 }
-// interface ServerStatus {
-//   cpuload: Record<string, unknown>
-// }
 interface Snackbar {
   type: string
   visibility: boolean // A toggle for showing error messages to the user
@@ -50,6 +42,7 @@ export interface AppState {
   disableDelays: boolean
   snackbar: Snackbar
   deviceStatus: DeviceStatus
+  userRecordingsInProcess: UserRecordingInProcess[]
 }
 // ------------  State (internal) --------------
 const _appState: Ref<AppState> = ref({
@@ -85,7 +78,7 @@ const _appState: Ref<AppState> = ref({
     type: 'none',
     text: '',
   },
-  // userRecordingsInProcess: new Array<UserRecordingInProcess>(),
+  userRecordingsInProcess: [],
 })
 
 // ------------  Getters (Read only) --------------
@@ -94,20 +87,12 @@ interface Getters {
   lastActive: ComputedRef<number>
   isLoggedIn: ComputedRef<boolean>
   isAuthorised: ComputedRef<boolean>
-  // useCordova: ComputedRef<boolean>
-  // appIsOld: ComputedRef<boolean>
-  // isFullScreen: ComputedRef<boolean>
   dialog: ComputedRef<Dialog>
   snackbar: ComputedRef<Snackbar>
-  // deviceStatus: ComputedRef<DeviceStatus>
-  // serverStatus: ComputedRef<ServerStatus>
   user: ComputedRef<User>
-  // users: ComputedRef<UserRecordingInProcess[]>
+  usersDrafts: ComputedRef<UserRecordingInProcess[]>
 }
 const getters = {
-  // get hostType(): ComputedRef<string> {
-  //   return computed(() => _appState.value.hostType)
-  // },
   get lastActive(): ComputedRef<number> {
     return computed(() => _appState.value.deviceStatus.lastActive)
   },
@@ -117,54 +102,34 @@ const getters = {
   get isAuthorised(): ComputedRef<boolean> {
     return computed(() => _appState.value.isAuthorised)
   },
-  // get useCordova(): ComputedRef<boolean> {
-  //   return computed(() => _appState.value.useCordova)
-  // },
-  // get appIsOld(): ComputedRef<boolean> {
-  //   return computed(() => _appState.value.appIsOld)
-  // },
-  // get isFullScreen(): ComputedRef<boolean> {
-  //   return computed(() => _appState.value.deviceStatus.isFullScreen)
-  // },
   get dialog(): ComputedRef<Dialog> {
     return computed(() => _appState.value.dialog)
   },
   get snackbar(): ComputedRef<Snackbar> {
     return computed(() => _appState.value.snackbar)
   },
-  // get deviceStatus(): ComputedRef<DeviceStatus> {
-  //   return computed(() => _appState.value.deviceStatus)
-  // },
-  // get serverStatus(): ComputedRef<ServerStatus> {
-  //   return computed(() => _appState.value.serverStatus)
-  // },
   get user(): ComputedRef<User> {
     return computed(() => _appState.value.selectedUser)
   },
-  // get users(): ComputedRef<UserRecordingInProcess[]> {
-  //   return computed(() => _appState.value.userRecordingsInProcess)
-  // },
+  get usersDrafts(): ComputedRef<UserRecordingInProcess[]> {
+    return computed(() => _appState.value.userRecordingsInProcess)
+  },
 }
 // ------------  Actions --------------
 interface Actions {
-  // setFullScreen: (value: boolean) => void
-  // setUseCordova: (value: boolean) => void
   activeNow: () => void
   addDraftIdToUser: (fileID: string) => void
   removeDraftId: (fileID: string) => void
   setDialog: (dialog: Dialog) => void
   setSnackbar: (newSnackbar: Snackbar) => void
   errorMessage: (message: Error | string) => void
-  // detectDevice: () => void
-  // detectAppVersion: () => void
   logout: () => void
   updateUserAtServer: (user: User | void) => Promise<void>
   redirectedLogin: () => Promise<void>
   getLoginSession: () => Promise<void>
   tokenLogin: () => Promise<boolean>
-  // setCordovaPath: (path: string[]) => void
-  // getUsers: () => Promise<void>
   fetchLTIData: () => Promise<void>
+  getUsersDrafts: () => Promise<void>
 }
 const actions = {
   fetchLTIData(): Promise<void> {
@@ -237,36 +202,6 @@ const actions = {
       callback: undefined,
     })
   },
-  // detectDevice(): void {
-  //   const ua = navigator.userAgent
-  //   console.log(ua)
-  //   const deviceStatus = {
-  //     mobile: ua.indexOf('Mobi') !== -1,
-  //     browser:
-  //       ua.indexOf('Chrome') !== -1 && ua.indexOf('Safari') !== -1
-  //         ? 'Chrome'
-  //         : 'Safari',
-  //   }
-  //   _appState.value.deviceStatus.mobile = deviceStatus.mobile
-  //   _appState.value.deviceStatus.browser = deviceStatus.browser
-  // },
-  // detectAppVersion(): void {
-  //   const payload: APIRequestPayload = {
-  //     method: XHR_REQUEST_TYPE.GET,
-  //     route: '/api/appversion',
-  //   }
-  //   apiRequest<{ version: string }>(payload).then((result) => {
-  //     if (appVersion !== result.version) {
-  //       _appState.value.appIsOld = true
-  //       this.setSnackbar({
-  //         visibility: true,
-  //         text: 'Viva appen er en eldre versjon, og du må laste ned en ny versjon fra Appstore',
-  //         callback: undefined,
-  //         type: 'message',
-  //       })
-  //     }
-  //   })
-  // },
   logout(): void {
     _appState.value.isLoggedIn = false
     _appState.value.isAuthorised = false
@@ -314,10 +249,6 @@ const actions = {
 
             actions.activeNow()
             _appState.value.selectedUser = user
-            // actions.setCordovaPath([CordovaPathName.users, user._id])
-            // deviceActions.setCordovaPath([CordovaPathName.users, user._id])
-            // videoActions.setCordovaPath([CordovaPathName.users, user._id])
-            //datasetActions.setPresetDatasetConfig(user.datasetConfig)
           } else {
             actions.errorMessage('User not found')
             actions.logout()
@@ -338,8 +269,6 @@ const actions = {
         credentials: true,
         body: u,
       }
-      // if (datasetGetters.presetDatasetConfig.value)
-      //   u.datasetConfig = datasetGetters.presetDatasetConfig.value
       return apiRequest<User>(payload)
         .then((su: User) => {
           _appState.value.selectedUser = su
@@ -350,22 +279,25 @@ const actions = {
         })
     } else return Promise.resolve()
   },
-  // getUsers(): Promise<void> {
-  //   const payload: APIRequestPayload = {
-  //     method: XHR_REQUEST_TYPE.GET,
-  //     route: '/api/users',
-  //     credentials: true,
-  //   }
-  //   return apiRequest<UserRecordingInProcess[]>(payload)
-  //     .then((userRecordings) => {
-  //       _appState.value.userRecordingsInProcess = userRecordings
-  //       return Promise.resolve()
-  //     })
-  //     .catch((error: Error) => {
-  //       actions.errorMessage(error)
-  //       return Promise.reject(error)
-  //     })
-  // },
+  getUsersDrafts(): Promise<void> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.GET,
+      route: '/api/users/drafts',
+      credentials: true,
+    }
+    return apiRequest<User[]>(payload)
+      .then((usersDrafts) => {
+        _appState.value.userRecordingsInProcess = usersDrafts.map((u) => ({
+          name: u.profile.username,
+          videos: u.videos.draftIDs,
+        }))
+        return Promise.resolve()
+      })
+      .catch((error: Error) => {
+        actions.errorMessage(error)
+        return Promise.reject(error)
+      })
+  },
 
   // Try to exchange token for a session if the token already exists
   tokenLogin: function (): Promise<boolean> {

@@ -516,7 +516,7 @@ export class Dataset {
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manual,
+      kind: CONSENT_TYPES.manuel,
     }
     this.users = { owner: '' }
     this.selection = {}
@@ -534,7 +534,7 @@ export class Dataset {
         lockedBy: data.status.lockedBy,
       }
       this.consent = {
-        kind: data.consent.kind || CONSENT_TYPES.manual,
+        kind: data.consent.kind || CONSENT_TYPES.manuel,
       }
       this.users = {
         owner: data.users.owner,
