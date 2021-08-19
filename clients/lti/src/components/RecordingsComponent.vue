@@ -5,7 +5,7 @@
     <div class="mx-3">
       <button
         class="px-4 py-2 bg-green-400 rounded-lg w-full my-1"
-        v-for="(video, videoIndex) in videoList"
+        v-for="(video, videoIndex) in videos"
         :key="videoIndex"
         @click="selectVideo(video)"
       >
@@ -15,7 +15,7 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, computed, onMounted } from 'vue'
+import { defineComponent, computed, onMounted, PropType } from 'vue'
 import { useVideoStore } from '@/store/useVideoStore'
 import { Video } from '../types/main'
 
@@ -24,6 +24,9 @@ const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
 export default defineComponent({
   name: 'Recording list',
+  props: {
+    videos: { type: Object as PropType<Video[]>, required: true },
+  },
   setup() {
     const videoList = computed(() => videoGetters.videos.value)
 

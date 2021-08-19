@@ -6,19 +6,6 @@
   >
     <div class="flex flex-col flex-grow scrolling-touch w-full relative">
       <div class="flex-none bg-black" @click="toggleScreenMode()">
-        <video
-          :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
-          ref="playbackVideo"
-          id="playbackVideo"
-          oncontextmenu="return false;"
-          :src="`${baseUrl}/api/video/file?videoref=${selectedVideo.details.id}`"
-          playsinline
-          webkit-playsinline
-          preload="metadata"
-          :type="videoMimeType"
-        >
-          <track kind="subtitles" />
-        </video>
         <video class="video-js" ref="smplayer" id="smplayer">
           <source
             :src="`https://localhost:8000/api/video/file?videoref=${selectedVideo.details.id}`"
@@ -33,41 +20,10 @@
         <div class="flex flex-grow-0 justify-center items-center">
           <div class="mx-4 text-white">{{ playerTime }}</div>
         </div>
-
-        <div
-          class="flex flex-grow-0 justify-center content-center items-center"
-          v-show="videoDataLoaded"
-        >
-          <SVGSymbol
-            v-show="!playing"
-            class="pr-4 justify-center content-center"
-            applyClasses="w-6 h-8 md:w-12"
-            @click="startPlaying()"
-            symbol="play"
-          ></SVGSymbol>
-          <SVGSymbol
-            v-show="playing"
-            class="pr-4 justify-center content-center"
-            applyClasses="w-6 j-8 md:w-12"
-            @click="stopPlaying()"
-            symbol="stop"
-          ></SVGSymbol>
-        </div>
-      </div>
-
-      <div class="flex bg-black p-4 md:p-4">
-        <Scrubber
-          type="range"
-          v-model="moveScrubber"
-          :max="scrubberMax"
-          :min="scrubberMin"
-          :step="step"
-          @input="(newValue) => edlUpdated('move', [newValue])"
-        />
       </div>
     </div>
 
-    <div v-for="(share, index) in video.users.sharing" :key="index">
+    <!-- <div v-for="(share, index) in video.users.sharing" :key="index">
       <Share
         class="bg-blue-200 p-2"
         :share="share"
@@ -76,15 +32,15 @@
         @updated="(share) => updateShare(share, index)"
         @deleted="deleteShare(index)"
       ></Share>
-    </div>
-    <div class="flex m-4">
+    </div> -->
+    <!-- <div class="flex m-4">
       <Button
         class="bg-blue-400 self-center rounded-lg"
         id="button-accept"
         @click="addGroupShare"
         >+ Add new group share
       </Button>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -93,20 +49,19 @@ import { defineComponent, ref, Ref, computed, onMounted, watch } from 'vue'
 import { Video, VideoSharing } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
-import { baseUrl } from '@/constants'
 import videojs, { VideoJsPlayer } from 'video.js'
-import Button from '@/components/base/Button.vue'
-import SVGSymbol from '@/components/base/SVGSymbol.vue'
-import Scrubber from '@/components/base/Scrubber.vue'
-import Share from '@/components/Share.vue'
+// import Button from '@/components/base/Button.vue'
+// import SVGSymbol from '@/components/base/SVGSymbol.vue'
+// import Scrubber from '@/components/base/Scrubber.vue'
+// import Share from '@/components/Share.vue'
 
 export default defineComponent({
-  name: 'videoComponent',
+  name: 'videojsComponent',
   components: {
-    Button,
-    Scrubber,
-    Share,
-    SVGSymbol,
+    // Button,
+    // Scrubber,
+    // Share,
+    // SVGSymbol,
   },
   props: {
     page: {
@@ -385,7 +340,6 @@ export default defineComponent({
       updateShare,
       deleteShare,
       // data
-      baseUrl,
       selectedVideo,
       video,
       playerTime,
