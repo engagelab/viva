@@ -86,6 +86,9 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
         response.setHeader('Content-Length', file.ContentLength)
         response.setHeader('Content-Range', `0-${file.ContentLength}`)
         file.Body.pipe(response)
+      }).catch((error) => {
+        console.log(`Video not found: ${keyname}`)
+        response.status(404).send(error)
       })
     }
   })
