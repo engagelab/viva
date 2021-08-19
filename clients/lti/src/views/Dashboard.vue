@@ -1,29 +1,38 @@
 <template>
-  <div>
-    <div class="flex flex-col p-4">
-      <ul class="flex border-b space-x-2">
-        <div class="hover:bg-blue-300 cursor-pointer" @click="showTab = 'all'">
-          AllVideos
-        </div>
-        <div class="hover:bg-blue-300 cursor-pointer" @click="showTab = 'own'">
-          My Recordings
-        </div>
-        <div
-          class="hover:bg-blue-300 cursor-pointer"
-          @click="showTab = 'shared'"
-        >
-          Shared Videos
-        </div>
-      </ul>
-    </div>
-    <div class="flex flex-wrap my-2">
-      <div class="w-1/6">
-        <RecordingsComponent :videos="videos" />
-        <!-- <RecordingsComponent /> -->
+  <div class="bg-grey-bg p-4">
+    <div class="flex flex-row font-serious font-extralight text-white py-4">
+      <div
+        class="cursor-pointer mr-6"
+        :class="{ 'font-medium': currentTab === 'all' }"
+        @click="showTab('all')"
+      >
+        All
       </div>
-      <div class="w-5/6">
-        <!-- <VideoComponent :key="video ? video.details.id : 'video component'" /> -->
-        <VideoJsComponent :key="video ? video.details.id : 'video component'" />
+      <div
+        class="cursor-pointer mr-6"
+        :class="{ 'font-medium': currentTab === 'own' }"
+        @click="showTab('own')"
+      >
+        My Videos
+      </div>
+      <div
+        class="cursor-pointer mr-6"
+        :class="{ 'font-medium': currentTab === 'shared' }"
+        @click="showTab('shared')"
+      >
+        Shared With Me
+      </div>
+    </div>
+    <div>
+      <!--VideoJsComponent :key="video ? video.details.id : 'video component'" /-->
+      <VideoComponent v-if="video" :key="video.details.id" />
+      <div v-else class="flex flex-row flex-wrap gap-4">
+        <VideoCard
+          v-for="(video, videoIndex) in videos"
+          :key="videoIndex"
+          :video="video"
+          @click="selectVideo(video)"
+        />
       </div>
     </div>
   </div>
@@ -31,37 +40,49 @@
 
 <script lang="ts">
 // @ is an alias to /src
-import { defineComponent, ref, computed } from 'vue'
-/* import router from '../router' */
+import { defineComponent, ref, computed, onMounted } from 'vue'
+import { Video } from '../types/main'
 
 import { useAppStore } from '../store/useAppStore'
 import { useVideoStore } from '../store/useVideoStore'
-/* import SlButton from '@/components/base/SlButton.vue' */
 
-import RecordingsComponent from '@/components/RecordingsComponent.vue'
-// import VideoComponent from '@/components/VideoComponent.vue'
-import VideoJsComponent from '@/components/VideojsComponent.vue'
+import VideoComponent from '@/components/VideoComponent.vue'
+import VideoCard from '@/components/VideoCard.vue'
+// import VideoJsComponent from '@/components/VideojsComponent.vue'
 
 export default defineComponent({
   name: 'Dashboard',
   components: {
-    /*  SlButton, */
-    RecordingsComponent,
-    VideoJsComponent,
+    VideoCard,
+    VideoComponent,
+    // VideoJsComponent,
   },
   setup() {
     const { getters: appGetters, actions: appActions } = useAppStore()
-    const { getters: videoGetters } = useVideoStore()
+    const { getters: videoGetters, actions: videoActions } = useVideoStore()
     const user = appGetters.user.value
     appActions.fetchLTIData()
-    const showTab = ref('all')
+    const currentTab = ref('all')
+
+    onMounted(() => {
+      videoActions.getVideoMetadata()
+    })
 
     const video = videoGetters.selectedVideo
 
+    function showTab(tabName: string) {
+      currentTab.value = tabName
+      videoActions.selectNoVideo()
+    }
+
+    function selectVideo(video: Video) {
+      videoActions.selectVideo(video)
+    }
+    videoActions.selectNoVideo()
+
     const videos = computed(() => {
-      console.log(videoGetters.videos.value)
-      if (showTab.value == 'all') return videoGetters.videos.value
-      else if (showTab.value == 'shared')
+      if (currentTab.value == 'all') return videoGetters.videos.value
+      else if (currentTab.value == 'shared')
         return videoGetters.videosSharedWithMe.value
       else
         return videoGetters.videos.value.filter(
@@ -72,7 +93,9 @@ export default defineComponent({
     return {
       user,
       video,
+      selectVideo,
       showTab,
+      currentTab,
       videos,
     }
   },

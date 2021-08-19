@@ -65,7 +65,6 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 
 // Get a video file from S3 (Educloud)
 router.get('/video/file', utilities.authoriseUser, (request, response) => {
-  console.log('Getting video from S3...')
   Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) {
@@ -73,13 +72,14 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
       return response.status(200).end()
     }
     else {
+      if (!video.users.owner) console.log(`Bad owner! ${video.id}`)
       const keyname = `${video.users.owner.toString()}/${video.file.name}.${
         video.file.extension
       }`
       const sseKey = video.file.encryptionKey
       const sseMD5 = video.file.encryptionMD5
-      console.log(`Requesting S3 video: ${keyname}`)
       downloadS3File({ keyname, sseKey, sseMD5 }).then((file) => {
+        console.log(`S3 Video success: ${keyname}`)
         // These headers are required to enable seeking `currentTime` in Chrome browser
         response.setHeader('content-type', 'video/mp4')
         response.setHeader('Accept-Ranges', 'bytes')
@@ -87,7 +87,7 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
         response.setHeader('Content-Range', `0-${file.ContentLength}`)
         file.Body.pipe(response)
       }).catch((error) => {
-        console.log(`Video not found: ${keyname}`)
+        console.log(`S3 Video not found: ${keyname}`)
         response.status(404).send(error)
       })
     }

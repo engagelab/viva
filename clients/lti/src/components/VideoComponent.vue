@@ -19,12 +19,6 @@
         >
           <track kind="subtitles" />
         </video>
-        <video class="video-js" ref="smplayer" id="smplayer">
-          <source
-            :src="`https://localhost:8000/api/video/file?videoref=${selectedVideo.details.id}`"
-            type="video/mp4"
-          />
-        </video>
       </div>
 
       <div

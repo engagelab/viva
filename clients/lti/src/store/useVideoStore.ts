@@ -80,6 +80,7 @@ const getters = {
 interface Actions {
   getVideoMetadata: () => Promise<void>
   selectVideo: (video: Video) => Promise<void>
+  selectNoVideo: () => void
   updateMetadata: (video: Video) => Promise<void>
   fetchVideoData: (videoId: string) => Promise<{ url: string }>
   updateVideoMetaData: (selectedVideo: Video) => Promise<Video>
@@ -159,6 +160,10 @@ const actions = {
     state.value.selectedVideo = video
     // state.value.selectedVideoURL = response.url
     return Promise.resolve()
+  },
+
+  selectNoVideo: function (): void {
+    state.value.selectedVideo = undefined
   },
 
   // Update the video in store with the given video (by fileId) and save to local disk

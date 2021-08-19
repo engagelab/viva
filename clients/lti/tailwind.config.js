@@ -26,6 +26,10 @@ module.exports = {
       indigo: colors.indigo,
       purple: colors.violet,
       pink: colors.pink,
+
+      'grey-bg': '#121212',
+      'grey-card': '#1a1a1a',
+      'grey-text': '#888888',
     },
     spacing: {
       px: '1px',
