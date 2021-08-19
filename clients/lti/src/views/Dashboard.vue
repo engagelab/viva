@@ -22,7 +22,8 @@
         <!-- <RecordingsComponent /> -->
       </div>
       <div class="w-5/6">
-        <VideoComponent :key="video ? video.details.id : 'video component'" />
+        <!-- <VideoComponent :key="video ? video.details.id : 'video component'" /> -->
+        <VideoJsComponent :key="video ? video.details.id : 'video component'" />
       </div>
     </div>
   </div>
@@ -38,14 +39,15 @@ import { useVideoStore } from '../store/useVideoStore'
 /* import SlButton from '@/components/base/SlButton.vue' */
 
 import RecordingsComponent from '@/components/RecordingsComponent.vue'
-import VideoComponent from '@/components/VideoComponent.vue'
+// import VideoComponent from '@/components/VideoComponent.vue'
+import VideoJsComponent from '@/components/VideojsComponent.vue'
 
 export default defineComponent({
   name: 'Dashboard',
   components: {
     /*  SlButton, */
     RecordingsComponent,
-    VideoComponent,
+    VideoJsComponent,
   },
   setup() {
     const { getters: appGetters, actions: appActions } = useAppStore()
