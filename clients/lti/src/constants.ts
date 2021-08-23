@@ -91,6 +91,19 @@ enum CONSENT_SELECTION {
   article6 = 'article6',
 }
 
+enum VIDEO_SHARING_MODE {
+  feed = 'feed',
+  myVideos = 'myVideos',
+  sharedToMe = 'sharedToMe',
+}
+
+enum VIDEO_SHARING_STATUS {
+  annotated = 'annotated',
+  users = 'users',
+  edl = 'edl',
+  comment = 'comment',
+}
+
 export {
   deviceType,
   baseUrl,
@@ -101,6 +114,8 @@ export {
   VIDEO_STORAGE_TYPES,
   CONSENT_SELECTION,
   VIDEO_STATUS_TYPES,
+  VIDEO_SHARING_MODE,
+  VIDEO_SHARING_STATUS,
   consentTypes,
   cordovaConstants,
   appVersion,

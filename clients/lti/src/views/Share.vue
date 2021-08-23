@@ -1,6 +1,7 @@
 <template>
   <div class="my-2 flex flex-row">
     <div class="flex flex-col">
+      <Player @currenttime="(t) => (videoCurrentTime = t)" />
       <div class="flex flex-row">
         <AnswerInput
           class="m-2"
@@ -28,7 +29,9 @@
         @updated="(edl) => updateEDL(edl)"
       />
       <div class="flex flex-grow flex-col justify-end">
-        <Button class="mx-2" v-if="unsavedData" @vclick="save()">Save</Button>
+        <Button class="mx-2" v-if="unsavedData" @vclick="updateShare()"
+          >Save</Button
+        >
         <Button class="text-red-600 h-10 my-4 mx-2" @vclick="deleteShare()"
           >Delete</Button
         >
@@ -61,13 +64,16 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref, Ref, PropType, watch, toRefs } from 'vue'
+import { defineComponent, ref, Ref, watch } from 'vue'
+import { ListItem } from '@/types/main'
 import { useAppStore } from '@/store/useAppStore'
+import { useVideoStore } from '@/store/useVideoStore'
 import { EditDecriptionList, NameAndRole, VideoSharing } from '@/types/main'
 import AnswerInput from '@/components/base/AnswerInput.vue'
 import Button from '@/components/base/Button.vue'
-import Trim from './Trim.vue'
+import Trim from '@/components/Trim.vue'
 const { getters: appGetters } = useAppStore()
+const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
 interface NARListItem {
   itemName: string
@@ -80,43 +86,41 @@ export default defineComponent({
     Trim,
     Button,
   },
-  props: {
-    share: {
-      type: Object as PropType<VideoSharing>,
-      required: true,
-    },
-    videoCurrentTime: {
-      type: Number,
-      required: true,
-    },
-    videoDuration: {
-      type: Number,
-      required: true,
-    },
-  },
-  emits: ['updated', 'deleted'],
-  setup(props, context) {
-    const { share } = toRefs(props)
+  setup() {
+    const selectedItem = videoGetters.selectedItem
     const showUsers = ref(false)
     const unsavedData = ref(false)
+    const videoCurrentTime = ref(0)
+    let videoDuration = 0
+    let videoID = ''
+    const myLTIID = appGetters.user.value.profile.ltiUserId
     let NARList: NARListItem[] = appGetters.canvasData.value.namesAndRoles.map(
       (u) => ({ itemName: u.name, item: u })
     )
     const localShare: Ref<VideoSharing> = ref({
       _id: '',
+      creator: myLTIID,
       users: [],
       access: false,
+      title: '',
       description: '',
       edl: { trim: [0, 0], blur: [] },
+      comments: [],
     })
 
-    const resetData = (s: VideoSharing) => {
-      localShare.value = {
-        _id: s._id || '',
-        users: s.users,
-        access: s.access,
-        description: s.description,
-        edl: s.edl,
+    const resetData = (li: ListItem) => {
+      const s = li.share
+      if (s) {
+        localShare.value = {
+          _id: s._id || '',
+          creator: s.creator,
+          users: s.users,
+          access: s.access,
+          title: s.title,
+          description: s.description,
+          edl: s.edl,
+          comments: s.comments,
+        }
       }
     }
 
@@ -126,26 +130,37 @@ export default defineComponent({
     }
 
     watch(
-      () => share.value,
-      (s) => resetData(s)
+      () => selectedItem.value,
+      (s) => {
+        if (s) {
+          videoID = s.video.details.id
+          videoDuration = s.video.details.duration
+          resetData(s)
+        }
+      }
     )
-    resetData(share.value)
+    if (selectedItem.value) {
+      videoID = selectedItem.value.video.details.id
+      resetData(selectedItem.value)
+    }
 
-    const save = function () {
-      context.emit('updated', localShare.value)
+    const updateShare = function () {
+      videoActions.updateShare(videoID, localShare.value)
       unsavedData.value = false
     }
 
     const deleteShare = function () {
-      context.emit('deleted')
+      videoActions.deleteShare(videoID, localShare.value)
     }
 
     return {
+      videoDuration,
+      videoCurrentTime,
       NARList,
       localShare,
       showUsers,
       updateEDL,
-      save,
+      updateShare,
       deleteShare,
       unsavedData,
     }

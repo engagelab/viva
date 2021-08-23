@@ -18,7 +18,7 @@ const fileOperations = require('./subprocesses/fileOperations')
 const {
   fetchStorage,
   sendToLagringshotell,
-  sendToEducloud,
+  sendVideoToEducloud,
 } = require('./services/storage')
 
 // Initialise queues and populate with unfinished work
@@ -82,7 +82,9 @@ const advanceVideoStatus = (video, pStatus) => {
   video.save((error) => {
     if (error) {
       console.log(
-        `Error saving Video to DB. Video details ID: ${video.details.id} Error: ${error.toString()}`
+        `Error saving Video to DB. Video details ID: ${
+          video.details.id
+        } Error: ${error.toString()}`
       )
     }
     delete activelyProcessing[pStatus]
@@ -97,7 +99,9 @@ const beginProcessingVideo = (pStatus) => {
   nextVideo.save((error) => {
     if (error) {
       return console.log(
-        `Error saving Video to DB during begin processing. Video fileId: ${nextVideo.details.id} Error: ${error.toString()}`
+        `Error saving Video to DB during begin processing. Video fileId: ${
+          nextVideo.details.id
+        } Error: ${error.toString()}`
       )
     }
 
@@ -153,49 +157,52 @@ const beginProcessingVideo = (pStatus) => {
       }
       // Here the video can be copied to a final storage location
       case videoStatusTypes.edited: {
-        fetchStorage(nextVideo).then((stores) => {
-          const allPromises = []
-          stores.forEach((store) => {
-            console.log(store)
-            if (store.kind == videoStorageTypes.lagringshotell) {
-              const LHpromise = sendToLagringshotell({
-                video: nextVideo,
-                store,
-                subDirSrc: videoFolderNames.edited,
-              })
-              allPromises.push(LHpromise)
-            } else if (store.kind == videoStorageTypes.educloud) {
-              const ECpromise = sendToEducloud({
-                video: nextVideo,
-                subDirSrc: videoFolderNames.edited,
-              })
-              allPromises.push(ECpromise)
-            }
-          })
-          Promise.all(allPromises)
-            .then(() => {
-              console.log('Continuing after all resolved')
-              fileOperations
-                .moveFile(
-                  nextVideo,
-                  videoFolderNames.edited,
-                  videoFolderNames.stored
-                )
-                .then(() => advanceVideoStatus(nextVideo, pStatus))
-                .catch((err) => {
-                  console.log(`Error after move file. Error: ${err}`)
-                  errorProcessingVideo(err, pStatus)
+        fetchStorage(nextVideo)
+          .then((stores) => {
+            const allPromises = []
+            stores.forEach((store) => {
+              console.log(store)
+              if (store.kind == videoStorageTypes.lagringshotell) {
+                const LHpromise = sendToLagringshotell({
+                  video: nextVideo,
+                  store,
+                  subDirSrc: videoFolderNames.edited,
                 })
+                allPromises.push(LHpromise)
+              } else if (store.kind == videoStorageTypes.educloud) {
+                const ECpromise = sendVideoToEducloud({
+                  video: nextVideo,
+                  subDirSrc: videoFolderNames.edited,
+                })
+                allPromises.push(ECpromise)
+              }
             })
-            .catch((err) => {
-              console.log(`Error after all resolved. Error: ${err}`)
-              errorProcessingVideo(err, pStatus)
-            })
-        })
-        .catch((err) => {
-          console.log(`Error finding dataset for video ${nextVideo.details.name}: ${err}`)
-          errorProcessingVideo(err, pStatus)
-        })
+            Promise.all(allPromises)
+              .then(() => {
+                console.log('Continuing after all resolved')
+                fileOperations
+                  .moveFile(
+                    nextVideo,
+                    videoFolderNames.edited,
+                    videoFolderNames.stored
+                  )
+                  .then(() => advanceVideoStatus(nextVideo, pStatus))
+                  .catch((err) => {
+                    console.log(`Error after move file. Error: ${err}`)
+                    errorProcessingVideo(err, pStatus)
+                  })
+              })
+              .catch((err) => {
+                console.log(`Error after all resolved. Error: ${err}`)
+                errorProcessingVideo(err, pStatus)
+              })
+          })
+          .catch((err) => {
+            console.log(
+              `Error finding dataset for video ${nextVideo.details.name}: ${err}`
+            )
+            errorProcessingVideo(err, pStatus)
+          })
         break
       }
       // Decide if we keep the video ready for user-authenticated transfer to a third party
@@ -205,14 +212,21 @@ const beginProcessingVideo = (pStatus) => {
           .map((s) => s.kind)
           .some((kind) => storageTypesRequiringTransfer.includes(kind))
         if (!keepVideo) {
-          // TODO: Remove file here, rather than moving to 'complete' folder
+          // Remove thumbnail
           fileOperations
-            .moveFile(
-              nextVideo,
-              videoFolderNames.stored,
-              videoFolderNames.complete
+            .removeFile(
+              `${nextVideo.file.name}.jpg`,
+              videoFolderNames.thumbnails
             )
-            .then(() => advanceVideoStatus(nextVideo, pStatus))
+            .then(() =>
+              fileOperations
+                .moveFile(
+                  nextVideo,
+                  videoFolderNames.stored,
+                  videoFolderNames.complete
+                )
+                .then(() => advanceVideoStatus(nextVideo, pStatus))
+            )
             .catch((err) => errorProcessingVideo(err, pStatus))
         }
         break

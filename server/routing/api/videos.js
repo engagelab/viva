@@ -2,7 +2,6 @@
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
 
-// const https = require('https')
 const router = require('express').Router()
 const utilities = require('../../utilities')
 const { downloadS3File } = require('../../services/storage')
@@ -19,9 +18,7 @@ const Video = require('../../models/Video')
  */
 router.get('/videos', utilities.authoriseUser, (request, response) => {
   const u = response.locals.user
-  //const users = request.session.canvasData.namesAndRoles
   const isAdmin = utilities.hasMinimumUserRole(u, userRoles.admin)
-  //  console.log(request.session.canvasData)
   let query = {}
   if (isAdmin) {
     query = {}
@@ -64,6 +61,7 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 })
 
 // Get a video file from S3 (Educloud)
+// set request.query.mode to 'thumbnail' to get a thumbnail instead of the video file
 router.get('/video/file', utilities.authoriseUser, (request, response) => {
   Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
     if (error) return response.status(403).end()
@@ -73,9 +71,8 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
     }
     else {
       if (!video.users.owner) console.log(`Bad owner! ${video.id}`)
-      const keyname = `${video.users.owner.toString()}/${video.file.name}.${
-        video.file.extension
-      }`
+      let extension = request.query.mode === 'thumbnail' ? 'jpg' : video.file.extension
+      const keyname = `${video.users.owner.toString()}/${video.file.name}.${extension}`
       const sseKey = video.file.encryptionKey
       const sseMD5 = video.file.encryptionMD5
       downloadS3File({ keyname, sseKey, sseMD5 }).then((file) => {
@@ -86,9 +83,9 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
         response.setHeader('Content-Length', file.ContentLength)
         response.setHeader('Content-Range', `0-${file.ContentLength}`)
         file.Body.pipe(response)
-      }).catch((error) => {
+      }).catch((error2) => {
         console.log(`S3 Video not found: ${keyname}`)
-        response.status(404).send(error)
+        response.status(404).send(error2)
       })
     }
   })
@@ -111,24 +108,4 @@ router.post('/video', utilities.authoriseUser, async (request, response) => {
   })
 })
 
-// To update the sharing info for a selected video
-router.put(
-  '/video/share',
-  utilities.authoriseUser,
-  async (request, response, next) => {
-    const query = { 'details.id': request.body.details.id }
-    Video.findOne(query, (error, v) => {
-      if (error || !v) {
-        return response.status(400).end()
-      } else {
-        const video = { ...request.body }
-        v.users = video.users
-        v.save((saveError) => {
-          if (saveError) return next(saveError)
-          response.end()
-        })
-      }
-    })
-  }
-)
 module.exports = router

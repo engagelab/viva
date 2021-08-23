@@ -113,8 +113,22 @@ interface Actions {
   detectOldApp: () => Promise<void>
   fetchLTIData: () => Promise<void>
   redirectedLogin: () => Promise<void>
+  nameAndRole: (ltiID: string) => NameAndRole
 }
 const actions = {
+  nameAndRole(ltiID: string): NameAndRole {
+    const namerole = _appState.value.canvasData.namesAndRoles.find(
+      (nr) => nr.ltiUserID === ltiID
+    )
+    return (
+      namerole || {
+        name: 'not found',
+        ltiUserID: ltiID,
+        email: '',
+        roles: [],
+      }
+    )
+  },
   fetchLTIData(): Promise<void> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,

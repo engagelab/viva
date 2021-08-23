@@ -3,35 +3,60 @@
     <div class="flex flex-row font-serious font-extralight text-white py-4">
       <div
         class="cursor-pointer mr-6"
-        :class="{ 'font-medium': currentTab === 'all' }"
-        @click="showTab('all')"
+        :class="{ 'font-medium': currentTab === VIDEO_SHARING_MODE.feed }"
+        @click="showTab(VIDEO_SHARING_MODE.feed)"
       >
-        All
+        Feed
       </div>
       <div
         class="cursor-pointer mr-6"
-        :class="{ 'font-medium': currentTab === 'own' }"
-        @click="showTab('own')"
+        :class="{ 'font-medium': currentTab === VIDEO_SHARING_MODE.myVideos }"
+        @click="showTab(VIDEO_SHARING_MODE.myVideos)"
       >
         My Videos
       </div>
       <div
         class="cursor-pointer mr-6"
-        :class="{ 'font-medium': currentTab === 'shared' }"
-        @click="showTab('shared')"
+        :class="{
+          'font-medium': currentTab === VIDEO_SHARING_MODE.sharedToMe,
+        }"
+        @click="showTab(VIDEO_SHARING_MODE.sharedToMe)"
       >
-        Shared With Me
+        Shared To Me
       </div>
     </div>
     <div>
-      <!--VideoJsComponent :key="video ? video.details.id : 'video component'" /-->
-      <VideoComponent v-if="video" :key="video.details.id" />
-      <div v-else class="flex flex-row flex-wrap gap-4">
-        <VideoCard
-          v-for="(video, videoIndex) in videos"
+      <div
+        v-if="currentTab === VIDEO_SHARING_MODE.feed"
+        class="flex flex-row flex-wrap gap-4"
+      >
+        <VideoFeedCard
+          v-for="(v, videoIndex) in feed"
           :key="videoIndex"
-          :video="video"
-          @click="selectVideo(video)"
+          :video="v"
+          @click="selectVideo(v.item)"
+        />
+      </div>
+      <div
+        v-else-if="currentTab === VIDEO_SHARING_MODE.myVideos"
+        class="flex flex-row flex-wrap gap-4"
+      >
+        <VideoMyCard
+          v-for="(v, videoIndex) in myVideos"
+          :key="videoIndex"
+          :video="v"
+          @click="selectVideo(v)"
+        />
+      </div>
+      <div
+        v-else-if="currentTab === VIDEO_SHARING_MODE.sharedToMe"
+        class="flex flex-row flex-wrap gap-4"
+      >
+        <VideoSharedCard
+          v-for="(v, videoIndex) in sharedToMe"
+          :key="videoIndex"
+          :video="v"
+          @click="selectVideo(v)"
         />
       </div>
     </div>
@@ -40,109 +65,57 @@
 
 <script lang="ts">
 // @ is an alias to /src
-import { defineComponent, ref, computed, onMounted } from 'vue'
-import { Video } from '../types/main'
+import { defineComponent, ref, onMounted, Ref } from 'vue'
+import { VIDEO_SHARING_MODE } from '@/constants'
+import { ListItem } from '@/types/main'
 
 import { useAppStore } from '../store/useAppStore'
 import { useVideoStore } from '../store/useVideoStore'
 
-import VideoComponent from '@/components/VideoComponent.vue'
-import VideoCard from '@/components/VideoCard.vue'
-// import VideoJsComponent from '@/components/VideojsComponent.vue'
+import VideoFeedCard from '@/components/VideoFeedCard.vue'
+import VideoMyCard from '@/components/VideoMyCard.vue'
+import VideoSharedCard from '@/components/VideoSharedCard.vue'
 
 export default defineComponent({
   name: 'Dashboard',
   components: {
-    VideoCard,
-    VideoComponent,
-    // VideoJsComponent,
+    VideoFeedCard,
+    VideoMyCard,
+    VideoSharedCard,
   },
   setup() {
     const { getters: appGetters, actions: appActions } = useAppStore()
     const { getters: videoGetters, actions: videoActions } = useVideoStore()
     const user = appGetters.user.value
     appActions.fetchLTIData()
-    const currentTab = ref('all')
+    const currentTab: Ref<string> = ref(VIDEO_SHARING_MODE.feed)
 
     onMounted(() => {
       videoActions.getVideoMetadata()
     })
-
-    const video = videoGetters.selectedVideo
 
     function showTab(tabName: string) {
       currentTab.value = tabName
       videoActions.selectNoVideo()
     }
 
-    function selectVideo(video: Video) {
-      videoActions.selectVideo(video)
+    function selectVideo(item: ListItem) {
+      videoActions.selectVideo(item)
     }
     videoActions.selectNoVideo()
 
-    const videos = computed(() => {
-      if (currentTab.value == 'all') return videoGetters.videos.value
-      else if (currentTab.value == 'shared')
-        return videoGetters.videosSharedWithMe.value
-      else
-        return videoGetters.videos.value.filter(
-          (video) => video.users.owner == appGetters.user.value._id
-        )
-    })
-
     return {
+      VIDEO_SHARING_MODE,
       user,
-      video,
+      feed: videoGetters.feed,
+      myVideos: videoGetters.myVideos,
+      sharedToMe: videoGetters.sharedToMe,
       selectVideo,
       showTab,
       currentTab,
-      videos,
     }
   },
 })
 </script>
 
-<style scoped lang="postcss">
-.slide-rightmenu-enter-from {
-  transform-box: border-box;
-  transform: translateX(100%);
-}
-.slide-rightmenu-enter-active,
-.slide-rightmenu-leave-active {
-  transition: all 1s ease;
-}
-.slide-rightmenu-leave-to {
-  transform-box: border-box;
-  transform: translateX(100%);
-}
-
-.widthTransition {
-  transition: transform 1s ease;
-}
-@responsive {
-  .translate-x-full {
-    -webkit-transform: translateX(66%);
-    transform: translateX(66%);
-  }
-
-  .-translate-x-full {
-    -webkit-transform: translateX(-50%);
-    transform: translateX(-50%);
-  }
-
-  .translate-x-0 {
-    -webkit-transform: translateX(16.6 %);
-    transform: translateX(16.6%);
-  }
-}
-/* .slidemenu-right-enter-from {
-  transform: translateX(-100%);
-}
-.slidemenu-right-enter-active,
-.slidemenu-right-leave-active {
-  transition: all 1s ease;
-}
-.slidemenu-right-leave-to {
-  transform: translateX(100%);
-} */
-</style>
+<style scoped lang="postcss"></style>

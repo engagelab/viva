@@ -17,6 +17,7 @@ const videoFolderNames = {
   stored: 'stored',
   complete: 'complete',
   error: 'error',
+  thumbnails: 'thumbnails'
 }
 
 const userRolesAsArray = process.env.VUE_APP_USER_ROLES.split(',')
@@ -59,6 +60,10 @@ const videoStorageTypes = {
   onedrive: 'onedrive',
   educloud: 'educloud',
   lagringshotell: 'lagringshotell',
+}
+
+const videoSharingStatusTypes = {
+
 }
 
 const consentTypes = {
@@ -157,6 +162,7 @@ const pilotUsers = [
 
 module.exports = {
   videoStatusTypes,
+  videoSharingStatusTypes,
   videoStorageTypes,
   pipelineStates,
   pipelineErrorMessages,

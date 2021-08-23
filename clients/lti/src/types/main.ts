@@ -3,6 +3,8 @@ import {
   CONSENT_TYPES,
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
+  VIDEO_SHARING_MODE,
+  VIDEO_SHARING_STATUS,
 } from '../constants'
 import { uuid } from '../utilities'
 
@@ -132,7 +134,23 @@ export interface DeviceStatus {
   lastActive: number // ms from epoch
 }
 
-//------------------------- Video and Dataset models -----------------
+//------------------------- Video Auxiliary Interfaces for LTI -----------------
+
+// StatusListItem is always associated with a ListItem
+export interface StatusListItem {
+  readonly mode: VIDEO_SHARING_STATUS
+  readonly user?: NameAndRole // User who is subject of the status update
+  readonly created?: Date // Creation date of the status update
+  readonly item: ListItem
+}
+export interface ListItem {
+  readonly mode: VIDEO_SHARING_MODE
+  readonly video: Video
+  readonly videoOwner: NameAndRole // Owner of the video
+  readonly share?: VideoSharing // Pointer to video.users.shares[index]
+}
+
+// --------------------------   Video data --------------------------
 export interface EditDecriptionList {
   trim: number[]
   blur: number[][]
@@ -197,11 +215,19 @@ interface VideoStatus {
   hasUnsavedChanges: boolean
   hasNewDataAvailable: boolean
 }
+export interface SharingComment {
+  created: Date
+  creator: string // LTI ID
+  comment: string
+}
 export interface VideoSharing {
-  _id?: string
+  _id: string // DB ID of the share (not the video!)
+  creator: string // LTI ID
   users: string[]
   access: boolean
+  title: string
   description: string
+  comments: SharingComment[]
   edl: EditDecriptionList
 }
 interface VideoUsersData {
@@ -211,6 +237,7 @@ interface VideoUsersData {
 }
 interface VideoUsers {
   owner: string
+  ltiID: string
   sharedWith: string[] // Users who can see this video. Used for easier searching
   sharing: VideoSharing[] // Each entry is a share for a particular set of users, and particular EDL of this video
 }
@@ -310,6 +337,7 @@ export class Video {
     }
     this.users = {
       owner: '',
+      ltiID: '',
       sharedWith: [],
       sharing: [],
     }
@@ -402,7 +430,23 @@ export class Video {
   updateUsers(users: VideoUsersData): void {
     if (users.owner) this.users.owner = users.owner
     if (users.sharedWith) this.users.sharedWith = users.sharedWith
-    if (users.sharing) this.users.sharing = users.sharing
+    if (users.sharing) this.updateSharing(users.sharing)
+  }
+  updateSharing(sharing: VideoSharing[]): void {
+    sharing.forEach((s) => {
+      const share = this.users.sharing.find((us) => us._id === s._id)
+      if (share) {
+        share.access = s.access
+        share.creator = s.creator
+        share.title = s.title
+        share.description = s.description
+        share.comments = s.comments
+        share.edl = s.edl
+        share.users = s.users
+      } else {
+        console.log(`Share ${s._id} not found in user ID ${this.details.id}`)
+      }
+    })
   }
   updateDataset(dataset: VideoDatasetData): void {
     if (dataset.id) this.dataset.id = dataset.id

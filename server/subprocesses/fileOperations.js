@@ -3,8 +3,8 @@ const dirPath = process.cwd();
 const lagringshotellPath = process.env.LAGRINGSHOTELL
 
 // Get the complete file system path for the given video
-const getPath = (video, subDir) => {
-  return `${dirPath}/videos/${subDir}/${video.file.name}.${video.file.extension}`
+const getPath = (subdir, filename, extension) => {
+  return `${dirPath}/videos/${subdir}/${filename}.${extension}`
 }
 
 // Create a file on the server in given video subfolder
