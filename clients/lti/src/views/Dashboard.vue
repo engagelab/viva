@@ -27,36 +27,36 @@
     </div>
     <div>
       <div
-        v-if="currentTab === VIDEO_SHARING_MODE.feed"
+        v-show="currentTab === VIDEO_SHARING_MODE.feed"
         class="flex flex-row flex-wrap gap-4"
       >
         <VideoFeedCard
-          v-for="(v, videoIndex) in feed"
-          :key="videoIndex"
-          :video="v"
-          @click="selectVideo(v.item)"
+          v-for="(statusItem, itemIndex) in feed"
+          :key="itemIndex"
+          :statusItem="statusItem"
+          @click="selectItem(statusItem.item)"
         />
       </div>
       <div
-        v-else-if="currentTab === VIDEO_SHARING_MODE.myVideos"
+        v-show="currentTab === VIDEO_SHARING_MODE.myVideos"
         class="flex flex-row flex-wrap gap-4"
       >
         <VideoMyCard
-          v-for="(v, videoIndex) in myVideos"
-          :key="videoIndex"
-          :video="v"
-          @click="selectVideo(v)"
+          v-for="(item, itemIndex) in myVideos"
+          :key="itemIndex"
+          :item="item"
+          @click="selectItem(item)"
         />
       </div>
       <div
-        v-else-if="currentTab === VIDEO_SHARING_MODE.sharedToMe"
+        v-show="currentTab === VIDEO_SHARING_MODE.sharedToMe"
         class="flex flex-row flex-wrap gap-4"
       >
         <VideoSharedCard
-          v-for="(v, videoIndex) in sharedToMe"
-          :key="videoIndex"
-          :video="v"
-          @click="selectVideo(v)"
+          v-for="(item, itemIndex) in sharedToMe"
+          :key="itemIndex"
+          :item="item"
+          @click="selectItem(item)"
         />
       </div>
     </div>
@@ -94,12 +94,13 @@ export default defineComponent({
       videoActions.getVideoMetadata()
     })
 
-    function showTab(tabName: string) {
+    function showTab(tabName: VIDEO_SHARING_MODE) {
       currentTab.value = tabName
+      console.log(currentTab.value)
       videoActions.selectNoVideo()
     }
 
-    function selectVideo(item: ListItem) {
+    function selectItem(item: ListItem) {
       videoActions.selectVideo(item)
     }
     videoActions.selectNoVideo()
@@ -110,7 +111,7 @@ export default defineComponent({
       feed: videoGetters.feed,
       myVideos: videoGetters.myVideos,
       sharedToMe: videoGetters.sharedToMe,
-      selectVideo,
+      selectItem,
       showTab,
       currentTab,
     }

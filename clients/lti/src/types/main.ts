@@ -139,7 +139,7 @@ export interface DeviceStatus {
 // StatusListItem is always associated with a ListItem
 export interface StatusListItem {
   readonly mode: VIDEO_SHARING_STATUS
-  readonly user?: NameAndRole // User who is subject of the status update
+  readonly user: NameAndRole // User who is subject of the status update
   readonly created?: Date // Creation date of the status update
   readonly item: ListItem
 }
@@ -444,7 +444,7 @@ export class Video {
         share.edl = s.edl
         share.users = s.users
       } else {
-        console.log(`Share ${s._id} not found in user ID ${this.details.id}`)
+        this.users.sharing.push(s)
       }
     })
   }

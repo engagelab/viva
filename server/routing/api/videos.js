@@ -62,7 +62,7 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 
 // Get a video file from S3 (Educloud)
 // set request.query.mode to 'thumbnail' to get a thumbnail instead of the video file
-router.get('/video/file', utilities.authoriseUser, (request, response) => {
+router.get('/video/file', utilities.authoriseUser, (request, response, next) => {
   Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) {
@@ -70,7 +70,11 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
       return response.status(200).end()
     }
     else {
-      if (!video.users.owner) console.log(`Bad owner! ${video.id}`)
+      if (!video.users.owner) {
+        const error = new Error(`Bad owner! ${video.id}`)
+        console.error(error)
+        return next(error)
+      }
       let extension = request.query.mode === 'thumbnail' ? 'jpg' : video.file.extension
       const keyname = `${video.users.owner.toString()}/${video.file.name}.${extension}`
       const sseKey = video.file.encryptionKey
