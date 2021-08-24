@@ -75,7 +75,7 @@ if (process.env.NODE_ENV === 'development') {
   app.use(cors({ credentials: true, origin }))
 }
 else {
-  app.use(cors({ credentials: true, origin: process.env.VUE_APP_SERVER_HOST }))
+  app.use(cors({ credentials: true, origin: 'https://uio.instructure.com' }))
 }
 const sessionOptions = {
   secret: process.env.SESSION_SECRET,
