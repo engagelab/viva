@@ -82,13 +82,17 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
       downloadS3File({ keyname, sseKey, sseMD5 }).then((file) => {
         console.log(`S3 Video success: ${keyname}`)
         // These headers are required to enable seeking `currentTime` in Chrome browser
-        response.setHeader('content-type', 'video/mp4')
-        response.setHeader('Accept-Ranges', 'bytes')
-        response.setHeader('Content-Length', file.ContentLength)
-        response.setHeader('Content-Range', `0-${file.ContentLength}`)
+        if (request.query.mode !== 'thumbnail') {
+          response.setHeader('content-type', 'video/mp4')
+          response.setHeader('Accept-Ranges', 'bytes')
+          response.setHeader('Content-Length', file.ContentLength)
+          response.setHeader('Content-Range', `0-${file.ContentLength}`)
+        } else {
+          response.setHeader('content-type', 'image/jpeg')
+        }
         file.Body.pipe(response)
       }).catch((error2) => {
-        console.log(`S3 Video not found: ${keyname}`)
+        console.log(`S3 Video error for key: ${keyname} error: ${error2.toString()}`)
         response.status(404).send(error2)
       })
     }

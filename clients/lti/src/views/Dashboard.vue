@@ -39,8 +39,9 @@
       </div>
       <div
         v-show="currentTab === VIDEO_SHARING_MODE.myVideos"
-        class="flex flex-row flex-wrap gap-4"
+        class="flex flex-col gap-4"
       >
+        <p class="text-lg text-white">My Videos</p>
         <VideoMyCard
           v-for="(item, itemIndex) in myVideos"
           :key="itemIndex"

@@ -67,9 +67,9 @@ const getters = {
     return computed(() => [])
   },
   get myVideos(): ComputedRef<ListItem[]> {
-    const myUserID = appGetters.user.value._id
-    const myLTIID = appGetters.user.value.profile.ltiUserId
     return computed(() => {
+      const myUserID = appGetters.user.value._id
+      const myLTIID = appGetters.user.value.profile.ltiUserId
       const videos = Array.from(state.value.videos.values())
       return videos
         .filter((v) => v.users.owner === myUserID)
@@ -84,9 +84,9 @@ const getters = {
     })
   },
   get sharedToMe(): ComputedRef<ListItem[]> {
-    const myUserID = appGetters.user.value._id
-    const myLTIID = appGetters.user.value.profile.ltiUserId
     return computed(() => {
+      const myUserID = appGetters.user.value._id
+      const myLTIID = appGetters.user.value.profile.ltiUserId
       const videos = Array.from(state.value.videos.values())
       return videos
         .filter((v: Video) => v.users.owner !== myUserID) // Filter out my own videos
