@@ -75,7 +75,11 @@ if (process.env.NODE_ENV === 'development') {
   app.use(cors({ credentials: true, origin }))
 }
 else {
-  app.use(cors({ credentials: true, origin: 'https://uio.instructure.com' }))
+  app.use((req) => {
+    let referer = req.headers.referer || req.headers.Referer
+    console.log(`Referrer: ${referer}`)
+  })
+  app.use(cors({ credentials: true, origin: process.env.VUE_APP_SERVER_HOST }))
 }
 const sessionOptions = {
   secret: process.env.SESSION_SECRET,
