@@ -75,9 +75,10 @@ if (process.env.NODE_ENV === 'development') {
   app.use(cors({ credentials: true, origin }))
 }
 else {
-  app.use((req) => {
+  app.use((req, res, next) => {
     let referer = req.headers.referer || req.headers.Referer
     console.log(`Referrer: ${referer}`)
+    return next()
   })
   app.use(cors({ credentials: true, origin: 'https://instructure.com' }))
 }
