@@ -36,52 +36,47 @@ app.use(express.urlencoded({ limit: '25mb', extended: true }))
 
 // We encounter CORS issues if the server is serving the webpage locally
 // CORS (Cross-Origin Resource Sharing) headers to support Cross-site HTTP requests
-if (process.env.NODE_ENV === 'development') {
-  let origin = ''
-  app.use((req, res, next) => {
-    const allowedOrigins = [
-      `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}`,
-      `${process.env.VUE_APP_SERVER_HOST}:8080`,
-      `${process.env.VUE_APP_SERVER_HOST}:8081`,
-      `${process.env.VUE_APP_SERVER_HOST}:8082`,
-      'https://auth.dataporten.no'
-    ]
-    let referer = req.headers.referer || req.headers.Referer
-    if (referer) {
-      if (referer.charAt(referer.length - 1) === '/') referer = referer.slice(0, -1)
-      const i = allowedOrigins.indexOf(referer)
-      if (i > -1) {
-        origin = referer
-        res.header('Access-Control-Allow-Origin', origin)
-      }
+
+let origin = ''
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}`,
+    `${process.env.VUE_APP_SERVER_HOST}:8080`,
+    `${process.env.VUE_APP_SERVER_HOST}:8081`,
+    `${process.env.VUE_APP_SERVER_HOST}:8082`,
+    'https://instructure.com',
+    'https://auth.dataporten.no'
+  ]
+  let referer = req.headers.referer || req.headers.Referer
+  if (referer) {
+    if (referer.charAt(referer.length - 1) === '/') referer = referer.slice(0, -1)
+    const i = allowedOrigins.indexOf(referer)
+    if (i > -1) {
+      origin = referer
+      res.header('Access-Control-Allow-Origin', origin)
+      console.log(`Allowing access for origin: ${origin}`)
     }
-    // add details of what is allowed in HTTP request headers to the response headers
-    res.header(
-      'Access-Control-Allow-Methods',
-      'POST, GET, PUT, DELETE, OPTIONS'
-    )
-    res.header('Access-Control-Max-Age', '86400')
-    res.header(
-      'Access-Control-Allow-Methods',
-      'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-    )
-    res.header(
-      'Access-Control-Allow-Headers',
-      'Origin, Content-Type, X-Requested-With, X-HTTP-Method-Override, Accept, Authorization, tus-resumable, upload-offset'
-    )
-    res.header('Access-Control-Allow-Credentials', true)
-    return next()
-  })
-  app.use(cors({ credentials: true, origin }))
-}
-else {
-  app.use((req, res, next) => {
-    let referer = req.headers.referer || req.headers.Referer
-    console.log(`Referrer: ${referer}`)
-    return next()
-  })
-  app.use(cors({ credentials: true, origin: 'https://instructure.com' }))
-}
+  }
+  // add details of what is allowed in HTTP request headers to the response headers
+  res.header(
+    'Access-Control-Allow-Methods',
+    'POST, GET, PUT, DELETE, OPTIONS'
+  )
+  res.header('Access-Control-Max-Age', '86400')
+  res.header(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, DELETE, OPTIONS, PATCH'
+  )
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, Content-Type, X-Requested-With, X-HTTP-Method-Override, Accept, Authorization, tus-resumable, upload-offset'
+  )
+  res.header('Access-Control-Allow-Credentials', true)
+  return next()
+})
+app.use(cors({ credentials: true, origin }))
+
+
 const sessionOptions = {
   secret: process.env.SESSION_SECRET,
   store: new MemoryStore({
