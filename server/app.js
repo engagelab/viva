@@ -84,9 +84,9 @@ const sessionOptions = {
     checkPeriod: 86400000, // prune expired entries every 24h
   }),
   rolling: true,
-  resave: true,
+  resave: false,
   saveUninitialized: true,
-  cookie: { httpOnly: true, maxAge: 86400000, sameSite: 'none' },
+  cookie: { httpOnly: true, maxAge: 86400000 },
 }
 
 // Start a secure server
