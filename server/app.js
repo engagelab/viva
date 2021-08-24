@@ -79,7 +79,7 @@ else {
     let referer = req.headers.referer || req.headers.Referer
     console.log(`Referrer: ${referer}`)
   })
-  app.use(cors({ credentials: true, origin: process.env.VUE_APP_SERVER_HOST }))
+  app.use(cors({ credentials: true, origin: 'https://instructure.com' }))
 }
 const sessionOptions = {
   secret: process.env.SESSION_SECRET,
