@@ -58,7 +58,7 @@ router.post('/canvas/callback', function (request, response) {
 
   console.log(`Cookie at #2: ${request.headers.cookie}`)
 
-  if (state != response.req.body.state) {
+  if (state != request.body.state) {
     console.error('/canvas/callback: Session state does not match')
     return response.status(401).end()
   }
