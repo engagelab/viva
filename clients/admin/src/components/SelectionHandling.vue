@@ -1,4 +1,5 @@
 <template>
+  <!-- Component handles only selection priority  -->
   <div class="ml-2">
     <p class="text-red-600 my-4">Selection Priority</p>
     <select
@@ -35,7 +36,9 @@
     </div>
 
     <p class="text-red-600 mt-4">Instances</p>
-    <!--SelectionItem></SelectionItem-->
+    <SelectionItem
+      :localSelectionPriority="localSelectionPriority"
+    ></SelectionItem>
   </div>
 </template>
 
@@ -43,10 +46,10 @@
 import { defineComponent, ref, computed, watch, Ref, ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { behandlings, UTVALG_SELECTION, CONSENT_TYPES } from '@/constants'
-import { DatasetSelection } from '@/types/main'
+// import { DatasetSelection } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
 
-// import SelectionItem from '@/components/SelectionItem.vue'
+import SelectionItem from '@/components/SelectionItem.vue'
 
 const messages = {
   nb_NO: {
@@ -71,7 +74,7 @@ const messages = {
 export default defineComponent({
   name: 'selectionHandling',
   components: {
-    // SelectionItem,
+    SelectionItem,
   },
   emits: ['updated'],
   setup(props, context) {
@@ -85,7 +88,7 @@ export default defineComponent({
 
     // Local reactive containers to hold changes before saving to the Dataset
     const localSelectionPriority: Ref<string[]> = ref(d.value.selectionPriority)
-    const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref({})
+    // const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref({})
 
     // Available options in list should exclude those those already chosen
     const selectionOptionList: ComputedRef<string[]> = computed(() => {
@@ -96,7 +99,7 @@ export default defineComponent({
 
     function reloadData() {
       localSelectionPriority.value = [...d.value.selectionPriority]
-      localSelection.value = d.value.selection
+      // localSelection.value = d.value.selection
     }
 
     function addSelectionPriority() {

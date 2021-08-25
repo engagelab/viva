@@ -1,7 +1,14 @@
 <template>
   <div>
     <div>
-      <div v-if="index > 0" class="flex space-x-2" :class="`ml-${index * 4}`">
+      <div
+        v-if="
+          (localSelection && Object.entries(localSelection).length === 0) ||
+          depth > 0
+        "
+        class="flex space-x-2"
+        :class="`ml-${depth * 4}`"
+      >
         <div
           class="
             rounded-full
@@ -15,7 +22,33 @@
           "
           @click="
             showInputBox({
-              currentKey: theDataset.selectionPriority[index - 1],
+              currentKey: localSelectionPriority[depth - 1],
+              currentValue: title,
+              path: path,
+              title: '',
+            })
+          "
+        >
+          ⬇️
+        </div>
+        <p v-if="localSelectionPriority">
+          {{ localSelectionPriority[depth - 1] }}:{{ title }}
+        </p>
+        <div
+          v-if="nodes.length == 0"
+          class="
+            rounded-full
+            h-4
+            w-4
+            flex
+            items-center
+            justify-center
+            bg-blue-400
+            cursor-pointer
+          "
+          @click="
+            showInputBox({
+              currentKey: localSelectionPriority[depth],
               currentValue: title,
               path: path,
               title: '',
@@ -24,24 +57,31 @@
         >
           +
         </div>
-        <p>{{ theDataset.selectionPriority[index - 1] }}:{{ title }}</p>
       </div>
-      <Subset
-        v-for="node in nodes"
-        :title="node.title"
-        :label="node.selection ? Object.keys(node.selection)[0] : ''"
-        :nodes="
-          node.selection ? node.selection[Object.keys(node.selection)[0]] : []
-        "
-        :key="node"
-        :index="index + 1"
-        :path="
-          theDataset.selectionPriority[index - 1]
-            ? theDataset.selectionPriority[index - 1] + '-' + title
-            : title
-        "
-      >
-      </Subset>
+      <div v-if="localSelectionPriority">
+        <Subset
+          class="my-2"
+          :class="`my-${depth * 0.5}`"
+          v-for="node in nodes"
+          :title="node.title"
+          :label="node.selection ? Object.keys(node.selection)[0] : ''"
+          :nodes="
+            node.selection ? node.selection[Object.keys(node.selection)[0]] : []
+          "
+          :key="node"
+          :depth="depth + 1"
+          :path="
+            localSelectionPriority[depth - 1]
+              ? path.toLowerCase() +
+                '+' +
+                localSelectionPriority[depth - 1].toLowerCase() +
+                '-' +
+                title.toLowerCase()
+              : ''
+          "
+        >
+        </Subset>
+      </div>
       <!-- Add new subset -->
       <div class="flex justify-start ...">
         <div class="flex flex-row" v-if="showInput">
@@ -61,8 +101,8 @@
               bg-blue-300
               hover:bg-blue-500
             "
-            @click="addSubset()"
-            >Add
+            @click="addSubset(currentDataPath, depth)"
+            >Add {{ currentDataPath.currentKey }}{{ currentDataPath }}
           </SlButton>
           <!-- <div v-if="errorMessage" class="text-red-600">
             {{ errorMessage }}
@@ -74,26 +114,34 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, PropType, ref } from 'vue'
+import { defineComponent, PropType, ref, Ref } from 'vue'
 import { DatasetSelection, DataPath } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
 
 export default defineComponent({
-  name: 'subset',
+  name: 'Subset',
   components: {},
   props: {
-    path: String,
-    index: { type: Number, required: true },
+    path: { type: String, required: true },
+    depth: { type: Number, required: true },
     title: { type: String, required: true },
-    label: String,
+    label: { type: String, required: true },
     nodes: { type: Object as PropType<DatasetSelection[]>, required: true },
+    // localSelectionPriority: {
+    //   type: Array as PropType<string[]>,
+    //   required: true,
+    // },
+    // localSelection: {
+    //   type: Object as PropType<{ [key: string]: DatasetSelection[] }>,
+    //   required: true,
+    // },
   },
 
   setup(props) {
-    const { getters: datasetGetters, actions: datasetActions } =
-      useDatasetStore()
+    const { getters: datasetGetters } = useDatasetStore()
     const d = datasetGetters.selectedDataset
-    const theDataset = ref(d)
+    // const theDataset = ref(d)
+    // const { actions: datasetActions } = useDatasetStore()
     let currentDataPath = ref<DataPath>({
       path: '',
       currentKey: '',
@@ -101,22 +149,61 @@ export default defineComponent({
       title: '',
     })
     const showInput = ref(false)
-    //Methods
+    const localSelectionPriority: Ref<string[]> = ref(d.value.selectionPriority)
+    const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref(
+      d.value.selection
+    )
 
+    //Methods
     const showInputBox = (path: DataPath) => {
+      console.log(props.path)
       currentDataPath.value = path
       showInput.value = !showInput.value
     }
 
-    const addSubset = () => {
-      datasetActions.addSelection(currentDataPath.value)
+    const addSubset = (currentDataPath: DataPath, depth: number) => {
+      console.log(currentDataPath.path, depth, currentDataPath.title)
+      let nySubset: DatasetSelection = {
+        title: currentDataPath.title,
+        selection: {},
+      }
+      // datasetActions.addSelection(currentDataPath.value)
       showInput.value = !showInput.value
+      //  Match the path and add the subset
+      let p = ''
+      let depthIndex = 0
+      const subsetPath = (subsets: DatasetSelection[]) => {
+        subsets.forEach((set) => {
+          depthIndex = depthIndex + 1
+          p = localSelectionPriority.value[depthIndex - 1]
+            ? p.toLowerCase() +
+              '+' +
+              localSelectionPriority.value[depthIndex - 1].toLowerCase() +
+              '-' +
+              set.title.toLowerCase()
+            : ''
+
+          if (p === props.path) {
+            set.selection[currentDataPath.currentKey].push(nySubset)
+          }
+          if (set.selection) {
+            subsetPath(set.selection[Object.keys(set.selection)[0]])
+          } else {
+            p = ''
+            depthIndex = 0
+          }
+        })
+      }
+
+      subsetPath(localSelection.value[Object.keys(localSelection.value)[0]])
     }
     return {
-      selectionPriority: computed(() =>
-        theDataset.value.selectionPriority.findIndex((i) => i == props.label)
-      ),
-      theDataset,
+      // selectionPriority: computed(() =>
+      //   theDataset.value.selectionPriority.findIndex((i) => i == props.label)
+      // ),
+      // theDataset,
+      localSelection,
+      localSelectionPriority,
       showInput,
       currentDataPath,
       // Methods
