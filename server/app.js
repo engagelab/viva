@@ -75,23 +75,21 @@ if (process.env.NODE_ENV === 'development') {
   app.use(cors({ credentials: true, origin }))
 }
 else {
-  app.use(cors({ credentials: true, origin: process.env.VUE_APP_SERVER_HOST }))
+  app.use(cors({ credentials: true, origin: [/\.engagelab\.uio\.no$/, /\.instructure\.com$/] }))
 }
 const sessionOptions = {
   secret: process.env.SESSION_SECRET,
   store: new MemoryStore({
     checkPeriod: 86400000, // prune expired entries every 24h
   }),
-  rolling: true,
-  resave: true,
-  saveUninitialized: true,
-  cookie: { httpOnly: true, maxAge: 86400000, sameSite: 'none' },
+  resave: false,
+  proxy: true,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, maxAge: 86400000, sameSite: 'none', secure: true },
 }
 
 // Start a secure server
 app.set('trust proxy', 1) // trust first proxy
-sessionOptions.proxy = true
-sessionOptions.cookie.secure = true // serve secure cookies
 app.use(session(sessionOptions))
 
 // Redirect http calls to https

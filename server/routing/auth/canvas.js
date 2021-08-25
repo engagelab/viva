@@ -34,6 +34,8 @@ router.post('/canvas/login', function (request, response) {
   request.session.organization = organization || 'uio'
   request.session.client = 'lti'
 
+  console.log(`Cookie at #1: ${request.headers.cookie}`)
+
   let redirectUrl = CanvasLTIClient.authorizationUrl({
     lti_message_hint: request.body.lti_message_hint,
     login_hint: request.body.login_hint,
@@ -54,7 +56,9 @@ router.post('/canvas/callback', function (request, response) {
   const idToken = request.body.id_token
   const decodedToken = jwt.decode(idToken, { complete: true })
 
-  if (state != response.req.body.state) {
+  console.log(`Cookie at #2: ${request.headers.cookie}`)
+
+  if (state != request.body.state) {
     console.error('/canvas/callback: Session state does not match')
     return response.status(401).end()
   }
