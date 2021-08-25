@@ -1,9 +1,9 @@
 <template>
   <div class="bg-grey-card text-grey-text rounded-xl w-64">
-    <p class="m-2 text-xs p-2">By {{ svideo.creator.name }}</p>
+    <p class="m-2 text-xs p-2">By {{ statusItem.user.name }}</p>
     <img
       class="object-cover h-36 w-full"
-      :src="`${baseUrl}/api/video/file?videoref=${svideo.original.details.id}&mode=thumbnail`"
+      :src="`${baseUrl}/api/video/file?videoref=${statusItem.item.video.details.id}&mode=thumbnail`"
       alt="video thumbnail"
     />
   </div>
@@ -11,13 +11,13 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue'
-import { ListItem } from '../types/main'
+import { StatusListItem } from '../types/main'
 import { baseUrl } from '@/constants'
 
 export default defineComponent({
   name: 'videofeedcard',
   props: {
-    svideo: { type: Object as PropType<ListItem>, required: true },
+    statusItem: { type: Object as PropType<StatusListItem>, required: true },
   },
   setup() {
     return {

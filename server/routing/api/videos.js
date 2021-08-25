@@ -62,7 +62,7 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 
 // Get a video file from S3 (Educloud)
 // set request.query.mode to 'thumbnail' to get a thumbnail instead of the video file
-router.get('/video/file', utilities.authoriseUser, (request, response) => {
+router.get('/video/file', utilities.authoriseUser, (request, response, next) => {
   Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) {
@@ -70,7 +70,11 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
       return response.status(200).end()
     }
     else {
-      if (!video.users.owner) console.log(`Bad owner! ${video.id}`)
+      if (!video.users.owner) {
+        const error = new Error(`Bad owner! ${video.id}`)
+        console.error(error)
+        return next(error)
+      }
       let extension = request.query.mode === 'thumbnail' ? 'jpg' : video.file.extension
       const keyname = `${video.users.owner.toString()}/${video.file.name}.${extension}`
       const sseKey = video.file.encryptionKey
@@ -78,13 +82,17 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
       downloadS3File({ keyname, sseKey, sseMD5 }).then((file) => {
         console.log(`S3 Video success: ${keyname}`)
         // These headers are required to enable seeking `currentTime` in Chrome browser
-        response.setHeader('content-type', 'video/mp4')
-        response.setHeader('Accept-Ranges', 'bytes')
-        response.setHeader('Content-Length', file.ContentLength)
-        response.setHeader('Content-Range', `0-${file.ContentLength}`)
+        if (request.query.mode !== 'thumbnail') {
+          response.setHeader('content-type', 'video/mp4')
+          response.setHeader('Accept-Ranges', 'bytes')
+          response.setHeader('Content-Length', file.ContentLength)
+          response.setHeader('Content-Range', `0-${file.ContentLength}`)
+        } else {
+          response.setHeader('content-type', 'image/jpeg')
+        }
         file.Body.pipe(response)
       }).catch((error2) => {
-        console.log(`S3 Video not found: ${keyname}`)
+        console.log(`S3 Video error for key: ${keyname} error: ${error2.toString()}`)
         response.status(404).send(error2)
       })
     }
