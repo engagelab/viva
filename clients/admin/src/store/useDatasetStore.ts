@@ -1,9 +1,3 @@
-// Store to do dataset functions (Mostly in admin side)
-/* ---- Functionaltiy to be done  ----------------
-1.Selection Priority
-2. Add instances
-
-*/
 import { ref, Ref, computed, ComputedRef } from 'vue'
 import {
   Dataset,
@@ -68,26 +62,6 @@ const actions = {
         appActions.errorMessage(error)
       })
   },
-  // // Fetch all dataporten groups for the user
-  // fetchDataportenGroups(): Promise<void> {
-  //   const payload: APIRequestPayload = {
-  //     method: XHR_REQUEST_TYPE.GET,
-  //     route: '/api/dataset/dataportengroups',
-  //     credentials: true,
-  //   }
-  //   return apiRequest<DataportenGroups[]>(payload)
-  //     .then((dataportenGroups) => {
-  //       if (dataportenGroups) {
-  //         dataportenGroups.forEach((s) => {
-  //           const newDataportenGroups = new DataportenGroups(s)
-  //           state.value.dataportenGroups.set(newDataportenGroups.id, newDataportenGroups)
-  //         })
-  //       }
-  //     })
-  //     .catch((error: Error) => {
-  //       appActions.errorMessage(error)
-  //     })
-  // },
   //To create a new dataset
   addDataset(datasetName: string): Promise<void> {
     const payload: APIRequestPayload = {
@@ -132,46 +106,8 @@ const actions = {
   },
 
   addSelection(localSelection: { [key: string]: DatasetSelection[] }): void {
-    // if (state.value.selectedDataset) {
-    //   const selection = state.value.selectedDataset.selection
-    //     ? state.value.selectedDataset.selection
-    //     : {}
-
-    //   selection[selectionPriority] == undefined
-    //     ? (selection[selectionPriority] = [subset])
-    //     : selection[selectionPriority].push(subset)
-
-    //   state.value.selectedDataset.selection = { ...selection }
-    //   console.log(state.value.selectedDataset)
-    // }
-
-    // const recurse = (nodes: DatasetSelection[], label: string) => {
-    //   nodes.forEach((node) => {
-    //     if (label) console.log('Label:' + label + 'Value:' + node.title)
-    //     if (node.selection)
-    //       recurse(
-    //         node.selection[Object.keys(node.selection)[0]],
-    //         Object.keys(node.selection)[0]
-    //       )
-    //   })
-    // }
-
-    // recurse(
-    //   state.value.selectedDataset.selection[
-    //     Object.keys(state.value.selectedDataset.selection)[0]
-    //   ],
-    //   Object.keys(state.value.selectedDataset.selection)[0]
-    // )
-
-    // console.log(currentDataPath)
-    // const path = currentDataPath.path.split('-')
-    // console.log(path)
-    // for (const [key, value] of Object.entries(
-    //   state.value.selectedDataset.selection
-    // )) {
-    //   console.log(`${key}: ${value}`)
-    // }
     state.value.selectedDataset.selection = { ...localSelection }
+    actions.updateDataset()
   },
 }
 
