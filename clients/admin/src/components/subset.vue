@@ -10,6 +10,7 @@
         :class="`ml-${depth * 4}`"
       >
         <div
+          v-if="nodes"
           class="
             rounded-full
             h-4
@@ -35,12 +36,16 @@
         >
           ⬇️
         </div>
-        <p v-if="localSelectionPriority">
-          {{ localSelectionPriority[depth - 1] }}:{{ title }}{{ nodes
-          }}{{ label }}
+        <p v-if="localSelectionPriority && nodes">
+          {{ localSelectionPriority[depth - 1] }}:{{ title }}
         </p>
         <div
-          v-if="nodes && nodes.length == 0"
+          v-if="
+            (nodes &&
+              nodes.length == 0 &&
+              depth != localSelectionPriority.length) ||
+            (localSelectionPriority.length > 0 && !nodes)
+          "
           class="
             rounded-full
             h-4
@@ -194,9 +199,9 @@ export default defineComponent({
       let newPath =
         props.path +
         '+' +
-        currentDataPath.currentKey.toLowerCase() +
+        currentDataPath.currentKey?.toLowerCase() +
         '-' +
-        currentDataPath.currentValue.toLowerCase()
+        currentDataPath.currentValue?.toLowerCase()
       console.log(newPath)
 
       showInput.value = !showInput.value
@@ -217,7 +222,9 @@ export default defineComponent({
           if (p === props.path && mode.value == 'current') {
             set.selection[currentDataPath.currentKey].push(nySubset)
           } else if (p === newPath && mode.value == 'new') {
-            Object.assign(set, { [currentDataPath.nextKey]: [nySubset] })
+            Object.assign(set, {
+              selection: { [currentDataPath.nextKey]: [nySubset] },
+            })
             console.log(set)
           }
           // console.log(set)
@@ -229,8 +236,13 @@ export default defineComponent({
           }
         })
       }
-
-      subsetPath(localSelection.value[Object.keys(localSelection.value)[0]])
+      if (Object.keys(localSelection.value).length > 0) {
+        subsetPath(localSelection.value[Object.keys(localSelection.value)[0]])
+      } else {
+        Object.assign(localSelection.value, {
+          [currentDataPath.nextKey]: [nySubset],
+        })
+      }
       console.log(localSelection.value)
       datasetActions.addSelection(localSelection.value)
       showInput.value = false
