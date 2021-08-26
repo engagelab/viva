@@ -15,11 +15,10 @@
   </div>
 </template>
 <script lang="ts">
-import { computed, defineComponent, ref, PropType, Ref } from 'vue'
+import { computed, defineComponent, ref, watch, PropType, Ref } from 'vue'
 
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { DatasetSelection } from '@/types/main'
-
 import Subset from './Subset.vue'
 
 export default defineComponent({
@@ -43,6 +42,9 @@ export default defineComponent({
       d.value.selection
     )
 
+    function reloadData() {
+      localSelection.value = d.value.selection
+    }
     const InitialSelectionPriority = computed(() => {
       return localSelection.value
         ? props.localSelectionPriority.find(
@@ -58,7 +60,11 @@ export default defineComponent({
         currentSelectionPriority.value = props.localSelectionPriority[index + 1]
       } else currentSelectionPriority.value = props.localSelectionPriority[0]
     }
-
+    watch(
+      () => d.value,
+      () => reloadData()
+    )
+    reloadData()
     return {
       localSelection,
       currentSelectionPriority,

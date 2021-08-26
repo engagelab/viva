@@ -6,6 +6,7 @@
       span
       ref="selects"
       @change="addSelectionPriority"
+      @click="showWarning = true"
       class="select"
       style="width: 150px"
       v-model="currentSelection"
@@ -48,7 +49,7 @@ import { useI18n } from 'vue-i18n'
 import { behandlings, UTVALG_SELECTION, CONSENT_TYPES } from '@/constants'
 // import { DatasetSelection } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
-
+// import Button from '@/components/base/Button.vue'
 import SelectionItem from '@/components/SelectionItem.vue'
 
 const messages = {
@@ -83,14 +84,11 @@ export default defineComponent({
 
     const currentSelection = ref('')
 
-    // TODO: Supply the temporary dataset's selection / selectionPriority by props, don't modify the store's original
     const d = datasetGetters.selectedDataset
 
-    // Local reactive containers to hold changes before saving to the Dataset
     const localSelectionPriority: Ref<string[]> = ref(d.value.selectionPriority)
     // const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref({})
 
-    // Available options in list should exclude those those already chosen
     const selectionOptionList: ComputedRef<string[]> = computed(() => {
       return Object.values(UTVALG_SELECTION).filter(
         (r) => !localSelectionPriority.value.includes(r)
@@ -99,23 +97,26 @@ export default defineComponent({
 
     function reloadData() {
       localSelectionPriority.value = [...d.value.selectionPriority]
-      // localSelection.value = d.value.selection
     }
 
     function addSelectionPriority() {
-      if (currentSelection.value) {
-        localSelectionPriority.value.push(currentSelection.value)
-        context.emit('updated', localSelectionPriority.value)
+      if (confirm('Modifying the priority resets instances , are you sure? ')) {
+        if (currentSelection.value) {
+          localSelectionPriority.value.push(currentSelection.value)
+          context.emit('updated', localSelectionPriority.value)
+        }
       }
     }
 
     const removeSelectionPriority = (s: string) => {
-      currentSelection.value = ''
-      localSelectionPriority.value.splice(
-        localSelectionPriority.value.indexOf(s),
-        1
-      )
-      context.emit('updated', localSelectionPriority.value)
+      if (confirm('Modifying the priority resets instances , are you sure? ')) {
+        currentSelection.value = ''
+        localSelectionPriority.value.splice(
+          localSelectionPriority.value.indexOf(s),
+          1
+        )
+        context.emit('updated', localSelectionPriority.value)
+      }
     }
 
     watch(
@@ -131,6 +132,7 @@ export default defineComponent({
       selectionOptionList,
       currentSelection,
       localSelectionPriority,
+
       // Methods
       addSelectionPriority,
       removeSelectionPriority,

@@ -124,9 +124,8 @@
               bg-blue-300
               hover:bg-blue-500
             "
-            @click="addSubset(currentDataPath, depth)"
-            >Add {{ currentDataPath.currentKey }}{{ newInstancePath
-            }}{{ currentDataPath }}
+            @click="addSubset(currentDataPath)"
+            >Add
           </SlButton>
           <!-- <div v-if="errorMessage" class="text-red-600">
             {{ errorMessage }}
@@ -164,10 +163,9 @@ export default defineComponent({
   },
 
   setup(props) {
-    const { getters: datasetGetters } = useDatasetStore()
+    const { getters: datasetGetters, actions: datasetActions } =
+      useDatasetStore()
     const d = datasetGetters.selectedDataset
-    // const theDataset = ref(d)
-    const { actions: datasetActions } = useDatasetStore()
     let currentDataPath = ref<DataPath>({
       path: '',
       currentKey: '',
@@ -183,6 +181,7 @@ export default defineComponent({
     )
 
     //Methods
+
     const showInputBox = (path: DataPath, modeValue: string) => {
       mode.value = modeValue
       console.log(props.path)
@@ -190,8 +189,8 @@ export default defineComponent({
       showInput.value = !showInput.value
     }
 
-    const addSubset = (currentDataPath: DataPath, depth: number) => {
-      console.log(currentDataPath.path, depth, currentDataPath.title)
+    // Check the datapath and if it matches and the new subset
+    const addSubset = (currentDataPath: DataPath) => {
       let nySubset: DatasetSelection = {
         title: currentDataPath.title,
         selection: {},
@@ -209,7 +208,7 @@ export default defineComponent({
       let p = ''
       let depthIndex = 0
       const subsetPath = (subsets: DatasetSelection[]) => {
-        subsets.forEach((set) => {
+        subsets?.forEach((set) => {
           depthIndex = depthIndex + 1
           p = localSelectionPriority.value[depthIndex - 1]
             ? p.toLowerCase() +
@@ -225,9 +224,8 @@ export default defineComponent({
             Object.assign(set, {
               selection: { [currentDataPath.nextKey]: [nySubset] },
             })
-            console.log(set)
           }
-          // console.log(set)
+
           if (set.selection) {
             subsetPath(set.selection[Object.keys(set.selection)[0]])
           } else {
@@ -239,6 +237,7 @@ export default defineComponent({
       if (Object.keys(localSelection.value).length > 0) {
         subsetPath(localSelection.value[Object.keys(localSelection.value)[0]])
       } else {
+        // first instance added
         Object.assign(localSelection.value, {
           [currentDataPath.nextKey]: [nySubset],
         })
@@ -248,10 +247,6 @@ export default defineComponent({
       showInput.value = false
     }
     return {
-      // selectionPriority: computed(() =>
-      //   theDataset.value.selectionPriority.findIndex((i) => i == props.label)
-      // ),
-      // theDataset,
       localSelection,
       localSelectionPriority,
       showInput,

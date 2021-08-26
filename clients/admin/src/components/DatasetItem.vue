@@ -181,6 +181,7 @@ export default defineComponent({
     }
 
     const selectionUpdated = (s: string[]) => {
+      dataset.value.selection = {}
       dataset.value.selectionPriority = s
       unsavedData.value = true
     }
