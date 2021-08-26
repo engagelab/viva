@@ -136,18 +136,29 @@ export interface DeviceStatus {
 
 //------------------------- Video Auxiliary Interfaces for LTI -----------------
 
-// StatusListItem is always associated with a ListItem
-export interface StatusListItem {
+// FeedListItem is always associated with a ListItem
+export interface FeedListItem {
   readonly mode: VIDEO_SHARING_STATUS
   readonly user: NameAndRole // User who is subject of the status update
   readonly created?: Date // Creation date of the status update
   readonly item: ListItem
 }
+export interface ListItemShare {
+  id: string // id of the share (video.users.sharing[share]._id)
+  creator: string // LTI ID of the creator of the share
+  creatorName: NameAndRole // Creator of the share
+  users: NameAndRole[] // Users this item is shared with
+  share: VideoSharing // Pointer to video.users.shares[this share]
+}
 export interface ListItem {
   readonly mode: VIDEO_SHARING_MODE
-  readonly video: Video
-  readonly videoOwner: NameAndRole // Owner of the video
-  readonly share?: VideoSharing // Pointer to video.users.shares[index]
+  readonly video: Video // Pointer to the actual video
+  readonly owner: NameAndRole // Owner of the video
+  readonly dataset: {
+    name: string
+    selection: string
+  }
+  readonly shares: ListItemShare[] // sub-interface describing sharing for this item
 }
 
 // --------------------------   Video data --------------------------
@@ -265,9 +276,10 @@ export interface VideoSpec {
 
 export interface NameAndRole {
   name: string
-  ltiUserID: string
+  ltiID: string
   email: string
   roles: string[]
+  abbreviation: string
 }
 export interface VideoData {
   file: {
@@ -622,11 +634,11 @@ interface UserProfile {
   username: string
   password: string
   fullName: string
+  ltiID: string
   email: string
   oauthId: string
   reference: string // This should be sent to the client rather than _id
   groups: UserProfileGroup[] // Groups this user is a member of
-  ltiUserId: string
 }
 export interface UserDatasetSelection {
   title: string
@@ -664,11 +676,11 @@ export class User {
       username: 'initial user',
       password: '',
       fullName: 'initial user',
+      ltiID: '',
       email: '',
       oauthId: '',
       reference: '', // This should be sent to the client rather than _id
       groups: [],
-      ltiUserId: '',
     }
     this.datasetConfig = {
       id: '',

@@ -34,8 +34,6 @@ router.post('/canvas/login', function (request, response) {
   request.session.organization = organization || 'uio'
   request.session.client = 'lti'
 
-  console.log(`Cookie at #1: ${request.headers.cookie}`)
-
   let redirectUrl = CanvasLTIClient.authorizationUrl({
     lti_message_hint: request.body.lti_message_hint,
     login_hint: request.body.login_hint,
@@ -55,8 +53,6 @@ router.post('/canvas/callback', function (request, response) {
   request.session.canvasData = {}
   const idToken = request.body.id_token
   const decodedToken = jwt.decode(idToken, { complete: true })
-
-  console.log(`Cookie at #2: ${request.headers.cookie}`)
 
   if (state != request.body.state) {
     console.error('/canvas/callback: Session state does not match')
@@ -125,7 +121,7 @@ router.post('/canvas/callback', function (request, response) {
       email: custom_vars.user_email || '',
       fullName: custom_vars.person_name || '',
       organization: organization || '',
-      lti_id: verified_decoded_id_token['sub'],
+      ltiID: verified_decoded_id_token['sub'],
       client,
     }
 
@@ -153,7 +149,7 @@ router.post('/canvas/callback', function (request, response) {
           (m) => {
             return {
               name: m.name || 'unknown',
-              ltiUserID: m.user_id || 'unknown',
+              ltiID: m.user_id || 'unknown',
               email: m.email || 'unknown',
               roles: m.roles,
             }
@@ -161,11 +157,11 @@ router.post('/canvas/callback', function (request, response) {
         )
       }
       const user = namesAndRoles.members.find(
-        (user) => user.name === profile.fullName
+        (u) => u.name === profile.fullName
       )
-      profile.ltiUserId = user.user_id
-      createOrUpdateUser({ id_token: idToken }, profile).then((user) => {
-        return completeCallback(request, response, user)
+      profile.ltiID = user.user_id
+      createOrUpdateUser({ id_token: idToken }, profile).then((u) => {
+        return completeCallback(request, response, u)
       })
     })
   }

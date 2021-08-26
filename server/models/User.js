@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String },
     fullName: { type: String, default: '' },
     provider_id: { type: String },
-    lti_id: { type: String },
+    ltiID: { type: String },
     email: { type: String },
     reference: { type: String }, // This should be sent to the client rather than _id
     organization: { type: String },
@@ -38,7 +38,6 @@ const userSchema = new mongoose.Schema({
         role: { type: String },
       },
     ],
-    ltiUserId: { type: String },
   },
   tokens: {
     access_token: { type: String },

@@ -11,13 +11,13 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue'
-import { StatusListItem } from '../types/main'
+import { FeedListItem } from '../types/main'
 import { baseUrl } from '@/constants'
 
 export default defineComponent({
   name: 'videofeedcard',
   props: {
-    statusItem: { type: Object as PropType<StatusListItem>, required: true },
+    statusItem: { type: Object as PropType<FeedListItem>, required: true },
   },
   setup() {
     return {

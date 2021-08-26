@@ -1,11 +1,11 @@
 <template>
   <div
-    class="flex flex-col flex-grow w-full"
+    class="flex flex-col w-full bg-viva-grey-400 rounded-xl"
     v-if="selectedItem"
     :key="selectedItem.video.details.id"
   >
-    <div class="flex flex-col flex-grow scrolling-touch w-full relative">
-      <div class="flex-none bg-black" @click="toggleScreenMode()">
+    <div class="flex flex-col scrolling-touch w-full relative">
+      <div class="flex-none" @click.stop="toggleScreenMode()">
         <video
           :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
           ref="playbackVideo"
@@ -21,7 +21,7 @@
       </div>
 
       <div
-        class="flex flex-row flex-grow-0 w-full bg-black py-1 md:py-4 justify-between"
+        class="flex flex-row flex-grow-0 w-full py-1 md:py-4 justify-between"
       >
         <div class="flex flex-grow-0 justify-center items-center">
           <div class="mx-4 text-white">{{ playerTime }}</div>
@@ -34,20 +34,20 @@
             v-show="!playing"
             class="pr-4 justify-center content-center"
             applyClasses="w-6 h-8 md:w-12"
-            @click="startPlaying()"
+            @click.stop="startPlaying()"
             symbol="play"
           ></SVGSymbol>
           <SVGSymbol
             v-show="playing"
             class="pr-4 justify-center content-center"
             applyClasses="w-6 j-8 md:w-12"
-            @click="stopPlaying()"
+            @click.stop="stopPlaying()"
             symbol="stop"
           ></SVGSymbol>
         </div>
       </div>
 
-      <div class="flex bg-black p-4 md:p-4">
+      <div class="flex p-4 md:p-4">
         <Scrubber
           type="range"
           v-model="moveScrubber"
@@ -58,33 +58,22 @@
         />
       </div>
     </div>
-    <div class="flex m-4">
-      <Button
-        class="bg-blue-400 self-center rounded-lg"
-        id="button-accept"
-        @click="addGroupShare"
-        >+ Add new group share
-      </Button>
-    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, Ref, computed, onMounted } from 'vue'
-import router from '@/router'
 import { Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
-import { baseUrl } from '@/constants'
+import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import videojs, { VideoJsPlayer } from 'video.js'
-import Button from '@/components/base/Button.vue'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import Scrubber from '@/components/base/Scrubber.vue'
 
 export default defineComponent({
-  name: 'videoComponent',
+  name: 'Player',
   components: {
-    Button,
     Scrubber,
     SVGSymbol,
   },
@@ -96,7 +85,7 @@ export default defineComponent({
     if (selectedItem.value) {
       video.value = new Video().updateFromVideo(selectedItem.value.video)
     }
-    const fullScreenMode = ref(true)
+    const fullScreenMode = ref(false)
     const moveScrubber = ref(0)
     const step = 0.01
     const playing = ref(false)
@@ -155,14 +144,10 @@ export default defineComponent({
       return 'video/mp4'
     })
 
-    // METHODS
-    const addGroupShare = () => {
-      videoActions
-        .createShare(video.value.details.id)
-        .then(() => router.push('/share'))
-    }
-
     function toggleScreenMode(): void {
+      const player: HTMLVideoElement | null = playbackVideo.value
+      if (player && !fullScreenMode.value) player.requestFullscreen()
+      else document.exitFullscreen()
       fullScreenMode.value = !fullScreenMode.value
     }
 
@@ -297,6 +282,9 @@ export default defineComponent({
           setPlayerBounds()
           player.removeEventListener('loadeddata', dataLoaded)
           context.emit('duration', player.duration)
+          if (videoGetters.detailMode.value === VIDEO_DETAIL_MODE.play) {
+            startPlaying()
+          }
         }
 
         player.addEventListener('loadeddata', dataLoaded)
@@ -317,7 +305,6 @@ export default defineComponent({
       stopPlaying,
       startPlaying,
       toggleScreenMode,
-      addGroupShare,
       // data
       baseUrl,
       selectedItem,

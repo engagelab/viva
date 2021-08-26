@@ -12,12 +12,13 @@ router.post(
   '/video/share',
   utilities.authoriseUser,
   async (request, response, next) => {
-    Video.find({ 'details.id': request.query.id }, (error, v) => {
+    const ltiID = response.locals.user.profile.ltiID
+    Video.findOne({ 'details.id': request.query.id }, (error, v) => {
       if (error || !v) {
         return response.status(400).end()
       } else {
         const newShare = v.users.sharing.create({
-          creator: '',
+          creator: ltiID || '',
           users: [],
           access: true,
           title: '',
@@ -43,7 +44,7 @@ router.put(
   utilities.authoriseUser,
   async (request, response, next) => {
     const updatedShare = request.body
-    Video.find({ 'details.id': request.query.id }, (error, v) => {
+    Video.findOne({ 'details.id': request.query.id }, (error, v) => {
       if (error || !v || !updatedShare._id) {
         return response.status(400).end()
       } else {
@@ -72,7 +73,7 @@ router.delete(
   utilities.authoriseUser,
   async (request, response, next) => {
     const deletedShare = request.body
-    Video.find({ 'details.id': request.query.id }, (error, v) => {
+    Video.findOne({ 'details.id': request.query.id }, (error, v) => {
       if (error || !v || !deletedShare._id) {
         return response.status(400).end()
       } else {

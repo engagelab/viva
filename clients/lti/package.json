@@ -12,6 +12,7 @@
     "@tailwindcss/postcss7-compat": "^2.0.2",
     "@types/cordova": "^0.0.34",
     "@types/video.js": "^7.3.26",
+    "@vueform/slider": "^2.0.4",
     "autoprefixer": "9.8.6",
     "core-js": "^3.6.5",
     "dotenv": "^8.2.0",

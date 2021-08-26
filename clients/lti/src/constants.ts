@@ -104,6 +104,13 @@ enum VIDEO_SHARING_STATUS {
   comment = 'comment',
 }
 
+enum VIDEO_DETAIL_MODE {
+  play = 'play',
+  share = 'share',
+  trim = 'trim',
+  users = 'users',
+}
+
 export {
   deviceType,
   baseUrl,
@@ -116,6 +123,7 @@ export {
   VIDEO_STATUS_TYPES,
   VIDEO_SHARING_MODE,
   VIDEO_SHARING_STATUS,
+  VIDEO_DETAIL_MODE,
   consentTypes,
   cordovaConstants,
   appVersion,

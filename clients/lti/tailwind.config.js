@@ -1,4 +1,5 @@
 const colors = require('tailwindcss/colors')
+const vivaColours = require('./tailwindCustomColors')
 
 module.exports = {
   purge: { content: ['./public/**/*.html', './src/**/*.vue'] },
@@ -27,9 +28,7 @@ module.exports = {
       purple: colors.violet,
       pink: colors.pink,
 
-      'grey-bg': '#121212',
-      'grey-card': '#1a1a1a',
-      'grey-text': '#888888',
+      viva: vivaColours,
     },
     spacing: {
       px: '1px',
@@ -753,6 +752,7 @@ module.exports = {
       opacity: 'opacity',
       shadow: 'box-shadow',
       transform: 'transform',
+      maxheight: 'max-height',
     },
     transitionTimingFunction: {
       DEFAULT: 'cubic-bezier(0.4, 0, 0.2, 1)',

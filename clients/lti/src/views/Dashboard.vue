@@ -1,16 +1,22 @@
 <template>
-  <div class="bg-grey-bg p-4">
-    <div class="flex flex-row font-serious font-extralight text-white py-4">
+  <div class="relative bg-viva-grey-300 p-4">
+    <div
+      class="flex flex-row font-serious font-extralight text-viva-grey-500 py-4"
+    >
       <div
         class="cursor-pointer mr-6"
-        :class="{ 'font-medium': currentTab === VIDEO_SHARING_MODE.feed }"
+        :class="{
+          'font-medium text-white': currentTab === VIDEO_SHARING_MODE.feed,
+        }"
         @click="showTab(VIDEO_SHARING_MODE.feed)"
       >
         Feed
       </div>
       <div
         class="cursor-pointer mr-6"
-        :class="{ 'font-medium': currentTab === VIDEO_SHARING_MODE.myVideos }"
+        :class="{
+          'font-medium text-white': currentTab === VIDEO_SHARING_MODE.myVideos,
+        }"
         @click="showTab(VIDEO_SHARING_MODE.myVideos)"
       >
         My Videos
@@ -18,7 +24,8 @@
       <div
         class="cursor-pointer mr-6"
         :class="{
-          'font-medium': currentTab === VIDEO_SHARING_MODE.sharedToMe,
+          'font-medium text-white':
+            currentTab === VIDEO_SHARING_MODE.sharedToMe,
         }"
         @click="showTab(VIDEO_SHARING_MODE.sharedToMe)"
       >
@@ -45,8 +52,7 @@
         <VideoMyCard
           v-for="(item, itemIndex) in myVideos"
           :key="itemIndex"
-          :item="item"
-          @click="selectItem(item)"
+          :listitem="item"
         />
       </div>
       <div
@@ -56,10 +62,18 @@
         <VideoSharedCard
           v-for="(item, itemIndex) in sharedToMe"
           :key="itemIndex"
-          :item="item"
+          :listitem="item"
           @click="selectItem(item)"
         />
       </div>
+    </div>
+    <div
+      v-if="selectedItem"
+      class="fixed top-0 left-0 flex flex-col w-full h-full bg-black bg-opacity-75 rounded-xl p-10"
+      @click.self="selectNone()"
+    >
+      <Player v-if="detailMode === VIDEO_DETAIL_MODE.play" />
+      <Share v-if="detailMode === VIDEO_DETAIL_MODE.share" />
     </div>
   </div>
 </template>
@@ -67,7 +81,7 @@
 <script lang="ts">
 // @ is an alias to /src
 import { defineComponent, ref, onMounted, Ref } from 'vue'
-import { VIDEO_SHARING_MODE } from '@/constants'
+import { VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
 import { ListItem } from '@/types/main'
 
 import { useAppStore } from '../store/useAppStore'
@@ -76,6 +90,8 @@ import { useVideoStore } from '../store/useVideoStore'
 import VideoFeedCard from '@/components/VideoFeedCard.vue'
 import VideoMyCard from '@/components/VideoMyCard.vue'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'
+import Player from '@/views/Player.vue'
+import Share from '@/views/Share.vue'
 
 export default defineComponent({
   name: 'Dashboard',
@@ -83,16 +99,29 @@ export default defineComponent({
     VideoFeedCard,
     VideoMyCard,
     VideoSharedCard,
+    Player,
+    Share,
   },
   setup() {
     const { getters: appGetters, actions: appActions } = useAppStore()
     const { getters: videoGetters, actions: videoActions } = useVideoStore()
     const user = appGetters.user.value
     appActions.fetchLTIData()
-    const currentTab: Ref<string> = ref(VIDEO_SHARING_MODE.feed)
+    const currentTab: Ref<string> = ref(VIDEO_SHARING_MODE.myVideos)
 
     onMounted(() => {
       videoActions.getVideoMetadata()
+      const h = document.documentElement.clientHeight
+      const windowHeight = parseInt(localStorage.getItem('windowHeight') || '0')
+      if (windowHeight > 0 && (windowHeight > h || h < 500)) {
+        parent.postMessage(
+          JSON.stringify({
+            subject: 'lti.frameResize',
+            height: windowHeight,
+          }),
+          '*'
+        )
+      }
     })
 
     function showTab(tabName: VIDEO_SHARING_MODE) {
@@ -102,16 +131,21 @@ export default defineComponent({
     }
 
     function selectItem(item: ListItem) {
+      videoActions.detailMode(VIDEO_DETAIL_MODE.share)
       videoActions.selectVideo(item)
     }
     videoActions.selectNoVideo()
 
     return {
       VIDEO_SHARING_MODE,
+      VIDEO_DETAIL_MODE,
       user,
       feed: videoGetters.feed,
       myVideos: videoGetters.myVideos,
       sharedToMe: videoGetters.sharedToMe,
+      selectedItem: videoGetters.selectedItem,
+      selectNone: videoActions.selectNoVideo,
+      detailMode: videoGetters.detailMode,
       selectItem,
       showTab,
       currentTab,

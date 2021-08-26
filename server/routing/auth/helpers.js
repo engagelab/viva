@@ -26,12 +26,11 @@ Sample profile = {
 function setUserAttributes(user, profile, tokenSet) {
   user.profile.username = profile.login_id
   user.profile.provider_id = profile.provider_id
-  user.profile.lti_id = profile.lti_id
-  user.profile.reference = createReference(user.profile.provider_id || user.profile.lti_id || user.profile.username)
+  user.profile.ltiID = profile.ltiID
+  user.profile.reference = createReference(user.profile.provider_id || user.profile.ltiID || user.profile.username)
   user.profile.fullName = profile.fullName
   user.profile.email = profile.email
   user.profile.organization = profile.organization
-  user.profile.ltiUserId = profile.ltiUserId
   // Tokens from Issuer service
   if (tokenSet.access_token) user.tokens.access_token = tokenSet.access_token
   if (tokenSet.id_token) user.tokens.id_token = tokenSet.id_token

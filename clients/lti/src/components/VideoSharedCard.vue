@@ -1,9 +1,9 @@
 <template>
   <div class="bg-grey-card text-grey-text rounded-xl w-64">
-    <p class="m-2 text-xs p-2">By {{ svideo.creator.name }}</p>
+    <p class="m-2 text-xs p-2">By {{ listitem.owner.name }}</p>
     <img
       class="object-cover h-36 w-full"
-      :src="`${baseUrl}/api/video/file?videoref=${svideo.original.details.id}&mode=thumbnail`"
+      :src="`${baseUrl}/api/video/file?videoref=${listitem.video.details.id}&mode=thumbnail`"
       alt="video thumbnail"
     />
   </div>
@@ -17,7 +17,7 @@ import { baseUrl } from '@/constants'
 export default defineComponent({
   name: 'videosharedcard',
   props: {
-    svideo: { type: Object as PropType<ListItem>, required: true },
+    listitem: { type: Object as PropType<ListItem>, required: true },
   },
   setup() {
     return {

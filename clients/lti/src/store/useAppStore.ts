@@ -118,18 +118,20 @@ interface Actions {
 const actions = {
   nameAndRole(ltiID: string): NameAndRole {
     const namerole = _appState.value.canvasData.namesAndRoles.find(
-      (nr) => nr.ltiUserID === ltiID
+      (nr) => nr.ltiID === ltiID
     )
     return (
       namerole || {
         name: 'not found',
-        ltiUserID: ltiID,
+        ltiID,
         email: '',
         roles: [],
+        abbreviation: 'NF',
       }
     )
   },
   fetchLTIData(): Promise<void> {
+    const rgx = new RegExp(/(\p{L}{1})\p{L}+/, 'gu')
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/api/users',
@@ -139,8 +141,18 @@ const actions = {
     return apiRequest<NameAndRole[]>(payload)
       .then((response: NameAndRole[]) => {
         if (response && response.length) {
-          _appState.value.canvasData.namesAndRoles = response
-          // console.dir(response)
+          const n = response.map((nar) => {
+            const initials: RegExpMatchArray[] =
+              [...nar.name.matchAll(rgx)] || []
+            const abbreviation: string = (
+              (initials.shift()?.[1] || '') + (initials.pop()?.[1] || '')
+            ).toUpperCase()
+            return {
+              ...nar,
+              abbreviation,
+            }
+          })
+          _appState.value.canvasData.namesAndRoles = n
         }
       })
       .catch((error: Error) => {

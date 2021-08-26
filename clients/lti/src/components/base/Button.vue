@@ -1,21 +1,26 @@
 <template>
   <button
-    class="flex justify-center items-center py-2 bg-white rounded-full shadow-md"
-    :class="{ 'text-gray-400': disabled }"
-    :style="{ width: customWidth }"
+    class="flex justify-center items-center py-2 rounded-full shadow-md"
+    :class="[
+      textcolour,
+      backgroundcolour && !disabled ? backgroundcolour : '',
+      disabled ? 'text-gray-400 bg-viva-grey-450' : '',
+      childclass ? childclass : 'w-56',
+    ]"
     @click="click"
   >
-    <span v-if="text" class="text-xl">{{ text }}</span>
     <slot></slot>
     <img
       class="w-24"
       v-if="logo == 'feide'"
       src="../../assets/icons/svg/feide.svg"
+      alt="feide logo"
     />
     <img
       class="w-24"
       v-if="logo == 'canvas'"
       src="../../assets/icons/svg/canvas.svg"
+      alt="canvas logo"
     />
   </button>
 </template>
@@ -29,17 +34,19 @@ export default defineComponent({
       type: String,
       default: '',
     },
-    text: {
+    childclass: {
       type: String,
-      default: '',
+    },
+    textcolour: {
+      type: String,
+      default: 'text-white',
+    },
+    backgroundcolour: {
+      type: String,
     },
     disabled: {
       type: Boolean,
       default: false,
-    },
-    customWidth: {
-      type: String,
-      default: '14rem',
     },
   },
   emits: ['vclick'],

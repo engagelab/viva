@@ -1,77 +1,107 @@
 <template>
-  <div class="my-2 flex flex-row">
-    <div class="flex flex-col">
-      <Player @currenttime="(t) => (videoCurrentTime = t)" />
-      <div class="flex flex-row">
-        <AnswerInput
-          class="m-2"
-          mode="text"
-          :border="false"
-          :label="'Description'"
-          :required="true"
-          v-model="localShare.description"
-          @change="unsavedData = true"
-        ></AnswerInput>
-        <AnswerInput
-          class="m-2 w-32"
-          mode="binary"
-          :border="false"
-          :label="'Access'"
-          :required="true"
-          v-model="localShare.access"
-          @change="unsavedData = true"
-        ></AnswerInput>
-      </div>
-      <Trim
-        :edl="localShare.edl"
-        :videoCurrentTime="videoCurrentTime"
-        :videoDuration="videoDuration"
-        @updated="(edl) => updateEDL(edl)"
-      />
-      <div class="flex flex-grow flex-col justify-end">
-        <Button class="mx-2" v-if="unsavedData" @vclick="updateShare()"
-          >Save</Button
-        >
-        <Button class="text-red-600 h-10 my-4 mx-2" @vclick="deleteShare()"
-          >Delete</Button
+  <div
+    class="my-6 flex flex-row bg-viva-grey-400 text-viva-grey-500 rounded-xl p-6"
+    v-if="selectedItem"
+  >
+    <template
+      v-if="detailMode === VIDEO_DETAIL_MODE.share"
+      class="flex flex-row"
+    >
+      <div class="flex flex-col w-56">
+        <img
+          class="object-cover h-36 rounded-md bg-viva-grey-450"
+          :src="`${baseUrl}/api/video/file?videoref=${selectedItem.video.details.id}&mode=thumbnail`"
+          alt="video thumbnail"
+        />
+        <Button
+          @click.stop="trimVideo()"
+          class="mt-4"
+          :childclass="'w-36 bg-opacity-0'"
+          :textcolour="'text-viva-blue-800'"
+          >Trim the video</Button
         >
       </div>
-    </div>
-    <div class="flex flex-row">
-      <div class="flex flex-col m-2">
-        <label
-          class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
-        >
-          shared with
-        </label>
-        <div>
-          <div v-for="(nar, index) in NARList" :key="index">
-            <input
-              class="mr-1 mb-1"
-              type="checkbox"
-              :id="`share-user-${index}`"
-              :value="nar.item.ltiUserID"
-              v-model="localShare.users"
-              @change="unsavedData = true"
-            />
-            <label class="mr-2" :for="`share-user-${index}`">{{
-              nar.itemName
-            }}</label>
+      <div class="flex flex-col flex-grow ml-4">
+        <div class="flex flex-col">
+          <input
+            v-if="myLTIID === localShare.creator"
+            class="text-2xl bg-viva-grey-400 text-white focus:bg-viva-grey-450 p-1"
+            placeholder="Add a title"
+            v-model="localShare.title"
+            @input="() => (unsavedData = true)"
+          />
+          <p v-else class="text-2xl">
+            {{ localShare.title }}
+          </p>
+          <textarea
+            class="mt-6 w-full text-white bg-viva-grey-450 focus:ring-2 focus:ring-blue-600 p-1"
+            rows="5"
+            placeholder="Add a description"
+            type="text"
+            v-model="localShare.description"
+            @input="() => (unsavedData = true)"
+          />
+        </div>
+        <div class="flex flex-col m-2">
+          <p class="my-2 text-white">Shared with</p>
+          <div class="m-2 max-h-36 overflow-scroll overflow-x-hidden">
+            <div v-for="(nar, index) in NARList" :key="index">
+              <input
+                class="mr-4 mb-4"
+                type="checkbox"
+                :id="`share-user-${index}`"
+                :value="nar.item.ltiID"
+                v-model="localShare.users"
+                @change="unsavedData = true"
+              />
+              <label class="mr-2" :for="`share-user-${index}`">{{
+                nar.itemName
+              }}</label>
+            </div>
           </div>
         </div>
+        <Button
+          class="self-end"
+          :childclass="'w-32'"
+          :disabled="!unsavedData"
+          :backgroundcolour="'bg-viva-blue-800'"
+          :textcolour="'text-white'"
+          @vclick.stop="updateShare()"
+        >
+          Save
+        </Button>
       </div>
+    </template>
+    <div
+      v-else-if="detailMode === VIDEO_DETAIL_MODE.trim"
+      class="flex flex-col"
+    >
+      <Player
+        @currenttime="(t) => (videoCurrentTime = t)"
+        @duration="updateDuration"
+      />
+      <Slider v-model="localShare.edl.trim" @change="updateEDL" />
     </div>
+    <!--div
+      v-else-if="detailMode === VIDEO_DETAIL_MODE.users"
+      class="flex flex-col"
+    ></div-->
   </div>
 </template>
 <script lang="ts">
 import { defineComponent, ref, Ref, watch } from 'vue'
-import { ListItem } from '@/types/main'
+import Slider from '@vueform/slider'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
-import { EditDecriptionList, NameAndRole, VideoSharing } from '@/types/main'
-import AnswerInput from '@/components/base/AnswerInput.vue'
+import {
+  EditDecriptionList,
+  NameAndRole,
+  VideoSharing,
+  ListItemShare,
+} from '@/types/main'
+import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
+import Player from '@/views/Player.vue'
 import Button from '@/components/base/Button.vue'
-import Trim from '@/components/Trim.vue'
 const { getters: appGetters } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
@@ -81,19 +111,19 @@ interface NARListItem {
 }
 
 export default defineComponent({
+  name: 'Share',
   components: {
-    AnswerInput,
-    Trim,
     Button,
+    Player,
+    Slider,
   },
   setup() {
     const selectedItem = videoGetters.selectedItem
+    const selectedItemShare = videoGetters.selectedItemShare
     const showUsers = ref(false)
     const unsavedData = ref(false)
     const videoCurrentTime = ref(0)
-    let videoDuration = 0
-    let videoID = ''
-    const myLTIID = appGetters.user.value.profile.ltiUserId
+    const myLTIID = appGetters.user.value.profile.ltiID
     let NARList: NARListItem[] = appGetters.canvasData.value.namesAndRoles.map(
       (u) => ({ itemName: u.name, item: u })
     )
@@ -108,7 +138,8 @@ export default defineComponent({
       comments: [],
     })
 
-    const resetData = (li: ListItem) => {
+    const resetData = (li: ListItemShare) => {
+      unsavedData.value = false
       const s = li.share
       if (s) {
         localShare.value = {
@@ -124,38 +155,55 @@ export default defineComponent({
       }
     }
 
-    const updateEDL = (edl: EditDecriptionList) => {
-      localShare.value.edl = edl
+    const updateEDL = (trim: EditDecriptionList['trim']) => {
+      localShare.value.edl.trim = trim
       unsavedData.value = true
     }
 
     watch(
-      () => selectedItem.value,
+      () => selectedItemShare.value,
       (s) => {
-        if (s) {
-          videoID = s.video.details.id
-          videoDuration = s.video.details.duration
+        if (s && selectedItem.value) {
           resetData(s)
         }
       }
     )
-    if (selectedItem.value) {
-      videoID = selectedItem.value.video.details.id
-      resetData(selectedItem.value)
+    if (selectedItemShare.value && selectedItem.value) {
+      resetData(selectedItemShare.value)
     }
 
     const updateShare = function () {
-      videoActions.updateShare(videoID, localShare.value)
-      unsavedData.value = false
+      if (selectedItem.value && unsavedData.value) {
+        videoActions.updateShare(
+          selectedItem.value.video.details.id,
+          localShare.value
+        )
+        unsavedData.value = false
+      }
+    }
+
+    const updateDuration = function (duration: string) {
+      localShare.value.edl.trim[1] = parseFloat(duration)
     }
 
     const deleteShare = function () {
-      videoActions.deleteShare(videoID, localShare.value)
+      if (selectedItem.value) {
+        videoActions.deleteShare(
+          selectedItem.value.video.details.id,
+          localShare.value
+        )
+      }
+    }
+
+    const trimVideo = function () {
+      videoActions.detailMode(VIDEO_DETAIL_MODE.trim)
     }
 
     return {
-      videoDuration,
-      videoCurrentTime,
+      VIDEO_DETAIL_MODE,
+      baseUrl,
+      myLTIID,
+      selectedItem,
       NARList,
       localShare,
       showUsers,
@@ -163,6 +211,10 @@ export default defineComponent({
       updateShare,
       deleteShare,
       unsavedData,
+      trimVideo,
+      videoCurrentTime,
+      updateDuration,
+      detailMode: videoGetters.detailMode,
     }
   },
 })

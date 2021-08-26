@@ -27,7 +27,7 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
       $or: [
         {
           'users.sharing.users': {
-            $in: [response.locals.user.profile.ltiUserId],
+            $in: [response.locals.user.profile.ltiID],
           },
         },
         { 'users.owner': response.locals.user._id },

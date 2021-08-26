@@ -23,8 +23,13 @@ window.addEventListener('message', function (event) {
     } else {
       router.push('/')
     }
+  } else if (typeof event.data === 'string' && event.data.match(/lti/g)) {
+    const data = JSON.parse(event.data)
+    if (data.subject === 'lti.fetchWindowSize')
+      localStorage.setItem('windowHeight', data.height)
   }
 })
+window.parent.postMessage({ subject: 'lti.fetchWindowSize' }, '*')
 
 /* interface SLPlusCustomEventDetail {
   type: string
