@@ -1,14 +1,13 @@
 // Store to do dataset functions (Mostly in admin side)
 /* ---- Functionaltiy to be done  ----------------
-1. Display datasets
-2. Create / update dataset
-3. Fetch consents either using feide token or canvas token  */
+1.Selection Priority
+2. Add instances
 
+*/
 import { ref, Ref, computed, ComputedRef } from 'vue'
 import {
   Dataset,
   DatasetSelection,
-  DataPath,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
 } from '../types/main'
@@ -44,7 +43,7 @@ interface Actions {
   addDataset: (datasetName: string) => Promise<void>
   updateDataset: (d?: Dataset) => Promise<void>
   selectDatasetById: (datasetId: string) => void
-  addSelection: (currentDataPath: DataPath) => void
+  addSelection: (localSelection: { [key: string]: DatasetSelection[] }) => void
   addConsentField: (value: string) => void
 }
 
@@ -132,7 +131,7 @@ const actions = {
     if (d) state.value.selectedDataset = d
   },
 
-  addSelection(currentDataPath: DataPath): void {
+  addSelection(localSelection: { [key: string]: DatasetSelection[] }): void {
     // if (state.value.selectedDataset) {
     //   const selection = state.value.selectedDataset.selection
     //     ? state.value.selectedDataset.selection
@@ -146,32 +145,33 @@ const actions = {
     //   console.log(state.value.selectedDataset)
     // }
 
-    const recurse = (nodes: DatasetSelection[], label: string) => {
-      nodes.forEach((node) => {
-        if (label) console.log('Label:' + label + 'Value:' + node.title)
-        if (node.selection)
-          recurse(
-            node.selection[Object.keys(node.selection)[0]],
-            Object.keys(node.selection)[0]
-          )
-      })
-    }
+    // const recurse = (nodes: DatasetSelection[], label: string) => {
+    //   nodes.forEach((node) => {
+    //     if (label) console.log('Label:' + label + 'Value:' + node.title)
+    //     if (node.selection)
+    //       recurse(
+    //         node.selection[Object.keys(node.selection)[0]],
+    //         Object.keys(node.selection)[0]
+    //       )
+    //   })
+    // }
 
-    recurse(
-      state.value.selectedDataset.selection[
-        Object.keys(state.value.selectedDataset.selection)[0]
-      ],
-      Object.keys(state.value.selectedDataset.selection)[0]
-    )
+    // recurse(
+    //   state.value.selectedDataset.selection[
+    //     Object.keys(state.value.selectedDataset.selection)[0]
+    //   ],
+    //   Object.keys(state.value.selectedDataset.selection)[0]
+    // )
 
-    console.log(currentDataPath)
-    const path = currentDataPath.path.split('-')
-    console.log(path)
-    for (const [key, value] of Object.entries(
-      state.value.selectedDataset.selection
-    )) {
-      console.log(`${key}: ${value}`)
-    }
+    // console.log(currentDataPath)
+    // const path = currentDataPath.path.split('-')
+    // console.log(path)
+    // for (const [key, value] of Object.entries(
+    //   state.value.selectedDataset.selection
+    // )) {
+    //   console.log(`${key}: ${value}`)
+    // }
+    state.value.selectedDataset.selection = { ...localSelection }
   },
 }
 

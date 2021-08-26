@@ -21,21 +21,26 @@
             cursor-pointer
           "
           @click="
-            showInputBox({
-              currentKey: localSelectionPriority[depth - 1],
-              currentValue: title,
-              path: path,
-              title: '',
-            })
+            showInputBox(
+              {
+                currentKey: localSelectionPriority[depth - 1],
+                nextKey: '',
+                currentValue: title,
+                path: path,
+                title: '',
+              },
+              'current'
+            )
           "
         >
           ⬇️
         </div>
         <p v-if="localSelectionPriority">
-          {{ localSelectionPriority[depth - 1] }}:{{ title }}
+          {{ localSelectionPriority[depth - 1] }}:{{ title }}{{ nodes
+          }}{{ label }}
         </p>
         <div
-          v-if="nodes.length == 0"
+          v-if="nodes && nodes.length == 0"
           class="
             rounded-full
             h-4
@@ -47,12 +52,16 @@
             cursor-pointer
           "
           @click="
-            showInputBox({
-              currentKey: localSelectionPriority[depth],
-              currentValue: title,
-              path: path,
-              title: '',
-            })
+            showInputBox(
+              {
+                currentKey: localSelectionPriority[depth - 1],
+                nextKey: localSelectionPriority[depth],
+                currentValue: title,
+                path: path,
+                title: '',
+              },
+              'new'
+            )
           "
         >
           +
@@ -71,6 +80,15 @@
           :key="node"
           :depth="depth + 1"
           :path="
+            localSelectionPriority[depth - 1]
+              ? path.toLowerCase() +
+                '+' +
+                localSelectionPriority[depth - 1].toLowerCase() +
+                '-' +
+                title.toLowerCase()
+              : ''
+          "
+          :newInstancePath="
             localSelectionPriority[depth - 1]
               ? path.toLowerCase() +
                 '+' +
@@ -102,7 +120,8 @@
               hover:bg-blue-500
             "
             @click="addSubset(currentDataPath, depth)"
-            >Add {{ currentDataPath.currentKey }}{{ currentDataPath }}
+            >Add {{ currentDataPath.currentKey }}{{ newInstancePath
+            }}{{ currentDataPath }}
           </SlButton>
           <!-- <div v-if="errorMessage" class="text-red-600">
             {{ errorMessage }}
@@ -123,6 +142,8 @@ export default defineComponent({
   components: {},
   props: {
     path: { type: String, required: true },
+    newInstancePath: { type: String, required: true },
+
     depth: { type: Number, required: true },
     title: { type: String, required: true },
     label: { type: String, required: true },
@@ -141,13 +162,15 @@ export default defineComponent({
     const { getters: datasetGetters } = useDatasetStore()
     const d = datasetGetters.selectedDataset
     // const theDataset = ref(d)
-    // const { actions: datasetActions } = useDatasetStore()
+    const { actions: datasetActions } = useDatasetStore()
     let currentDataPath = ref<DataPath>({
       path: '',
       currentKey: '',
+      nextKey: '',
       currentValue: '',
       title: '',
     })
+    let mode = ref('')
     const showInput = ref(false)
     const localSelectionPriority: Ref<string[]> = ref(d.value.selectionPriority)
     const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref(
@@ -155,7 +178,8 @@ export default defineComponent({
     )
 
     //Methods
-    const showInputBox = (path: DataPath) => {
+    const showInputBox = (path: DataPath, modeValue: string) => {
+      mode.value = modeValue
       console.log(props.path)
       currentDataPath.value = path
       showInput.value = !showInput.value
@@ -167,7 +191,14 @@ export default defineComponent({
         title: currentDataPath.title,
         selection: {},
       }
-      // datasetActions.addSelection(currentDataPath.value)
+      let newPath =
+        props.path +
+        '+' +
+        currentDataPath.currentKey.toLowerCase() +
+        '-' +
+        currentDataPath.currentValue.toLowerCase()
+      console.log(newPath)
+
       showInput.value = !showInput.value
       //  Match the path and add the subset
       let p = ''
@@ -183,9 +214,13 @@ export default defineComponent({
               set.title.toLowerCase()
             : ''
 
-          if (p === props.path) {
+          if (p === props.path && mode.value == 'current') {
             set.selection[currentDataPath.currentKey].push(nySubset)
+          } else if (p === newPath && mode.value == 'new') {
+            Object.assign(set, { [currentDataPath.nextKey]: [nySubset] })
+            console.log(set)
           }
+          // console.log(set)
           if (set.selection) {
             subsetPath(set.selection[Object.keys(set.selection)[0]])
           } else {
@@ -196,6 +231,9 @@ export default defineComponent({
       }
 
       subsetPath(localSelection.value[Object.keys(localSelection.value)[0]])
+      console.log(localSelection.value)
+      datasetActions.addSelection(localSelection.value)
+      showInput.value = false
     }
     return {
       // selectionPriority: computed(() =>

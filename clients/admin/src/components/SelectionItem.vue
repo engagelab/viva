@@ -9,6 +9,7 @@
         :nodes="localSelection[Object.keys(localSelection)[0]]"
         :depth="0"
         :path="''"
+        :newInstancePath="''"
       ></Subset>
     </div>
   </div>
@@ -49,7 +50,6 @@ export default defineComponent({
           )
         : ''
     })
-    console.log(InitialSelectionPriority.value)
     //Methods
     const setCurrentSelectionPriority = (selectionPriority: string) => {
       let index: number =
