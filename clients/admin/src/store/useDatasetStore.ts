@@ -37,7 +37,10 @@ interface Actions {
   addDataset: (datasetName: string) => Promise<void>
   updateDataset: (d?: Dataset) => Promise<void>
   selectDatasetById: (datasetId: string) => void
-  addSelection: (localSelection: { [key: string]: DatasetSelection[] }) => void
+  addSelection: (
+    localSelection: { [key: string]: DatasetSelection[] } | string[],
+    mode: string
+  ) => void
   addConsentField: (value: string) => void
 }
 
@@ -105,8 +108,21 @@ const actions = {
     if (d) state.value.selectedDataset = d
   },
 
-  addSelection(localSelection: { [key: string]: DatasetSelection[] }): void {
-    state.value.selectedDataset.selection = { ...localSelection }
+  addSelection(
+    value: { [key: string]: DatasetSelection[] } | string[],
+    mode: string
+  ): void {
+    if (mode == 'priority') {
+      state.value.selectedDataset.selectionPriority = value as string[]
+      state.value.selectedDataset.selection = {}
+      // Object.assign(state.value.selectedDataset.selection, {
+      //   [state.value.selectedDataset.selectionPriority[0]]: [],
+      // })
+    } else if (mode == 'selection') {
+      state.value.selectedDataset.selection = {
+        ...(value as { [key: string]: DatasetSelection[] }),
+      }
+    }
     actions.updateDataset()
   },
 }

@@ -15,7 +15,7 @@
   </div>
 </template>
 <script lang="ts">
-import { computed, defineComponent, ref, watch, PropType, Ref } from 'vue'
+import { defineComponent, ref, watch, Ref } from 'vue'
 
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { DatasetSelection } from '@/types/main'
@@ -26,16 +26,12 @@ export default defineComponent({
   components: {
     Subset,
   },
-  props: {
-    localSelectionPriority: {
-      type: Array as PropType<string[]>,
-      required: true,
-    },
-  },
 
-  setup(props) {
+  setup() {
     const { getters: datasetGetters } = useDatasetStore()
     const d = datasetGetters.selectedDataset
+    const localSelectionPriority: Ref<string[]> = ref(d.value.selectionPriority)
+
     let currentSelectionPriority = ref('')
 
     const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref(
@@ -43,22 +39,17 @@ export default defineComponent({
     )
 
     function reloadData() {
+      localSelectionPriority.value = [...d.value.selectionPriority]
       localSelection.value = d.value.selection
     }
-    const InitialSelectionPriority = computed(() => {
-      return localSelection.value
-        ? props.localSelectionPriority.find(
-            (i) => i == Object.keys(localSelection.value)[0]
-          )
-        : ''
-    })
+
     //Methods
     const setCurrentSelectionPriority = (selectionPriority: string) => {
       let index: number =
-        props.localSelectionPriority.indexOf(selectionPriority)
+        localSelectionPriority.value.indexOf(selectionPriority)
       if (index > -1) {
-        currentSelectionPriority.value = props.localSelectionPriority[index + 1]
-      } else currentSelectionPriority.value = props.localSelectionPriority[0]
+        currentSelectionPriority.value = localSelectionPriority.value[index + 1]
+      } else currentSelectionPriority.value = localSelectionPriority.value[0]
     }
     watch(
       () => d.value,
@@ -68,7 +59,7 @@ export default defineComponent({
     return {
       localSelection,
       currentSelectionPriority,
-      InitialSelectionPriority,
+      localSelectionPriority,
       // Methods
       setCurrentSelectionPriority,
     }

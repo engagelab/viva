@@ -126,6 +126,8 @@
             "
             @click="addSubset(currentDataPath)"
             >Add
+            <p v-if="mode == 'new'">{{ currentDataPath.nextKey }}</p>
+            <p v-else>{{ currentDataPath.currentKey }}</p>
           </SlButton>
           <!-- <div v-if="errorMessage" class="text-red-600">
             {{ errorMessage }}
@@ -137,7 +139,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, Ref } from 'vue'
+import { defineComponent, PropType, watch, ref, Ref } from 'vue'
 import { DatasetSelection, DataPath } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
 
@@ -234,7 +236,13 @@ export default defineComponent({
           }
         })
       }
-      if (Object.keys(localSelection.value).length > 0) {
+      if (
+        props.depth == 1 &&
+        props.path == '' &&
+        currentDataPath.nextKey == ''
+      ) {
+        localSelection.value[currentDataPath.currentKey].push(nySubset)
+      } else if (Object.keys(localSelection.value).length > 0) {
         subsetPath(localSelection.value[Object.keys(localSelection.value)[0]])
       } else {
         // first instance added
@@ -243,14 +251,24 @@ export default defineComponent({
         })
       }
       console.log(localSelection.value)
-      datasetActions.addSelection(localSelection.value)
+      datasetActions.addSelection(localSelection.value, 'selection')
       showInput.value = false
     }
+    function reloadData() {
+      localSelectionPriority.value = [...d.value.selectionPriority]
+      localSelection.value = d.value.selection
+    }
+    watch(
+      () => d.value,
+      () => reloadData()
+    )
+    reloadData()
     return {
       localSelection,
       localSelectionPriority,
       showInput,
       currentDataPath,
+      mode,
       // Methods
       showInputBox,
       addSubset,

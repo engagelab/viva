@@ -47,9 +47,9 @@
 import { defineComponent, ref, computed, watch, Ref, ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { behandlings, UTVALG_SELECTION, CONSENT_TYPES } from '@/constants'
-// import { DatasetSelection } from '@/types/main'
+
 import { useDatasetStore } from '@/store/useDatasetStore'
-// import Button from '@/components/base/Button.vue'
+
 import SelectionItem from '@/components/SelectionItem.vue'
 
 const messages = {
@@ -77,17 +77,17 @@ export default defineComponent({
   components: {
     SelectionItem,
   },
-  emits: ['updated'],
-  setup(props, context) {
+  // emits: ['updated'],
+  setup(/*props, context*/) {
     const { t } = useI18n({ messages })
-    const { getters: datasetGetters } = useDatasetStore()
+    const { getters: datasetGetters, actions: datasetActions } =
+      useDatasetStore()
 
     const currentSelection = ref('')
 
     const d = datasetGetters.selectedDataset
 
     const localSelectionPriority: Ref<string[]> = ref(d.value.selectionPriority)
-    // const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref({})
 
     const selectionOptionList: ComputedRef<string[]> = computed(() => {
       return Object.values(UTVALG_SELECTION).filter(
@@ -100,22 +100,38 @@ export default defineComponent({
     }
 
     function addSelectionPriority() {
-      if (confirm('Modifying the priority resets instances , are you sure? ')) {
+      let check = false
+      if (d.value.selection && Object.keys(d.value.selection).length != 0) {
+        check = confirm(
+          'Modifying the priority resets instances , are you sure? '
+        )
+      } else check = true
+
+      if (check) {
         if (currentSelection.value) {
           localSelectionPriority.value.push(currentSelection.value)
-          context.emit('updated', localSelectionPriority.value)
+          // context.emit('updated', localSelectionPriority.value)
+          datasetActions.addSelection(localSelectionPriority.value, 'priority')
         }
       }
     }
 
     const removeSelectionPriority = (s: string) => {
-      if (confirm('Modifying the priority resets instances , are you sure? ')) {
+      let check = false
+      if (Object.keys(d.value.selection).length != 0) {
+        check = confirm(
+          'Modifying the priority resets instances , are you sure? '
+        )
+      } else check = true
+
+      if (check) {
         currentSelection.value = ''
         localSelectionPriority.value.splice(
           localSelectionPriority.value.indexOf(s),
           1
         )
-        context.emit('updated', localSelectionPriority.value)
+        // context.emit('updated', localSelectionPriority.value)
+        datasetActions.addSelection(localSelectionPriority.value, 'priority')
       }
     }
 
