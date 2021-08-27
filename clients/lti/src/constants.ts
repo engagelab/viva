@@ -105,10 +105,11 @@ enum VIDEO_SHARING_STATUS {
 }
 
 enum VIDEO_DETAIL_MODE {
+  none = 'none',
   play = 'play',
   share = 'share',
   trim = 'trim',
-  users = 'users',
+  annotate = 'annotate',
 }
 
 export {

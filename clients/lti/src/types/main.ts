@@ -144,11 +144,12 @@ export interface FeedListItem {
   readonly item: ListItem
 }
 export interface ListItemShare {
-  id: string // id of the share (video.users.sharing[share]._id)
-  creator: string // LTI ID of the creator of the share
-  creatorName: NameAndRole // Creator of the share
-  users: NameAndRole[] // Users this item is shared with
-  share: VideoSharing // Pointer to video.users.shares[this share]
+  readonly id: string // id of the share (video.users.sharing[share]._id)
+  readonly creator: string // LTI ID of the creator of the share
+  readonly creatorName: NameAndRole // Creator of the share
+  readonly users: NameAndRole[] // Users this item is shared with
+  readonly share: VideoSharing // Pointer to video.users.shares[this share]
+  readonly video: Video // Pointer to the actual video
 }
 export interface ListItem {
   readonly mode: VIDEO_SHARING_MODE

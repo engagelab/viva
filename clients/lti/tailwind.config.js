@@ -1,5 +1,6 @@
 const colors = require('tailwindcss/colors')
 const vivaColours = require('./tailwindCustomColors')
+const plugin = require('tailwindcss/plugin')
 
 module.exports = {
   purge: { content: ['./public/**/*.html', './src/**/*.vue'] },
@@ -452,6 +453,7 @@ module.exports = {
       '4/6': '66.666667%',
       '5/6': '83.333333%',
       full: '100%',
+      screen90: '90vh',
       screen: '100vh',
     }),
     inset: (theme, { negative }) => ({
@@ -1038,5 +1040,27 @@ module.exports = {
     wordBreak: ['responsive'],
     zIndex: ['responsive', 'focus-within', 'focus'],
   },
-  plugins: [],
+  plugins: [
+    plugin(function ({ addUtilities }) {
+      const newUtilities = {
+        '.skew-10deg': {
+          transform: 'skewY(-10deg)',
+        },
+        '.skew-15deg': {
+          transform: 'skewY(-15deg)',
+        },
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        '.no-scrollbar::-webkit-scrollbar': {
+          display: 'none',
+        },
+        /* Hide scrollbar for IE, Edge and Firefox */
+        '.no-scrollbar': {
+          '-ms-overflow-style': 'none', // IE and Edge
+          'scrollbar-width': 'none', // Firefox
+        },
+      }
+
+      addUtilities(newUtilities)
+    }),
+  ],
 }

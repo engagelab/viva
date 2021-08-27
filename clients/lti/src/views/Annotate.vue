@@ -1,10 +1,10 @@
 <template>
   <div>
     <template
-      v-if="detailMode.submode === VIDEO_DETAIL_MODE.none && selectedItemShare"
+      v-if="detailMode.mode === VIDEO_DETAIL_MODE.annotate && selectedItemShare"
     >
       <div
-        class="my-6 flex flex-row flex-wrap bg-viva-grey-400 text-viva-grey-500 rounded-xl p-6 w-auto lg:w-192"
+        class="my-6 flex flex-row flex-wrap bg-viva-grey-400 text-viva-grey-500 rounded-xl p-6"
       >
         <div class="flex flex-col w-auto lg:w-56">
           <div class="relative flex bg-viva-grey-450 rounded-md">
@@ -23,18 +23,6 @@
                 <img :src="playButtonSVG" alt="play-button" />
               </div>
             </div>
-          </div>
-          <div
-            v-if="myLTIID === localShare.creator"
-            @click.stop="trimVideo()"
-            class="flex flex-row items-center mt-4 text-viva-blue-800 cursor-pointer"
-          >
-            <div
-              class="flex items-center justify-center w-10 h-10 rounded-full bg-viva-grey-450 p-2 mr-2"
-            >
-              <img :src="trimButtonSVG" alt="trim-button" />
-            </div>
-            Trim the video
           </div>
         </div>
         <div class="flex flex-col flex-grow ml-4">
@@ -85,8 +73,8 @@
                   >
                     {{ nar.item.abbreviation }}
                   </div>
-                  <div class="flex flex-col">
-                    <p class="ml-2">{{ nar.item.name }}</p>
+                  <div class="flex flex-col ml-2">
+                    <p>{{ nar.item.name }}</p>
                     <p
                       v-if="localShare.creator === nar.item.ltiID"
                       class="text-xs text-white"
@@ -112,13 +100,6 @@
         </div>
       </div>
     </template>
-    <template v-else-if="detailMode.submode === VIDEO_DETAIL_MODE.trim">
-      <Player
-        @currenttime="(t) => (videoCurrentTime = t)"
-        @duration="updateDuration"
-        @edl="updateEDL"
-      />
-    </template>
   </div>
 </template>
 <script lang="ts">
@@ -132,7 +113,6 @@ import {
   ListItemShare,
 } from '@/types/main'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
-import Player from '@/views/Player.vue'
 import Button from '@/components/base/Button.vue'
 import trimButtonSVG from '@/assets/icons/svg/trim.svg'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
@@ -149,7 +129,6 @@ export default defineComponent({
   name: 'Share',
   components: {
     Button,
-    Player,
   },
   setup() {
     const selectedItemShare = videoGetters.selectedItemShare
@@ -206,7 +185,7 @@ export default defineComponent({
     }
 
     const updateShare = function () {
-      if (unsavedData.value && selectedItemShare.value) {
+      if (selectedItemShare.value && unsavedData.value) {
         videoActions.updateShare(
           selectedItemShare.value.video.details.id,
           localShare.value
@@ -228,11 +207,11 @@ export default defineComponent({
       }
     }
 
-    const trimVideo = function () {
-      videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.trim)
-    }
     const playVideo = function () {
-      videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.play)
+      videoActions.detailMode(
+        VIDEO_DETAIL_MODE.annotate,
+        VIDEO_DETAIL_MODE.play
+      )
     }
 
     return {
@@ -247,7 +226,6 @@ export default defineComponent({
       updateShare,
       deleteShare,
       unsavedData,
-      trimVideo,
       playVideo,
       videoCurrentTime,
       updateDuration,

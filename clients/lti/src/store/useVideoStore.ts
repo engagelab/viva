@@ -32,7 +32,7 @@ interface State {
   selectedItemShare: ListItemShare | undefined
   selectedVideoURL: string
   videos: Map<string, Video>
-  detailMode: VIDEO_DETAIL_MODE
+  detailMode: { mode: VIDEO_DETAIL_MODE; submode: VIDEO_DETAIL_MODE }
 }
 
 const state: Ref<State> = ref({
@@ -40,7 +40,10 @@ const state: Ref<State> = ref({
   selectedItemShare: undefined,
   selectedVideoURL: '',
   videos: new Map<string, Video>(),
-  detailMode: VIDEO_DETAIL_MODE.share,
+  detailMode: {
+    mode: VIDEO_DETAIL_MODE.none,
+    submode: VIDEO_DETAIL_MODE.none,
+  },
 })
 
 //----------------- Server side functions----------------//
@@ -60,8 +63,8 @@ interface Getters {
   selectedVideoURL: ComputedRef<State['selectedVideoURL']>
   feed: ComputedRef<FeedListItem[]>
   myVideos: ComputedRef<ListItem[]>
-  sharedToMe: ComputedRef<ListItem[]>
-  detailMode: ComputedRef<VIDEO_DETAIL_MODE>
+  sharedToMe: ComputedRef<ListItemShare[]>
+  detailMode: ComputedRef<State['detailMode']>
 }
 const getters = {
   get selectedItem(): ComputedRef<State['selectedItem']> {
@@ -73,7 +76,7 @@ const getters = {
   get selectedVideoURL(): ComputedRef<State['selectedVideoURL']> {
     return computed(() => state.value.selectedVideoURL)
   },
-  get detailMode(): ComputedRef<VIDEO_DETAIL_MODE> {
+  get detailMode(): ComputedRef<State['detailMode']> {
     return computed(() => state.value.detailMode)
   },
   get feed(): ComputedRef<FeedListItem[]> {
@@ -88,13 +91,16 @@ const getters = {
         .filter((v) => v.users.owner === myUserID)
         .map(
           (v: Video): ListItem => {
-            const shares: ListItemShare[] = v.users.sharing.map((s) => ({
-              id: s._id,
-              creator: s.creator,
-              creatorName: appActions.nameAndRole(s.creator),
-              users: s.users.map((u) => appActions.nameAndRole(u)),
-              share: s,
-            }))
+            const shares: ListItemShare[] = v.users.sharing
+              .filter((s) => s.creator === myLTIID)
+              .map((s) => ({
+                id: s._id,
+                creator: s.creator,
+                creatorName: appActions.nameAndRole(s.creator),
+                users: s.users.map((u) => appActions.nameAndRole(u)),
+                share: s,
+                video: v,
+              }))
             return {
               mode: VIDEO_SHARING_MODE.myVideos,
               video: v,
@@ -111,41 +117,27 @@ const getters = {
         )
     })
   },
-  get sharedToMe(): ComputedRef<ListItem[]> {
+  get sharedToMe(): ComputedRef<ListItemShare[]> {
     return computed(() => {
       const myUserID = appGetters.user.value._id
       const myLTIID = appGetters.user.value.profile.ltiID
       const videos = Array.from(state.value.videos.values())
-      return videos
-        .filter((v: Video) => v.users.owner !== myUserID) // Filter out my own videos
-        .map((v) => {
-          const sharedToMe: ListItem[] = []
-          v.users.sharing
-            .filter((s) => s.users.includes(myLTIID)) // Filter out shares that don't include me
-            .forEach((s) => {
-              const singleShare: ListItemShare = {
-                id: s._id,
-                creator: s.creator,
-                creatorName: appActions.nameAndRole(s.creator),
-                users: s.users.map((u) => appActions.nameAndRole(u)),
-                share: s,
-              }
-              sharedToMe.push({
-                mode: VIDEO_SHARING_MODE.sharedToMe,
-                video: v,
-                shares: [singleShare],
-                owner: appActions.nameAndRole(s.creator),
-                dataset: {
-                  name: v.dataset.name,
-                  selection: v.dataset.selection.reduce((acc, curr) => {
-                    return acc + curr.title
-                  }, ''),
-                },
-              })
+      const sharedWithMe: ListItemShare[] = []
+      videos.forEach((v) => {
+        v.users.sharing
+          .filter((s) => s.creator !== myUserID && s.users.includes(myLTIID)) // Filter for shares that include me, but aren't created by me
+          .forEach((s) => {
+            sharedWithMe.push({
+              id: s._id,
+              creator: s.creator,
+              creatorName: appActions.nameAndRole(s.creator),
+              users: s.users.map((u) => appActions.nameAndRole(u)),
+              share: s,
+              video: v,
             })
-          return sharedToMe
-        })
-        .flat()
+          })
+      })
+      return sharedWithMe
     })
   },
 }
@@ -155,15 +147,19 @@ interface Actions {
   selectVideo: (video: ListItem) => void
   selectShare: (share: ListItemShare) => void
   selectNoVideo: () => void
-  detailMode: (mode: VIDEO_DETAIL_MODE) => void
+  detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
   updateMetadata: (video: Video) => Promise<void>
   createShare: (videoID: string) => Promise<void>
   updateShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
   deleteShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
 }
 const actions = {
-  detailMode: function (mode: VIDEO_DETAIL_MODE): void {
-    state.value.detailMode = mode
+  detailMode: function (
+    mode: VIDEO_DETAIL_MODE,
+    submode: VIDEO_DETAIL_MODE
+  ): void {
+    state.value.detailMode.mode = mode
+    state.value.detailMode.submode = submode
   },
   createShare: function (videoID: string): Promise<void> {
     const payload: APIRequestPayload = {
@@ -174,15 +170,18 @@ const actions = {
     }
     return apiRequest<VideoSharing>(payload).then((newShare: VideoSharing) => {
       const v = state.value.videos.get(videoID)
-      const share: ListItemShare = {
-        id: newShare._id,
-        creator: newShare.creator,
-        creatorName: appActions.nameAndRole(newShare.creator),
-        users: newShare.users.map((u) => appActions.nameAndRole(u)),
-        share: newShare,
+      if (v) {
+        const share: ListItemShare = {
+          id: newShare._id,
+          creator: newShare.creator,
+          creatorName: appActions.nameAndRole(newShare.creator),
+          users: newShare.users.map((u) => appActions.nameAndRole(u)),
+          share: newShare,
+          video: v,
+        }
+        state.value.selectedItemShare = share
+        v.users.sharing.push(newShare)
       }
-      state.value.selectedItemShare = share
-      if (v) v.users.sharing.push(newShare)
     })
   },
 

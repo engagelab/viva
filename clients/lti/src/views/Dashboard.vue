@@ -32,7 +32,7 @@
         Shared To Me
       </div>
     </div>
-    <div class="w-auto lg:w-192">
+    <div class="w-auto lg:w-192 overflow-y-auto no-scrollbar">
       <div
         v-show="currentTab === VIDEO_SHARING_MODE.feed"
         class="flex flex-row flex-wrap"
@@ -41,7 +41,6 @@
           v-for="(statusItem, itemIndex) in feed"
           :key="itemIndex"
           :statusItem="statusItem"
-          @click="selectItem(statusItem.item)"
         />
       </div>
       <div
@@ -57,26 +56,24 @@
       </div>
       <div
         v-show="currentTab === VIDEO_SHARING_MODE.sharedToMe"
-        class="flex flex-row flex-wrap"
+        class="flex flex-col"
       >
+        <p class="text-lg text-white">Shared with me</p>
         <VideoSharedCard
-          v-for="(item, itemIndex) in sharedToMe"
+          v-for="(share, itemIndex) in sharedToMe"
           :key="itemIndex"
-          :listitem="item"
-          @click="selectItem(item)"
+          :share="share"
         />
       </div>
     </div>
     <div
-      v-if="selectedItem"
+      v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none"
       class="fixed top-0 left-0 flex flex-col items-center w-full h-full bg-black bg-opacity-75 rounded-xl p-10"
       @click.self="selectNone()"
     >
-      <Player v-if="detailMode === VIDEO_DETAIL_MODE.play" />
-      <Share
-        v-if="detailMode === VIDEO_DETAIL_MODE.share"
-        class="w-auto lg:w-192"
-      />
+      <Player v-if="detailMode.mode === VIDEO_DETAIL_MODE.play" />
+      <Annotate v-if="detailMode.mode === VIDEO_DETAIL_MODE.annotate" />
+      <Share v-if="detailMode.mode === VIDEO_DETAIL_MODE.share" />
     </div>
   </div>
 </template>
@@ -85,7 +82,6 @@
 // @ is an alias to /src
 import { defineComponent, ref, onMounted, Ref } from 'vue'
 import { VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
-import { ListItem } from '@/types/main'
 
 import { useAppStore } from '../store/useAppStore'
 import { useVideoStore } from '../store/useVideoStore'
@@ -93,6 +89,7 @@ import { useVideoStore } from '../store/useVideoStore'
 import VideoFeedCard from '@/components/VideoFeedCard.vue'
 import VideoMyCard from '@/components/VideoMyCard.vue'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'
+import Annotate from '@/views/Annotate.vue'
 import Player from '@/views/Player.vue'
 import Share from '@/views/Share.vue'
 
@@ -102,6 +99,7 @@ export default defineComponent({
     VideoFeedCard,
     VideoMyCard,
     VideoSharedCard,
+    Annotate,
     Player,
     Share,
   },
@@ -114,17 +112,6 @@ export default defineComponent({
 
     onMounted(() => {
       videoActions.getVideoMetadata()
-      const h = document.documentElement.clientHeight
-      const windowHeight = parseInt(localStorage.getItem('windowHeight') || '0')
-      if (windowHeight > 0 && (windowHeight > h || h < 500)) {
-        parent.postMessage(
-          JSON.stringify({
-            subject: 'lti.frameResize',
-            height: windowHeight,
-          }),
-          '*'
-        )
-      }
     })
 
     function showTab(tabName: VIDEO_SHARING_MODE) {
@@ -133,11 +120,45 @@ export default defineComponent({
       videoActions.selectNoVideo()
     }
 
-    function selectItem(item: ListItem) {
-      videoActions.detailMode(VIDEO_DETAIL_MODE.share)
-      videoActions.selectVideo(item)
-    }
     videoActions.selectNoVideo()
+
+    function selectNone() {
+      const { mode, submode } = videoGetters.detailMode.value
+      switch (mode) {
+        case VIDEO_DETAIL_MODE.play:
+          videoActions.detailMode(
+            VIDEO_DETAIL_MODE.none,
+            VIDEO_DETAIL_MODE.none
+          )
+          videoActions.selectNoVideo()
+          break
+        case VIDEO_DETAIL_MODE.share:
+          if (
+            submode === VIDEO_DETAIL_MODE.play ||
+            submode === VIDEO_DETAIL_MODE.trim
+          )
+            videoActions.detailMode(
+              VIDEO_DETAIL_MODE.share,
+              VIDEO_DETAIL_MODE.none
+            )
+          else videoActions.selectNoVideo()
+          break
+        case VIDEO_DETAIL_MODE.annotate:
+          if (submode === VIDEO_DETAIL_MODE.play)
+            videoActions.detailMode(
+              VIDEO_DETAIL_MODE.annotate,
+              VIDEO_DETAIL_MODE.none
+            )
+          else
+            videoActions.detailMode(
+              VIDEO_DETAIL_MODE.none,
+              VIDEO_DETAIL_MODE.none
+            )
+          break
+        default:
+          break
+      }
+    }
 
     return {
       VIDEO_SHARING_MODE,
@@ -147,9 +168,8 @@ export default defineComponent({
       myVideos: videoGetters.myVideos,
       sharedToMe: videoGetters.sharedToMe,
       selectedItem: videoGetters.selectedItem,
-      selectNone: videoActions.selectNoVideo,
+      selectNone,
       detailMode: videoGetters.detailMode,
-      selectItem,
       showTab,
       currentTab,
     }

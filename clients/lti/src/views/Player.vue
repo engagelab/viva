@@ -21,11 +21,24 @@
       </div>
 
       <div
-        class="flex flex-row flex-grow-0 w-full py-1 md:py-4 justify-between"
+        class="absolute bottom-0 flex flex-row flex-grow-0 self-end w-full py-1 md:py-4 items-center justify-between bg-black bg-opacity-70"
       >
-        <div class="flex flex-grow-0 justify-center items-center">
-          <div class="mx-4 text-white">{{ playerTime }}</div>
+        <Slider v-model="trim" />
+        <div
+          v-show="!playing"
+          class="flex items-center justify-center w-10 h-10 rounded-full p-3 pl-4 mr-2 border"
+          @click.stop="startPlaying()"
+        >
+          <img :src="playButtonSVG" alt="play-button" />
         </div>
+        <div
+          v-show="playing"
+          class="flex items-center justify-center w-10 h-10 rounded-full p-3 pl-4 mr-2 border"
+          @click.stop="pausePlaying()"
+        >
+          <img :src="pauseButtonSVG" alt="pause-button" />
+        </div>
+        <div class="mx-4 text-white">{{ playerTime }}</div>
 
         <div
           class="flex flex-grow-0 justify-center content-center items-center"
@@ -46,17 +59,6 @@
           ></SVGSymbol>
         </div>
       </div>
-
-      <div class="flex p-4 md:p-4">
-        <Scrubber
-          type="range"
-          v-model="moveScrubber"
-          :max="scrubberMax"
-          :min="scrubberMin"
-          :step="step"
-          @input="(newValue) => edlUpdated('move', [newValue])"
-        />
-      </div>
     </div>
   </div>
 </template>
@@ -69,12 +71,14 @@ const { actions: videoActions, getters: videoGetters } = useVideoStore()
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import videojs, { VideoJsPlayer } from 'video.js'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
-import Scrubber from '@/components/base/Scrubber.vue'
+import playButtonSVG from '@/assets/icons/svg/play.svg'
+import pauseButtonSVG from '@/assets/icons/svg/play.svg'
+import Slider from '@vueform/slider'
 
 export default defineComponent({
   name: 'Player',
   components: {
-    Scrubber,
+    Slider,
     SVGSymbol,
   },
   emits: ['currenttime', 'duration'],
@@ -87,12 +91,13 @@ export default defineComponent({
     }
     const fullScreenMode = ref(false)
     const moveScrubber = ref(0)
+    const trim = ref([0, 0])
     const step = 0.01
     const playing = ref(false)
 
     let playerLowerBound = 0 // Time >= 0 when video should start playing, when using the scrubber
     let playerUpperBound = 0 // Time <= player end time when video should stop playing, when using the scrubber
-    let currentVolume = 0
+    let currentVolume = ref(0)
     let playerCurrentTime = ref(0)
 
     const videoJsplayer: Ref<VideoJsPlayer | null> = ref(null)
@@ -127,16 +132,22 @@ export default defineComponent({
       return video.value.details.edl.trim[0] || 0
     })
 
-    const playerTime = computed(() => {
-      const timeAsInt = playerCurrentTime.value
-      let minutes = Math.floor(timeAsInt / 60)
+    // Input time as a number - seconds as whole with milliseconds as the decimal e.g. 12.65 = 12 seconds 650 milliseconds
+    function formatTime(timeInSeconds: number): string {
+      let minutes = Math.floor(timeInSeconds / 60)
       // prettier-ignore
-      let seconds = minutes > 0 ? timeAsInt % (60 * minutes) : Math.floor(timeAsInt)
-      let milliseconds = timeAsInt.toFixed(2)
+      let seconds = minutes > 0 ? timeInSeconds % (60 * minutes) : Math.floor(timeInSeconds)
+      let milliseconds = timeInSeconds.toFixed(2)
       milliseconds = milliseconds.substring(milliseconds.length - 2)
       const minutesString = minutes > 9 ? minutes : '0' + minutes
       const secondsString = seconds > 9 ? seconds : '0' + seconds
       return `${minutesString}:${secondsString}.${milliseconds}`
+    }
+
+    const playerTime = computed(() => {
+      const currentTime = formatTime(playerCurrentTime.value)
+      const totalTime = formatTime(duration.value)
+      return `${currentTime} / ${totalTime}`
     })
 
     // Always video/mp4
@@ -236,7 +247,7 @@ export default defineComponent({
       const player: HTMLVideoElement | null = playbackVideo.value
       setPlayerBounds()
       if (player) {
-        currentVolume = player.volume
+        currentVolume.value = player.volume
         if (playing.value) {
           player.pause()
           playing.value = false
@@ -252,7 +263,7 @@ export default defineComponent({
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
         player.pause()
-        player.volume = currentVolume
+        player.volume = currentVolume.value
         playing.value = false
         player.currentTime = playerLowerBound
         playerCurrentTime.value = player.currentTime
@@ -263,6 +274,16 @@ export default defineComponent({
         } else {
           player.style.filter = 'blur(0)'
         }
+        player.removeEventListener('timeupdate', onTimeUpdate)
+      }
+    }
+
+    function pausePlaying() {
+      const player: HTMLVideoElement | null = playbackVideo.value
+      if (player) {
+        player.pause()
+        player.volume = currentVolume.value
+        playing.value = false
         player.removeEventListener('timeupdate', onTimeUpdate)
       }
     }
@@ -282,7 +303,7 @@ export default defineComponent({
           setPlayerBounds()
           player.removeEventListener('loadeddata', dataLoaded)
           context.emit('duration', player.duration)
-          if (videoGetters.detailMode.value === VIDEO_DETAIL_MODE.play) {
+          if (videoGetters.detailMode.value.mode === VIDEO_DETAIL_MODE.play) {
             startPlaying()
           }
         }
@@ -304,6 +325,7 @@ export default defineComponent({
       // methods
       stopPlaying,
       startPlaying,
+      pausePlaying,
       toggleScreenMode,
       // data
       baseUrl,
@@ -316,9 +338,13 @@ export default defineComponent({
       playerCurrentTime,
       moveScrubber,
       step,
+      trim,
       // booleans
       playing,
       fullScreenMode,
+      // assets
+      playButtonSVG,
+      pauseButtonSVG,
     }
   },
 })

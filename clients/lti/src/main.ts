@@ -25,11 +25,21 @@ window.addEventListener('message', function (event) {
     }
   } else if (typeof event.data === 'string' && event.data.match(/lti/g)) {
     const data = JSON.parse(event.data)
-    if (data.subject === 'lti.fetchWindowSize')
+    if (data.subject === 'lti.fetchWindowSize') {
       localStorage.setItem('windowHeight', data.height)
+      // This removes the outside scroll bar in the LTI iframe
+      // const h = document.documentElement.clientHeight
+      parent.postMessage(
+        JSON.stringify({
+          subject: 'lti.frameResize',
+          height: data.height,
+        }),
+        '*'
+      )
+    }
   }
 })
-window.parent.postMessage({ subject: 'lti.fetchWindowSize' }, '*')
+// window.parent.postMessage({ subject: 'lti.fetchWindowSize' }, '*')
 
 /* interface SLPlusCustomEventDetail {
   type: string

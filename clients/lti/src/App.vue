@@ -1,7 +1,6 @@
 <template>
   <div
-    id="app"
-    class="fadeInOut h-full bg-viva-grey-300 flex flex-row justify-center"
+    class="fadeInOut h-screen overflow-hidden bg-viva-grey-300 flex flex-row justify-center"
     :style="fadeState"
   >
     <!--p @click="fixHeight()">FIX HEIGHT</p-->
