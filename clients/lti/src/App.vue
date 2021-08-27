@@ -1,5 +1,9 @@
 <template>
-  <div id="app" class="fadeInOut h-full" :style="fadeState">
+  <div
+    id="app"
+    class="fadeInOut h-full bg-viva-grey-300 flex flex-row justify-center"
+    :style="fadeState"
+  >
     <!--p @click="fixHeight()">FIX HEIGHT</p-->
     <router-view />
   </div>

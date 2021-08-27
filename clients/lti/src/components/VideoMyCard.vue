@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col text-viva-grey-500 rounded-xl bg-viva-grey-400 bg-cover bg-center bg-no-repeat my-2"
+    class="flex flex-col text-viva-grey-500 rounded-xl bg-viva-grey-400 bg-cover bg-center bg-no-repeat my-1"
     :style="{
       'background-image': `url(${baseUrl}/api/video/file?videoref=${listitem.video.details.id}&mode=thumbnail)`,
     }"
@@ -16,7 +16,7 @@
         <div
           class="absolute top-0 left-0 ml-4 flex flex-col text-white font-extralight"
         >
-          <p class="m-1 text-2xl max-w-2xl">
+          <p class="m-1 text-xl max-w-xxs lg:text-2xl lg:max-w-sm">
             {{ listitem.dataset.name }}{{ listitem.dataset.selection }}
           </p>
           <p class="m-1 text-xs">{{ listitem.video.details.name }}</p>

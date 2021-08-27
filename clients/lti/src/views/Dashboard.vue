@@ -1,7 +1,7 @@
 <template>
-  <div class="relative bg-viva-grey-300 p-4">
+  <div class="relative p-4 flex flex-col">
     <div
-      class="flex flex-row font-serious font-extralight text-viva-grey-500 py-4"
+      class="flex flex-row justify-start font-serious font-extralight text-viva-grey-500 py-4"
     >
       <div
         class="cursor-pointer mr-6"
@@ -32,10 +32,10 @@
         Shared To Me
       </div>
     </div>
-    <div>
+    <div class="w-auto lg:w-192">
       <div
         v-show="currentTab === VIDEO_SHARING_MODE.feed"
-        class="flex flex-row flex-wrap gap-4"
+        class="flex flex-row flex-wrap"
       >
         <VideoFeedCard
           v-for="(statusItem, itemIndex) in feed"
@@ -46,7 +46,7 @@
       </div>
       <div
         v-show="currentTab === VIDEO_SHARING_MODE.myVideos"
-        class="flex flex-col gap-4"
+        class="flex flex-col"
       >
         <p class="text-lg text-white">My Videos</p>
         <VideoMyCard
@@ -57,7 +57,7 @@
       </div>
       <div
         v-show="currentTab === VIDEO_SHARING_MODE.sharedToMe"
-        class="flex flex-row flex-wrap gap-4"
+        class="flex flex-row flex-wrap"
       >
         <VideoSharedCard
           v-for="(item, itemIndex) in sharedToMe"
@@ -69,11 +69,14 @@
     </div>
     <div
       v-if="selectedItem"
-      class="fixed top-0 left-0 flex flex-col w-full h-full bg-black bg-opacity-75 rounded-xl p-10"
+      class="fixed top-0 left-0 flex flex-col items-center w-full h-full bg-black bg-opacity-75 rounded-xl p-10"
       @click.self="selectNone()"
     >
       <Player v-if="detailMode === VIDEO_DETAIL_MODE.play" />
-      <Share v-if="detailMode === VIDEO_DETAIL_MODE.share" />
+      <Share
+        v-if="detailMode === VIDEO_DETAIL_MODE.share"
+        class="w-auto lg:w-192"
+      />
     </div>
   </div>
 </template>

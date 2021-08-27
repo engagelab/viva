@@ -65,7 +65,13 @@ module.exports = {
       64: '16rem',
       72: '18rem',
       80: '20rem',
+      88: '22rem',
       96: '24rem',
+      104: '26rem',
+      112: '28rem',
+      168: '42rem',
+      192: '48rem',
+      224: '56rem',
     },
     animation: {
       none: 'none',
@@ -537,6 +543,7 @@ module.exports = {
     maxWidth: (theme, { breakpoints }) => ({
       none: 'none',
       0: '0rem',
+      xxs: '10rem',
       xs: '20rem',
       sm: '24rem',
       md: '28rem',

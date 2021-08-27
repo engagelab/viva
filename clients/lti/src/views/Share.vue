@@ -5,21 +5,26 @@
   >
     <template
       v-if="detailMode === VIDEO_DETAIL_MODE.share"
-      class="flex flex-row"
+      class="flex flex-row flex-wrap"
     >
-      <div class="flex flex-col w-56">
+      <div class="flex flex-col w-auto lg:w-56">
         <img
           class="object-cover h-36 rounded-md bg-viva-grey-450"
           :src="`${baseUrl}/api/video/file?videoref=${selectedItem.video.details.id}&mode=thumbnail`"
           alt="video thumbnail"
         />
-        <Button
+        <div
+          v-if="myLTIID === localShare.creator"
           @click.stop="trimVideo()"
-          class="mt-4"
-          :childclass="'w-36 bg-opacity-0'"
-          :textcolour="'text-viva-blue-800'"
-          >Trim the video</Button
+          class="flex flex-row items-center mt-4 text-viva-blue-800 cursor-pointer"
         >
+          <div
+            class="flex items-center justify-center w-10 h-10 rounded-full bg-viva-grey-450 p-2 mr-2"
+          >
+            <img :src="trimButtonSVG" alt="my-logo" />
+          </div>
+          Trim the video
+        </div>
       </div>
       <div class="flex flex-col flex-grow ml-4">
         <div class="flex flex-col">
@@ -30,10 +35,11 @@
             v-model="localShare.title"
             @input="() => (unsavedData = true)"
           />
-          <p v-else class="text-2xl">
+          <p v-else class="text-2xl text-white">
             {{ localShare.title }}
           </p>
           <textarea
+            v-if="myLTIID === localShare.creator"
             class="mt-6 w-full text-white bg-viva-grey-450 focus:ring-2 focus:ring-blue-600 p-1"
             rows="5"
             placeholder="Add a description"
@@ -41,23 +47,42 @@
             v-model="localShare.description"
             @input="() => (unsavedData = true)"
           />
+          <p v-else class="text-sm text-white">
+            {{ localShare.description }}
+          </p>
         </div>
-        <div class="flex flex-col m-2">
+        <div class="flex flex-col mt-4">
           <p class="my-2 text-white">Shared with</p>
           <div class="m-2 max-h-36 overflow-scroll overflow-x-hidden">
-            <div v-for="(nar, index) in NARList" :key="index">
-              <input
-                class="mr-4 mb-4"
-                type="checkbox"
-                :id="`share-user-${index}`"
-                :value="nar.item.ltiID"
-                v-model="localShare.users"
-                @change="unsavedData = true"
-              />
-              <label class="mr-2" :for="`share-user-${index}`">{{
-                nar.itemName
-              }}</label>
-            </div>
+            <template v-for="(nar, index) in NARList" :key="index">
+              <div v-if="myLTIID === localShare.creator">
+                <input
+                  class="mr-4 mb-4"
+                  type="checkbox"
+                  :id="`share-user-${index}`"
+                  :value="nar.item.ltiID"
+                  v-model="localShare.users"
+                  @change="unsavedData = true"
+                />
+                <label class="mr-2" :for="`share-user-${index}`">{{
+                  nar.itemName
+                }}</label>
+              </div>
+              <div v-else class="flex flex-row my-2 items-center">
+                <div
+                  class="flex items-center justify-center w-10 h-10 rounded-full border text-xs"
+                >
+                  {{ nar.item.abbreviation }}
+                </div>
+                <p class="ml-2">{{ nar.item.name }}</p>
+                <p
+                  v-if="localShare.creator === nar.item.ltiID"
+                  class="text-xs text-white"
+                >
+                  owner
+                </p>
+              </div>
+            </template>
           </div>
         </div>
         <Button
@@ -102,6 +127,8 @@ import {
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import Player from '@/views/Player.vue'
 import Button from '@/components/base/Button.vue'
+import trimButtonSVG from '@/assets/icons/svg/trim.svg'
+
 const { getters: appGetters } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
@@ -124,9 +151,9 @@ export default defineComponent({
     const unsavedData = ref(false)
     const videoCurrentTime = ref(0)
     const myLTIID = appGetters.user.value.profile.ltiID
-    let NARList: NARListItem[] = appGetters.canvasData.value.namesAndRoles.map(
-      (u) => ({ itemName: u.name, item: u })
-    )
+    let NARList: NARListItem[] = appGetters.canvasData.value.namesAndRoles
+      .map((u) => ({ itemName: u.name, item: u }))
+      .filter((u) => u.item.ltiID !== myLTIID)
     const localShare: Ref<VideoSharing> = ref({
       _id: '',
       creator: myLTIID,
@@ -215,6 +242,9 @@ export default defineComponent({
       videoCurrentTime,
       updateDuration,
       detailMode: videoGetters.detailMode,
+
+      // assets
+      trimButtonSVG,
     }
   },
 })
