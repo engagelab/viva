@@ -1,17 +1,16 @@
 <template>
   <div
-    class="flex flex-col flex-grow w-full"
-    v-if="selectedVideo"
-    :key="selectedVideo.details.id"
+    class="flex flex-col w-full bg-viva-grey-400 rounded-xl"
+    v-if="selectedItem"
+    :key="selectedItem.video.details.id"
   >
-    <div class="flex flex-col flex-grow scrolling-touch w-full relative">
-      <div class="flex-none bg-black" @click="toggleScreenMode()">
+    <div class="flex flex-col scrolling-touch w-full relative">
+      <div class="flex-none" @click.stop="toggleScreenMode()">
         <video
           :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
           ref="playbackVideo"
           id="playbackVideo"
           oncontextmenu="return false;"
-          :src="`${baseUrl}/api/video/file?videoref=${selectedVideo.details.id}`"
           playsinline
           webkit-playsinline
           preload="metadata"
@@ -19,130 +18,97 @@
         >
           <track kind="subtitles" />
         </video>
-        <video class="video-js" ref="smplayer" id="smplayer">
-          <source
-            :src="`https://localhost:8000/api/video/file?videoref=${selectedVideo.details.id}`"
-            type="video/mp4"
-          />
-        </video>
       </div>
 
       <div
-        class="flex flex-row flex-grow-0 w-full bg-black py-1 md:py-4 justify-between"
+        class="absolute bottom-0 flex flex-row flex-grow-0 self-end w-full py-1 md:py-4 items-center justify-between bg-black bg-opacity-70"
       >
-        <div class="flex flex-grow-0 justify-center items-center">
-          <div class="mx-4 text-white">{{ playerTime }}</div>
+        <Slider v-model="trim" />
+        <div
+          v-show="!playing"
+          class="flex items-center justify-center w-10 h-10 rounded-full p-3 pl-4 mr-2 border"
+          @click.stop="startPlaying()"
+        >
+          <img :src="playButtonSVG" alt="play-button" />
         </div>
+        <div
+          v-show="playing"
+          class="flex items-center justify-center w-10 h-10 rounded-full p-3 pl-4 mr-2 border"
+          @click.stop="pausePlaying()"
+        >
+          <img :src="pauseButtonSVG" alt="pause-button" />
+        </div>
+        <div class="mx-4 text-white">{{ playerTime }}</div>
 
         <div
           class="flex flex-grow-0 justify-center content-center items-center"
-          v-show="videoDataLoaded"
         >
           <SVGSymbol
             v-show="!playing"
             class="pr-4 justify-center content-center"
             applyClasses="w-6 h-8 md:w-12"
-            @click="startPlaying()"
+            @click.stop="startPlaying()"
             symbol="play"
           ></SVGSymbol>
           <SVGSymbol
             v-show="playing"
             class="pr-4 justify-center content-center"
             applyClasses="w-6 j-8 md:w-12"
-            @click="stopPlaying()"
+            @click.stop="stopPlaying()"
             symbol="stop"
           ></SVGSymbol>
         </div>
       </div>
-
-      <div class="flex bg-black p-4 md:p-4">
-        <Scrubber
-          type="range"
-          v-model="moveScrubber"
-          :max="scrubberMax"
-          :min="scrubberMin"
-          :step="step"
-          @input="(newValue) => edlUpdated('move', [newValue])"
-        />
-      </div>
-    </div>
-
-    <div v-for="(share, index) in video.users.sharing" :key="index">
-      <Share
-        class="bg-blue-200 p-2"
-        :share="share"
-        :videoCurrentTime="playerCurrentTime"
-        :videoDuration="duration"
-        @updated="(share) => updateShare(share, index)"
-        @deleted="deleteShare(index)"
-      ></Share>
-    </div>
-    <div class="flex m-4">
-      <Button
-        class="bg-blue-400 self-center rounded-lg"
-        id="button-accept"
-        @click="addGroupShare"
-        >+ Add new group share
-      </Button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, computed, onMounted, watch } from 'vue'
-import { Video, VideoSharing } from '@/types/main'
+import { defineComponent, ref, Ref, computed, onMounted } from 'vue'
+import { Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
-import { baseUrl } from '@/constants'
-import Button from '@/components/base/Button.vue'
+import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
-import Scrubber from '@/components/base/Scrubber.vue'
-import Share from '@/components/Share.vue'
+import playButtonSVG from '@/assets/icons/svg/play.svg'
+import pauseButtonSVG from '@/assets/icons/svg/play.svg'
+import Slider from '@vueform/slider'
 
 export default defineComponent({
-  name: 'videoComponent',
+  name: 'Player',
   components: {
-    Button,
-    Scrubber,
-    Share,
+    Slider,
     SVGSymbol,
   },
-  props: {
-    page: {
-      type: String,
-      default: '0',
-    },
-  },
-  setup() {
-    const selectedVideo = videoGetters.selectedVideo
+  emits: ['currenttime', 'duration'],
+  setup(props, context) {
+    const selectedItem = videoGetters.selectedItem
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
-    const video = ref(new Video().updateFromVideo(selectedVideo.value))
-    const fullScreenMode = ref(true)
+    const video: Ref<Video> = ref(new Video())
+    if (selectedItem.value) {
+      video.value = new Video().updateFromVideo(selectedItem.value.video)
+    }
+    const fullScreenMode = ref(false)
     const moveScrubber = ref(0)
+    const trim = ref([0, 0])
     const step = 0.01
     const playing = ref(false)
-    const videoDataLoaded = ref(false)
 
     let playerLowerBound = 0 // Time >= 0 when video should start playing, when using the scrubber
     let playerUpperBound = 0 // Time <= player end time when video should stop playing, when using the scrubber
-    let currentVolume = 0
+    let currentVolume = ref(0)
     let playerCurrentTime = ref(0)
 
-    // Test
-
-    // Lifecycle Hooks
-
     onMounted(() => {
-      if (!selectedVideo.value) {
-        console.log('Video is undefined')
+      if (!selectedItem.value) {
+        console.log('Sharable Video is undefined')
       } else {
-        setupVideo(selectedVideo.value)
+        setupVideo(selectedItem.value.video)
       }
-
     })
 
     const duration = computed(() => {
-      return selectedVideo.value ? selectedVideo.value.details.duration : 0
+      return selectedItem.value ? selectedItem.value.video.details.duration : 0
     })
 
     const scrubberMax = computed(() => {
@@ -153,16 +119,22 @@ export default defineComponent({
       return video.value.details.edl.trim[0] || 0
     })
 
-    const playerTime = computed(() => {
-      const timeAsInt = playerCurrentTime.value
-      let minutes = Math.floor(timeAsInt / 60)
+    // Input time as a number - seconds as whole with milliseconds as the decimal e.g. 12.65 = 12 seconds 650 milliseconds
+    function formatTime(timeInSeconds: number): string {
+      let minutes = Math.floor(timeInSeconds / 60)
       // prettier-ignore
-      let seconds = minutes > 0 ? timeAsInt % (60 * minutes) : Math.floor(timeAsInt)
-      let milliseconds = timeAsInt.toFixed(2)
+      let seconds = minutes > 0 ? timeInSeconds % (60 * minutes) : Math.floor(timeInSeconds)
+      let milliseconds = timeInSeconds.toFixed(2)
       milliseconds = milliseconds.substring(milliseconds.length - 2)
       const minutesString = minutes > 9 ? minutes : '0' + minutes
       const secondsString = seconds > 9 ? seconds : '0' + seconds
       return `${minutesString}:${secondsString}.${milliseconds}`
+    }
+
+    const playerTime = computed(() => {
+      const currentTime = formatTime(playerCurrentTime.value)
+      const totalTime = formatTime(duration.value)
+      return `${currentTime} / ${totalTime}`
     })
 
     // Always video/mp4
@@ -170,55 +142,10 @@ export default defineComponent({
       return 'video/mp4'
     })
 
-    const hasNewDataAvailable = computed(() => {
-      return selectedVideo.value
-        ? selectedVideo.value.status.hasNewDataAvailable
-        : false
-    })
-
-    watch(
-      () => hasNewDataAvailable.value,
-      (newValue) => {
-        if (newValue) loadPlayerWithVideo()
-      }
-    )
-
-    watch(
-      () => selectedVideo.value,
-      (newValue) => {
-        if (newValue) {
-          setupVideo(newValue)
-        }
-      }
-    )
-
-    // METHODS
-    const addGroupShare = () => {
-      const newShare: VideoSharing = {
-        users: [],
-        access: false,
-        description: '',
-        edl: {
-          trim: [0, duration.value],
-          blur: [],
-        },
-      }
-      video.value.users.sharing.push(newShare)
-    }
-    const updateShare = (share: VideoSharing, index: number) => {
-      const s = video.value.users.sharing[index]
-      s.users = share.users
-      s.access = share.access
-      s.description = share.description
-      s.edl = share.edl
-      videoActions.updateVideoMetaData(selectedVideo.value as Video)
-    }
-    const deleteShare = (index: number) => {
-      video.value.users.sharing.splice(index, 1)
-      videoActions.updateVideoMetaData(selectedVideo.value as Video)
-    }
-
     function toggleScreenMode(): void {
+      const player: HTMLVideoElement | null = playbackVideo.value
+      if (player && !fullScreenMode.value) player.requestFullscreen()
+      else document.exitFullscreen()
       fullScreenMode.value = !fullScreenMode.value
     }
 
@@ -238,14 +165,12 @@ export default defineComponent({
           player.currentTime = newValue[0]
         }
         playerCurrentTime.value = player.currentTime
+        context.emit('currenttime', player.currentTime)
       }
     }
 
     // Called on initialisation of this view to create placeholder for edited data
     function setupVideo(chosenVideo: Video): void {
-      // reset states
-      videoDataLoaded.value = false
-
       // Create a video placeholder that can be modifed by the user
       const player: HTMLVideoElement | null = playbackVideo.value
       video.value = new Video().updateFromVideo(chosenVideo)
@@ -286,6 +211,7 @@ export default defineComponent({
       if (player) {
         playerCurrentTime.value = player.currentTime
         moveScrubber.value = playerCurrentTime.value
+        context.emit('currenttime', player.currentTime)
         if (
           player.currentTime >= playerUpperBound ||
           (trim && player.currentTime >= video.value.details.edl.trim[1])
@@ -308,7 +234,7 @@ export default defineComponent({
       const player: HTMLVideoElement | null = playbackVideo.value
       setPlayerBounds()
       if (player) {
-        currentVolume = player.volume
+        currentVolume.value = player.volume
         if (playing.value) {
           player.pause()
           playing.value = false
@@ -324,16 +250,27 @@ export default defineComponent({
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
         player.pause()
-        player.volume = currentVolume
+        player.volume = currentVolume.value
         playing.value = false
         player.currentTime = playerLowerBound
         playerCurrentTime.value = player.currentTime
         moveScrubber.value = playerCurrentTime.value
+        context.emit('currenttime', player.currentTime)
         if (timeIsMasked(player.currentTime)) {
           player.style.filter = 'blur(15px)'
         } else {
           player.style.filter = 'blur(0)'
         }
+        player.removeEventListener('timeupdate', onTimeUpdate)
+      }
+    }
+
+    function pausePlaying() {
+      const player: HTMLVideoElement | null = playbackVideo.value
+      if (player) {
+        player.pause()
+        player.volume = currentVolume.value
+        playing.value = false
         player.removeEventListener('timeupdate', onTimeUpdate)
       }
     }
@@ -352,11 +289,18 @@ export default defineComponent({
           videoActions.updateMetadata(video.value)
           setPlayerBounds()
           player.removeEventListener('loadeddata', dataLoaded)
-          videoDataLoaded.value = true
+          context.emit('duration', player.duration)
+          if (videoGetters.detailMode.value.mode === VIDEO_DETAIL_MODE.play) {
+            startPlaying()
+          }
         }
 
         player.addEventListener('loadeddata', dataLoaded)
         player.addEventListener('ended', stopPlaying, false)
+
+        const path = `${baseUrl}/api/video/file?videoref=${video.value.details.id}`
+        player.setAttribute('src', path)
+        player.load()
       }
     }
 
@@ -368,13 +312,11 @@ export default defineComponent({
       // methods
       stopPlaying,
       startPlaying,
+      pausePlaying,
       toggleScreenMode,
-      addGroupShare,
-      updateShare,
-      deleteShare,
       // data
       baseUrl,
-      selectedVideo,
+      selectedItem,
       video,
       playerTime,
       videoMimeType,
@@ -383,10 +325,13 @@ export default defineComponent({
       playerCurrentTime,
       moveScrubber,
       step,
+      trim,
       // booleans
-      videoDataLoaded,
       playing,
       fullScreenMode,
+      // assets
+      playButtonSVG,
+      pauseButtonSVG,
     }
   },
 })

@@ -10,6 +10,7 @@ import { useAppStore } from '../store/useAppStore'
 const { actions: appActions } = useAppStore()
 
 import Dashboard from '../views/Dashboard.vue'
+import Share from '../views/Share.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -33,6 +34,11 @@ const routes: Array<RouteRecordRaw> = [
         console.log(error)
       })
     },
+  },
+  {
+    path: '/share',
+    name: 'Share',
+    component: Share,
   },
   { path: '/index.html', redirect: '/' },
 ]

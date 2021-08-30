@@ -1,18 +1,18 @@
 <template>
   <div class="hello">
-    <SlButton @click="monitor()">Monitor</SlButton>
+    <Button @click="monitor()">Monitor</Button>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
 import router from '../router'
-import SlButton from '../components/base/SlButton.vue'
+import Button from '../components/base/Button.vue'
 
 export default defineComponent({
   name: 'HelloWorld',
   components: {
-    SlButton,
+    Button,
   },
   setup() {
     return {

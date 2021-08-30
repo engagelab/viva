@@ -11,7 +11,7 @@ const crypto = require('crypto')
 const Dataset = require('../models/Dataset')
 const moment = require('moment')
 
-const { videoStorageTypes } = require('../constants')
+const { videoStorageTypes, videoFolderNames } = require('../constants')
 const {
   getPath,
   checkLHMount,
@@ -166,12 +166,11 @@ const fetchStorage = (video) => {
 }
 
 // Using user(owner) ID as a containing folder
-function sendToEducloud({ video, subDirSrc }) {
-  const path = getPath(video, subDirSrc)
-  const keyname = `${video.users.owner.toString()}/${video.file.name}.${
+function sendVideoToEducloud({ video, subDirSrc }) {
+  let path = getPath(subDirSrc, video.file.name, video.file.extension)
+  let keyname = `${video.users.owner.toString()}/${video.file.name}.${
     video.file.extension
   }`
-  console.log(keyname)
   const sseKey = Buffer.alloc(
     32,
     crypto.randomBytes(32).toString('hex').slice(0, 32)
@@ -182,6 +181,11 @@ function sendToEducloud({ video, subDirSrc }) {
   return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
     console.log(`Video sent to Educloud at key: ${keyname}`)
     video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
+    path = getPath(videoFolderNames.thumbnails, video.file.name, 'jpg')
+    keyname = `${video.users.owner.toString()}/${video.file.name}.jpg`
+    return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
+      console.log(`Thumbnail sent to Educloud at key: ${keyname}`)
+    })
   }).catch((error) => {
     console.log(error)
     return Promise.reject(error)
@@ -208,7 +212,7 @@ module.exports = {
   downloadS3File,
   getSignedUrlS3URL,
   fetchStorage,
-  sendToEducloud,
+  sendVideoToEducloud,
   sendToLagringshotell,
   generatePath,
 }

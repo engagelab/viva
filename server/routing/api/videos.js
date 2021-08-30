@@ -2,7 +2,6 @@
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
 
-// const https = require('https')
 const router = require('express').Router()
 const utilities = require('../../utilities')
 const { downloadS3File } = require('../../services/storage')
@@ -19,9 +18,7 @@ const Video = require('../../models/Video')
  */
 router.get('/videos', utilities.authoriseUser, (request, response) => {
   const u = response.locals.user
-  //const users = request.session.canvasData.namesAndRoles
   const isAdmin = utilities.hasMinimumUserRole(u, userRoles.admin)
-  //  console.log(request.session.canvasData)
   let query = {}
   if (isAdmin) {
     query = {}
@@ -30,7 +27,7 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
       $or: [
         {
           'users.sharing.users': {
-            $in: [response.locals.user.profile.ltiUserId],
+            $in: [response.locals.user.profile.ltiID],
           },
         },
         { 'users.owner': response.locals.user._id },
@@ -64,8 +61,8 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 })
 
 // Get a video file from S3 (Educloud)
-router.get('/video/file', utilities.authoriseUser, (request, response) => {
-  console.log('Getting video from S3...')
+// set request.query.mode to 'thumbnail' to get a thumbnail instead of the video file
+router.get('/video/file', utilities.authoriseUser, (request, response, next) => {
   Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) {
@@ -73,19 +70,30 @@ router.get('/video/file', utilities.authoriseUser, (request, response) => {
       return response.status(200).end()
     }
     else {
-      const keyname = `${video.users.owner.toString()}/${video.file.name}.${
-        video.file.extension
-      }`
+      if (!video.users.owner) {
+        const error = new Error(`Bad owner! ${video.id}`)
+        console.error(error)
+        return next(error)
+      }
+      let extension = request.query.mode === 'thumbnail' ? 'jpg' : video.file.extension
+      const keyname = `${video.users.owner.toString()}/${video.file.name}.${extension}`
       const sseKey = video.file.encryptionKey
       const sseMD5 = video.file.encryptionMD5
-      console.log(`Requesting S3 video: ${keyname}`)
       downloadS3File({ keyname, sseKey, sseMD5 }).then((file) => {
+        console.log(`S3 Video success: ${keyname}`)
         // These headers are required to enable seeking `currentTime` in Chrome browser
-        response.setHeader('content-type', 'video/mp4')
-        response.setHeader('Accept-Ranges', 'bytes')
-        response.setHeader('Content-Length', file.ContentLength)
-        response.setHeader('Content-Range', `0-${file.ContentLength}`)
+        if (request.query.mode !== 'thumbnail') {
+          response.setHeader('content-type', 'video/mp4')
+          response.setHeader('Accept-Ranges', 'bytes')
+          response.setHeader('Content-Length', file.ContentLength)
+          response.setHeader('Content-Range', `0-${file.ContentLength}`)
+        } else {
+          response.setHeader('content-type', 'image/jpeg')
+        }
         file.Body.pipe(response)
+      }).catch((error2) => {
+        console.log(`S3 Video error for key: ${keyname} error: ${error2.toString()}`)
+        response.status(404).send(error2)
       })
     }
   })
@@ -108,24 +116,4 @@ router.post('/video', utilities.authoriseUser, async (request, response) => {
   })
 })
 
-// To update the sharing info for a selected video
-router.put(
-  '/video/share',
-  utilities.authoriseUser,
-  async (request, response, next) => {
-    const query = { 'details.id': request.body.details.id }
-    Video.findOne(query, (error, v) => {
-      if (error || !v) {
-        return response.status(400).end()
-      } else {
-        const video = { ...request.body }
-        v.users = video.users
-        v.save((saveError) => {
-          if (saveError) return next(saveError)
-          response.end()
-        })
-      }
-    })
-  }
-)
 module.exports = router

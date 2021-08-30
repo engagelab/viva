@@ -1,12 +1,5 @@
 <template>
   <div class="flex flex-col">
-    <label
-      class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
-      :class="{ 'pl-8': border }"
-      :for="elementId"
-    >
-      {{ label }}
-    </label>
     <p class="text-xs max-w-sm">{{ description }}</p>
     <template v-if="mode == 'binary'">
       <div class="flex flex-row items-center">

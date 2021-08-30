@@ -3,6 +3,8 @@ import {
   CONSENT_TYPES,
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
+  VIDEO_SHARING_MODE,
+  VIDEO_SHARING_STATUS,
 } from '../constants'
 import { uuid } from '../utilities'
 
@@ -132,7 +134,35 @@ export interface DeviceStatus {
   lastActive: number // ms from epoch
 }
 
-//------------------------- Video and Dataset models -----------------
+//------------------------- Video Auxiliary Interfaces for LTI -----------------
+
+// FeedListItem is always associated with a ListItem
+export interface FeedListItem {
+  readonly mode: VIDEO_SHARING_STATUS
+  readonly user: NameAndRole // User who is subject of the status update
+  readonly created?: Date // Creation date of the status update
+  readonly item: ListItem
+}
+export interface ListItemShare {
+  readonly id: string // id of the share (video.users.sharing[share]._id)
+  readonly creator: string // LTI ID of the creator of the share
+  readonly creatorName: NameAndRole // Creator of the share
+  readonly users: NameAndRole[] // Users this item is shared with
+  readonly share: VideoSharing // Pointer to video.users.shares[this share]
+  readonly video: Video // Pointer to the actual video
+}
+export interface ListItem {
+  readonly mode: VIDEO_SHARING_MODE
+  readonly video: Video // Pointer to the actual video
+  readonly owner: NameAndRole // Owner of the video
+  readonly dataset: {
+    name: string
+    selection: string
+  }
+  readonly shares: ListItemShare[] // sub-interface describing sharing for this item
+}
+
+// --------------------------   Video data --------------------------
 export interface EditDecriptionList {
   trim: number[]
   blur: number[][]
@@ -197,11 +227,19 @@ interface VideoStatus {
   hasUnsavedChanges: boolean
   hasNewDataAvailable: boolean
 }
+export interface SharingComment {
+  created: Date
+  creator: string // LTI ID
+  comment: string
+}
 export interface VideoSharing {
-  _id?: string
+  _id: string // DB ID of the share (not the video!)
+  creator: string // LTI ID
   users: string[]
   access: boolean
+  title: string
   description: string
+  comments: SharingComment[]
   edl: EditDecriptionList
 }
 interface VideoUsersData {
@@ -211,6 +249,7 @@ interface VideoUsersData {
 }
 interface VideoUsers {
   owner: string
+  ltiID: string
   sharedWith: string[] // Users who can see this video. Used for easier searching
   sharing: VideoSharing[] // Each entry is a share for a particular set of users, and particular EDL of this video
 }
@@ -238,9 +277,10 @@ export interface VideoSpec {
 
 export interface NameAndRole {
   name: string
-  ltiUserID: string
+  ltiID: string
   email: string
   roles: string[]
+  abbreviation: string
 }
 export interface VideoData {
   file: {
@@ -310,6 +350,7 @@ export class Video {
     }
     this.users = {
       owner: '',
+      ltiID: '',
       sharedWith: [],
       sharing: [],
     }
@@ -402,7 +443,23 @@ export class Video {
   updateUsers(users: VideoUsersData): void {
     if (users.owner) this.users.owner = users.owner
     if (users.sharedWith) this.users.sharedWith = users.sharedWith
-    if (users.sharing) this.users.sharing = users.sharing
+    if (users.sharing) this.updateSharing(users.sharing)
+  }
+  updateSharing(sharing: VideoSharing[]): void {
+    sharing.forEach((s) => {
+      const share = this.users.sharing.find((us) => us._id === s._id)
+      if (share) {
+        share.access = s.access
+        share.creator = s.creator
+        share.title = s.title
+        share.description = s.description
+        share.comments = s.comments
+        share.edl = s.edl
+        share.users = s.users
+      } else {
+        this.users.sharing.push(s)
+      }
+    })
   }
   updateDataset(dataset: VideoDatasetData): void {
     if (dataset.id) this.dataset.id = dataset.id
@@ -578,11 +635,11 @@ interface UserProfile {
   username: string
   password: string
   fullName: string
+  ltiID: string
   email: string
   oauthId: string
   reference: string // This should be sent to the client rather than _id
   groups: UserProfileGroup[] // Groups this user is a member of
-  ltiUserId: string
 }
 export interface UserDatasetSelection {
   title: string
@@ -620,11 +677,11 @@ export class User {
       username: 'initial user',
       password: '',
       fullName: 'initial user',
+      ltiID: '',
       email: '',
       oauthId: '',
       reference: '', // This should be sent to the client rather than _id
       groups: [],
-      ltiUserId: '',
     }
     this.datasetConfig = {
       id: '',

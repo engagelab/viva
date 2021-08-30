@@ -1,5 +1,9 @@
 <template>
-  <div id="app" class="fadeInOut" :style="fadeState">
+  <div
+    class="fadeInOut h-screen overflow-hidden bg-viva-grey-300 flex flex-row justify-center"
+    :style="fadeState"
+  >
+    <!--p @click="fixHeight()">FIX HEIGHT</p-->
     <router-view />
   </div>
 </template>
@@ -18,6 +22,16 @@ export default defineComponent({
     const fadeState = computed(() => {
       return { opacity: appStore.getters.fade.value ? '0' : '1' }
     })
+    const fixHeight = () => {
+      const h = '90vh' // document.documentElement.clientHeight * 0.65
+      parent.postMessage(
+        JSON.stringify({
+          subject: 'lti.frameResize',
+          height: h,
+        }),
+        '*'
+      )
+    }
 
     // If we arrived here from a page reload, make sure to set up again
     if (router.currentRoute.value.path !== '/') {
@@ -25,6 +39,7 @@ export default defineComponent({
     }
 
     return {
+      fixHeight,
       fadeState,
       disableDelays: appStore.getters.disableDelays,
     }

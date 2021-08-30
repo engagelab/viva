@@ -11,36 +11,39 @@
  7. Route call to mongoDB to update video metadata
  */
 
-enum PROJECT_NAME {
-  viva = 'viva',
-}
-
 import { ref, Ref, computed, ComputedRef } from 'vue'
 import {
   Video,
+  ListItem,
+  FeedListItem,
   VideoData,
   APIRequestPayload,
   XHR_REQUEST_TYPE,
+  VideoSharing,
+  ListItemShare,
 } from '../types/main'
+import { VIDEO_SHARING_MODE, VIDEO_DETAIL_MODE } from '@/constants'
 import { apiRequest } from '../api/apiRequest'
 import { useAppStore } from './useAppStore'
-const { getters: appGetters } = useAppStore()
+const { getters: appGetters, actions: appActions } = useAppStore()
 //State
 interface State {
-  selectedVideo: Video | undefined
+  selectedItem: ListItem | undefined
+  selectedItemShare: ListItemShare | undefined
   selectedVideoURL: string
   videos: Map<string, Video>
-  videosSharedWithMe: Video[]
+  detailMode: { mode: VIDEO_DETAIL_MODE; submode: VIDEO_DETAIL_MODE }
 }
 
 const state: Ref<State> = ref({
-  project: {
-    name: PROJECT_NAME.viva,
-  },
-  selectedVideo: undefined,
-  videos: new Map<string, Video>(),
+  selectedItem: undefined,
+  selectedItemShare: undefined,
   selectedVideoURL: '',
-  videosSharedWithMe: [],
+  videos: new Map<string, Video>(),
+  detailMode: {
+    mode: VIDEO_DETAIL_MODE.none,
+    submode: VIDEO_DETAIL_MODE.none,
+  },
 })
 
 //----------------- Server side functions----------------//
@@ -54,70 +57,174 @@ async function fetchVideoMetadata(): Promise<VideoData[]> {
   return apiRequest<VideoData[]>(payload)
 }
 
-//Getters
 interface Getters {
-  videos: ComputedRef<Video[]>
-  selectedVideo: ComputedRef<State['selectedVideo']>
+  selectedItem: ComputedRef<State['selectedItem']>
+  selectedItemShare: ComputedRef<State['selectedItemShare']>
   selectedVideoURL: ComputedRef<State['selectedVideoURL']>
-  videosSharedWithMe: ComputedRef<State['videosSharedWithMe']>
+  feed: ComputedRef<FeedListItem[]>
+  myVideos: ComputedRef<ListItem[]>
+  sharedToMe: ComputedRef<ListItemShare[]>
+  detailMode: ComputedRef<State['detailMode']>
 }
 const getters = {
-  get videos(): ComputedRef<Video[]> {
-    return computed(() => Array.from(state.value.videos.values()))
+  get selectedItem(): ComputedRef<State['selectedItem']> {
+    return computed(() => state.value.selectedItem)
   },
-  get selectedVideo(): ComputedRef<State['selectedVideo']> {
-    return computed(() => state.value.selectedVideo)
+  get selectedItemShare(): ComputedRef<State['selectedItemShare']> {
+    return computed(() => state.value.selectedItemShare)
   },
   get selectedVideoURL(): ComputedRef<State['selectedVideoURL']> {
     return computed(() => state.value.selectedVideoURL)
   },
-  get videosSharedWithMe(): ComputedRef<State['videosSharedWithMe']> {
-    return computed(() => state.value.videosSharedWithMe)
+  get detailMode(): ComputedRef<State['detailMode']> {
+    return computed(() => state.value.detailMode)
+  },
+  get feed(): ComputedRef<FeedListItem[]> {
+    return computed(() => [])
+  },
+  get myVideos(): ComputedRef<ListItem[]> {
+    return computed(() => {
+      const myUserID = appGetters.user.value._id
+      const myLTIID = appGetters.user.value.profile.ltiID
+      const videos = Array.from(state.value.videos.values())
+      return videos
+        .filter((v) => v.users.owner === myUserID)
+        .map(
+          (v: Video): ListItem => {
+            const shares: ListItemShare[] = v.users.sharing
+              .filter((s) => s.creator === myLTIID)
+              .map((s) => ({
+                id: s._id,
+                creator: s.creator,
+                creatorName: appActions.nameAndRole(s.creator),
+                users: s.users.map((u) => appActions.nameAndRole(u)),
+                share: s,
+                video: v,
+              }))
+            return {
+              mode: VIDEO_SHARING_MODE.myVideos,
+              video: v,
+              shares: shares,
+              owner: appActions.nameAndRole(myLTIID),
+              dataset: {
+                name: v.dataset.name,
+                selection: v.dataset.selection.reduce((acc, curr) => {
+                  return acc + ' > ' + curr.title
+                }, ''),
+              },
+            }
+          }
+        )
+    })
+  },
+  get sharedToMe(): ComputedRef<ListItemShare[]> {
+    return computed(() => {
+      const myUserID = appGetters.user.value._id
+      const myLTIID = appGetters.user.value.profile.ltiID
+      const videos = Array.from(state.value.videos.values())
+      const sharedWithMe: ListItemShare[] = []
+      videos.forEach((v) => {
+        v.users.sharing
+          .filter((s) => s.creator !== myUserID && s.users.includes(myLTIID)) // Filter for shares that include me, but aren't created by me
+          .forEach((s) => {
+            sharedWithMe.push({
+              id: s._id,
+              creator: s.creator,
+              creatorName: appActions.nameAndRole(s.creator),
+              users: s.users.map((u) => appActions.nameAndRole(u)),
+              share: s,
+              video: v,
+            })
+          })
+      })
+      return sharedWithMe
+    })
   },
 }
 
-//Actions
 interface Actions {
   getVideoMetadata: () => Promise<void>
-  selectVideo: (video: Video) => Promise<void>
+  selectVideo: (video: ListItem) => void
+  selectShare: (share: ListItemShare) => void
+  selectNoVideo: () => void
+  detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
   updateMetadata: (video: Video) => Promise<void>
-  fetchVideoData: (videoId: string) => Promise<{ url: string }>
-  updateVideoMetaData: (selectedVideo: Video) => Promise<Video>
+  createShare: (videoID: string) => Promise<void>
+  updateShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
+  deleteShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
 }
 const actions = {
-  // fetch a specific video with draft id
-  fetchVideo: async function (videoId: string): Promise<Video> {
+  detailMode: function (
+    mode: VIDEO_DETAIL_MODE,
+    submode: VIDEO_DETAIL_MODE
+  ): void {
+    state.value.detailMode.mode = mode
+    state.value.detailMode.submode = submode
+  },
+  createShare: function (videoID: string): Promise<void> {
     const payload: APIRequestPayload = {
-      method: XHR_REQUEST_TYPE.GET,
+      method: XHR_REQUEST_TYPE.POST,
       credentials: true,
-      query: {
-        videoref: videoId,
-      },
-      route: '/api/video',
+      query: { id: videoID },
+      route: '/api/video/share',
     }
-    return apiRequest<Video>(payload)
+    return apiRequest<VideoSharing>(payload).then((newShare: VideoSharing) => {
+      const v = state.value.videos.get(videoID)
+      if (v) {
+        const share: ListItemShare = {
+          id: newShare._id,
+          creator: newShare.creator,
+          creatorName: appActions.nameAndRole(newShare.creator),
+          users: newShare.users.map((u) => appActions.nameAndRole(u)),
+          share: newShare,
+          video: v,
+        }
+        state.value.selectedItemShare = share
+        v.users.sharing.push(newShare)
+      }
+    })
   },
 
   // Update sharing for a selected video
-  updateVideoMetaData: async function (selectedVideo: Video): Promise<Video> {
+  updateShare: function (
+    videoID: string,
+    videoSharing: VideoSharing
+  ): Promise<void> {
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.PUT,
       credentials: true,
-      body: selectedVideo,
+      body: videoSharing,
+      query: { id: videoID },
       route: '/api/video/share',
     }
-    return apiRequest<Video>(payload)
+    return apiRequest<VideoSharing>(payload).then((s: VideoSharing) => {
+      const v = state.value.videos.get(videoID)
+      if (v) {
+        v.updateSharing([s])
+      }
+    })
   },
-  fetchVideoData: async function (videoId: string): Promise<{ url: string }> {
+
+  deleteShare: function (
+    videoID: string,
+    videoSharing: VideoSharing
+  ): Promise<void> {
     const payload: APIRequestPayload = {
-      method: XHR_REQUEST_TYPE.GET,
+      method: XHR_REQUEST_TYPE.DELETE,
       credentials: true,
-      query: {
-        videoref: videoId,
-      },
-      route: '/api/video/file',
+      body: videoSharing,
+      query: { id: videoID },
+      route: '/api/video/share',
     }
-    return apiRequest<{ url: string }>(payload)
+    return apiRequest<VideoSharing>(payload).then(() => {
+      const v = state.value.videos.get(videoID)
+      if (v) {
+        const sIndex = v.users.sharing.findIndex(
+          (share) => share._id === videoSharing._id
+        )
+        if (sIndex >= 0) v.users.sharing.splice(sIndex, 1)
+      }
+    })
   },
 
   //Fetch videometadata from mongoDB
@@ -127,38 +234,20 @@ const actions = {
       const v = new Video(video)
       state.value.videos.set(v.details.id, v)
     })
-    const filtershareVideo = (video: Video) => {
-      const shares = video.users.sharing.filter((share) => {
-        if (share.users.indexOf(appGetters.user.value.profile.ltiUserId) >= 0)
-          return share
-      })
-
-      return shares
-    }
-    // filter shared videos and own videos
-    const allVideos = Array.from(state.value.videos.values())
-    const ownVideos = allVideos.filter(
-      (video) => video.users.owner == appGetters.user.value?._id
-    )
-    console.log('ownVideo', ownVideos)
-    const shareVideos = allVideos.filter((video) => {
-      const v = filtershareVideo(video)
-      if (v.length && v.length > 0) return v
-    })
-
-    state.value.videosSharedWithMe = shareVideos
-    // shareVideos.forEach((video) => {
-    //   state.value.videosSharedWithMe.set(video.details.id, video)
-    // })
-    console.log('sharedVideos', state.value.videosSharedWithMe)
+    const videos = Array.from(state.value.videos.values())
+    console.log(videos)
     return Promise.resolve()
   },
 
-  selectVideo: async function (video: Video): Promise<void> {
-    // const response = await actions.fetchVideoData(video.details.id)
-    state.value.selectedVideo = video
-    // state.value.selectedVideoURL = response.url
-    return Promise.resolve()
+  selectVideo: function (video: ListItem): void {
+    if (video) state.value.selectedItem = video
+  },
+  selectShare: function (share: ListItemShare): void {
+    if (share) state.value.selectedItemShare = share
+  },
+
+  selectNoVideo: function (): void {
+    state.value.selectedItem = undefined
   },
 
   // Update the video in store with the given video (by fileId) and save to local disk

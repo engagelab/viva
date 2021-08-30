@@ -4,18 +4,42 @@
 
 const mongoose = require('mongoose')
 const videoStatusTypes = require('../constants').videoStatusTypes
+const videoSharingStatusTypes = require('../constants').videoSharingStatusTypes
 
 const editDecriptionList = {
   trim: { type: Array, default: [] },
   blur: { type: Array, default: [] },
 }
 
-const sharingSchema = {
+const sharingSchema = new mongoose.Schema({
+  creator: { type: String }, // LTI ID of the creator
   users: { type: Array },
   access: { type: Boolean, default: false },
+  title: { type: String },
   description: { type: String },
   edl: editDecriptionList,
-}
+  annotations: [{
+    created: { type: Date, default: Date.now },
+    creator: { type: String }, // LTI ID
+    comment: { type: String },
+    time: { type: Number },
+  }],
+  comment: [{
+    created: { type: Date, default: Date.now },
+    creator: { type: String }, // LTI ID
+    comment: { type: String },
+  }],
+  status: [{
+    created: { type: Date, default: Date.now },
+    user: { type: String }, // LTI ID
+    status: {
+      type: String,
+      enum: Object.values(videoSharingStatusTypes),
+      default: videoSharingStatusTypes.uploaded, // Status of this change to the share
+    },
+  }]
+})
+
 const videoSchema = new mongoose.Schema({
   file: {
     // For Back-End use only
@@ -29,7 +53,7 @@ const videoSchema = new mongoose.Schema({
     id: { type: String }, // Used instead of video._id front end, and for QR Code.
     name: { type: String }, // A human-readable string for naming this video
     category: { type: String }, // green, yellow, red
-    created: { type: Date },
+    created: { type: Date, default: Date.now },
     description: { type: String },
     duration: { type: Number }, // Seconds  created: { type: Date },
     edl: editDecriptionList,
@@ -57,18 +81,8 @@ const videoSchema = new mongoose.Schema({
     sharing: {
       type: Array,
       of: sharingSchema,
+      default: []
     },
-    // sharedWith: [{ type: mongoose.Schema.ObjectId, ref: 'User' }], // Users who can see this video. Used for easier searching
-    /*sharing: [
-      // Each entry is a share for a particular set of users, and particular EDL of this video
-      {
-        // users: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
-        users: { type: Array },
-        access: { type: Boolean, default: false },
-        description: { type: String },
-        edl: editDecriptionList,
-      },
-    ],*/
   },
   dataset: {
     id: { type: mongoose.Schema.ObjectId, ref: 'Dataset' },
