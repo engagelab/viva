@@ -3,7 +3,7 @@
     <div
       class="flex flex-row justify-start font-serious font-extralight text-viva-grey-500 py-4"
     >
-      <div
+      <!--div
         class="cursor-pointer mr-6"
         :class="{
           'font-medium text-white': currentTab === VIDEO_SHARING_MODE.feed,
@@ -11,7 +11,7 @@
         @click="showTab(VIDEO_SHARING_MODE.feed)"
       >
         Feed
-      </div>
+      </div-->
       <div
         class="cursor-pointer mr-6"
         :class="{

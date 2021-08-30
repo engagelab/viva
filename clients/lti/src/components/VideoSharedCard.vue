@@ -1,8 +1,25 @@
 <template>
   <div
-    class="flex flex-row items-center text-viva-grey-500 bg-viva-grey-400 my-1"
+    class="relative flex flex-row items-center text-viva-grey-500 bg-viva-grey-400 my-1"
     @click.stop="openShare(share)"
+    @mouseover="hover = true"
+    @mouseleave="hover = false"
   >
+    <div
+      class="absolute top-2 right-2 flex bg-viva-grey-300 items-center justify-center w-6 h-6 rounded-full text-xs cursor-pointer"
+      v-show="(menu || hover) && myLTIID === share.creator"
+      @click.stop="menu = !menu"
+    >
+      •••
+    </div>
+    <div
+      class="absolute flex flex-col top-10 right-2 bg-viva-grey-300 p-2 gap-2 w-24 rounded-md text-xs text-white cursor-pointer"
+      v-show="menu"
+    >
+      <p @click="editShare(share)">Edit</p>
+      <p>New share</p>
+      <p>Delete</p>
+    </div>
     <img
       class="object-cover h-36 p-4"
       :src="`${baseUrl}/api/video/file?videoref=${share.video.details.id}&mode=thumbnail`"
@@ -10,7 +27,7 @@
     />
     <div class="mx-6">
       <p class="text-white">{{ share.share.title }}</p>
-      <p class="m-1 text-xs">
+      <p class="mt-1 text-xs">
         By <span class="text-white">{{ share.creatorName.name }}</span>
       </p>
     </div>
@@ -28,10 +45,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue'
+import { defineComponent, PropType, ref } from 'vue'
 import { ListItemShare } from '../types/main'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import { useVideoStore } from '@/store/useVideoStore'
+import { useAppStore } from '@/store/useAppStore'
+const { getters: appGetters } = useAppStore()
 const { actions: videoActions } = useVideoStore()
 
 export default defineComponent({
@@ -40,6 +59,10 @@ export default defineComponent({
     share: { type: Object as PropType<ListItemShare>, required: true },
   },
   setup() {
+    const myLTIID = appGetters.user.value.profile.ltiID
+    const hover = ref(false)
+    const menu = ref(false)
+
     function openShare(share: ListItemShare) {
       videoActions.selectShare(share)
       videoActions.detailMode(
@@ -47,9 +70,20 @@ export default defineComponent({
         VIDEO_DETAIL_MODE.none
       )
     }
+
+    function editShare(share: ListItemShare) {
+      menu.value = false
+      videoActions.selectShare(share)
+      videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
+    }
+
     return {
+      hover,
+      menu,
+      myLTIID,
       baseUrl,
       openShare,
+      editShare,
     }
   },
 })
