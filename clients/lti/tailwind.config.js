@@ -1041,6 +1041,7 @@ module.exports = {
     zIndex: ['responsive', 'focus-within', 'focus'],
   },
   plugins: [
+    require('@vueform/slider/tailwind'),
     plugin(function ({ addUtilities }) {
       const newUtilities = {
         '.skew-10deg': {

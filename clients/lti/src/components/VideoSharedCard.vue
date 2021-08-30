@@ -16,7 +16,7 @@
       class="absolute flex flex-col top-10 right-2 bg-viva-grey-300 p-2 gap-2 w-24 rounded-md text-xs text-white cursor-pointer"
       v-show="menu"
     >
-      <p @click="editShare(share)">Edit</p>
+      <p @click.stop="editShare(share)">Edit</p>
       <p>New share</p>
       <p>Delete</p>
     </div>
@@ -36,7 +36,10 @@
         v-for="(u, i) in share.users"
         :key="`share-user-${i}`"
         :title="u.name"
-        class="flex items-center justify-center w-10 h-10 rounded-full border text-xs -m-1 bg-black"
+        class="flex items-center justify-center w-10 h-10 rounded-full text-white text-xs -m-1"
+        :style="{
+          'background-color': stringToColour(u.name),
+        }"
       >
         {{ u.abbreviation }}
       </div>
@@ -47,6 +50,7 @@
 <script lang="ts">
 import { defineComponent, PropType, ref } from 'vue'
 import { ListItemShare } from '../types/main'
+import { stringToColour } from '@/utilities'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import { useVideoStore } from '@/store/useVideoStore'
 import { useAppStore } from '@/store/useAppStore'
@@ -78,6 +82,7 @@ export default defineComponent({
     }
 
     return {
+      stringToColour,
       hover,
       menu,
       myLTIID,

@@ -257,7 +257,10 @@ const actions = {
     if (video) state.value.selectedItem = video
   },
   selectShare: function (share: ListItemShare): void {
-    if (share) state.value.selectedItemShare = share
+    if (share) {
+      state.value.selectedItemShare = share
+      state.value.selectedItem = share.item
+    }
   },
 
   selectNoVideo: function (): void {

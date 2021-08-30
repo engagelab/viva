@@ -69,9 +69,14 @@
     <div
       v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none"
       class="fixed top-0 left-0 flex flex-col items-center w-full h-full bg-black bg-opacity-75 rounded-xl"
-      @click.self="selectNone()"
+      @mousedown.self="selectNone()"
     >
-      <Player v-if="detailMode.mode === VIDEO_DETAIL_MODE.play" />
+      <Player
+        v-if="
+          detailMode.mode === VIDEO_DETAIL_MODE.play ||
+          detailMode.submode === VIDEO_DETAIL_MODE.play
+        "
+      />
       <Annotate v-if="detailMode.mode === VIDEO_DETAIL_MODE.annotate" />
       <Share v-if="detailMode.mode === VIDEO_DETAIL_MODE.share" />
     </div>
@@ -130,7 +135,10 @@ export default defineComponent({
             VIDEO_DETAIL_MODE.none,
             VIDEO_DETAIL_MODE.none
           )
-          videoActions.selectNoVideo()
+          videoActions.detailMode(
+            VIDEO_DETAIL_MODE.none,
+            VIDEO_DETAIL_MODE.none
+          )
           break
         case VIDEO_DETAIL_MODE.share:
           if (
@@ -141,7 +149,11 @@ export default defineComponent({
               VIDEO_DETAIL_MODE.share,
               VIDEO_DETAIL_MODE.none
             )
-          else videoActions.selectNoVideo()
+          else
+            videoActions.detailMode(
+              VIDEO_DETAIL_MODE.none,
+              VIDEO_DETAIL_MODE.none
+            )
           break
         case VIDEO_DETAIL_MODE.annotate:
           if (submode === VIDEO_DETAIL_MODE.play)

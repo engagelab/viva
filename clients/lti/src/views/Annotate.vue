@@ -1,13 +1,15 @@
 <template>
   <div>
     <template
-      v-if="detailMode.mode === VIDEO_DETAIL_MODE.annotate && selectedItemShare"
+      v-if="detailMode.submode === VIDEO_DETAIL_MODE.none && selectedItemShare"
     >
       <div
         class="my-6 flex flex-row flex-wrap bg-viva-grey-400 text-viva-grey-500 rounded-xl p-6"
       >
         <div class="flex flex-col w-auto lg:w-72">
-          <div class="relative flex bg-viva-grey-450 rounded-md">
+          <div
+            class="relative flex bg-viva-grey-450 rounded-md justify-center items-center"
+          >
             <img
               class="object-cover h-36"
               :src="`${baseUrl}/api/video/file?videoref=${selectedItemShare.item.video.details.id}&mode=thumbnail`"
@@ -45,14 +47,14 @@
           <div class="flex mt-4">
             <div class="flex flex-row flex-wrap">
               <div
-                v-for="(nar, index) in NARList"
+                v-for="(nar, index) in selectedItemShare.users"
                 :key="`share-user-${index}`"
                 class="flex items-center justify-center w-10 h-10 rounded-full text-white text-xs -m-1"
                 :style="{
-                  'background-color': stringToColour(nar.item.name),
+                  'background-color': stringToColour(nar.name),
                 }"
               >
-                {{ nar.item.abbreviation }}
+                {{ nar.abbreviation }}
               </div>
             </div>
           </div>
@@ -93,7 +95,7 @@ interface NARListItem {
 }
 
 export default defineComponent({
-  name: 'Share',
+  name: 'Annotate',
   setup() {
     const selectedItemShare = videoGetters.selectedItemShare
     const showUsers = ref(false)

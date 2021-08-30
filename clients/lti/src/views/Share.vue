@@ -7,7 +7,9 @@
         class="my-6 flex flex-row flex-wrap bg-viva-grey-400 text-viva-grey-500 rounded-xl p-6 w-auto lg:w-192"
       >
         <div class="flex flex-col w-auto lg:w-72">
-          <div class="relative flex bg-viva-grey-450 rounded-md">
+          <div
+            class="relative flex bg-viva-grey-450 justify-center items-center rounded-md"
+          >
             <img
               class="object-cover h-36"
               :src="`${baseUrl}/api/video/file?videoref=${selectedItemShare.item.video.details.id}&mode=thumbnail`"
