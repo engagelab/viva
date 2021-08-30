@@ -56,7 +56,7 @@
         </div>
       </div>
 
-      <SelectionHandling></SelectionHandling>
+      <SelectionHandling @updated="selectionUpdated"></SelectionHandling>
 
       <ConsentHandling @updated="consentUpdated"></ConsentHandling>
 
@@ -180,6 +180,11 @@ export default defineComponent({
       dataset.value.storages.push(newStorage)
     }
 
+    const selectionUpdated = (s: string[]) => {
+      dataset.value.selection = {}
+      dataset.value.selectionPriority = s
+      unsavedData.value = true
+    }
     const consentUpdated = (c: DatasetConsent) => {
       dataset.value.consent = c
       unsavedData.value = true
@@ -206,6 +211,7 @@ export default defineComponent({
       groups,
       showInput,
       currentSubset,
+      selectionUpdated,
       consentUpdated,
       storageUpdated,
       unsavedData,

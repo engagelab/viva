@@ -1,26 +1,45 @@
 <template>
+  <!-- Component handles only selection priority  -->
   <div class="ml-2">
     <p class="text-red-600 my-4">Selection Priority</p>
-    <SelectionBox
-      id="select-kind"
-      :label="t('selection')"
-      :options="selectionOptionList"
-      :resetOnChoose="true"
-      v-model="currentSelection"
+    <select
+      span
+      ref="selects"
       @change="addSelectionPriority"
-    ></SelectionBox>
-    <div
-      v-for="(selection, index) in d.selectionPriority"
-      :key="index"
-      class="flex"
+      @click="showWarning = true"
+      class="select"
+      style="width: 150px"
+      v-model="currentSelection"
     >
-      <p class="ml-4">{{ selection }}</p>
-      <p>*</p>
-      <p class="ml-2" v-if="d?.selectionPriority.length != index + 1">></p>
+      <option :value="0"></option>
+      <option
+        v-for="(selection, index) in selectionOptionList"
+        :value="selection"
+        :key="index"
+      >
+        {{ selection }}
+      </option>
+    </select>
+    <div class="flex">
+      <div
+        v-for="(selection, index) in localSelectionPriority"
+        :key="index"
+        class="flex flex-row"
+      >
+        <p class="ml-1">{{ selection }}</p>
+        <p class="cursor-pointer" @click="removeSelectionPriority(selection)">
+          *
+        </p>
+        <div class="ml-2" v-if="localSelectionPriority.length != index + 1">
+          >
+        </div>
+      </div>
     </div>
 
     <p class="text-red-600 mt-4">Instances</p>
-    <!--SelectionItem></SelectionItem-->
+    <SelectionItem
+      :localSelectionPriority="localSelectionPriority"
+    ></SelectionItem>
   </div>
 </template>
 
@@ -28,15 +47,10 @@
 import { defineComponent, ref, computed, watch, Ref, ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { behandlings, UTVALG_SELECTION, CONSENT_TYPES } from '@/constants'
-import { DatasetSelection } from '@/types/main'
+// import { DatasetSelection } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import SelectionBox from '@/components/base/SelectionBox.vue'
-// import SelectionItem from '@/components/SelectionItem.vue'
-
-interface OptionListItem {
-  itemName: string
-  item: string
-}
+// import Button from '@/components/base/Button.vue'
+import SelectionItem from '@/components/SelectionItem.vue'
 
 const messages = {
   nb_NO: {
@@ -61,42 +75,47 @@ const messages = {
 export default defineComponent({
   name: 'selectionHandling',
   components: {
-    SelectionBox,
-    // SelectionItem,
+    SelectionItem,
   },
-  setup() {
+  emits: ['updated'],
+  setup(props, context) {
     const { t } = useI18n({ messages })
     const { getters: datasetGetters } = useDatasetStore()
-    const currentSelection: Ref<OptionListItem> = ref({
-      item: '',
-      itemName: '',
-    })
 
-    // TODO: Supply the temporary dataset's selection / selectionPriority by props, don't modify the store's original
+    const currentSelection = ref('')
+
     const d = datasetGetters.selectedDataset
 
-    // Local reactive containers to hold changes before saving to the Dataset
-    const localSelectionPriority: Ref<string[]> = ref([])
-    const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref({})
+    const localSelectionPriority: Ref<string[]> = ref(d.value.selectionPriority)
+    // const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref({})
 
-    // Available options in list should exclude those those already chosen
-    const selectionOptionList: ComputedRef<OptionListItem[]> = computed(() => {
-      return Object.values(UTVALG_SELECTION)
-        .filter((r) => !localSelectionPriority.value.includes(r))
-        .map((r) => ({
-          item: r,
-          itemName: r,
-        }))
+    const selectionOptionList: ComputedRef<string[]> = computed(() => {
+      return Object.values(UTVALG_SELECTION).filter(
+        (r) => !localSelectionPriority.value.includes(r)
+      )
     })
 
     function reloadData() {
       localSelectionPriority.value = [...d.value.selectionPriority]
-      localSelection.value = d.value.selection
     }
 
     function addSelectionPriority() {
-      if (currentSelection.value) {
-        localSelectionPriority.value.push(currentSelection.value.itemName)
+      if (confirm('Modifying the priority resets instances , are you sure? ')) {
+        if (currentSelection.value) {
+          localSelectionPriority.value.push(currentSelection.value)
+          context.emit('updated', localSelectionPriority.value)
+        }
+      }
+    }
+
+    const removeSelectionPriority = (s: string) => {
+      if (confirm('Modifying the priority resets instances , are you sure? ')) {
+        currentSelection.value = ''
+        localSelectionPriority.value.splice(
+          localSelectionPriority.value.indexOf(s),
+          1
+        )
+        context.emit('updated', localSelectionPriority.value)
       }
     }
 
@@ -110,9 +129,13 @@ export default defineComponent({
       d,
       CONSENT_TYPES,
       behandlings,
-      addSelectionPriority,
       selectionOptionList,
       currentSelection,
+      localSelectionPriority,
+
+      // Methods
+      addSelectionPriority,
+      removeSelectionPriority,
     }
   },
 })

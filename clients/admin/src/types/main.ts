@@ -500,6 +500,7 @@ export class Video {
 export interface DataPath {
   path: string
   currentKey: string
+  nextKey: string
   currentValue: string
   title: string
 }

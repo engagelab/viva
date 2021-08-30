@@ -69,7 +69,6 @@ import { Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
-import videojs, { VideoJsPlayer } from 'video.js'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
 import pauseButtonSVG from '@/assets/icons/svg/play.svg'
@@ -100,23 +99,11 @@ export default defineComponent({
     let currentVolume = ref(0)
     let playerCurrentTime = ref(0)
 
-    const videoJsplayer: Ref<VideoJsPlayer | null> = ref(null)
-
     onMounted(() => {
       if (!selectedItem.value) {
         console.log('Sharable Video is undefined')
       } else {
         setupVideo(selectedItem.value.video)
-      }
-      const videoPlayer = document.getElementById('smplayer')
-      if (videoPlayer) {
-        videoJsplayer.value = videojs(
-          videoPlayer,
-          {},
-          function onPlayerReady() {
-            console.log('onPlayerReady', this)
-          }
-        )
       }
     })
 
