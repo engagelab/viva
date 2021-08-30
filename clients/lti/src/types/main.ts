@@ -3,7 +3,6 @@ import {
   CONSENT_TYPES,
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
-  VIDEO_SHARING_MODE,
   VIDEO_SHARING_STATUS,
 } from '../constants'
 import { uuid } from '../utilities'
@@ -149,10 +148,9 @@ export interface ListItemShare {
   readonly creatorName: NameAndRole // Creator of the share
   readonly users: NameAndRole[] // Users this item is shared with
   readonly share: VideoSharing // Pointer to video.users.shares[this share]
-  readonly video: Video // Pointer to the actual video
+  readonly item: ListItem // Pointer to the parent of this share item
 }
 export interface ListItem {
-  readonly mode: VIDEO_SHARING_MODE
   readonly video: Video // Pointer to the actual video
   readonly owner: NameAndRole // Owner of the video
   readonly dataset: {

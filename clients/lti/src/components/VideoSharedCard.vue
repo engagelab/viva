@@ -22,7 +22,7 @@
     </div>
     <img
       class="object-cover h-36 p-4"
-      :src="`${baseUrl}/api/video/file?videoref=${share.video.details.id}&mode=thumbnail`"
+      :src="`${baseUrl}/api/video/file?videoref=${share.item.video.details.id}&mode=thumbnail`"
       alt="video thumbnail"
     />
     <div class="mx-6">

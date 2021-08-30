@@ -6,11 +6,11 @@
       <div
         class="my-6 flex flex-row flex-wrap bg-viva-grey-400 text-viva-grey-500 rounded-xl p-6"
       >
-        <div class="flex flex-col w-auto lg:w-56">
+        <div class="flex flex-col w-auto lg:w-72">
           <div class="relative flex bg-viva-grey-450 rounded-md">
             <img
               class="object-cover h-36"
-              :src="`${baseUrl}/api/video/file?videoref=${selectedItemShare.video.details.id}&mode=thumbnail`"
+              :src="`${baseUrl}/api/video/file?videoref=${selectedItemShare.item.video.details.id}&mode=thumbnail`"
               alt="video thumbnail"
             />
             <div
@@ -24,79 +24,46 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="flex flex-col flex-grow ml-4">
-          <div class="flex flex-col">
-            <input
-              v-if="myLTIID === localShare.creator"
-              class="text-2xl bg-viva-grey-400 text-white focus:bg-viva-grey-450 p-1"
-              placeholder="Add a title"
-              v-model="localShare.title"
-              @input="() => (unsavedData = true)"
-            />
-            <p v-else class="text-2xl text-white">
-              {{ localShare.title }}
+          <div class="flex flex-col text-white pt-3">
+            <p class="m-1 mb-4 text-xl max-w-xxs lg:text-2xl lg:max-w-sm">
+              {{ selectedItemShare.item.dataset.name
+              }}{{ selectedItemShare.item.dataset.selection }}
             </p>
-            <textarea
-              v-if="myLTIID === localShare.creator"
-              class="mt-6 w-full text-white bg-viva-grey-450 focus:ring-2 focus:ring-blue-600 p-1"
-              rows="5"
-              placeholder="Add a description"
-              type="text"
-              v-model="localShare.description"
-              @input="() => (unsavedData = true)"
-            />
-            <p v-else class="text-sm text-white">
-              {{ localShare.description }}
+            <p class="m-1 text-xs">
+              By
+              <span
+                :style="{
+                  color: stringToColour(selectedItemShare.item.owner.name),
+                }"
+                >{{ selectedItemShare.item.owner.name }}</span
+              >
+            </p>
+            <p class="m-1 text-xs">
+              {{ formatDate(selectedItemShare.item.video.details.created) }}
             </p>
           </div>
-          <div class="flex flex-col mt-4">
-            <p class="my-2 text-white">Shared with</p>
-            <div class="m-2 max-h-36 overflow-scroll overflow-x-hidden">
-              <template v-for="(nar, index) in NARList" :key="index">
-                <div v-if="myLTIID === localShare.creator">
-                  <input
-                    class="mr-4 mb-4"
-                    type="checkbox"
-                    :id="`share-user-${index}`"
-                    :value="nar.item.ltiID"
-                    v-model="localShare.users"
-                    @change="unsavedData = true"
-                  />
-                  <label class="mr-2" :for="`share-user-${index}`">{{
-                    nar.itemName
-                  }}</label>
-                </div>
-                <div v-else class="flex flex-row my-2 items-center">
-                  <div
-                    class="flex items-center justify-center w-10 h-10 rounded-full border text-xs"
-                  >
-                    {{ nar.item.abbreviation }}
-                  </div>
-                  <div class="flex flex-col ml-2">
-                    <p>{{ nar.item.name }}</p>
-                    <p
-                      v-if="localShare.creator === nar.item.ltiID"
-                      class="text-xs text-white"
-                    >
-                      owner
-                    </p>
-                  </div>
-                </div>
-              </template>
+          <div class="flex mt-4">
+            <div class="flex flex-row flex-wrap">
+              <div
+                v-for="(nar, index) in NARList"
+                :key="`share-user-${index}`"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-white text-xs -m-1"
+                :style="{
+                  'background-color': stringToColour(nar.item.name),
+                }"
+              >
+                {{ nar.item.abbreviation }}
+              </div>
             </div>
           </div>
-          <Button
-            v-if="myLTIID === localShare.creator"
-            class="self-end"
-            :childclass="'w-32'"
-            :disabled="!unsavedData"
-            :backgroundcolour="'bg-viva-blue-800'"
-            :textcolour="'text-white'"
-            @vclick.stop="updateShare()"
-          >
-            Save
-          </Button>
+          <div class="flex flex-col mt-4">
+            <p class="text-2xl text-white">
+              {{ localShare.title || 'no title' }}
+            </p>
+            <p class="text-sm text-white">
+              {{ localShare.description || 'no descritpion' }}
+            </p>
+          </div>
         </div>
       </div>
     </template>
@@ -112,8 +79,8 @@ import {
   VideoSharing,
   ListItemShare,
 } from '@/types/main'
+import { stringToColour, formatDate } from '@/utilities'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
-import Button from '@/components/base/Button.vue'
 import trimButtonSVG from '@/assets/icons/svg/trim.svg'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
 
@@ -127,9 +94,6 @@ interface NARListItem {
 
 export default defineComponent({
   name: 'Share',
-  components: {
-    Button,
-  },
   setup() {
     const selectedItemShare = videoGetters.selectedItemShare
     const showUsers = ref(false)
@@ -139,6 +103,7 @@ export default defineComponent({
     let NARList: NARListItem[] = appGetters.canvasData.value.namesAndRoles
       .map((u) => ({ itemName: u.name, item: u }))
       .filter((u) => u.item.ltiID !== myLTIID)
+
     const localShare: Ref<VideoSharing> = ref({
       _id: '',
       creator: myLTIID,
@@ -187,7 +152,7 @@ export default defineComponent({
     const updateShare = function () {
       if (selectedItemShare.value && unsavedData.value) {
         videoActions.updateShare(
-          selectedItemShare.value.video.details.id,
+          selectedItemShare.value.item.video.details.id,
           localShare.value
         )
         unsavedData.value = false
@@ -201,7 +166,7 @@ export default defineComponent({
     const deleteShare = function () {
       if (selectedItemShare.value) {
         videoActions.deleteShare(
-          selectedItemShare.value.video.details.id,
+          selectedItemShare.value.item.video.details.id,
           localShare.value
         )
       }
@@ -219,6 +184,8 @@ export default defineComponent({
       baseUrl,
       myLTIID,
       selectedItemShare,
+      stringToColour,
+      formatDate,
       NARList,
       localShare,
       showUsers,

@@ -68,7 +68,7 @@
     </div>
     <div
       v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none"
-      class="fixed top-0 left-0 flex flex-col items-center w-full h-full bg-black bg-opacity-75 rounded-xl p-10"
+      class="fixed top-0 left-0 flex flex-col items-center w-full h-full bg-black bg-opacity-75 rounded-xl"
       @click.self="selectNone()"
     >
       <Player v-if="detailMode.mode === VIDEO_DETAIL_MODE.play" />

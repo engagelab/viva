@@ -6,11 +6,11 @@
       <div
         class="my-6 flex flex-row flex-wrap bg-viva-grey-400 text-viva-grey-500 rounded-xl p-6 w-auto lg:w-192"
       >
-        <div class="flex flex-col w-auto lg:w-56">
+        <div class="flex flex-col w-auto lg:w-72">
           <div class="relative flex bg-viva-grey-450 rounded-md">
             <img
               class="object-cover h-36"
-              :src="`${baseUrl}/api/video/file?videoref=${selectedItemShare.video.details.id}&mode=thumbnail`"
+              :src="`${baseUrl}/api/video/file?videoref=${selectedItemShare.item.video.details.id}&mode=thumbnail`"
               alt="video thumbnail"
             />
             <div
@@ -208,7 +208,7 @@ export default defineComponent({
     const updateShare = function () {
       if (unsavedData.value && selectedItemShare.value) {
         videoActions.updateShare(
-          selectedItemShare.value.video.details.id,
+          selectedItemShare.value.item.video.details.id,
           localShare.value
         )
         unsavedData.value = false
@@ -222,7 +222,7 @@ export default defineComponent({
     const deleteShare = function () {
       if (selectedItemShare.value) {
         videoActions.deleteShare(
-          selectedItemShare.value.video.details.id,
+          selectedItemShare.value.item.video.details.id,
           localShare.value
         )
       }

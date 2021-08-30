@@ -16,6 +16,7 @@ const consentTypesString = process.env.VUE_APP_CONSENT_STATES || ''
 const consentTypes = consentTypesString.split(',')
 let appVersion: string =
   document.documentElement.getAttribute('data-appversion') || ''
+const usernameColourMode = 'bright'
 
 // The web-based app will always be the latest version, set the version directly from .env
 // If not built with Cordova, 'data-appversion' will === '%%VERSION%%'
@@ -125,6 +126,7 @@ export {
   VIDEO_SHARING_MODE,
   VIDEO_SHARING_STATUS,
   VIDEO_DETAIL_MODE,
+  usernameColourMode,
   consentTypes,
   cordovaConstants,
   appVersion,
