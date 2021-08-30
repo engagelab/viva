@@ -1,6 +1,6 @@
 import { isRef, ref, Ref } from 'vue'
 import { User } from './types/main'
-import { USER_ROLE } from './constants'
+import { USER_ROLE, usernameColourMode } from './constants'
 
 const wrap = <T>(element: Ref<T> | T): Ref<T> => {
   if (isRef(element)) {
@@ -65,6 +65,28 @@ const formatDate = (date: Date): string => {
   )
 }
 
+function getBrightColour(hash: number): string {
+  return `hsla(${~~(360 * hash)},70%,70%,1)`
+}
+function getNormalColour(hash: number): string {
+  let colour = '#'
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xff
+    colour += ('00' + value.toString(16)).substr(-2)
+  }
+  return colour
+}
+
+const stringToColour = (str: string): string => {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return usernameColourMode === 'bright'
+    ? getBrightColour(hash)
+    : getNormalColour(hash)
+}
+
 // Random UUID. See https://gist.github.com/jed/982883
 const uuid = (a = ''): string =>
   a
@@ -105,31 +127,6 @@ const wait = (ms: number): Promise<void> => {
   })
 }
 
-/*
-  Taken from: https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
-*/
-/* function ab2str(buf: ArrayBuffer): string {
-  return String.fromCharCode.apply(null, new Uint16Array(buf))
-}
-
-function str2ab(str: string): ArrayBuffer {
-  const buf = new ArrayBuffer(str.length * 2) // 2 bytes for each char
-  const bufView = new Uint16Array(buf)
-  for (let i = 0, strLen = str.length; i < strLen; i++) {
-    bufView[i] = str.charCodeAt(i)
-  }
-  return buf
-}
-
-function ui8arr2str(uint8array: Uint8Array): string {
-  return uint8array.toString()
-}
-
-function str2ui8arr(myString: string): Uint8Array {
-  const array = myString.split(',').map((s) => Number.parseInt(s))
-  return Uint8Array.from(array)
-} */
-
 export {
   uuid,
   formatDate,
@@ -139,8 +136,5 @@ export {
   hasMinimumRole,
   shuffleItems,
   emitError,
-  /* ab2str,
-  str2ab,
-  ui8arr2str,
-  str2ui8arr, */
+  stringToColour,
 }

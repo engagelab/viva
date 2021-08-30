@@ -93,7 +93,7 @@ export default defineComponent({
       videoActions.selectVideo(listitem)
     }
     function newShare(listitem: ListItem) {
-      videoActions.createShare(listitem.video.details.id)
+      videoActions.createShare(listitem)
       videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
       videoActions.selectVideo(listitem)
     }

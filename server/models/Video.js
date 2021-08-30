@@ -18,6 +18,7 @@ const sharingSchema = new mongoose.Schema({
   title: { type: String },
   description: { type: String },
   edl: editDecriptionList,
+  tags: [{ type: String }],
   annotations: [{
     created: { type: Date, default: Date.now },
     creator: { type: String }, // LTI ID

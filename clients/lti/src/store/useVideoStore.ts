@@ -22,7 +22,7 @@ import {
   VideoSharing,
   ListItemShare,
 } from '../types/main'
-import { VIDEO_SHARING_MODE, VIDEO_DETAIL_MODE } from '@/constants'
+import { VIDEO_DETAIL_MODE } from '@/constants'
 import { apiRequest } from '../api/apiRequest'
 import { useAppStore } from './useAppStore'
 const { getters: appGetters, actions: appActions } = useAppStore()
@@ -91,20 +91,9 @@ const getters = {
         .filter((v) => v.users.owner === myUserID)
         .map(
           (v: Video): ListItem => {
-            const shares: ListItemShare[] = v.users.sharing
-              .filter((s) => s.creator === myLTIID)
-              .map((s) => ({
-                id: s._id,
-                creator: s.creator,
-                creatorName: appActions.nameAndRole(s.creator),
-                users: s.users.map((u) => appActions.nameAndRole(u)),
-                share: s,
-                video: v,
-              }))
-            return {
-              mode: VIDEO_SHARING_MODE.myVideos,
+            const item: ListItem = {
               video: v,
-              shares: shares,
+              shares: [],
               owner: appActions.nameAndRole(myLTIID),
               dataset: {
                 name: v.dataset.name,
@@ -113,6 +102,20 @@ const getters = {
                 }, ''),
               },
             }
+            v.users.sharing
+              .filter((s) => s.creator === myLTIID)
+              .forEach((s) => {
+                const newShare: ListItemShare = {
+                  id: s._id,
+                  creator: s.creator,
+                  creatorName: appActions.nameAndRole(s.creator),
+                  users: s.users.map((u) => appActions.nameAndRole(u)),
+                  share: s,
+                  item,
+                }
+                item.shares.push(newShare)
+              })
+            return item
           }
         )
     })
@@ -133,7 +136,17 @@ const getters = {
               creatorName: appActions.nameAndRole(s.creator),
               users: s.users.map((u) => appActions.nameAndRole(u)),
               share: s,
-              video: v,
+              item: {
+                video: v,
+                owner: appActions.nameAndRole(s.creator),
+                shares: [],
+                dataset: {
+                  name: v.dataset.name,
+                  selection: v.dataset.selection.reduce((acc, curr) => {
+                    return acc + ' > ' + curr.title
+                  }, ''),
+                },
+              },
             })
           })
       })
@@ -149,7 +162,7 @@ interface Actions {
   selectNoVideo: () => void
   detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
   updateMetadata: (video: Video) => Promise<void>
-  createShare: (videoID: string) => Promise<void>
+  createShare: (listItem: ListItem) => Promise<void>
   updateShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
   deleteShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
 }
@@ -161,7 +174,8 @@ const actions = {
     state.value.detailMode.mode = mode
     state.value.detailMode.submode = submode
   },
-  createShare: function (videoID: string): Promise<void> {
+  createShare: function (listItem: ListItem): Promise<void> {
+    const videoID = listItem.video.details.id
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.POST,
       credentials: true,
@@ -177,7 +191,7 @@ const actions = {
           creatorName: appActions.nameAndRole(newShare.creator),
           users: newShare.users.map((u) => appActions.nameAndRole(u)),
           share: newShare,
-          video: v,
+          item: listItem,
         }
         state.value.selectedItemShare = share
         v.users.sharing.push(newShare)
