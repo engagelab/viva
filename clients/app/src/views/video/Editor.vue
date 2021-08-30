@@ -16,7 +16,24 @@
             id="videoContainer"
             ref="videoContainer"
       -->
-      <div class="flex-none bg-black" @click="toggleScreenMode()">
+      <div class="relative flex-none bg-black" @click="toggleScreenMode()">
+        <div
+          v-if="loadingVideoNow"
+          class="
+            absolute
+            flex flex-row
+            items-center
+            justify-center
+            bg-black bg-opacity-50
+            text-white
+            h-full
+            w-full
+            text-xs
+            z-10
+          "
+        >
+          <p>{{ t('pleaseWait') }}</p>
+        </div>
         <video
           :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
           ref="playbackVideo"
@@ -165,7 +182,16 @@ const { actions: deviceActions, getters: deviceGetters } = useDeviceService()
 const { actions: appActions, getters: appGetters } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
 const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
+const messages = {
+  nb_NO: {
+    pleaseWait: 'Laster inn Video..',
+  },
+  en: {
+    pleaseWait: 'Loading video..',
+  },
+}
 
+import { useI18n } from 'vue-i18n'
 import Slider from '@/components/base/Slider.vue'
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import main from './pages/main.vue'
@@ -194,6 +220,7 @@ export default defineComponent({
       markRaw(classify),
       markRaw(upload),
     ]
+    const { t } = useI18n({ messages })
     const selectedVideo = videoGetters.selectedVideo
     const selectedDataset = datasetGetters.selectedDataset
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
@@ -205,6 +232,7 @@ export default defineComponent({
     })
     const playing = ref(false)
     const videoDataLoaded = ref(false)
+    const loadingVideoNow = ref(false)
 
     let playerLowerBound = 0 // Time >= 0 when video should start playing, when using the scrubber
     let playerUpperBound = 0 // Time <= player end time when video should stop playing, when using the scrubber
@@ -467,8 +495,10 @@ export default defineComponent({
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player && video.value && !deviceGetters.recordingNow.value) {
         const dataLoaded = () => {
+          loadingVideoNow.value = false
           playerUpperBound = player.duration
           video.value.details.duration = player.duration
+          video.value.status.recordingExists = true
           // We need to save the latest duration
           videoActions.updateMetadata(video.value).then(() => {
             // But if this is new video replacing an old, the unsavedChanges must be set true to request 'samtykker' acceptance
@@ -479,7 +509,6 @@ export default defineComponent({
           player.removeEventListener('loadeddata', dataLoaded)
           videoDataLoaded.value = true
         }
-
         player.addEventListener('loadeddata', dataLoaded)
         player.addEventListener('ended', stopPlaying, false)
 
@@ -487,6 +516,7 @@ export default defineComponent({
           .loadVideo(video.value.details.id + '.mp4')
           .then((fileEntry) => {
             if (fileEntry) {
+              loadingVideoNow.value = true
               deviceActions.loadCordovaMedia(fileEntry).then((tempEntry) => {
                 if (tempEntry) {
                   const path = convertFilePath(tempEntry.toURL()) + '#t=0.1'
@@ -569,6 +599,7 @@ export default defineComponent({
     }
 
     return {
+      t,
       // methods
       stopPlaying,
       startPlaying,
@@ -591,6 +622,7 @@ export default defineComponent({
       recording: deviceGetters.recordingNow,
       playing,
       fullScreenMode,
+      loadingVideoNow,
     }
   },
 })
@@ -605,13 +637,11 @@ export default defineComponent({
 .playbackVideo {
   margin: 0;
   width: 100%;
-  background-color: green;
   z-index: 1;
 }
 .playbackVideoSmall {
   margin: auto;
   width: 50%;
-  background-color: green;
   z-index: 1;
 }
 /* video::-webkit-media-controls-enclosure {

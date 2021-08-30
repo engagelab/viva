@@ -23,7 +23,7 @@ if (appVersion === '%%VERSION%%' && process.env.VUE_APP_VERSION)
 
 const vivaServer = 'viva.uio.no'
 const engagelabServer = 'engagelab.uio.no'
-const idleTimeout = 3600 // seconds
+const idleTimeout = 12000 // 200 minutes (in seconds)
 const recordingDataInterval = 5 // seconds
 const recordingMaxDuration = 2700 // seconds (2700 = 45 mins)
 const recordingMaxDurationWeb = 600 // seconds (600 = 10 mins)
