@@ -11,34 +11,39 @@
       >
         <div
           v-if="nodes"
-          class="
-            rounded-full
-            h-4
-            w-4
-            flex
-            items-center
-            justify-center
-            bg-blue-400
-            cursor-pointer
-          "
+          class="cursor-pointer"
           @click="
-            showInputBox(
-              {
-                currentKey: localSelectionPriority[depth - 1],
-                nextKey: '',
-                currentValue: title,
-                path: path,
-                title: '',
-              },
-              'current'
-            )
+            showInputBox({
+              currentKey: localSelectionPriority[depth - 1],
+              nextKey: '',
+              currentValue: title,
+              path: path,
+              title: '',
+              mode: 'current',
+            })
           "
         >
           ⬇️
         </div>
         <p v-if="localSelectionPriority && nodes">
           {{ localSelectionPriority[depth - 1] }}:{{ title }}
+          <span
+            class="cursor-pointer"
+            @click="
+              addSubset({
+                currentKey: localSelectionPriority[depth - 1],
+                nextKey: '',
+                currentValue: title,
+                path: path,
+                title: '',
+                mode: 'delete',
+              })
+            "
+          >
+            ˟
+          </span>
         </p>
+
         <div
           v-if="
             (nodes &&
@@ -57,19 +62,17 @@
             cursor-pointer
           "
           @click="
-            showInputBox(
-              {
-                currentKey: localSelectionPriority[depth - 1],
-                nextKey: localSelectionPriority[depth],
-                currentValue: title,
-                path: path,
-                title: '',
-              },
-              'new'
-            )
+            showInputBox({
+              currentKey: localSelectionPriority[depth - 1],
+              nextKey: localSelectionPriority[depth],
+              currentValue: title,
+              path: path,
+              title: '',
+              mode: 'new',
+            })
           "
         >
-          +
+          ＋
         </div>
       </div>
       <div v-if="localSelectionPriority">
@@ -106,7 +109,8 @@
         </Subset>
       </div>
       <!-- Add new subset -->
-      <div class="flex justify-start ...">
+
+      <div class="flex justify-start" v-if="currentDataPath.mode != 'delete'">
         <div class="flex flex-row" v-if="showInput">
           <input
             v-model="currentDataPath.title"
@@ -154,14 +158,6 @@ export default defineComponent({
     title: { type: String, required: true },
     label: { type: String, required: true },
     nodes: { type: Object as PropType<DatasetSelection[]>, required: true },
-    // localSelectionPriority: {
-    //   type: Array as PropType<string[]>,
-    //   required: true,
-    // },
-    // localSelection: {
-    //   type: Object as PropType<{ [key: string]: DatasetSelection[] }>,
-    //   required: true,
-    // },
   },
 
   setup(props) {
@@ -174,6 +170,7 @@ export default defineComponent({
       nextKey: '',
       currentValue: '',
       title: '',
+      mode: '',
     })
     let mode = ref('')
     const showInput = ref(false)
@@ -184,9 +181,8 @@ export default defineComponent({
 
     //Methods
 
-    const showInputBox = (path: DataPath, modeValue: string) => {
-      mode.value = modeValue
-      console.log(props.path)
+    const showInputBox = (path: DataPath) => {
+      mode.value = path.mode
       currentDataPath.value = path
       showInput.value = !showInput.value
     }
@@ -203,14 +199,14 @@ export default defineComponent({
         currentDataPath.currentKey?.toLowerCase() +
         '-' +
         currentDataPath.currentValue?.toLowerCase()
-      console.log(newPath)
 
-      showInput.value = !showInput.value
       //  Match the path and add the subset
       let p = ''
       let depthIndex = 0
+
+      // recursive to iterate throught the nested Object
       const subsetPath = (subsets: DatasetSelection[]) => {
-        subsets?.forEach((set) => {
+        subsets?.forEach((set, index) => {
           depthIndex = depthIndex + 1
           p = localSelectionPriority.value[depthIndex - 1]
             ? p.toLowerCase() +
@@ -226,8 +222,13 @@ export default defineComponent({
             Object.assign(set, {
               selection: { [currentDataPath.nextKey]: [nySubset] },
             })
+          } else if (
+            p === newPath &&
+            set.title == currentDataPath.currentValue &&
+            currentDataPath.mode == 'delete'
+          ) {
+            subsets.splice(index, 1)
           }
-
           if (set.selection) {
             subsetPath(set.selection[Object.keys(set.selection)[0]])
           } else {
@@ -239,7 +240,8 @@ export default defineComponent({
       if (
         props.depth == 1 &&
         props.path == '' &&
-        currentDataPath.nextKey == ''
+        currentDataPath.nextKey == '' &&
+        currentDataPath.mode != 'delete'
       ) {
         localSelection.value[currentDataPath.currentKey].push(nySubset)
       } else if (Object.keys(localSelection.value).length > 0) {
@@ -250,7 +252,7 @@ export default defineComponent({
           [currentDataPath.nextKey]: [nySubset],
         })
       }
-      console.log(localSelection.value)
+
       datasetActions.addSelection(localSelection.value, 'selection')
       showInput.value = false
     }

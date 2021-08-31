@@ -92,8 +92,9 @@ const actions = {
 
     return apiRequest<Dataset>(payload)
       .then((dataset) => {
-        state.value.datasets.set(dataset._id, dataset)
-        actions.selectDatasetById(dataset._id)
+        const updatedDataset = new Dataset(dataset)
+        state.value.datasets.set(updatedDataset._id, updatedDataset)
+        actions.selectDatasetById(updatedDataset._id)
       })
       .catch((error: Error) => {
         appActions.errorMessage(error)

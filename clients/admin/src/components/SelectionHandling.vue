@@ -37,9 +37,15 @@
     </div>
 
     <p class="text-red-600 mt-4">Instances</p>
-    <SelectionItem
-      :localSelectionPriority="localSelectionPriority"
-    ></SelectionItem>
+    <Subset
+      v-if="localSelection"
+      :title="Object.keys(localSelection)[0]"
+      :label="Object.keys(localSelection)[0]"
+      :nodes="localSelection[Object.keys(localSelection)[0]]"
+      :depth="0"
+      :path="''"
+      :newInstancePath="''"
+    ></Subset>
   </div>
 </template>
 
@@ -47,10 +53,10 @@
 import { defineComponent, ref, computed, watch, Ref, ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { behandlings, UTVALG_SELECTION, CONSENT_TYPES } from '@/constants'
-
+import { DatasetSelection } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
-
-import SelectionItem from '@/components/SelectionItem.vue'
+import Subset from './Subset.vue'
+// import SelectionItem from '@/components/SelectionItem.vue'
 
 const messages = {
   nb_NO: {
@@ -75,10 +81,11 @@ const messages = {
 export default defineComponent({
   name: 'selectionHandling',
   components: {
-    SelectionItem,
+    // SelectionItem,
+    Subset,
   },
-  // emits: ['updated'],
-  setup(/*props, context*/) {
+
+  setup() {
     const { t } = useI18n({ messages })
     const { getters: datasetGetters, actions: datasetActions } =
       useDatasetStore()
@@ -88,7 +95,9 @@ export default defineComponent({
     const d = datasetGetters.selectedDataset
 
     const localSelectionPriority: Ref<string[]> = ref(d.value.selectionPriority)
-
+    const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref(
+      d.value.selection
+    )
     const selectionOptionList: ComputedRef<string[]> = computed(() => {
       return Object.values(UTVALG_SELECTION).filter(
         (r) => !localSelectionPriority.value.includes(r)
@@ -97,6 +106,7 @@ export default defineComponent({
 
     function reloadData() {
       localSelectionPriority.value = [...d.value.selectionPriority]
+      localSelection.value = d.value.selection
     }
 
     function addSelectionPriority() {
@@ -148,7 +158,7 @@ export default defineComponent({
       selectionOptionList,
       currentSelection,
       localSelectionPriority,
-
+      localSelection,
       // Methods
       addSelectionPriority,
       removeSelectionPriority,
