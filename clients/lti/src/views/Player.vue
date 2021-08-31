@@ -6,7 +6,7 @@
     @click.prevent.self
   >
     <div class="flex flex-col scrolling-touch w-full relative">
-      <div class="relative flex-none">
+      <div class="flex-none">
         <video
           :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
           ref="playbackVideo"
@@ -19,56 +19,65 @@
         >
           <track kind="subtitles" />
         </video>
-        <Slider class="absolute bottom-0 left-0 w-full px-6" v-model="trim" />
       </div>
 
-      <div
-        class="absolute bottom-0 flex flex-row flex-grow self-end w-full py-1 px-6 md:py-4 items-center bg-black bg-opacity-70"
-      >
+      <div class="absolute bottom-0 flex flex-col w-full">
+        <Slider
+          class="progress-slider top-0 left-0 w-full"
+          v-model="playerCurrentTime"
+          :format="formatProgressTooltip"
+          :max="scrubberMax"
+          :min="scrubberMin"
+          @change="adjustProgress"
+        />
         <div
-          v-show="!playing"
-          class="flex items-center justify-center w-10 h-10 rounded-full p-3 pl-4 mr-2 border"
-          @click.stop="startPlaying()"
+          class="flex flex-row flex-grow self-end w-full py-1 px-6 md:py-4 items-center bg-gradient-to-b from-transparent to-black"
         >
-          <img :src="playButtonSVG" alt="play-button" />
-        </div>
-        <div
-          v-show="playing"
-          class="flex items-center justify-center w-10 h-10 rounded-full p-3 mr-2 border"
-          @click.stop="pausePlaying()"
-        >
-          <img :src="pauseButtonSVG" alt="pause-button" />
-        </div>
-        <div class="mx-4 text-white">{{ playerTime }}</div>
-        <div class="flex flex-grow flex-row justify-end">
           <div
-            class="relative flex w-6 h-6 mr-6"
-            @click.stop="volumeMenu = !volumeMenu"
+            v-show="!playing"
+            class="flex items-center justify-center w-10 h-10 rounded-full p-3 mr-2 border"
+            @click.stop="startPlaying()"
           >
-            <div
-              v-show="volumeMenu"
-              class="flex flex-row items-start pt-3 justify-center absolute -bottom-3 -left-3 h-32 w-12 rounded-full bg-white bg-opacity-10"
-            >
-              <Slider
-                class="volume-slider"
-                orientation="vertical"
-                direction="rtl"
-                step="-1"
-                :format="formatVolumeTooltip"
-                :min="0"
-                :max="1"
-                v-model="volumeLevel"
-              />
-            </div>
-            <img
-              v-if="volumeLevel > 0"
-              :src="soundOnButtonSVG"
-              alt="volumeOn-button"
-            />
-            <img v-else :src="soundOffButtonSVG" alt="volumeOff-button" />
+            <img :src="playButtonSVG" alt="play-button" />
           </div>
-          <div class="flex w-6 h-6" @click.stop="toggleScreenMode()">
-            <img :src="fullscreenButtonSVG" alt="fullscreen-button" />
+          <div
+            v-show="playing"
+            class="flex items-center justify-center w-10 h-10 rounded-full p-3 mr-2 border"
+            @click.stop="pausePlaying()"
+          >
+            <img :src="pauseButtonSVG" alt="pause-button" />
+          </div>
+          <div class="mx-4 text-white">{{ playerTime }}</div>
+          <div class="flex flex-grow flex-row justify-end">
+            <div
+              class="relative flex w-6 h-6 mr-6"
+              @click.stop="volumeMenu = !volumeMenu"
+            >
+              <div
+                v-show="volumeMenu"
+                class="flex flex-row items-start pt-3 justify-center absolute -bottom-3 -left-3 h-32 w-12 rounded-full bg-white bg-opacity-10"
+              >
+                <Slider
+                  class="volume-slider"
+                  orientation="vertical"
+                  direction="rtl"
+                  step="-1"
+                  :format="formatVolumeTooltip"
+                  :min="0"
+                  :max="1"
+                  v-model="volumeLevel"
+                />
+              </div>
+              <img
+                v-if="volumeLevel > 0"
+                :src="soundOnButtonSVG"
+                alt="volumeOn-button"
+              />
+              <img v-else :src="soundOffButtonSVG" alt="volumeOff-button" />
+            </div>
+            <div class="flex w-6 h-6" @click.stop="toggleScreenMode()">
+              <img :src="fullscreenButtonSVG" alt="fullscreen-button" />
+            </div>
           </div>
         </div>
       </div>
@@ -104,6 +113,9 @@ export default defineComponent({
     }
     const formatVolumeTooltip = function (value: number) {
       return Math.floor(value * 100)
+    }
+    const formatProgressTooltip = function (value: number) {
+      return formatTime(value)
     }
     const fullScreenMode = ref(false)
     const moveScrubber = ref(0)
@@ -148,8 +160,6 @@ export default defineComponent({
         minutes > 0
           ? Math.floor(timeInSeconds % (60 * minutes + 60 * 60 * hours))
           : Math.floor(timeInSeconds)
-      // let milliseconds = timeInSeconds.toFixed(2)
-      // milliseconds = milliseconds.substring(milliseconds.length - 2)
       const minutesString = minutes > 9 ? minutes : '0' + minutes
       const secondsString = seconds > 9 ? seconds : '0' + seconds
       return `${hours}:${minutesString}:${secondsString}`
@@ -169,6 +179,11 @@ export default defineComponent({
     function adjustVolume(level: number): void {
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) player.volume = level
+    }
+
+    function adjustProgress(value: number): void {
+      const player: HTMLVideoElement | null = playbackVideo.value
+      if (player) player.currentTime = value
     }
 
     function toggleScreenMode(): void {
@@ -345,6 +360,8 @@ export default defineComponent({
       toggleScreenMode,
       adjustVolume,
       formatVolumeTooltip,
+      formatProgressTooltip,
+      adjustProgress,
       // data
       baseUrl,
       selectedItem,
@@ -390,6 +407,19 @@ export default defineComponent({
     var(--slider-handle-height, 16px) / 2 * -1 - var(--slider-height, 6px) / 2 *
       -1
   ) !important;
+}
+.progress-slider {
+  --slider-handle-bg: #059fff;
+  --slider-handle-width: 16px;
+  --slider-handle-height: 16px;
+  --slider-height: 3px;
+  --slider-vertical-height: 4rem;
+  --slider-bg: rgba(163, 185, 255, 0.2);
+  --slider-connect-bg: #059fff;
+  --slider-tooltip-bg: rgba(0, 0, 0, 0);
+  --slider-tooltip-font-size: 0.7rem;
+  --slider-tooltip-font-weight: 200;
+  --slider-tooltip-line-height: 0.5rem;
 }
 .layout {
   background: #f5f7f9;
