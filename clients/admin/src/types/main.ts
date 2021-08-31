@@ -503,6 +503,7 @@ export interface DataPath {
   nextKey: string
   currentValue: string
   title: string
+  mode: string
 }
 export interface DatasetSelection {
   title: string
