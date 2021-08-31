@@ -116,4 +116,25 @@ router.post('/video', utilities.authoriseUser, async (request, response) => {
   })
 })
 
+// To update a video details for a given video ID
+router.put(
+  '/video/details',
+  utilities.authoriseUser,
+  async (request, response, next) => {
+    const updatedVideo = request.body
+    Video.findOne({ 'details.id': request.query.id }, (error, v) => {
+      if (error || !v) {
+        return response.status(400).end()
+      } else {
+        v.details.name = updatedVideo.name
+        v.details.description = updatedVideo.description
+        v.save((saveError) => {
+          if (saveError) return next(saveError)
+          response.send(v.details)
+        })
+      }
+    })
+  }
+)
+
 module.exports = router

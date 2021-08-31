@@ -330,7 +330,7 @@ export default defineComponent({
           playerUpperBound = player.duration
           video.value.details.duration = player.duration
           // We need to save the latest duration
-          videoActions.updateMetadata(video.value)
+          videoActions.updateLocalVideo(video.value)
           setPlayerBounds()
           player.removeEventListener('loadeddata', dataLoaded)
           context.emit('duration', player.duration)

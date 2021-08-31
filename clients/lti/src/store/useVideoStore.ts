@@ -21,6 +21,7 @@ import {
   XHR_REQUEST_TYPE,
   VideoSharing,
   ListItemShare,
+  VideoDetailsData,
 } from '../types/main'
 import { VIDEO_DETAIL_MODE } from '@/constants'
 import { apiRequest } from '../api/apiRequest'
@@ -161,7 +162,8 @@ interface Actions {
   selectShare: (share: ListItemShare) => void
   selectNoVideo: () => void
   detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
-  updateMetadata: (video: Video) => Promise<void>
+  updateLocalVideo: (video: Video) => Promise<void>
+  updateVideoDetails: (id: string, details: VideoDetailsData) => Promise<void>
   createShare: (listItem: ListItem) => Promise<void>
   updateShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
   deleteShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
@@ -268,7 +270,7 @@ const actions = {
   },
 
   // Update the video in store with the given video (by fileId) and save to local disk
-  updateMetadata: (video: Video): Promise<void> => {
+  updateLocalVideo: (video: Video): Promise<void> => {
     video.status.hasUnsavedChanges = false
     video.status.hasNewDataAvailable = false
     let videoToUpdate: Video | undefined = undefined
@@ -278,6 +280,25 @@ const actions = {
       videoToUpdate.updateFromVideo(video)
       return Promise.resolve()
     } else return Promise.resolve()
+  },
+
+  updateVideoDetails: function (
+    id: string, // should be video.details.id
+    details: VideoDetailsData
+  ): Promise<void> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.PUT,
+      credentials: true,
+      body: details,
+      query: { id },
+      route: '/api/video/details',
+    }
+    return apiRequest<VideoDetailsData>(payload).then((d: VideoDetailsData) => {
+      const v = state.value.videos.get(id)
+      if (v) {
+        v.updateDetails(d)
+      }
+    })
   },
 }
 // This defines the interface used externally

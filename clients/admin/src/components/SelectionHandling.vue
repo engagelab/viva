@@ -55,7 +55,7 @@ import { useI18n } from 'vue-i18n'
 import { behandlings, UTVALG_SELECTION, CONSENT_TYPES } from '@/constants'
 import { DatasetSelection } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import Subset from './Subset.vue'
+import Subset from '@/components/Subset.vue'
 // import SelectionItem from '@/components/SelectionItem.vue'
 
 const messages = {

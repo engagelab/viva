@@ -203,9 +203,7 @@ export default defineComponent({
         }
       }
     )
-    if (selectedItemShare.value) {
-      resetData(selectedItemShare.value)
-    }
+    if (selectedItemShare.value) resetData(selectedItemShare.value)
 
     const updateShare = function () {
       if (unsavedData.value && selectedItemShare.value) {

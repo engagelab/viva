@@ -165,7 +165,7 @@ export interface EditDecriptionList {
   trim: number[]
   blur: number[][]
 }
-interface VideoDetailsData {
+export interface VideoDetailsData {
   id?: string // Used instead of video._id front end, and for QR Code.
   name?: string // A human-readable string for naming this video
   category?: string // green, yellow, red
