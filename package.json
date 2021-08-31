@@ -12,6 +12,7 @@
     "serve:app": "env-cmd yarn --cwd clients/app run serve",
     "build:app": "env-cmd yarn --cwd clients/app run build",
     "build:ios": "env-cmd yarn --cwd clients/app run cordova-build-ios",
+    "cordova:platform:version": "env-cmd yarn --cwd clients/app cordova-platform-version",
     "build:ios:production": "env-cmd yarn --cwd clients/app run cordova-build-ios-production",
     "build:android": "env-cmd yarn --cwd clients/app run cordova-build-android",
     "build:android:production": "env-cmd yarn --cwd clients/app run cordova-build-android-production",

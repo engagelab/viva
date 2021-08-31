@@ -8,6 +8,7 @@
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
     "cordova-add-ios": "cordova platform add ios",
+    "cordova-platform-version": "cordova platform version",
     "cordova-build-android": "cross-env CORDOVA_PLATFORM=android vue-cli-service cordova-build-android --mode production --buildConfig",
     "cordova-build-android-development": "cross-env CORDOVA_PLATFORM=android vue-cli-service cordova-build-android --mode development",
     "cordova-build-browser": "cross-env CORDOVA_PLATFORM=browser vue-cli-service cordova-build-browser",
