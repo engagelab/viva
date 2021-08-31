@@ -35,14 +35,14 @@
         >
           <div
             v-show="!playing"
-            class="flex items-center justify-center w-10 h-10 rounded-full p-3 mr-2 border"
+            class="flex items-center justify-center w-10 h-10 rounded-full p-3 pl-4 mr-2 border"
             @click.stop="startPlaying()"
           >
             <img :src="playButtonSVG" alt="play-button" />
           </div>
           <div
             v-show="playing"
-            class="flex items-center justify-center w-10 h-10 rounded-full p-3 mr-2 border"
+            class="flex items-center justify-center w-10 h-10 rounded-full p-3.5 mr-2 border"
             @click.stop="pausePlaying()"
           >
             <img :src="pauseButtonSVG" alt="pause-button" />
