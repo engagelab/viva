@@ -56,7 +56,6 @@ import { behandlings, UTVALG_SELECTION, CONSENT_TYPES } from '@/constants'
 import { DatasetSelection } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import Subset from '@/components/Subset.vue'
-// import SelectionItem from '@/components/SelectionItem.vue'
 
 const messages = {
   nb_NO: {
@@ -81,7 +80,6 @@ const messages = {
 export default defineComponent({
   name: 'selectionHandling',
   components: {
-    // SelectionItem,
     Subset,
   },
 
