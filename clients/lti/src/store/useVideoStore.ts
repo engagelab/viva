@@ -158,9 +158,9 @@ const getters = {
 
 interface Actions {
   getVideoMetadata: () => Promise<void>
-  selectVideo: (video: ListItem) => void
+  selectOriginal: (video: ListItem) => void
   selectShare: (share: ListItemShare) => void
-  selectNoVideo: () => void
+  selectNoOriginal: () => void
   detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
   updateLocalVideo: (video: Video) => Promise<void>
   updateVideoDetails: (id: string, details: VideoDetailsData) => Promise<void>
@@ -250,12 +250,10 @@ const actions = {
       const v = new Video(video)
       state.value.videos.set(v.details.id, v)
     })
-    const videos = Array.from(state.value.videos.values())
-    console.log(videos)
     return Promise.resolve()
   },
 
-  selectVideo: function (video: ListItem): void {
+  selectOriginal: function (video: ListItem): void {
     if (video) state.value.selectedItem = video
   },
   selectShare: function (share: ListItemShare): void {
@@ -265,7 +263,7 @@ const actions = {
     }
   },
 
-  selectNoVideo: function (): void {
+  selectNoOriginal: function (): void {
     state.value.selectedItem = undefined
   },
 

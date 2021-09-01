@@ -410,8 +410,10 @@ export class Video {
     if (details.category) this.details.category = details.category
     if (details.created) this.details.created = new Date(details.created)
     if (details.description) this.details.description = details.description
-    if (details.duration) this.details.duration = details.duration
+    if (details.duration) this.details.duration = details.duration || 0
     if (details.edl) this.details.edl = details.edl
+    if (this.details.edl.trim.length === 0)
+      this.details.edl.trim = [0, this.details.duration]
     if (details.encryptionKey)
       this.details.encryptionKey = details.encryptionKey
     if (details.id) this.details.id = details.id

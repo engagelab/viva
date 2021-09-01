@@ -18,7 +18,7 @@
         class="absolute flex flex-col top-10 right-2 bg-viva-grey-300 p-2 gap-2 w-24 z-50 rounded-md text-xs text-white cursor-pointer"
         v-show="menu"
       >
-        <p @click.stop="editShare()">Edit</p>
+        <p @click.stop="editOriginal()">Edit</p>
         <p @click.stop="newShare(listitem)">New share</p>
         <!--p>Delete</p-->
       </div>
@@ -76,7 +76,7 @@
           :disabled="!unsavedData"
           :backgroundcolour="'bg-viva-blue-800'"
           :textcolour="'text-white'"
-          @vclick.stop="updateShare()"
+          @vclick.stop="updateOriginal()"
         >
           Save
         </Button>
@@ -175,22 +175,22 @@ export default defineComponent({
     }
     function play(li: ListItem) {
       videoActions.detailMode(VIDEO_DETAIL_MODE.play, VIDEO_DETAIL_MODE.play)
-      videoActions.selectVideo(li)
+      videoActions.selectOriginal(li)
     }
     function newShare(li: ListItem) {
       menu.value = false
       videoActions.createShare(li)
       videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
-      videoActions.selectVideo(li)
+      videoActions.selectOriginal(li)
     }
-    function editShare() {
+    function editOriginal() {
       menu.value = false
       editing.value = true
     }
     function cancelEdit() {
       editing.value = false
     }
-    function updateShare() {
+    function updateOriginal() {
       if (unsavedData.value && listitem.value) {
         videoActions.updateVideoDetails(
           listitem.value.video.details.id,
@@ -206,8 +206,8 @@ export default defineComponent({
       menu,
       editing,
       unsavedData,
-      editShare,
-      updateShare,
+      editOriginal,
+      updateOriginal,
       cancelEdit,
       formatDate,
       baseUrl,

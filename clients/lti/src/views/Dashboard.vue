@@ -122,10 +122,10 @@ export default defineComponent({
     function showTab(tabName: VIDEO_SHARING_MODE) {
       currentTab.value = tabName
       console.log(currentTab.value)
-      videoActions.selectNoVideo()
+      videoActions.selectNoOriginal()
     }
 
-    videoActions.selectNoVideo()
+    videoActions.selectNoOriginal()
 
     function selectNone() {
       const { mode, submode } = videoGetters.detailMode.value
