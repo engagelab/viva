@@ -38,7 +38,14 @@
     </div>
     <div class="flex-col w-full">
       <div
-        class="flex flex-row flex-grow py-4 text-left px-2 overflow-y-auto justify-between"
+        class="
+          flex flex-row flex-grow
+          py-4
+          text-left
+          px-2
+          overflow-y-auto
+          justify-between
+        "
       >
         <div class="mb-2 font-serious">
           <h1 class="mb-2 font-serious">User Details</h1>
@@ -132,7 +139,15 @@ import MonitorProjectItem from '@/components/admin/MonitorProjectItem.vue'
 import SelectionBox from '@/components/base/SelectionBox.vue'
 import AnswerInput from '@/components/base/AnswerInput.vue'
 import SlButton from '@/components/base/SlButton.vue'
-
+import { useI18n } from 'vue-i18n'
+const messages = {
+  nb_NO: {
+    dataset: 'Registrering',
+  },
+  en: {
+    dataset: 'Registrering',
+  },
+}
 interface RoleOptionListItem {
   itemName: string
   item: USER_ROLE
@@ -155,12 +170,11 @@ export default defineComponent({
     AnswerInput,
   },
   setup() {
+    const { t } = useI18n({ messages })
     const { getters: appGetters, actions: appActions } = useAppStore()
     const { getters: userGetters, actions: userActions } = useUserStore()
-    const {
-      getters: projectGetters,
-      actions: projectActions,
-    } = useProjectStore()
+    const { getters: projectGetters, actions: projectActions } =
+      useProjectStore()
     const u = new User(userGetters.selectedUser.value)
     const theUser = ref(u)
     const currentUserRole = ref({
@@ -277,6 +291,7 @@ export default defineComponent({
       .then(() => userActions.selectUser(userGetters.myUser.value))
 
     return {
+      t,
       // Computed
       status: appGetters.status,
       allUsers: userGetters.allUsers,

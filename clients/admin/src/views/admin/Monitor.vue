@@ -88,13 +88,21 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import router from '../../router'
-
+import { useI18n } from 'vue-i18n'
+const messages = {
+  nb_NO: {
+    dataset: 'Registrering',
+  },
+  en: {
+    dataset: 'Registrering',
+  },
+}
 export default defineComponent({
   name: 'Monitor',
   setup() {
     const selectedTab = ref('recordingLog')
     const selectedSubTab = ref('profile')
-
+    const { t } = useI18n({ messages })
     const selectTab = (main: string, secondary: string) => {
       selectedTab.value = main
       selectedSubTab.value = secondary
@@ -107,7 +115,7 @@ export default defineComponent({
     return {
       selectedTab,
       selectedSubTab,
-
+      t,
       // Methods
       restart,
       selectTab,
