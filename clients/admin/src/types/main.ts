@@ -267,6 +267,9 @@ interface VideoTableLayout {
   dataset: string
   shared: VideoUsers
   details: VideoDetails
+  selection: string
+  consenters: string[]
+  storages: VideoStorages[]
 }
 
 export class Video {
@@ -445,9 +448,14 @@ export class Video {
       dataset: this.dataset.name,
       shared: this.users,
       details: this.details,
+      selection: this.dataset.selection.reduce(
+        (acc, item) => acc + `${item.title} > `,
+        ''
+      ),
+      consenters: this.consents,
+      storages: this.storages,
     }
   }
-
   // Convert this to a Plain Old Javascript Object
   get asPOJO(): unknown {
     return { ...this }
@@ -566,7 +574,7 @@ export class Dataset {
     this.created = new Date()
     this.formId = ''
     this.status = {
-      active: true,
+      active: false,
       lastUpdated: new Date(),
       lockedBy: '',
     }
