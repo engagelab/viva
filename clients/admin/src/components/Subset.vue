@@ -146,7 +146,15 @@
 import { defineComponent, PropType, watch, ref, Ref } from 'vue'
 import { DatasetSelection, DataPath } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
-
+import { useI18n } from 'vue-i18n'
+const messages = {
+  nb_NO: {
+    dataset: 'Registrering',
+  },
+  en: {
+    dataset: 'Registrering',
+  },
+}
 export default defineComponent({
   name: 'Subset',
   components: {},
@@ -164,6 +172,7 @@ export default defineComponent({
     const { getters: datasetGetters, actions: datasetActions } =
       useDatasetStore()
     const d = datasetGetters.selectedDataset
+    const { t } = useI18n({ messages })
     let currentDataPath = ref<DataPath>({
       path: '',
       currentKey: '',
@@ -266,6 +275,7 @@ export default defineComponent({
     )
     reloadData()
     return {
+      t,
       localSelection,
       localSelectionPriority,
       showInput,

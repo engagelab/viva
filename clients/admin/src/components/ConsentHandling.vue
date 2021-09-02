@@ -50,10 +50,17 @@
 import { defineComponent, ref, Ref } from 'vue'
 import { behandlings, CONSENT_TYPES } from '@/constants'
 import { DatasetConsent } from '@/types/main'
-
+import { useI18n } from 'vue-i18n'
 import AnswerInput from '@/components/base/AnswerInput.vue'
 import { useAppStore } from '@/store/useAppStore'
-
+const messages = {
+  nb_NO: {
+    dataset: 'Registrering',
+  },
+  en: {
+    dataset: 'Registrering',
+  },
+}
 export default defineComponent({
   name: 'consentHandling',
   components: {
@@ -62,7 +69,7 @@ export default defineComponent({
   emits: ['updated'],
   setup(props, context) {
     const { getters: appGetters } = useAppStore()
-
+    const { t } = useI18n({ messages })
     const consentData: Ref<DatasetConsent> = ref({
       kind: CONSENT_TYPES.manual,
       value: '',
@@ -74,6 +81,7 @@ export default defineComponent({
     }
 
     return {
+      t,
       consentData,
       CONSENT_TYPES,
       behandlings,
