@@ -7,6 +7,7 @@ const videoStatusTypes = {
   complete: 'complete', // Video has now been uploaded, decrypted, trimmed/watermarked, saved and transferred to another location.
   //This state means there is no more work to do, so the video should finally be removed here
   error: 'error', // Something went wrong. Videos in this state will not move further in the pipeline until attended to
+  deleted: 'deleted'
 }
 
 // Used to ensure correct folders exist for moving videos through the pipeline

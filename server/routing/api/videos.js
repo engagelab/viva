@@ -4,7 +4,7 @@
 
 const router = require('express').Router()
 const utilities = require('../../utilities')
-const { downloadS3File } = require('../../services/storage')
+const { downloadS3File, deleteS3File } = require('../../services/storage')
 const { userRoles } = require('../../constants')
 const videoStatusTypes = require('../../constants').videoStatusTypes
 const Video = require('../../models/Video')
@@ -41,7 +41,7 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
       console.error(error)
       return response.status(400).end()
     } else {
-      videosToReturn = videos.map((v) => v.redacted())
+      videosToReturn = videos.filter((v) => v.status.main !== videoStatusTypes.deleted).map((v) => v.redacted())
       response.send(videosToReturn).status(200).end()
     }
   })
@@ -91,6 +91,43 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
           response.setHeader('content-type', 'image/jpeg')
         }
         file.Body.pipe(response)
+      }).catch((error2) => {
+        console.log(`S3 Video error for key: ${keyname} error: ${error2.toString()}`)
+        response.status(404).send(error2)
+      })
+    }
+  })
+})
+
+// Remove a video file from S3 (Educloud)
+// this will mark the video metadata as 'status.main: deleted'
+router.delete('/video/file', utilities.authoriseUser, (request, response, next) => {
+  Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
+    if (error) return response.status(403).end()
+    else if (!video) {
+      console.log(`DB video not found. "details.id": "${request.query.videoref}"`)
+      return response.status(200).end()
+    }
+    else {
+      if (!video.users.owner) {
+        const error = new Error(`Bad owner! ${video.id}`)
+        console.error(error)
+        return next(error)
+      }
+      let keyname = `${video.users.owner.toString()}/${video.file.name}.${video.file.extension}`
+      const sseKey = video.file.encryptionKey
+      const sseMD5 = video.file.encryptionMD5
+      deleteS3File({ keyname, sseKey, sseMD5 }).then(() => {
+        console.log(`S3 DELETE Video success: ${keyname}`)
+        video.status.main = videoStatusTypes.deleted
+        video.save((saveError) => {
+          if (saveError) return next(saveError)
+          keyname = `${video.users.owner.toString()}/${video.file.name}.jpg`
+          return deleteS3File({ keyname, sseKey, sseMD5 }).then(() => {
+            console.log(`S3 DELETE Thumbnail success: ${keyname}`)
+            response.status(200).end()
+          })
+        })
       }).catch((error2) => {
         console.log(`S3 Video error for key: ${keyname} error: ${error2.toString()}`)
         response.status(404).send(error2)
