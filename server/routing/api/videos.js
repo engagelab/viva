@@ -24,14 +24,21 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
     query = {}
   } else {
     query = {
-      $or: [
-        {
-          'users.sharing.users': {
-            $in: [response.locals.user.profile.ltiID],
+      $and: [
+          {
+            $or: [
+              {
+                'users.sharing.users': {
+                  $in: [response.locals.user.profile.ltiID],
+                },
+              },
+              { 'users.owner': response.locals.user._id },
+            ],
           },
-        },
-        { 'users.owner': response.locals.user._id },
-      ],
+          {
+            'status.main': { $ne: videoStatusTypes.deleted }
+          }
+      ]
     }
   }
 
@@ -41,7 +48,7 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
       console.error(error)
       return response.status(400).end()
     } else {
-      videosToReturn = videos.filter((v) => v.status.main !== videoStatusTypes.deleted).map((v) => v.redacted())
+      videosToReturn = videos.map((v) => v.redacted())
       response.send(videosToReturn).status(200).end()
     }
   })
@@ -71,9 +78,9 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
     }
     else {
       if (!video.users.owner) {
-        const error = new Error(`Bad owner! ${video.id}`)
-        console.error(error)
-        return next(error)
+        const error2 = new Error(`Bad owner! ${video.id}`)
+        console.error(error2)
+        return next(error2)
       }
       let extension = request.query.mode === 'thumbnail' ? 'jpg' : video.file.extension
       const keyname = `${video.users.owner.toString()}/${video.file.name}.${extension}`
@@ -99,20 +106,21 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
   })
 })
 
-// Remove a video file from S3 (Educloud)
-// this will mark the video metadata as 'status.main: deleted'
-router.delete('/video/file', utilities.authoriseUser, (request, response, next) => {
-  Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
+// Remove a video
+// - delete the data file from S3 (Educloud)
+// - mark the video metadata as 'status.main: deleted'
+router.delete('/video', utilities.authoriseUser, (request, response, next) => {
+  Video.findOne({ 'details.id': request.query.id }, (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) {
-      console.log(`DB video not found. "details.id": "${request.query.videoref}"`)
+      console.log(`DB video not found. "details.id": "${request.query.id}"`)
       return response.status(200).end()
     }
     else {
       if (!video.users.owner) {
-        const error = new Error(`Bad owner! ${video.id}`)
-        console.error(error)
-        return next(error)
+        const error3 = new Error(`Bad owner! ${video.id}`)
+        console.error(error3)
+        return next(error3)
       }
       let keyname = `${video.users.owner.toString()}/${video.file.name}.${video.file.extension}`
       const sseKey = video.file.encryptionKey

@@ -67,8 +67,8 @@
       </div>
     </div>
     <div
-      v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none"
-      class="fixed top-0 left-0 flex flex-col items-center w-full h-full bg-black bg-opacity-75 rounded-xl"
+      v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none || dialogConfig.visible"
+      class="fixed top-0 left-0 flex flex-col items-center justify-center w-full h-full bg-black bg-opacity-75 rounded-xl"
       @mousedown.self="selectNone()"
     >
       <Player
@@ -79,6 +79,7 @@
       />
       <Annotate v-if="detailMode.mode === VIDEO_DETAIL_MODE.annotate" />
       <Share v-if="detailMode.mode === VIDEO_DETAIL_MODE.share" />
+      <DialogBox v-if="dialogConfig.visible" />
     </div>
   </div>
 </template>
@@ -94,6 +95,7 @@ import { useVideoStore } from '../store/useVideoStore'
 import VideoFeedCard from '@/components/VideoFeedCard.vue'
 import VideoMyCard from '@/components/VideoMyCard.vue'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'
+import DialogBox from '@/components/DialogBox.vue'
 import Annotate from '@/views/Annotate.vue'
 import Player from '@/views/Player.vue'
 import Share from '@/views/Share.vue'
@@ -107,6 +109,7 @@ export default defineComponent({
     Annotate,
     Player,
     Share,
+    DialogBox,
   },
   setup() {
     const { getters: appGetters, actions: appActions } = useAppStore()
@@ -182,6 +185,7 @@ export default defineComponent({
       selectedItem: videoGetters.selectedItem,
       selectNone,
       detailMode: videoGetters.detailMode,
+      dialogConfig: appGetters.dialogConfig,
       showTab,
       currentTab,
     }

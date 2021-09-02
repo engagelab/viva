@@ -160,6 +160,7 @@ interface Actions {
   getVideoMetadata: () => Promise<void>
   selectOriginal: (video: ListItem) => void
   selectShare: (share: ListItemShare) => void
+  deleteOriginal: (videoID: string) => Promise<void>
   selectNoOriginal: () => void
   detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
   updateLocalVideo: (video: Video) => Promise<void>
@@ -218,6 +219,18 @@ const actions = {
       if (v) {
         v.updateSharing([s])
       }
+    })
+  },
+
+  deleteOriginal: function (videoID: string): Promise<void> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.DELETE,
+      credentials: true,
+      query: { id: videoID },
+      route: '/api/video',
+    }
+    return apiRequest<void>(payload).then(() => {
+      state.value.videos.delete(videoID)
     })
   },
 

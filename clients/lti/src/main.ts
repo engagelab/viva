@@ -1,5 +1,7 @@
 import './tailwind.css'
 import { createApp } from 'vue'
+import { createI18n } from 'vue-i18n'
+import { globalTranslations } from './translations'
 import router from './router'
 import App from './App.vue'
 
@@ -62,9 +64,25 @@ window.addEventListener('unhandledrejection', function (event) {
   )
 })
 
+const i18n = createI18n({
+  locale: navigator.language || 'nb_NO',
+  globalInjection: true,
+  fallbackLocale: {
+    'nb-NO': ['nb_NO'],
+    nb: ['nb_NO'],
+    'nn-NO': ['nn_NO'],
+    nn: ['nn_NO'],
+    'en-AU': ['en'],
+  },
+  legacy: false,
+  silentTranslationWarn: true,
+  silentFallbackWarn: true,
+  messages: globalTranslations,
+})
+
 // Bootstrap the Vue app when called
 const initialiseApp = () => {
-  app.use(router).mount('#app')
+  app.use(router).use(i18n).mount('#app')
 }
 
 initialiseApp()

@@ -20,7 +20,7 @@
       >
         <p @click.stop="editOriginal()">Edit</p>
         <p @click.stop="newShare(listitem)">New share</p>
-        <!--p>Delete</p-->
+        <p @click.stop="deleteOriginal(listitem)">Delete</p>
       </div>
       <div
         class="absolute filter blur-sm w-full h-full bg-cover bg-center bg-no-repeat"
@@ -121,14 +121,34 @@
 <script lang="ts">
 import { defineComponent, PropType, ref, Ref, toRefs, watch } from 'vue'
 import moment from 'moment'
-import { ListItem, VideoDetailsData } from '../types/main'
+import { useI18n } from 'vue-i18n'
+import { ListItem, VideoDetailsData, DialogConfig } from '../types/main'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'
 import Button from '@/components/base/Button.vue'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
 import arrowTopSVG from '@/assets/icons/svg/arrow_top.svg'
 import { useVideoStore } from '@/store/useVideoStore'
+import { useAppStore } from '@/store/useAppStore'
 const { actions: videoActions } = useVideoStore()
+const { actions: appActions } = useAppStore()
+
+const messages = {
+  nb_NO: {
+    dialogDeleteTitle: 'Slett denne video',
+    dialogDeleteText:
+      'Hvis du sletter, fjernes også alle delinger, merknader, kommentarer og triminnstillinger',
+    dialogDeleteConfirm: 'Slette',
+    dialogDeleteCancel: 'Avbryt',
+  },
+  en: {
+    dialogDeleteTitle: 'Delete this video',
+    dialogDeleteText:
+      'Deleting will also remove all shares, annotations, comments, and trim settings',
+    dialogDeleteConfirm: 'Delete',
+    dialogDeleteCancel: 'Cancel',
+  },
+}
 
 export default defineComponent({
   name: 'VideoMyCard',
@@ -140,6 +160,7 @@ export default defineComponent({
     listitem: { type: Object as PropType<ListItem>, required: true },
   },
   setup(props) {
+    const { t } = useI18n({ messages })
     const { listitem } = toRefs(props)
     const openCard = ref(false)
     const hover = ref(false)
@@ -183,6 +204,23 @@ export default defineComponent({
       videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
       videoActions.selectOriginal(li)
     }
+    function deleteOriginal(li: ListItem) {
+      menu.value = false
+      const dialogConfig: DialogConfig = {
+        title: t('dialogDeleteTitle'),
+        visible: true,
+        text: t('dialogDeleteText'),
+        cancel: () => appActions.setDialog(false),
+        cancelText: t('dialogDeleteCancel'),
+        confirm: () => {
+          videoActions
+            .deleteOriginal(li.video.details.id)
+            .then(() => appActions.setDialog(false))
+        },
+        confirmText: t('dialogDeleteConfirm'),
+      }
+      appActions.setDialog(true, dialogConfig)
+    }
     function editOriginal() {
       menu.value = false
       editing.value = true
@@ -207,6 +245,7 @@ export default defineComponent({
       editing,
       unsavedData,
       editOriginal,
+      deleteOriginal,
       updateOriginal,
       cancelEdit,
       formatDate,

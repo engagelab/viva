@@ -160,6 +160,16 @@ export interface ListItem {
   readonly shares: ListItemShare[] // sub-interface describing sharing for this item
 }
 
+export interface DialogConfig {
+  title: string
+  text: string
+  visible: boolean
+  confirm: Callback
+  confirmText: string
+  cancel: Callback
+  cancelText: string
+}
+
 // --------------------------   Video data --------------------------
 export interface EditDecriptionList {
   trim: number[]
