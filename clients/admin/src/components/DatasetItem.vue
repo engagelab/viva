@@ -10,6 +10,7 @@
           :label="t('name')"
           :required="true"
           v-model="dataset.name"
+          @change="unsavedData = true"
         ></AnswerInput>
         <!--AnswerInput
           class="m-2"
@@ -26,6 +27,7 @@
           :label="t('description')"
           :required="true"
           v-model="dataset.description"
+          @change="unsavedData = true"
         ></AnswerInput>
         <AnswerInput
           class="m-2"
