@@ -64,7 +64,7 @@ export default defineComponent({
     const { getters: appGetters } = useAppStore()
 
     const consentData: Ref<DatasetConsent> = ref({
-      kind: CONSENT_TYPES.manuel,
+      kind: CONSENT_TYPES.manual,
       value: '',
       formId: 0,
     })
