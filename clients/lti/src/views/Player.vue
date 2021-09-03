@@ -1,6 +1,6 @@
 <template>
   <div
-    class="my-6 flex flex-col bg-viva-grey-400 rounded-xl w-full lg:w-192"
+    class="flex flex-col bg-viva-grey-400 rounded-xl w-full"
     v-if="selectedItem"
     :key="selectedItem.video.details.id"
     @click.prevent.self
@@ -39,6 +39,7 @@
           :max="scrubberMax"
           :min="scrubberMin"
           @change="adjustProgress"
+          @update="$emit('currenttime', currentPlayerTime)"
         />
         <div
           class="flex flex-row flex-grow self-end w-full py-1 px-6 md:py-4 items-center bg-gradient-to-b from-transparent to-black"
@@ -113,7 +114,7 @@ export default defineComponent({
   components: {
     Slider,
   },
-  emits: ['trim'],
+  emits: ['trim', 'currenttime'],
   setup(props, context) {
     const selectedItem = videoGetters.selectedItem
     const selectedItemShare = videoGetters.selectedItemShare
@@ -253,6 +254,7 @@ export default defineComponent({
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
         currentPlayerTime.value = player.currentTime
+        context.emit('currenttime', player.currentTime)
         if (player.currentTime >= edl.value.trim[1]) {
           stopPlaying()
         }
@@ -374,7 +376,7 @@ export default defineComponent({
   --slider-bg: #444;
   --slider-connect-bg: #ffffff;
 }
-.volume-slider >>> .slider-handle {
+.volume-slider ::v-deep(.slider-handle) {
   right: calc(
     var(--slider-handle-height, 16px) / 2 * -1 - var(--slider-height, 6px) / 2 *
       -1
@@ -393,7 +395,7 @@ export default defineComponent({
   --slider-tooltip-font-weight: 200;
   --slider-tooltip-line-height: 0.5rem;
 }
-.progress-slider >>> .slider-handle-upper {
+.progress-slider ::v-deep(.slider-handle-upper) {
   --slider-tooltip-line-height: 2rem !important;
 }
 .layout {

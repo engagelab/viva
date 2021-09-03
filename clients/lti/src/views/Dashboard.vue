@@ -31,8 +31,10 @@
       >
         Shared To Me
       </div>
+      {{ annotateVisible }}
     </div>
-    <div class="w-auto lg:w-192 overflow-y-auto no-scrollbar">
+    <Annotate class="w-auto lg:w-192 no-scrollbar" v-if="annotateVisible" />
+    <div v-else class="w-auto lg:w-192 overflow-y-auto no-scrollbar">
       <div
         v-show="currentTab === VIDEO_SHARING_MODE.feed"
         class="flex flex-row flex-wrap"
@@ -52,6 +54,7 @@
           v-for="(item, itemIndex) in myVideos"
           :key="itemIndex"
           :listitem="item"
+          @annotate="annotateVisible = true"
         />
       </div>
       <div
@@ -63,6 +66,7 @@
           v-for="(share, itemIndex) in sharedToMe"
           :key="itemIndex"
           :share="share"
+          @annotate="annotateVisible = true"
         />
       </div>
     </div>
@@ -72,12 +76,12 @@
       @mousedown.self="selectNone()"
     >
       <Player
+        class="lg:w-192"
         v-if="
           detailMode.mode === VIDEO_DETAIL_MODE.play ||
           detailMode.submode === VIDEO_DETAIL_MODE.play
         "
       />
-      <Annotate v-if="detailMode.mode === VIDEO_DETAIL_MODE.annotate" />
       <Share v-if="detailMode.mode === VIDEO_DETAIL_MODE.share" />
       <DialogBox v-if="dialogConfig.visible" />
     </div>
@@ -117,12 +121,14 @@ export default defineComponent({
     const user = appGetters.user.value
     appActions.fetchLTIData()
     const currentTab: Ref<string> = ref(VIDEO_SHARING_MODE.myVideos)
+    const annotateVisible = ref(false)
 
     onMounted(() => {
       videoActions.getVideoMetadata()
     })
 
     function showTab(tabName: VIDEO_SHARING_MODE) {
+      annotateVisible.value = false
       currentTab.value = tabName
       console.log(currentTab.value)
       videoActions.selectNoOriginal()
@@ -158,18 +164,6 @@ export default defineComponent({
               VIDEO_DETAIL_MODE.none
             )
           break
-        case VIDEO_DETAIL_MODE.annotate:
-          if (submode === VIDEO_DETAIL_MODE.play)
-            videoActions.detailMode(
-              VIDEO_DETAIL_MODE.annotate,
-              VIDEO_DETAIL_MODE.none
-            )
-          else
-            videoActions.detailMode(
-              VIDEO_DETAIL_MODE.none,
-              VIDEO_DETAIL_MODE.none
-            )
-          break
         default:
           break
       }
@@ -188,6 +182,7 @@ export default defineComponent({
       dialogConfig: appGetters.dialogConfig,
       showTab,
       currentTab,
+      annotateVisible,
     }
   },
 })

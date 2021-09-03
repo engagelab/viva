@@ -113,6 +113,7 @@
         v-for="share in listitem.shares"
         :key="share.id"
         :share="share"
+        @annotate="() => $emit('annotate')"
       />
     </div>
   </div>
@@ -159,6 +160,7 @@ export default defineComponent({
   props: {
     listitem: { type: Object as PropType<ListItem>, required: true },
   },
+  emits: ['annotate'],
   setup(props) {
     const { t } = useI18n({ messages })
     const { listitem } = toRefs(props)

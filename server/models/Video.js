@@ -11,6 +11,13 @@ const editDecriptionList = {
   blur: { type: Array, default: [] },
 }
 
+const annotationSchema = new mongoose.Schema({
+  created: { type: Date, default: Date.now },
+  creator: { type: String }, // LTI ID
+  comment: { type: String },
+  time: { type: Array, default: [] }, // e.g [2.35, 10.04] or just [2.35]
+})
+
 const sharingSchema = new mongoose.Schema({
   creator: { type: String }, // LTI ID of the creator
   users: { type: Array },
@@ -19,12 +26,11 @@ const sharingSchema = new mongoose.Schema({
   description: { type: String },
   edl: editDecriptionList,
   tags: [{ type: String }],
-  annotations: [{
-    created: { type: Date, default: Date.now },
-    creator: { type: String }, // LTI ID
-    comment: { type: String },
-    time: { type: Number },
-  }],
+  annotations: {
+    type: Array,
+    of: annotationSchema,
+    default: []
+  },
   comment: [{
     created: { type: Date, default: Date.now },
     creator: { type: String }, // LTI ID

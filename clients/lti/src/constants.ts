@@ -110,7 +110,6 @@ enum VIDEO_DETAIL_MODE {
   play = 'play',
   share = 'share',
   trim = 'trim',
-  annotate = 'annotate',
 }
 
 export {
