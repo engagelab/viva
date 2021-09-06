@@ -71,12 +71,17 @@ router.post('/dataset', utilities.authoriseUser, (request, response, next) => {
     let datasetName = request.body.name
     const u = response.locals.user
 
-    Dataset.create({ name: datasetName, 'users.owner': u._id, 'storages': [{ kind: videoStorageTypes.educloud }] })
+    Dataset.create({
+      name: datasetName,
+      'users.owner': u._id,
+      storages: [{ kind: videoStorageTypes.educloud }],
+    })
       .then((newDataset) => {
         response.send(newDataset)
       })
       .catch((error) => {
-        if (error.code === 11000) return response.status(400).json({ error: 'Name must be unique' })
+        if (error.code === 11000)
+          return response.status(400).json({ error: 'Name must be unique' })
         else next(error)
       })
   } else return next(new Error('Dataset name is required'))
@@ -133,6 +138,7 @@ router.put('/dataset', utilities.authoriseUser, (request, response, next) => {
       d.status.lastUpdated = Date.now()
       d.description = updatedDataset.description
       d.users.owner = user._id
+      d.users.groups = updatedDataset.users.groups
       d.storages = updatedDataset.storages
       d.consent = updatedDataset.consent
       d.status.active = updatedDataset.status.active

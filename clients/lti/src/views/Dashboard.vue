@@ -47,7 +47,20 @@
         v-show="currentTab === VIDEO_SHARING_MODE.myVideos"
         class="flex flex-col"
       >
-        <p class="text-lg text-white">My Videos</p>
+        <div class="grid grid-cols-3">
+          <p class="col-span-2 text-lg text-white">My Videos</p>
+          <!-- Sort function  -->
+          <select
+            class="col-end bg-transparent text-white"
+            v-model="sortOrder"
+            @change="sort"
+          >
+            <option disabled value="">Sort by</option>
+            <option v-for="(sort, index) in Object.keys(SORT_BY)" :key="index">
+              {{ sort }}
+            </option>
+          </select>
+        </div>
         <VideoMyCard
           v-for="(item, itemIndex) in myVideos"
           :key="itemIndex"
@@ -86,12 +99,12 @@
 
 <script lang="ts">
 // @ is an alias to /src
-import { defineComponent, ref, onMounted, Ref } from 'vue'
+import { defineComponent, ref, onMounted, Ref, watch } from 'vue'
 import { VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
 
 import { useAppStore } from '../store/useAppStore'
 import { useVideoStore } from '../store/useVideoStore'
-
+import { SORT_BY } from '@/constants'
 import VideoFeedCard from '@/components/VideoFeedCard.vue'
 import VideoMyCard from '@/components/VideoMyCard.vue'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'
@@ -99,7 +112,7 @@ import DialogBox from '@/components/DialogBox.vue'
 import Annotate from '@/views/Annotate.vue'
 import Player from '@/views/Player.vue'
 import Share from '@/views/Share.vue'
-
+// import { ListItem } from '../types/main'
 export default defineComponent({
   name: 'Dashboard',
   components: {
@@ -115,9 +128,10 @@ export default defineComponent({
     const { getters: appGetters, actions: appActions } = useAppStore()
     const { getters: videoGetters, actions: videoActions } = useVideoStore()
     const user = appGetters.user.value
+    const sortOrder = ref(SORT_BY.date)
     appActions.fetchLTIData()
     const currentTab: Ref<string> = ref(VIDEO_SHARING_MODE.myVideos)
-
+    const myVideos = ref(videoGetters.myVideos)
     onMounted(() => {
       videoActions.getVideoMetadata()
     })
@@ -129,6 +143,11 @@ export default defineComponent({
     }
 
     videoActions.selectNoOriginal()
+    const sort = () => {
+      // let v = videoGetters.sortByDataset.value
+      // console.log(SORT_BY[sortOrder.value])
+      videoActions.sortVideos(SORT_BY[sortOrder.value])
+    }
 
     function selectNone() {
       const { mode, submode } = videoGetters.detailMode.value
@@ -174,15 +193,31 @@ export default defineComponent({
           break
       }
     }
+    function reloadData() {
+      console.log('hi')
+    }
 
+    watch(
+      () => sortOrder.value,
+      () => reloadData()
+    )
+    reloadData()
     return {
       VIDEO_SHARING_MODE,
       VIDEO_DETAIL_MODE,
       user,
       feed: videoGetters.feed,
-      myVideos: videoGetters.myVideos,
+      // mySortedVideos: computed(() => {
+      //   return videoGetters.myVideos.value.sort((v1, v2) =>
+      //     v1.dataset.name.localeCompare(v2.dataset.name)
+      //   )
+      // }),
+      myVideos,
       sharedToMe: videoGetters.sharedToMe,
       selectedItem: videoGetters.selectedItem,
+      sort,
+      sortOrder,
+      SORT_BY,
       selectNone,
       detailMode: videoGetters.detailMode,
       dialogConfig: appGetters.dialogConfig,
