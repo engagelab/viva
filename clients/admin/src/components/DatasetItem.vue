@@ -36,6 +36,7 @@
           label="active"
           :required="true"
           v-model="dataset.status.active"
+          @change="unsavedData = true"
         ></AnswerInput>
       </div>
 
@@ -43,16 +44,17 @@
       <div>
         <p class="text-red-600 mt-4 ml-2">Data collection groups</p>
         <div class="flex flex-col">
-          <div v-for="g in groups" :key="g.item" class="py-1 ml-2">
+          <div v-for="(g, index) in groups" :key="index" class="py-1 ml-2">
             <input
               class="mr-1 mb-1"
               type="checkbox"
-              :id="`group-option-${g.item}`"
-              :value="g.item"
+              :id="g.id"
+              :value="g.id"
               v-model="dataset.users.groups"
+              @change="unsavedData = true"
             />
-            <label class="mr-2" :for="`group-option-${g.item}`">{{
-              g.itemName
+            <label class="mr-2" :for="`group-option-${g.name}`">{{
+              g.name
             }}</label>
           </div>
         </div>
@@ -153,13 +155,6 @@ export default defineComponent({
     const resetData = (d: Dataset) => {
       groups.length = 0
       dataset.value = new Dataset(d)
-      // Put current groups into a selection list
-      appGetters.user.value.profile.groups.forEach((g) => {
-        groups.push({
-          itemName: g.name,
-          item: g.id,
-        })
-      })
     }
 
     watch(
@@ -210,7 +205,7 @@ export default defineComponent({
     return {
       t,
       dataset,
-      groups,
+      groups: appGetters.user.value.profile.groups,
       showInput,
       currentSubset,
       selectionUpdated,

@@ -59,6 +59,13 @@ enum CONSENT_TYPES {
   manuel = 'manuel',
   article6 = 'article6',
 }
+
+enum SORT_BY {
+  date = 'date',
+  dataset = 'dataset',
+  selection = 'selection',
+}
+
 // Ensure enums match those defined in env file
 const ct = Object.values(CONSENT_TYPES)
 if (
@@ -119,6 +126,7 @@ export {
   assetRoot,
   userRoles,
   USER_ROLE,
+  SORT_BY,
   CONSENT_TYPES,
   VIDEO_STORAGE_TYPES,
   CONSENT_SELECTION,
