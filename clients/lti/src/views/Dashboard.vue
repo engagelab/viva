@@ -172,11 +172,13 @@ export default defineComponent({
               VIDEO_DETAIL_MODE.share,
               VIDEO_DETAIL_MODE.none
             )
-          else
+          else {
             videoActions.detailMode(
               VIDEO_DETAIL_MODE.none,
               VIDEO_DETAIL_MODE.none
             )
+            videoActions.selectNoShare()
+          }
           break
         case VIDEO_DETAIL_MODE.annotate:
           if (submode === VIDEO_DETAIL_MODE.play)
@@ -184,11 +186,13 @@ export default defineComponent({
               VIDEO_DETAIL_MODE.annotate,
               VIDEO_DETAIL_MODE.none
             )
-          else
+          else {
             videoActions.detailMode(
               VIDEO_DETAIL_MODE.none,
               VIDEO_DETAIL_MODE.none
             )
+            videoActions.selectNoShare()
+          }
           break
         default:
           break
