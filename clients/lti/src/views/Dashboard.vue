@@ -143,9 +143,8 @@ export default defineComponent({
     }
 
     videoActions.selectNoOriginal()
+    videoActions.selectNoShare()
     const sort = () => {
-      // let v = videoGetters.sortByDataset.value
-      // console.log(SORT_BY[sortOrder.value])
       videoActions.sortVideos(SORT_BY[sortOrder.value])
     }
 
@@ -161,6 +160,8 @@ export default defineComponent({
             VIDEO_DETAIL_MODE.none,
             VIDEO_DETAIL_MODE.none
           )
+          videoActions.selectNoOriginal()
+          videoActions.selectNoShare()
           break
         case VIDEO_DETAIL_MODE.share:
           if (

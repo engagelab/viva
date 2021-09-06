@@ -162,6 +162,7 @@ interface Actions {
   selectShare: (share: ListItemShare) => void
   deleteOriginal: (videoID: string) => Promise<void>
   selectNoOriginal: () => void
+  selectNoShare: () => void
   detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
   updateLocalVideo: (video: Video) => Promise<void>
   updateVideoDetails: (id: string, details: VideoDetailsData) => Promise<void>
@@ -313,6 +314,9 @@ const actions = {
 
   selectNoOriginal: function (): void {
     state.value.selectedItem = undefined
+  },
+  selectNoShare: function (): void {
+    state.value.selectedItemShare = undefined
   },
 
   // Update the video in store with the given video (by fileId) and save to local disk
