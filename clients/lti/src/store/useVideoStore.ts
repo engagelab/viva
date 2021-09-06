@@ -267,11 +267,6 @@ const actions = {
     return Promise.resolve()
   },
 
-  selectOriginal: function (video: ListItem): void {
-    // const videos = Array.from(state.value.videos.values())
-    return Promise.resolve()
-  },
-
   sortVideos: async (mode: string) => {
     if (mode) {
       const videos = Array.from(state.value.videos.values())
@@ -302,7 +297,7 @@ const actions = {
     }
   },
 
-  selectVideo: function (video: ListItem): void {
+  selectOriginal: function (video: ListItem): void {
     if (video) state.value.selectedItem = video
   },
   selectShare: function (share: ListItemShare): void {
