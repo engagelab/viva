@@ -111,11 +111,19 @@
 <script lang="ts">
 import { defineComponent, ref, watch, Ref, toRefs, PropType } from 'vue'
 import draggable from 'vuedraggable'
+import { useI18n } from 'vue-i18n'
 import AnswerInput from '@/components/base/AnswerInput.vue'
 import SelectionBox from '@/components/base/SelectionBox.vue'
 import { VIDEO_STORAGE_TYPES, storageKeys } from '@/constants'
 import { DatasetStorage } from '@/types/main'
-
+const messages = {
+  nb_NO: {
+    dataset: 'Registrering',
+  },
+  en: {
+    dataset: 'Registrering',
+  },
+}
 interface StorageStringListItem {
   itemName: string
   item: string
@@ -136,6 +144,7 @@ export default defineComponent({
   },
   emits: ['updated'],
   setup(props, context) {
+    const { t } = useI18n({ messages })
     const { storage } = toRefs(props)
     const localStorage: Ref<DatasetStorage> = ref({
       _id: '',
@@ -240,6 +249,7 @@ export default defineComponent({
     reloadData()
 
     return {
+      t,
       VIDEO_STORAGE_TYPES,
       localStorage,
       storageWasUpdated,

@@ -23,7 +23,7 @@ import {
   ListItemShare,
   VideoDetailsData,
 } from '../types/main'
-import { VIDEO_DETAIL_MODE } from '@/constants'
+import { SORT_BY, VIDEO_DETAIL_MODE } from '@/constants'
 import { apiRequest } from '../api/apiRequest'
 import { useAppStore } from './useAppStore'
 const { getters: appGetters, actions: appActions } = useAppStore()
@@ -162,12 +162,14 @@ interface Actions {
   selectShare: (share: ListItemShare) => void
   deleteOriginal: (videoID: string) => Promise<void>
   selectNoOriginal: () => void
+  selectNoShare: () => void
   detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
   updateLocalVideo: (video: Video) => Promise<void>
   updateVideoDetails: (id: string, details: VideoDetailsData) => Promise<void>
   createShare: (listItem: ListItem) => Promise<void>
   updateShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
   deleteShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
+  sortVideos: (mode: string) => Promise<void>
 }
 const actions = {
   detailMode: function (
@@ -201,7 +203,6 @@ const actions = {
       }
     })
   },
-
   // Update sharing for a selected video
   updateShare: function (
     videoID: string,
@@ -266,6 +267,36 @@ const actions = {
     return Promise.resolve()
   },
 
+  sortVideos: async (mode: string) => {
+    if (mode) {
+      const videos = Array.from(state.value.videos.values())
+      state.value.videos = new Map<string, Video>()
+      if (videos && videos.length > 0) {
+        videos
+          .sort((v1, v2) => {
+            if (mode == SORT_BY.dataset)
+              return v1.dataset.name.localeCompare(v2.dataset.name)
+            else if (mode == SORT_BY.date)
+              return v1.details.created.getTime() - v2.details.created.getTime()
+            else if (mode == SORT_BY.selection) {
+              const s1 = v1.dataset.selection.reduce((acc, curr) => {
+                return acc + ' > ' + curr.title
+              }, '')
+              const s2 = v2.dataset.selection.reduce((acc, curr) => {
+                return acc + ' > ' + curr.title
+              }, '')
+
+              return s1.localeCompare(s2)
+            }
+            return 0
+          })
+          .forEach((video: Video) => {
+            state.value.videos.set(video.details.id, video)
+          })
+      }
+    }
+  },
+
   selectOriginal: function (video: ListItem): void {
     if (video) state.value.selectedItem = video
   },
@@ -278,6 +309,9 @@ const actions = {
 
   selectNoOriginal: function (): void {
     state.value.selectedItem = undefined
+  },
+  selectNoShare: function (): void {
+    state.value.selectedItemShare = undefined
   },
 
   // Update the video in store with the given video (by fileId) and save to local disk

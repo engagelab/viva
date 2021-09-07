@@ -94,8 +94,8 @@ const deviceType: string =
   window.location.protocol == 'file:' ? 'mobile' : 'web'
 
 const cordovaConstants = {
-  videoRecordingMaxDuration: 300000, // 5 minutes
-  audioRecordingMaxDuration: 300000, // 5 minutes
+  videoRecordingMaxDuration: 3600, // 60 minutes
+  audioRecordingMaxDuration: 3600, // 60 minutes
 }
 
 const taskColours = ['#A861A6', '#F84016', '#009F4B', '#A9BD50', '#FFDE01']

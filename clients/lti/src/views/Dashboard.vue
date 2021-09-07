@@ -31,7 +31,6 @@
       >
         Shared To Me
       </div>
-      {{ annotateVisible }}
     </div>
     <Annotate class="w-auto lg:w-192 no-scrollbar" v-if="annotateVisible" />
     <div v-else class="w-auto lg:w-192 overflow-y-auto no-scrollbar">
@@ -49,7 +48,20 @@
         v-show="currentTab === VIDEO_SHARING_MODE.myVideos"
         class="flex flex-col"
       >
-        <p class="text-lg text-white">My Videos</p>
+        <div class="grid grid-cols-3">
+          <p class="col-span-2 text-lg text-white">My Videos</p>
+          <!-- Sort function  -->
+          <select
+            class="col-end bg-transparent text-white"
+            v-model="sortOrder"
+            @change="sort"
+          >
+            <option disabled value="">Sort by</option>
+            <option v-for="(sort, index) in Object.keys(SORT_BY)" :key="index">
+              {{ sort }}
+            </option>
+          </select>
+        </div>
         <VideoMyCard
           v-for="(item, itemIndex) in myVideos"
           :key="itemIndex"
@@ -91,11 +103,10 @@
 <script lang="ts">
 // @ is an alias to /src
 import { defineComponent, ref, onMounted, Ref } from 'vue'
-import { VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
+import { VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE, SORT_BY } from '@/constants'
 
 import { useAppStore } from '../store/useAppStore'
 import { useVideoStore } from '../store/useVideoStore'
-
 import VideoFeedCard from '@/components/VideoFeedCard.vue'
 import VideoMyCard from '@/components/VideoMyCard.vue'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'
@@ -119,8 +130,9 @@ export default defineComponent({
     const { getters: appGetters, actions: appActions } = useAppStore()
     const { getters: videoGetters, actions: videoActions } = useVideoStore()
     const user = appGetters.user.value
+    const sortOrder = ref(SORT_BY.date)
     appActions.fetchLTIData()
-    const currentTab: Ref<string> = ref(VIDEO_SHARING_MODE.myVideos)
+    const currentTab: Ref<VIDEO_SHARING_MODE> = ref(VIDEO_SHARING_MODE.myVideos)
     const annotateVisible = ref(false)
 
     onMounted(() => {
@@ -135,6 +147,10 @@ export default defineComponent({
     }
 
     videoActions.selectNoOriginal()
+    videoActions.selectNoShare()
+    const sort = () => {
+      videoActions.sortVideosBy(currentTab.value, sortOrder.value)
+    }
 
     function selectNone() {
       const { mode, submode } = videoGetters.detailMode.value
@@ -148,6 +164,8 @@ export default defineComponent({
             VIDEO_DETAIL_MODE.none,
             VIDEO_DETAIL_MODE.none
           )
+          videoActions.selectNoOriginal()
+          videoActions.selectNoShare()
           break
         case VIDEO_DETAIL_MODE.share:
           if (
@@ -158,11 +176,13 @@ export default defineComponent({
               VIDEO_DETAIL_MODE.share,
               VIDEO_DETAIL_MODE.none
             )
-          else
+          else {
             videoActions.detailMode(
               VIDEO_DETAIL_MODE.none,
               VIDEO_DETAIL_MODE.none
             )
+            videoActions.selectNoShare()
+          }
           break
         default:
           break
@@ -177,6 +197,9 @@ export default defineComponent({
       myVideos: videoGetters.myVideos,
       sharedToMe: videoGetters.sharedToMe,
       selectedItem: videoGetters.selectedItem,
+      sort,
+      sortOrder,
+      SORT_BY,
       selectNone,
       detailMode: videoGetters.detailMode,
       dialogConfig: appGetters.dialogConfig,

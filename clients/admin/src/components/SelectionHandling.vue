@@ -20,6 +20,10 @@
         {{ selection }}
       </option>
     </select>
+    <p v-if="d.selectionPriority.length == 0" class="text-red-500 text-sm">
+      Note: Atleast one selection priority must be created for dataset to be
+      reflected in app
+    </p>
     <div class="flex">
       <div
         v-for="(selection, index) in localSelectionPriority"

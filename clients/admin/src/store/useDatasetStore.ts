@@ -114,11 +114,14 @@ const actions = {
     mode: string
   ): void {
     if (mode == 'priority') {
-      state.value.selectedDataset.selectionPriority = value as string[]
+      const selectionPriority = value as string[]
+      if (selectionPriority.length > 0) {
+        state.value.selectedDataset.status.active = true
+      } else {
+        state.value.selectedDataset.status.active = false
+      }
+      state.value.selectedDataset.selectionPriority = selectionPriority
       state.value.selectedDataset.selection = {}
-      // Object.assign(state.value.selectedDataset.selection, {
-      //   [state.value.selectedDataset.selectionPriority[0]]: [],
-      // })
     } else if (mode == 'selection') {
       state.value.selectedDataset.selection = {
         ...(value as { [key: string]: DatasetSelection[] }),

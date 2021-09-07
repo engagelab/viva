@@ -89,7 +89,7 @@ interface Getters {
   isAuthorised: ComputedRef<boolean>
   dialog: ComputedRef<Dialog>
   snackbar: ComputedRef<Snackbar>
-  user: ComputedRef<User>
+  user: ComputedRef<AppState['selectedUser']>
   usersDrafts: ComputedRef<UserRecordingInProcess[]>
 }
 const getters = {
@@ -108,7 +108,7 @@ const getters = {
   get snackbar(): ComputedRef<Snackbar> {
     return computed(() => _appState.value.snackbar)
   },
-  get user(): ComputedRef<User> {
+  get user(): ComputedRef<AppState['selectedUser']> {
     return computed(() => _appState.value.selectedUser)
   },
   get usersDrafts(): ComputedRef<UserRecordingInProcess[]> {

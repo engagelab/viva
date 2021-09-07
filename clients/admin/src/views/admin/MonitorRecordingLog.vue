@@ -26,14 +26,57 @@
       </AgGridVue>
 
       <!-- Row details -->
-      <div v-if="selectedRow" class="mt-4 flex justify-items-start">
-        <div class="border-2 rounded-md bg-gray-300 p-4">
-          <div class="recording-title text-lg">Metadata about recording</div>
+      <div
+        v-if="selectedRow"
+        class="grid grid-rows-1 border-2 rounded-md bg-gray-300 p-4 mt-4"
+      >
+        <div class="recording-title text-lg">Metadata about recording</div>
+        <div class="">
+          <p class="text-red-500">video details</p>
           <div>Name: {{ selectedRow.details.name }}</div>
+          <div>Owner : {{ selectedRow.shared.owner }}</div>
           <div>Category: {{ selectedRow.details.category }}</div>
           <div>Created: {{ selectedRow.details.created }}</div>
           <div>Duration: {{ `${selectedRow.details.duration} Seconds` }}</div>
           <div>EDL: {{ selectedRow.details.edl }}</div>
+          <div>Description : {{ selectedRow.details.description }}</div>
+          <div class="mt-2">
+            <p class="text-red-500">Dataset Info:</p>
+            <div>DatasetName:{{ selectedRow.dataset }}</div>
+            <div>Selection: {{ selectedRow.selection }}</div>
+          </div>
+          <div class="mt-2">
+            <p class="text-red-500">Consenters:</p>
+            <div
+              v-for="(consenter, index) in selectedRow.consenters"
+              :key="index"
+            >
+              Consenters: {{ consenter }}
+            </div>
+          </div>
+          <div class="mt-2">
+            <p class="text-red-500">Storages:</p>
+            <div v-for="(storage, index) in selectedRow.storages" :key="index">
+              {{ storage.kind }}-{{ storage.path }}
+            </div>
+          </div>
+        </div>
+        <div class="mx-2">
+          <p class="text-red-500">Shares</p>
+          <div
+            class="mt-2"
+            v-for="(share, shareIndex) in selectedRow.shared.sharing"
+            :key="shareIndex"
+          >
+            <p>
+              <span class="text-red-500">></span> Description:{{
+                share.description
+              }}
+            </p>
+            <p>EDL:{{ share.edl.trim }}</p>
+            Users:
+            <p v-for="(user, index) in share.users" :key="index">{{ user }}</p>
+          </div>
         </div>
       </div>
     </div>

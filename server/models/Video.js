@@ -95,6 +95,7 @@ const videoSchema = new mongoose.Schema({
     id: { type: mongoose.Schema.ObjectId, ref: 'Dataset' },
     name: { type: String },
     selection: { type: Array }, // 'utvalg' setting
+    groups: { type: Array }, // Canvas / Dataporten groups given access to this video by the Dataset
   },
   consents: { type: Array }, // These are the consents confirmed by the teacher in this recording
   storages: [

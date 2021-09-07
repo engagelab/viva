@@ -217,11 +217,13 @@ interface VideoDatasetData {
   id?: string
   name?: string
   selection?: Selection[] // 'utvalg' setting
+  groups: string[]
 }
 interface VideoDataset {
   id: string
   name: string
   selection: Selection[] // 'utvalg' setting
+  groups: string[]
 }
 interface VideoStorages {
   kind: string
@@ -304,6 +306,7 @@ export class Video {
       id: '',
       name: '',
       selection: [],
+      groups: [],
     }
     this.consents = []
     this.storages = []
@@ -326,6 +329,7 @@ export class Video {
       id: data.dataset._id || '',
       name: data.dataset.name,
       selection: data.selection,
+      groups: data.dataset.users.groups,
     })
     this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
     this.file = {
@@ -391,6 +395,7 @@ export class Video {
     if (dataset.id) this.dataset.id = dataset.id
     if (dataset.name) this.dataset.name = dataset.name
     if (dataset.selection) this.dataset.selection = dataset.selection
+    this.dataset.groups = dataset.groups || []
   }
 
   // Convert this class to string representation
@@ -458,6 +463,7 @@ interface DatasetConsent {
 }
 interface DatasetUsers {
   owner: string
+  groups: string[]
 }
 interface DatasetStorage {
   kind: VIDEO_STORAGE_TYPES
@@ -503,6 +509,7 @@ export class Dataset {
     }
     this.users = {
       owner: '',
+      groups: [],
     }
     this.selection = {}
     this.selectionPriority = []
@@ -523,6 +530,7 @@ export class Dataset {
       }
       this.users = {
         owner: data.users.owner,
+        groups: data.users.groups,
       }
       this.selection = data.selection || {}
       this.selectionPriority = data.selectionPriority || []
