@@ -59,7 +59,7 @@ async function fetchVideoMetadata(): Promise<VideoData[]> {
   const payload: APIRequestPayload = {
     method: XHR_REQUEST_TYPE.GET,
     credentials: true,
-    route: '/api/videos',
+    route: '/api/videos/share',
   }
   return apiRequest<VideoData[]>(payload)
 }
