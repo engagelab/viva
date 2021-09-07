@@ -147,6 +147,7 @@ export default defineComponent({
     const localShare: Ref<VideoSharing> = ref({
       _id: '',
       creator: myLTIID,
+      created: new Date(),
       users: [],
       access: false,
       title: '',
@@ -163,6 +164,7 @@ export default defineComponent({
         localShare.value = {
           _id: s._id || '',
           creator: s.creator,
+          created: s.created,
           users: s.users,
           access: s.access,
           title: s.title,
@@ -208,6 +210,7 @@ export default defineComponent({
       }
       // TODO: Send to server here, on return add it to the localShare
       localShare.value.annotations.push(newAnnotation)
+      annotationText.value = ''
     }
 
     // if 'sortByCreated' sort by creation date, otherwise by video time
