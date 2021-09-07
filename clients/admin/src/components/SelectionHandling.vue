@@ -1,7 +1,7 @@
 <template>
   <!-- Component handles only selection priority  -->
   <div class="ml-2">
-    <p class="text-red-600 my-4">Selection Priority</p>
+    <p class="text-red-600 my-4">i18n Build selection structure for data subjects</p>
     <select
       span
       ref="selects"
@@ -36,7 +36,7 @@
       </div>
     </div>
 
-    <p class="text-red-600 mt-4">Instances</p>
+    <p class="text-red-600 mt-4">i18n Instances</p>
     <Subset
       v-if="localSelection"
       :title="Object.keys(localSelection)[0]"

@@ -3,12 +3,12 @@
     <div
       class="flex flex-col mt-36 text-xl grid grid-rows-1 justify-items-center"
     >
-      <h1>Viva Admin</h1>
+      <h1>i18n Viva Administration</h1>
       <div class="flex m-4 space-x-4 mt-48">
         <Button
           class="mx-2 text-l bg-white hover:bg-blue-500 rounded-lg"
           @click="login('uio')"
-          >UiO Feide Login</Button
+          >i18n Login with Feide</Button
         >
       </div>
     </div>

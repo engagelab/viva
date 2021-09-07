@@ -26,7 +26,7 @@
     <p class="text-red-600 mt-4">Path</p>
     <div class="flex flex-row m-2">
       <div class="flex flex-col">
-        <h3>Available options</h3>
+        <h3>i18n Available options</h3>
         <draggable
           class="flex flex-col p-1 border border-gray-400"
           style="min-height: 45px"

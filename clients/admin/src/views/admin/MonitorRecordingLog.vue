@@ -28,12 +28,12 @@
       <!-- Row details -->
       <div v-if="selectedRow" class="mt-4 flex justify-items-start">
         <div class="border-2 rounded-md bg-gray-300 p-4">
-          <div class="recording-title text-lg">Metadata about recording</div>
-          <div>Name: {{ selectedRow.details.name }}</div>
-          <div>Category: {{ selectedRow.details.category }}</div>
-          <div>Created: {{ selectedRow.details.created }}</div>
-          <div>Duration: {{ `${selectedRow.details.duration} Seconds` }}</div>
-          <div>EDL: {{ selectedRow.details.edl }}</div>
+          <div class="recording-title text-lg">i18n Metadata about recording</div>
+          <div>i18n Name: {{ selectedRow.details.name }}</div>
+          <div>i18n Category: {{ selectedRow.details.category }}</div>
+          <div>i18n Created: {{ selectedRow.details.created }}</div>
+          <div>i18n Duration: {{ `${selectedRow.details.duration} i18n Seconds (skip numbers after comma)` }}</div>
+          <div>i18n EDL: {{ selectedRow.details.edl }}</div>
         </div>
       </div>
     </div>
@@ -56,7 +56,7 @@ const { actions: videoActions, getters: videoGetters } = useVideoStore()
 import { useI18n } from 'vue-i18n'
 const messages = {
   nb_NO: {
-    MonitorRecordingLog: 'Logger',
+    MonitorRecordingLog: 'Opptakslogg',
     Opptak: 'Opptak',
     Dato: 'Dato',
     Datainnsamler: 'Datainnsamler',
@@ -66,7 +66,7 @@ const messages = {
     MonitorRecordingLog: 'Recording Log',
     Opptak: 'Recording',
     Dato: 'Date',
-    Datainnsamler: 'Person',
+    Datainnsamler: 'Data collector',
     Datasett: 'Dataset',
   },
 }

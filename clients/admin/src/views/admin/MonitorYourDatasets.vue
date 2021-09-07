@@ -22,14 +22,14 @@
     </div>
     <div class="flex flex-row mt-8">
       <Button v-if="!showInput" @vclick="showInput = !showInput">
-        Create new dataset
+        i18n Create new dataset
       </Button>
       <div class="flex flex-row" v-if="showInput">
         <input
           v-model="newDatasetName"
           type="String"
           class="border-2 text-center"
-          placeholder="Navn på dataset"
+          placeholder="Navn på datasett"
           @keypress="restrict($event)"
         />
         <Button class="ml-4 text-white bg-blue-600" @vclick="createDataset()">

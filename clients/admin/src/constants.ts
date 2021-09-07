@@ -161,7 +161,7 @@ interface Behandling {
 
 const behandlings: Record<CONSENT_TYPES, Behandling> = {
   [CONSENT_TYPES.samtykke]: {
-    name: 'Digital Samtykke',
+    name: 'Digitalt samtykke',
     description:
       'Opptak er basert på samtykker som er gitt digitalt i UiOs samtykkeportal.',
   },
@@ -170,9 +170,9 @@ const behandlings: Record<CONSENT_TYPES, Behandling> = {
     description: 'Opptak er basert på samtykker som er håndtert manuelt.',
   },
   [CONSENT_TYPES.article6]: {
-    name: 'Ikke Samtykke',
+    name: 'Ikke samtykke',
     description:
-      'Opptak er basert på GDPR §6(behandling som er nødvendig for å utføre en oppgave i allmennhetens interesse).',
+      'Opptak er basert på GDPR §6 (behandling som er nødvendig for å utføre en oppgave i allmennhetens interesse).',
   },
 }
 

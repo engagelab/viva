@@ -41,7 +41,7 @@
 
       <!-- Display of groups -->
       <div>
-        <p class="text-red-600 mt-4 ml-2">Data collection groups</p>
+        <p class="text-red-600 mt-4 ml-2">i18n Canvas Courses</p>
         <div class="flex flex-col">
           <div v-for="g in groups" :key="g.item" class="py-1 ml-2">
             <input
@@ -66,7 +66,7 @@
         <p class="text-red-600 mt-4 ml-2">
           Storage
           <span class="mt-4 ml-6 text-xs text-black"
-            >*Note: EduCloud storage not configurable here</span
+            >i18n *Note: EduCloud storage not configurable here</span
           >
         </p>
         <div v-for="s in dataset.storages" :key="s._id">
@@ -76,7 +76,7 @@
           class="mt-2 p-0 rounded-lg"
           id="button-accept"
           @click="addStorage"
-          >+ Add new storage
+          >+ i18n Add new storage
         </Button>
       </div>
 
