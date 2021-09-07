@@ -20,6 +20,7 @@ const annotationSchema = new mongoose.Schema({
 
 const sharingSchema = new mongoose.Schema({
   creator: { type: String }, // LTI ID of the creator
+  created: { type: Date, default: Date.now },
   users: { type: Array },
   access: { type: Boolean, default: false },
   title: { type: String },

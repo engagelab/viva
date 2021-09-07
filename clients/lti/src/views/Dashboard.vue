@@ -1,7 +1,7 @@
 <template>
   <div class="relative p-4 flex flex-col">
     <div
-      class="flex flex-row justify-start font-serious font-extralight text-viva-grey-500 py-4"
+      class="flex flex-row justify-start font-serious font-extralight text-viva-grey-500 py-4 w-auto"
     >
       <!--div
         class="cursor-pointer mr-6"
@@ -31,6 +31,19 @@
       >
         Shared To Me
       </div>
+      <!-- Sort function  -->
+      <div class="flex flex-grow justify-end">
+        <select
+          class="col-end bg-transparent text-white"
+          v-model="sortOrder"
+          @change="sort"
+        >
+          <option disabled value="">Sort by</option>
+          <option v-for="(sort, index) in Object.keys(SORT_BY)" :key="index">
+            {{ sort }}
+          </option>
+        </select>
+      </div>
     </div>
     <Annotate class="w-auto lg:w-192 no-scrollbar" v-if="annotateVisible" />
     <div v-else class="w-auto lg:w-192 overflow-y-auto no-scrollbar">
@@ -50,17 +63,6 @@
       >
         <div class="grid grid-cols-3">
           <p class="col-span-2 text-lg text-white">My Videos</p>
-          <!-- Sort function  -->
-          <select
-            class="col-end bg-transparent text-white"
-            v-model="sortOrder"
-            @change="sort"
-          >
-            <option disabled value="">Sort by</option>
-            <option v-for="(sort, index) in Object.keys(SORT_BY)" :key="index">
-              {{ sort }}
-            </option>
-          </select>
         </div>
         <VideoMyCard
           v-for="(item, itemIndex) in myVideos"

@@ -23,7 +23,7 @@ import {
   ListItemShare,
   VideoDetailsData,
 } from '../types/main'
-import { SORT_BY, VIDEO_DETAIL_MODE } from '@/constants'
+import { SORT_BY, VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
 import { apiRequest } from '../api/apiRequest'
 import { useAppStore } from './useAppStore'
 const { getters: appGetters, actions: appActions } = useAppStore()
@@ -34,6 +34,7 @@ interface State {
   selectedVideoURL: string
   videos: Map<string, Video>
   detailMode: { mode: VIDEO_DETAIL_MODE; submode: VIDEO_DETAIL_MODE }
+  sortMode: { [key in VIDEO_SHARING_MODE]: SORT_BY }
 }
 
 const state: Ref<State> = ref({
@@ -44,6 +45,11 @@ const state: Ref<State> = ref({
   detailMode: {
     mode: VIDEO_DETAIL_MODE.none,
     submode: VIDEO_DETAIL_MODE.none,
+  },
+  sortMode: {
+    [VIDEO_SHARING_MODE.myVideos]: SORT_BY.date,
+    [VIDEO_SHARING_MODE.sharedToMe]: SORT_BY.date,
+    [VIDEO_SHARING_MODE.feed]: SORT_BY.date,
   },
 })
 
@@ -56,6 +62,42 @@ async function fetchVideoMetadata(): Promise<VideoData[]> {
     route: '/api/videos',
   }
   return apiRequest<VideoData[]>(payload)
+}
+
+// Returns a custom compare function for array.sort, based on given mode
+function sortVideos(mode: VIDEO_SHARING_MODE) {
+  return (l1: ListItem | ListItemShare, l2: ListItem | ListItemShare) => {
+    const sortBy: SORT_BY = state.value.sortMode[mode]
+    // Comparisons are different depending on which list we are viewing
+    if (mode === VIDEO_SHARING_MODE.myVideos) {
+      const ll1 = l1 as ListItem
+      const ll2 = l2 as ListItem
+      if (sortBy === SORT_BY.dataset)
+        return ll1.dataset.name.localeCompare(ll2.dataset.name)
+      else if (sortBy === SORT_BY.date)
+        // In Javascript Dates can be compared directly but in Typescript must be cast first
+        return (
+          Number(ll1.video.details.created) - Number(ll2.video.details.created)
+        )
+      else if (sortBy === SORT_BY.selection) {
+        // Selection is already present as a string
+        return ll1.dataset.selection.localeCompare(ll2.dataset.selection)
+      } else return 0
+    } else {
+      const ll1 = l1 as ListItemShare
+      const ll2 = l2 as ListItemShare
+      if (sortBy === SORT_BY.dataset)
+        return ll1.item.dataset.name.localeCompare(ll2.item.dataset.name)
+      else if (sortBy === SORT_BY.date)
+        // Comparison should be on Share creation, not Video creation
+        return Number(ll1.share.created) - Number(ll2.share.created)
+      else if (sortBy === SORT_BY.selection) {
+        return ll1.item.dataset.selection.localeCompare(
+          ll2.item.dataset.selection
+        )
+      } else return 0
+    }
+  }
 }
 
 interface Getters {
@@ -119,6 +161,7 @@ const getters = {
             return item
           }
         )
+        .sort(sortVideos(VIDEO_SHARING_MODE.myVideos))
     })
   },
   get sharedToMe(): ComputedRef<ListItemShare[]> {
@@ -151,7 +194,7 @@ const getters = {
             })
           })
       })
-      return sharedWithMe
+      return sharedWithMe.sort(sortVideos(VIDEO_SHARING_MODE.sharedToMe))
     })
   },
 }
@@ -169,7 +212,7 @@ interface Actions {
   createShare: (listItem: ListItem) => Promise<void>
   updateShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
   deleteShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
-  sortVideos: (mode: string) => Promise<void>
+  sortVideosBy: (mode: VIDEO_SHARING_MODE, sortby: SORT_BY) => void
 }
 const actions = {
   detailMode: function (
@@ -267,34 +310,8 @@ const actions = {
     return Promise.resolve()
   },
 
-  sortVideos: async (mode: string) => {
-    if (mode) {
-      const videos = Array.from(state.value.videos.values())
-      state.value.videos = new Map<string, Video>()
-      if (videos && videos.length > 0) {
-        videos
-          .sort((v1, v2) => {
-            if (mode == SORT_BY.dataset)
-              return v1.dataset.name.localeCompare(v2.dataset.name)
-            else if (mode == SORT_BY.date)
-              return v1.details.created.getTime() - v2.details.created.getTime()
-            else if (mode == SORT_BY.selection) {
-              const s1 = v1.dataset.selection.reduce((acc, curr) => {
-                return acc + ' > ' + curr.title
-              }, '')
-              const s2 = v2.dataset.selection.reduce((acc, curr) => {
-                return acc + ' > ' + curr.title
-              }, '')
-
-              return s1.localeCompare(s2)
-            }
-            return 0
-          })
-          .forEach((video: Video) => {
-            state.value.videos.set(video.details.id, video)
-          })
-      }
-    }
+  sortVideosBy: (mode: VIDEO_SHARING_MODE, sortby: SORT_BY) => {
+    state.value.sortMode[mode] = sortby
   },
 
   selectOriginal: function (video: ListItem): void {
