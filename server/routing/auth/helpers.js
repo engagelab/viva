@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken')
 const { userRoles, organizations, platforms } = require('../../constants')
 const { createReference } = require('../../utilities')
 const User = require('../../models/User')
-const Dataset = require('../../models/Dataset')
+
 const dataporten = require('../../services/dataporten')
 const canvas = require('../../services/canvas')
 
@@ -190,22 +190,9 @@ function completeCallback(request, response, user) {
   return response.redirect(redirectUrl)
 }
 
-function fetchDatasetsBasedOnCourse(courseId) {
-  return new Promise((resolve, reject) => {
-    let query = {}
 
-    query = {
-      $and: [{ 'users.groups': { $eq: courseId } }, { 'status.active': true }],
-    }
-
-    Dataset.find(query, (error, ds) => {
-      if (error) return reject('Error fetching datasets')
-      resolve(ds)
-    })
-  })
-}
 module.exports = {
   createOrUpdateUser,
   completeCallback,
-  fetchDatasetsBasedOnCourse,
+
 }

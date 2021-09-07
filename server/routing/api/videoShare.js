@@ -5,8 +5,8 @@
 const router = require('express').Router()
 const utilities = require('../../utilities')
 const Video = require('../../models/Video')
-const { fetchDatasetsBasedOnCourse } = require('../auth/helpers')
 
+const Dataset = require('../../models/Dataset')
 /* ---------------- Video activities ---------------- */
 
 router.post(
@@ -87,11 +87,22 @@ router.delete(
     })
   }
 )
+// filter datasets for a canvas course
+function fetchDatasetsBasedOnCourse(courseId) {
+  return new Promise((resolve, reject) => {
+    let query = {}
+    query = {
+      $and: [{ 'users.groups': { $eq: courseId } }, { 'status.active': true }],
+    }
+    Dataset.find(query, (error, ds) => {
+      if (error) return reject('Error fetching datasets')
+      resolve(ds)
+    })
+  })
+}
 
-// TODO:SM  To get all videos for a filtered dataset
+// Fetch all videos for a filtered dataset
 router.get('/videos/share', utilities.authoriseUser, (request, response) => {
-  // const u = response.locals.user
-
   let query = {}
 
   // function to fetch datasets for a course
@@ -100,7 +111,7 @@ router.get('/videos/share', utilities.authoriseUser, (request, response) => {
       (datasets) => {
         console.log(datasets)
         // Filter video based on datasets for a course
-        const ids = datasets.map((dataset) =>dataset._id)
+        const ids = datasets.map((dataset) => dataset._id)
         query = {
           $and: [
             { 'dataset.id': { $in: ids } },

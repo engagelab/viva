@@ -27,7 +27,7 @@ const datasetSchema = new mongoose.Schema({
   formId: { type: String }, // Nettskjema form ID
   status: {
     lastUpdated: { type: Date, default: Date.now }, // Last time this Dataset was changed
-    active: { type: Boolean, default: true }, // Only active datasetts who will be fetched
+    active: { type: Boolean, default: false }, // Only active datasetts who will be fetched
     lockedBy: { type: mongoose.Schema.ObjectId, ref: 'User' }, // Who has locked the datasett for editing
   },
   consent: {
