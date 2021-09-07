@@ -20,6 +20,7 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
   const u = response.locals.user
   const isAdmin = utilities.hasMinimumUserRole(u, userRoles.admin)
   let query = {}
+  // first do a api call to filter datasets for a canvas course 
   if (isAdmin) {
     query = {}
   } else {
