@@ -56,7 +56,7 @@ if (
 
 enum CONSENT_TYPES {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
 
@@ -95,7 +95,7 @@ enum VIDEO_STATUS_TYPES {
 
 enum CONSENT_SELECTION {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
 

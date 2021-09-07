@@ -24,7 +24,7 @@ router.post(
           access: true,
           title: '',
           description: '',
-          edl: { trim: [], blur: [] },
+          edl: { trim: [0, v.details.duration] , blur: [] },
           annotations: [],
           comment: [],
           status: [],

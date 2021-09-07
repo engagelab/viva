@@ -263,8 +263,14 @@ export default defineComponent({
         let depth = currentSelection.value.length
         const key = selectedDataset.value.selectionPriority[depth]
         let list: DatasetSelection[] = []
-        if (depth === 0) list = selectedDataset.value.selection[key]
-        else {
+        if (depth === 0) {
+          if (
+            selectedDataset.value.selection &&
+            selectedDataset.value.selection[key]
+          ) {
+            list = selectedDataset.value.selection[key]
+          }
+        } else {
           const s = currentSelection.value[depth - 1].data.selection
           if (s) list = s[key]
         }

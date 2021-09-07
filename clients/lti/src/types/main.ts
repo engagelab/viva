@@ -160,6 +160,16 @@ export interface ListItem {
   readonly shares: ListItemShare[] // sub-interface describing sharing for this item
 }
 
+export interface DialogConfig {
+  title: string
+  text: string
+  visible: boolean
+  confirm: Callback
+  confirmText: string
+  cancel: Callback
+  cancelText: string
+}
+
 // --------------------------   Video data --------------------------
 export interface EditDecriptionList {
   trim: number[]
@@ -410,8 +420,10 @@ export class Video {
     if (details.category) this.details.category = details.category
     if (details.created) this.details.created = new Date(details.created)
     if (details.description) this.details.description = details.description
-    if (details.duration) this.details.duration = details.duration
+    if (details.duration) this.details.duration = details.duration || 0
     if (details.edl) this.details.edl = details.edl
+    if (this.details.edl.trim.length === 0)
+      this.details.edl.trim = [0, this.details.duration]
     if (details.encryptionKey)
       this.details.encryptionKey = details.encryptionKey
     if (details.id) this.details.id = details.id
@@ -571,7 +583,7 @@ export class Dataset {
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manuel,
+      kind: CONSENT_TYPES.manual,
     }
     this.users = { owner: '' }
     this.selection = {}
@@ -589,7 +601,7 @@ export class Dataset {
         lockedBy: data.status.lockedBy,
       }
       this.consent = {
-        kind: data.consent.kind || CONSENT_TYPES.manuel,
+        kind: data.consent.kind || CONSENT_TYPES.manual,
       }
       this.users = {
         owner: data.users.owner,

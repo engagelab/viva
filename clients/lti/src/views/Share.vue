@@ -115,11 +115,7 @@
       </div>
     </template>
     <template v-else-if="detailMode.submode === VIDEO_DETAIL_MODE.trim">
-      <Player
-        @currenttime="(t) => (videoCurrentTime = t)"
-        @duration="updateDuration"
-        @edl="updateEDL"
-      />
+      <Player @duration="updateDuration" @trim="updateEDL" />
     </template>
   </div>
 </template>
@@ -157,7 +153,6 @@ export default defineComponent({
     const selectedItemShare = videoGetters.selectedItemShare
     const showUsers = ref(false)
     const unsavedData = ref(false)
-    const videoCurrentTime = ref(0)
     const myLTIID = appGetters.user.value.profile.ltiID
     let NARList: NARListItem[] = appGetters.canvasData.value.namesAndRoles
       .map((u) => ({ itemName: u.name, item: u }))
@@ -249,7 +244,6 @@ export default defineComponent({
       unsavedData,
       trimVideo,
       playVideo,
-      videoCurrentTime,
       updateDuration,
       detailMode: videoGetters.detailMode,
 

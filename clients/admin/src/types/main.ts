@@ -579,7 +579,7 @@ export class Dataset {
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manuel,
+      kind: CONSENT_TYPES.manual,
       value: '',
       formId: 0,
     }
@@ -608,7 +608,7 @@ export class Dataset {
         lockedBy: data.status?.lockedBy ? data.status.lockedBy : '',
       }
       this.consent = {
-        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
+        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manual,
         // value: fetchValue(data.consent),
         value: data.consent?.value ? data.consent.value : '',
         formId: data.consent?.formId ? data.consent.formId : 0,

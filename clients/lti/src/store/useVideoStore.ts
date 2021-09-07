@@ -158,9 +158,11 @@ const getters = {
 
 interface Actions {
   getVideoMetadata: () => Promise<void>
-  selectVideo: (video: ListItem) => void
+  selectOriginal: (video: ListItem) => void
   selectShare: (share: ListItemShare) => void
-  selectNoVideo: () => void
+  deleteOriginal: (videoID: string) => Promise<void>
+  selectNoOriginal: () => void
+  selectNoShare: () => void
   detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
   updateLocalVideo: (video: Video) => Promise<void>
   updateVideoDetails: (id: string, details: VideoDetailsData) => Promise<void>
@@ -220,6 +222,19 @@ const actions = {
       }
     })
   },
+
+  deleteOriginal: function (videoID: string): Promise<void> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.DELETE,
+      credentials: true,
+      query: { id: videoID },
+      route: '/api/video',
+    }
+    return apiRequest<void>(payload).then(() => {
+      state.value.videos.delete(videoID)
+    })
+  },
+
   deleteShare: function (
     videoID: string,
     videoSharing: VideoSharing
@@ -249,7 +264,6 @@ const actions = {
       const v = new Video(video)
       state.value.videos.set(v.details.id, v)
     })
-    // const videos = Array.from(state.value.videos.values())
     return Promise.resolve()
   },
 
@@ -283,7 +297,7 @@ const actions = {
     }
   },
 
-  selectVideo: function (video: ListItem): void {
+  selectOriginal: function (video: ListItem): void {
     if (video) state.value.selectedItem = video
   },
   selectShare: function (share: ListItemShare): void {
@@ -293,8 +307,11 @@ const actions = {
     }
   },
 
-  selectNoVideo: function (): void {
+  selectNoOriginal: function (): void {
     state.value.selectedItem = undefined
+  },
+  selectNoShare: function (): void {
+    state.value.selectedItemShare = undefined
   },
 
   // Update the video in store with the given video (by fileId) and save to local disk

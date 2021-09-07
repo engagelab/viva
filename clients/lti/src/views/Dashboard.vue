@@ -80,8 +80,8 @@
       </div>
     </div>
     <div
-      v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none"
-      class="fixed top-0 left-0 flex flex-col items-center w-full h-full bg-black bg-opacity-75 rounded-xl"
+      v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none || dialogConfig.visible"
+      class="fixed top-0 left-0 flex flex-col items-center justify-center w-full h-full bg-black bg-opacity-75 rounded-xl"
       @mousedown.self="selectNone()"
     >
       <Player
@@ -92,6 +92,7 @@
       />
       <Annotate v-if="detailMode.mode === VIDEO_DETAIL_MODE.annotate" />
       <Share v-if="detailMode.mode === VIDEO_DETAIL_MODE.share" />
+      <DialogBox v-if="dialogConfig.visible" />
     </div>
   </div>
 </template>
@@ -107,6 +108,7 @@ import { SORT_BY } from '@/constants'
 import VideoFeedCard from '@/components/VideoFeedCard.vue'
 import VideoMyCard from '@/components/VideoMyCard.vue'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'
+import DialogBox from '@/components/DialogBox.vue'
 import Annotate from '@/views/Annotate.vue'
 import Player from '@/views/Player.vue'
 import Share from '@/views/Share.vue'
@@ -120,6 +122,7 @@ export default defineComponent({
     Annotate,
     Player,
     Share,
+    DialogBox,
   },
   setup() {
     const { getters: appGetters, actions: appActions } = useAppStore()
@@ -136,13 +139,12 @@ export default defineComponent({
     function showTab(tabName: VIDEO_SHARING_MODE) {
       currentTab.value = tabName
       console.log(currentTab.value)
-      videoActions.selectNoVideo()
+      videoActions.selectNoOriginal()
     }
 
-    videoActions.selectNoVideo()
+    videoActions.selectNoOriginal()
+    videoActions.selectNoShare()
     const sort = () => {
-      // let v = videoGetters.sortByDataset.value
-      // console.log(SORT_BY[sortOrder.value])
       videoActions.sortVideos(SORT_BY[sortOrder.value])
     }
 
@@ -158,6 +160,8 @@ export default defineComponent({
             VIDEO_DETAIL_MODE.none,
             VIDEO_DETAIL_MODE.none
           )
+          videoActions.selectNoOriginal()
+          videoActions.selectNoShare()
           break
         case VIDEO_DETAIL_MODE.share:
           if (
@@ -168,11 +172,13 @@ export default defineComponent({
               VIDEO_DETAIL_MODE.share,
               VIDEO_DETAIL_MODE.none
             )
-          else
+          else {
             videoActions.detailMode(
               VIDEO_DETAIL_MODE.none,
               VIDEO_DETAIL_MODE.none
             )
+            videoActions.selectNoShare()
+          }
           break
         case VIDEO_DETAIL_MODE.annotate:
           if (submode === VIDEO_DETAIL_MODE.play)
@@ -180,11 +186,13 @@ export default defineComponent({
               VIDEO_DETAIL_MODE.annotate,
               VIDEO_DETAIL_MODE.none
             )
-          else
+          else {
             videoActions.detailMode(
               VIDEO_DETAIL_MODE.none,
               VIDEO_DETAIL_MODE.none
             )
+            videoActions.selectNoShare()
+          }
           break
         default:
           break
@@ -217,6 +225,7 @@ export default defineComponent({
       SORT_BY,
       selectNone,
       detailMode: videoGetters.detailMode,
+      dialogConfig: appGetters.dialogConfig,
       showTab,
       currentTab,
     }
