@@ -20,7 +20,7 @@ router.get('/videos', utilities.authoriseUser, (request, response) => {
   const u = response.locals.user
   const isAdmin = utilities.hasMinimumUserRole(u, userRoles.admin)
   let query = {}
-  // first do a api call to filter datasets for a canvas course 
+  // first do a api call to filter datasets for a canvas course
   if (isAdmin) {
     query = {}
   } else {
@@ -91,6 +91,7 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
         console.log(`S3 Video success: ${keyname}`)
         // These headers are required to enable seeking `currentTime` in Chrome browser
         if (request.query.mode !== 'thumbnail') {
+          // response.setHeader('Content-Type', headers['content-type']);
           response.setHeader('content-type', 'video/mp4')
           response.setHeader('Accept-Ranges', 'bytes')
           response.setHeader('Content-Length', file.ContentLength)

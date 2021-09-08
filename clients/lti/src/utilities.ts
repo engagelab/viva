@@ -54,7 +54,14 @@ const formatTime = (timeInSeconds: number, offsetTime = 0): string => {
 // Reverse function to 'formatTime'
 // Expects a string in the form '0:00:00' (single hour:mins:seconds)
 const formattedTimeToSeconds = (timeString: string): number => {
-  return 0
+  const timeArray = timeString.split(':')
+  if (timeArray.length === 3)
+    return (
+      parseInt(timeArray[0]) * 3600 +
+      parseInt(timeArray[1]) * 60 +
+      parseInt(timeArray[2])
+    )
+  return -1
 }
 
 // https://stackoverflow.com/questions/3552461/how-to-format-a-javascript-date

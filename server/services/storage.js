@@ -101,6 +101,7 @@ const downloadS3File = async ({ keyname, sseKey, sseMD5 }) => {
 
 /**
  * Get presigned url to a file from S3
+ * NOTE: As Educloud uses client-supplied encryption keys, this method will not work from a browser unless those keys are sent with it
  *
  * @param {Object} meta - Object containing parameters.
  * @param {string} meta.keyname - Name to be used for the file in the S3 bucket.
