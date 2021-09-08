@@ -33,7 +33,7 @@
           class="m-2"
           mode="binary"
           :border="false"
-          label="active"
+          :label="t('active')"
           :required="true"
           v-model="dataset.status.active"
           @change="unsavedData = true"
@@ -42,7 +42,7 @@
 
       <!-- Display of groups -->
       <div>
-        <p class="text-red-600 mt-4 ml-2">Data collection groups</p>
+        <p class="text-red-600 mt-4 ml-2">{{ t('canvas courses') }}</p>
         <div class="flex flex-col">
           <div v-for="(g, index) in groups" :key="index" class="py-1 ml-2">
             <input
@@ -53,9 +53,9 @@
               v-model="dataset.users.groups"
               @change="unsavedData = true"
             />
-            <label class="mr-2" :for="`group-option-${g.name}`">{{
-              g.name
-            }}</label>
+            <label class="mr-2" :for="`group-option-${g.name}`"
+              >{{ g.id }}-{{ g.name }}</label
+            >
           </div>
         </div>
       </div>
@@ -66,10 +66,8 @@
 
       <div>
         <p class="text-red-600 mt-4 ml-2">
-          Storage
-          <span class="mt-4 ml-6 text-xs text-black"
-            >*Note: EduCloud storage not configurable here</span
-          >
+          {{ t('storage') }}
+          <span class="mt-4 ml-6 text-xs text-black">*{{ t('warning1') }}</span>
         </p>
         <div v-for="s in dataset.storages" :key="s._id">
           <StorageHandling :storage="s" @updated="storageUpdated" />
@@ -78,7 +76,7 @@
           class="mt-2 p-0 rounded-lg"
           id="button-accept"
           @click="addStorage"
-          >+ Add new storage
+          >+ {{ t('Add') }}
         </Button>
       </div>
 
@@ -108,20 +106,25 @@ import { useAppStore } from '@/store/useAppStore'
 const messages = {
   nb_NO: {
     dataset: 'Registrering',
-    description: 'Til forsiden',
-    selection: 'Ko-hort',
-    'data controller group': 'Data controller group',
-    owner: 'Owner',
     name: 'Name',
+    owner: 'Owner',
+    description: 'Til forsiden',
+    active: 'Aktiv',
+    'canvas courses': 'Canvas courses',
+    storage: '',
+    warning1: '',
+    add: '',
   },
   en: {
-    dataset: 'Registrering',
-    description: ' Description',
-    'choose one or more': 'Choose one or several kindergartens..',
-    selection: 'Cohort',
-    'data controller group': 'Data controller group',
-    owner: 'Owner',
+    dataset: 'Dataset',
     name: 'Name',
+    owner: 'Owner',
+    description: ' Description',
+    active: 'active',
+    'canvas courses': 'Canvas courses',
+    storage: 'Storage',
+    warning1: 'Note: EduCloud storage not configurable here',
+    add: 'Add new storage',
   },
 }
 

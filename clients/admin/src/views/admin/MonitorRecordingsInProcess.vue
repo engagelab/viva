@@ -42,11 +42,11 @@ import { useI18n } from 'vue-i18n'
 const messages = {
   nb_NO: {
     Datainnsamler: 'Datainnsamler',
-    'Antall opptakk': 'Antall opptakk',
+    'Antall opptakk': 'Antall opptak',
   },
   en: {
-    Datainnsamler: 'Name',
-    'Antall opptakk': 'Total',
+    Datainnsamler: 'Data collector',
+    'Antall opptakk': 'Number of recordings',
   },
 }
 

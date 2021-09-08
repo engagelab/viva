@@ -11,7 +11,7 @@
           v-model="searchField"
           @input="onWardTableSearchTextChanged"
         />
-        <div>{{ t('MonitorRecordingLog') }}</div>
+        <div>{{ t('monitorRecordingLog') }}</div>
       </div>
 
       <AgGridVue
@@ -30,51 +30,56 @@
         v-if="selectedRow"
         class="grid grid-rows-1 border-2 rounded-md bg-gray-300 p-4 mt-4"
       >
-        <div class="recording-title text-lg">Metadata about recording</div>
+        <div class="recording-title text-lg">{{ t('metadata') }}</div>
         <div class="">
           <p class="text-red-500">video details</p>
-          <div>Name: {{ selectedRow.details.name }}</div>
-          <div>Owner : {{ selectedRow.shared.owner }}</div>
-          <div>Category: {{ selectedRow.details.category }}</div>
-          <div>Created: {{ selectedRow.details.created }}</div>
-          <div>Duration: {{ `${selectedRow.details.duration} Seconds` }}</div>
-          <div>EDL: {{ selectedRow.details.edl }}</div>
-          <div>Description : {{ selectedRow.details.description }}</div>
-          <div class="mt-2">
-            <p class="text-red-500">Dataset Info:</p>
-            <div>DatasetName:{{ selectedRow.dataset }}</div>
-            <div>Selection: {{ selectedRow.selection }}</div>
+          <div>{{ t('name') }}: {{ selectedRow.details.name }}</div>
+          <div>{{ t('owner') }} : {{ selectedRow.shared.owner }}</div>
+          <div>{{ t('category') }}: {{ selectedRow.details.category }}</div>
+          <div>{{ t('created') }} : {{ selectedRow.details.created }}</div>
+          <div>
+            {{ t('duration') }} :
+            {{ `${selectedRow.details.duration} Seconds` }}
+          </div>
+          <div>{{ t('edl') }}: {{ selectedRow.details.edl }}</div>
+          <div>
+            {{ t('description') }} : {{ selectedRow.details.description }}
           </div>
           <div class="mt-2">
-            <p class="text-red-500">Consenters:</p>
+            <p class="text-red-500">{{ t('datasetInfo') }}:</p>
+            <div>{{ t('datasetName') }}:{{ selectedRow.dataset }}</div>
+            <div>{{ t('consenters') }}: {{ selectedRow.selection }}</div>
+          </div>
+          <div class="mt-2">
+            <p class="text-red-500">{{ t('consenters') }}:</p>
             <div
               v-for="(consenter, index) in selectedRow.consenters"
               :key="index"
             >
-              Consenters: {{ consenter }}
+              {{ t('consenters') }} : {{ consenter }}
             </div>
           </div>
           <div class="mt-2">
-            <p class="text-red-500">Storages:</p>
+            <p class="text-red-500">{{ t('storages') }}:</p>
             <div v-for="(storage, index) in selectedRow.storages" :key="index">
               {{ storage.kind }}-{{ storage.path }}
             </div>
           </div>
         </div>
         <div class="mx-2">
-          <p class="text-red-500">Shares</p>
+          <p class="text-red-500">{{ t('shares') }}</p>
           <div
             class="mt-2"
             v-for="(share, shareIndex) in selectedRow.shared.sharing"
             :key="shareIndex"
           >
             <p>
-              <span class="text-red-500">></span> Description:{{
+              <span class="text-red-500">></span> {{ t('description') }}:{{
                 share.description
               }}
             </p>
-            <p>EDL:{{ share.edl.trim }}</p>
-            Users:
+            <p>{{ t('edl') }}:{{ share.edl.trim }}</p>
+            {{ t('users') }}:
             <p v-for="(user, index) in share.users" :key="index">{{ user }}</p>
           </div>
         </div>
@@ -99,18 +104,42 @@ const { actions: videoActions, getters: videoGetters } = useVideoStore()
 import { useI18n } from 'vue-i18n'
 const messages = {
   nb_NO: {
-    MonitorRecordingLog: 'Logger',
-    Opptak: 'Opptak',
-    Dato: 'Dato',
-    Datainnsamler: 'Datainnsamler',
-    Datasett: 'Datasett',
+    monitorRecordingLog: 'Opptakslogg',
+    opptak: 'Opptak',
+    datainnsamler: 'Datainnsamler',
+    name: 'Navn',
+    category: '',
+    created: '',
+    duration: '',
+    edl: '',
+    consenters: '',
+    selection: '',
+    datasetName: '',
+    datasetInfo: '',
+    storages: '',
+    shares: '',
+    description: '',
+    users: '',
+    metadata: '',
   },
   en: {
-    MonitorRecordingLog: 'Recording Log',
-    Opptak: 'Recording',
-    Dato: 'Date',
-    Datainnsamler: 'Person',
-    Datasett: 'Dataset',
+    nonitorRecordingLog: 'Recording Log',
+    opptak: 'Recording',
+    datainnsamler: 'Data collector',
+    name: 'Name',
+    category: 'Category',
+    created: 'Created',
+    duration: 'Duration',
+    edl: 'EDL',
+    consenters: 'Consenters',
+    selection: 'Selection',
+    datasetName: 'Dataset name',
+    datasetInfo: 'Dataset info',
+    storages: 'Storages',
+    shares: 'Shares',
+    description: 'Description',
+    users: 'Users',
+    metadata: 'Metadata about recording',
   },
 }
 
