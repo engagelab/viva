@@ -46,7 +46,6 @@
       "cordova-plugin-add-swift-support": {},
       "eeschiavo-cordova-plugin-clipboard": {},
       "cordova-plugin-android-permissions": {},
-      "cordova-plugin-splashscreen": {},
       "cordova-plugin-wkwebview-file-xhr": {},
       "cordova-plugin-oauth-engagelab": {
         "URL_SCHEME": "viva"
