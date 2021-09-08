@@ -20,7 +20,13 @@
       </div>
     </div>
     <div v-else class="flex">
-      <Input @input="newValue => name = newValue" v-model="name" />
+      <AnswerInput
+        class="m-2"
+        mode="text"
+        label="Reference"
+        :border="false"
+        v-model="name"
+      ></AnswerInput>
       <div class="pl-4" @click="removeNewitem()">
         <SVGSymbol
           class="p-2 text-viva-korall fill-current cursor-pointer"
@@ -41,14 +47,15 @@
   </div>
 </template>
 
-<script>
-import SVGSymbol from '../../components/base/SVGSymbol';
-import Input from '../../components/base/Input';
+<script lang="ts">
+import { defineComponent, ref, toRefs } from 'vue'
+import SVGSymbol from './SVGSymbol.vue'
+import AnswerInput from './AnswerInput.vue'
 
-export default {
+export default defineComponent({
   components: {
     SVGSymbol,
-    Input,
+    AnswerInput,
   },
   props: {
     initialName: {
@@ -60,35 +67,39 @@ export default {
       default: '\\W',
     },
   },
-  data() {
+  setup(props, context) {
+    const { initialName, filter } = toRefs(props)
+    const name = ref('')
+    const editing = ref(false)
+    if (initialName.value) {
+      name.value = initialName.value
+    }
+    function editNewitem() {
+      if (initialName.value) {
+        name.value = initialName.value
+      }
+      editing.value = true
+    }
+    function removeNewitem() {
+      name.value = initialName.value || ''
+      editing.value = false
+    }
+    function addNewitem() {
+      let regex
+      regex = new RegExp(filter.value, 'g')
+      const newName = name.value.replace(regex, '')
+      context.emit('new-text', newName)
+      removeNewitem()
+    }
+
     return {
-      editing: false,
-      name: '',
-    };
-  },
-  mounted() {
-    if (this.initialName) {
-      this.name = this.initialName;
+      editing,
+      name,
+
+      editNewitem,
+      removeNewitem,
+      addNewitem,
     }
   },
-  methods: {
-    editNewitem() {
-      if (this.initialName) {
-        this.name = this.initialName;
-      }
-      this.editing = true;
-    },
-    removeNewitem() {
-      this.name = this.initialName || '';
-      this.editing = false;
-    },
-    addNewitem() {
-      let regex;
-      regex = new RegExp(this.filter, 'g');
-      const newName = this.name.replace(regex, '');
-      this.$emit('new-text', newName);
-      this.removeNewitem();
-    },
-  },
-};
+})
 </script>

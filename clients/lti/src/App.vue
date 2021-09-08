@@ -1,11 +1,9 @@
 <template>
-  <div id="app" class="fadeInOut h-screen" :style="fadeState">
-    <div
-      v-if="disableDelays"
-      class="absolute top-0 right-0 pr-20 text-red-600 text-xs"
-    >
-      Delays & locks disabled
-    </div>
+  <div
+    class="fadeInOut h-screen overflow-hidden bg-viva-grey-300 flex flex-row justify-center"
+    :style="fadeState"
+  >
+    <!--p @click="fixHeight()">FIX HEIGHT</p-->
     <router-view />
   </div>
 </template>
@@ -24,6 +22,16 @@ export default defineComponent({
     const fadeState = computed(() => {
       return { opacity: appStore.getters.fade.value ? '0' : '1' }
     })
+    const fixHeight = () => {
+      const h = '90vh' // document.documentElement.clientHeight * 0.65
+      parent.postMessage(
+        JSON.stringify({
+          subject: 'lti.frameResize',
+          height: h,
+        }),
+        '*'
+      )
+    }
 
     // If we arrived here from a page reload, make sure to set up again
     if (router.currentRoute.value.path !== '/') {
@@ -31,6 +39,7 @@ export default defineComponent({
     }
 
     return {
+      fixHeight,
       fadeState,
       disableDelays: appStore.getters.disableDelays,
     }
@@ -107,31 +116,4 @@ html {
 .slideup-leave-to {
   transform: translateY(-100%);
 }
-/* @media screen and (prefers-reduced-motion: reduce) {
-  .next-enter {
-    opacity: 0;
-    transform: translate3d(100px, 0, 0);
-  }
-  .next-enter-active,
-  .next-leave-active {
-    transition: 0.5s;
-  }
-  .next-leave-to {
-    opacity: 0;
-    transform: translate3d(-100px, 0, 0);
-  }
-
-  .prev-enter {
-    opacity: 0;
-    transform: translate3d(-100px, 0, 0);
-  }
-  .prev-enter-active,
-  .prev-leave-active {
-    transition: 0.5s;
-  }
-  .prev-leave-to {
-    opacity: 0;
-    transform: translate3d(100px, 0, 0);
-  }
-} */
 </style>

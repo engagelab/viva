@@ -3,17 +3,13 @@
  * Here we are managing transfer of a video file to Google Drive
  * Transfer must be initiated by the user
  */
-
-// const opn = require('opn');
-// const jwt = require('jsonwebtoken')
 const { google } = require('googleapis');
 const router = require('express').Router();
 
-const googleOperations = require('../../subprocesses/googleOperations');
+const googleOperations = require('../../services/google');
 const videoStatusTypes = require('../../constants').videoStatusTypes;
-// const videoStorageTypes = require('../../constants').videoStorageTypes
-const utilities = require('../utilities');
-const Datasett = require('../../models/Datasett');
+const utilities = require('../../utilities');
+const Dataset = require('../../models/Dataset');
 const Video = require('../../models/Video');
 const User = require('../../models/User');
 
@@ -37,74 +33,67 @@ const scopes = [
 ];
 
 // Authenticate for use of Google Drive with this user's account
-router.get('/google_transfer', utilities.authoriseUser, (request, response) => {
-  // const decodedUserToken = jwt.verify(request.user.id_token, 'shhhhh')
+router.get('/google_transfer', utilities.authoriseUser, (request, response, next) => {
+  const user = response.locals.user
   const csrf_token = require('crypto')
     .randomBytes(20)
     .toString('hex');
-  User.findById(request.session.ref, (err, user) => {
-    if (err) {
-      console.error('Error beginning Google Transfer', err);
-      return response.status(500).end();
-    }
-    // This token will be checked at Google callback prevent falsification of the request
-    user.tokens.csrf_token = csrf_token;
-    user.save(error => {
-      if (error) {
-        return utilities.errorResponse(error, response, 400);
-      } else {
-        // Create the request to Google
-        const device = request.query.device;
-        const mobileApp = typeof device === 'string' && device == 'mobileApp';
-        const authData = {
-          scope: scopes,
-          // Define values that should be passed through to the callback as a query string
-          state: JSON.stringify({
-            videoReference: request.query.videoReference,
-            settingId: request.query.settingId,
-            mode: request.query.mode,
-            userId: request.session.ref,
-            csrf_token,
-            device,
-          }),
-        };
-        authData.hd = 'uio.no'; // Influence Google to use this domain for login
-        const oauth2Client = getOauthClient()
-        oauth2Client.credentials = {
-          access_token: user.tokens.access_token,
-          token_type: 'Bearer',
-        };
-        if (mobileApp) {
-          response.cookie('id_token', user.tokens.id_token);
-          response.cookie('access_token', user.tokens.access_token);
-        }
-        const authorizeUrl = oauth2Client.generateAuthUrl(authData);
-        if (mobileApp) {
-          // response.set('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
-          return response.redirect(authorizeUrl);
-        } else {
-          return response
-            .send({ data: encodeURI(authorizeUrl) })
-            .status(200)
-            .end();
-        }
+
+  // This token will be checked at Google callback prevent falsification of the request
+  user.tokens.csrf_token = csrf_token;
+  user.save(error => {
+    if (error) {
+      return next(error)
+    } else {
+      // Create the request to Google
+      const device = request.query.device;
+      const mobileApp = typeof device === 'string' && device == 'mobileApp';
+      const authData = {
+        scope: scopes,
+        // Define values that should be passed through to the callback as a query string
+        state: JSON.stringify({
+          videoId: request.query.videoId,
+          datasetId: request.query.datasetId,
+          mode: request.query.mode,
+          userId: request.session.ref,
+          csrf_token,
+          device,
+        }),
+      };
+      authData.hd = 'uio.no'; // Influence Google to use this domain for login
+      const oauth2Client = getOauthClient()
+      oauth2Client.credentials = {
+        access_token: user.tokens.access_token,
+        token_type: 'Bearer',
+      };
+      if (mobileApp) {
+        response.cookie('id_token', user.tokens.id_token);
+        response.cookie('access_token', user.tokens.access_token);
       }
-    });
-  });
+      const authorizeUrl = oauth2Client.generateAuthUrl(authData);
+      if (mobileApp) {
+        return response.redirect(authorizeUrl);
+      } else {
+        return response
+          .send({ data: encodeURI(authorizeUrl) })
+          .status(200)
+          .end();
+      }
+    }
+  })
 });
 // Authentication callback
 router.get('/authenticated_google_transfer', (request, response) => {
   const code = request.query.code || ''; // Google's code to exchange for a token
   const hd = request.query.hd || ''; // The domain of our Google Cloud Portal
   const state = JSON.parse(request.query.state); // State variables passed from the initial call
-  const fileId = state.videoReference || '';
-  const settingId = state.settingId || '';
+  const videoId = state.videoId || '';
+  const datasetId = state.datasetId || '';
   const mode = state.mode || '';
   const csrf_token = state.csrf_token || '';
   const userId = state.userId;
 
-  const status = videoStatusTypes.edited;
-  // const storage = videoStorageTypes.google
+  const status = videoStatusTypes.stored;
   const mobileApp =
     typeof state.device === 'string' && state.device == 'mobileApp';
 
@@ -113,11 +102,11 @@ router.get('/authenticated_google_transfer', (request, response) => {
     if (mobileApp) {
       const bundleId = process.env.APP_BUNDLE_ID;
       return response.redirect(
-        `${bundleId}://oauth_callback?mode=transfer&videoReference=${fileId}&settingId=${settingId}&error=${error}`
+        `${bundleId}://oauth_callback?mode=transfer&videoReference=${videoId}&settingId=${datasetId}&error=${error}`
       );
     } else {
       return response.redirect(
-        `${utilities.baseUrl}/#/transferred?videoReference=${fileId}&settingId=${settingId}&error=${error}`
+        `${utilities.baseUrl}/#/transferred?videoReference=${videoId}&settingId=${datasetId}&error=${error}`
       );
     }
   };
@@ -152,49 +141,49 @@ router.get('/authenticated_google_transfer', (request, response) => {
       token_type: 'Bearer',
     };
     oauth2Client.getToken(code, (error2, tokens) => {
-      if (error2) return console.error(`${new Date().toUTCString()} Error retrieving access token ${error2} foro userid: ${user.id} username: ${user.username} videoFileId: ${fileId}`);
+      if (error2) return console.error(`${new Date().toUTCString()} Error retrieving access token ${error2} foro userid: ${user.id} username: ${user.profile.username} videoFileId: ${videoId}`);
       oauth2Client.setCredentials(tokens);
       // Check that the supplied settingID is indeed configured to transfer to this location
-      Datasett.findById(settingId, (error3, setting) => {
+      Dataset.findById(datasetId, (error3, dataset) => {
         if (error3) {
           return console.error(error3);
-        } else if (setting) {
+        } else if (dataset) {
           // const store = setting.storages.find(s => s.name == videoStorageTypes.google)
           // Now retrieve the video that matches this request
           // Only retrieve a video matching the reference, user and complete status
           Video.findOne(
-            { userId, settingId, fileId, status },
+            { 'users.owner': userId, 'dataset.id': datasetId, 'details.id': videoId, 'status.main': status },
             (error4, video) => {
               if (error4) {
                 return console.error(error4);
-              } else if (video && !video.pipelineInProgress) {
-                video.pipelineInProgress = true;
+              } else if (video && !video.status.inPipeline) {
+                video.status.inPipeline = true;
                 video.save();
                 console.log(
                   `${new Date().toUTCString()} Attained a token and initiated video transfer for userid: ${
                     user.id
-                  } username: ${user.username} Video filename: ${
-                    video.filename
+                  } username: ${user.profile.username} Video filename: ${
+                    video.file.name
                   }`
                 );
                 googleOperations
-                  .createVideoAtGoogle(video, setting, oauth2Client)
+                  .createVideoAtGoogle(video, dataset, oauth2Client)
                   .then(() => {
-                    if (!user.stats.totalTransfers) user.stats.totalTransfers = 0
-                    user.stats.totalTransfers += 1
+                    if (!user.status.totalTransfers) user.status.totalTransfers = 0
+                    user.status.totalTransfers += 1
                     user.save()
                     completedTransfer()
                   })
                   .catch(error5 => {
                     console.log(error5);
-                    video.pipelineInProgress = false;
-                    video.status = 'error';
-                    video.errorDebug = error5.toString();
+                    video.status.inPipeline = false;
+                    video.status.main = 'error';
+                    video.status.error.errorDebug = error5.toString();
                     video.save();
                     completedTransfer(error5.message);
                   });
               } else {
-                if (video && video.pipelineInProgress) {
+                if (video && video.status.inPipeline) {
                   const message =
                     'Attempted to transfer a video already in transfer';
                   console.log(message);

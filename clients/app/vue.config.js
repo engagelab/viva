@@ -1,14 +1,12 @@
 // vue.config.js
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const fs = require('fs')
 const host = process.env.VUE_APP_SERVER_HOST
 const port = process.env.VUE_APP_SERVER_PORT
-const hotHost = process.env.VUE_APP_HOTRELOAD_SERVER_HOST
-const hotPort = process.env.VUE_APP_HOTRELOAD_SERVER_PORT_APP
 const https_key = fs.readFileSync(process.env.SSL_KEY_FILE)
 const https_cert = fs.readFileSync(process.env.SSL_CERT_FILE)
-
-// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
-//   .BundleAnalyzerPlugin
+const baseUrl = process.env.BASE_URL || '/'
+const devHost = host === 'https://localhost' ? 'localhost' : '10.0.0.11'
 
 module.exports = {
   pluginOptions: {
@@ -16,37 +14,43 @@ module.exports = {
       locale: 'no',
       fallbackLocale: 'no',
       localeDir: 'locales',
-      enableInSFC: true
+      enableInSFC: true,
     },
-    cordovaPath: 'src-cordova'
+    cordovaPath: 'src-cordova',
   },
-  publicPath: process.env.BASE_URL || '',
+  publicPath: baseUrl,
   outputDir: 'www',
   configureWebpack: {
     devtool: 'source-map',
   },
-/*   configureWebpack: {
-    devtool: 'inline-source-map',
-    resolve: {
-      alias: {
-        '@': `${__dirname}/src`
-      }
-    },
-    plugins:
-      process.env.NODE_ENV == 'testing' ? [new BundleAnalyzerPlugin()] : []
-  }, */
-  chainWebpack: config => {
+  chainWebpack: (config) => {
+    config.module
+      .rule('i18n-resource')
+      .test(/\.(json5?|ya?ml)$/)
+      .type('javascript/auto')
+      .use('i18n-resource')
+      .loader('@intlify/vue-i18n-loader')
     config.module
       .rule('i18n')
       .resourceQuery(/blockType=i18n/)
       .type('javascript/auto')
       .use('i18n')
-      .loader('@kazupon/vue-i18n-loader')
-      .end()
-    config.plugin('html').tap(args => {
+      .loader('@intlify/vue-i18n-loader')
+    config.plugin('html').tap((args) => {
       const tmp = args[0]
       tmp.template = 'src/index.html'
       tmp.favicon = 'src/assets/icons/favicon.ico'
+      return args
+    })
+    // raw-loader is for loading querys in .txt files
+    config.module
+      .rule('raw')
+      .test(/\.(gql|graphql|txt)$/i)
+      .use('raw-loader')
+      .loader('raw-loader')
+      .end()
+    config.plugin('fork-ts-checker').tap((args) => {
+      args[0].typescript = { configFile: '../../tsconfig.json' }
       return args
     })
     if (process.env.NODE_ENV === 'development') {
@@ -60,11 +64,11 @@ module.exports = {
       cert: https_cert,
     },
     index: 'index.html',
-    host: hotHost,
-    port: hotPort,
+    host: devHost,
+    port: '8082',
     overlay: {
       warnings: true,
-      errors: true
+      errors: true,
     },
     proxy: {
       '/api': {
@@ -77,8 +81,8 @@ module.exports = {
       },
       '/upload': {
         target: `${host}:${port}`,
-        changeOrigin: true
-      }
-    }
-  }
+        changeOrigin: true,
+      },
+    },
+  },
 }

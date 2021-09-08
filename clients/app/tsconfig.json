@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "strict": true,
+    "jsx": "preserve",
+    "importHelpers": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "checkJs": false,
+    "baseUrl": "./",
+    "typeRoots": ["node_modules/@types", "src/types"],
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "lib": ["dom"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "node_modules/**/*.d.ts",
+    "src-cordova/node_modules/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "src/**/*.json",
+  ],
+  "exclude": [
+    "vue.config.js",
+    "tailwind.config.js",
+    "src-cordova/**/*",
+    "www/**/*",
+    "dist/**/*",
+  ]
+}

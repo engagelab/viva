@@ -2,52 +2,55 @@
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
 
+const fs = require('fs')
+const path = require('path')
 const router = require('express').Router()
-const utilities = require('../utilities')
-const tsd = require('../../services/tsdConsent')
-const User = require('../../models/User')
+const utilities = require('../../utilities')
+const tsdConsent = require('../../services/tsd')
 
-router.get('/consents', utilities.authoriseUser, (request, response) => {
-  // return utilities.successResponse([], response)
-  User.findById(request.session.ref, (err, user) => {
-    if (!err) {
-      if (request.query.datasettId && request.query.formId && request.query.formId !== '')  {
-        tsd.exportConsent(
-          {
-            user,
-            datasettId: request.query.datasettId,
-            formId: request.query.formId,
-            utvalg: request.query.utvalg
-          },
-          error => utilities.errorResponse(error, response, 400),
-          consents => utilities.successResponse(consents, response)
-        )
-      } else {
-        utilities.successResponse([], response)
-      }
-    } else if (err) {
-      utilities.errorResponse(err, response, 400)
+const sampleConsentsRaw = fs.readFileSync(
+  path.resolve(__dirname, './sampleConsents.json')
+)
+const sampleConsents = JSON.parse(sampleConsentsRaw)
+
+router.get('/consents', utilities.authoriseUser, (request, response, next) => {
+  const user = response.locals.user
+  if (
+    request.query.datasetId &&
+    request.query.formId &&
+    request.query.formId !== ''
+  ) {
+    if (process.env.NODE_ENV === 'development') {
+      return response.send(sampleConsents)
     }
-  })
+    tsdConsent.exportConsent(
+      {
+        user,
+        datasetId: request.query.datasetId,
+        formId: request.query.formId,
+        utvalg: request.query.utvalg,
+      },
+      (error) => next(error),
+      (consents) => response.send(consents)
+    )
+  } else {
+    response.send([])
+  }
 })
 
 // Post to TSD with utvlag instances to create consent
-router.post('/consent', utilities.authoriseUser, (request, response) => {
+router.post('/consent', utilities.authoriseUser, (request, response, next) => {
   let datasett = request.query
   let groups = JSON.parse(datasett.dataportenGroupsId)
   console.log(groups)
   if (request.query.utvalg) {
-    tsd.createConsent(
+    tsdConsent.createConsent(
       { user: request.body, datasett: request.query },
-      error =>
-        utilities.errorResponse(
-          { status: 400, message: error.toString() },
-          response
-        ),
-      clientID => utilities.successResponse(clientID, response)
+      (error) => next(error),
+      (clientID) => response.send(clientID)
     )
   } else {
-    utilities.successResponse([], response)
+    response.send([])
   }
 })
 

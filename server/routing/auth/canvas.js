@@ -3,16 +3,18 @@ const router = require('express').Router()
 const { generators } = require('openid-client')
 const jwt = require('jsonwebtoken')
 const jwksClient = require('jwks-rsa')
-const utilities = require('../utilities')
 const { createOrUpdateUser, completeCallback } = require('./helpers')
 
+const { httpRequest } = require('../../utilities')
 const openidClient = require('../../services/openid')
+const { userDetails } = require('../../services/canvas')
 
 // Activate the Dataporten Clients
 let CanvasLTIClient, CanvasLTIIssuer, CanvasAPIClient
-openidClient
-  .createClient('canvasLTI')
-  .then((struct) => { CanvasLTIClient = struct.client; CanvasLTIIssuer = struct.issuer})
+openidClient.createClient('canvasLTI').then((struct) => {
+  CanvasLTIClient = struct.client
+  CanvasLTIIssuer = struct.issuer
+})
 openidClient
   .createClient('canvasAPI')
   .then((struct) => (CanvasAPIClient = struct.client))
@@ -20,17 +22,17 @@ openidClient
 // --------------- For Canvas Login  -----------------
 
 // STEP 1
-// Authentication called from Canvas
+// Authentication called from Canvas for LTI
 // Uses OpenID to retrieve an id_token, and an "LTI Advantage Services" access_token
 // NOTE: This does *NOT* give Canvas API access
 // Use this procedure to initiate the LTI
 // http://www.imsglobal.org/spec/security/v1p0/#step-1-third-party-initiated-login
 router.post('/canvas/login', function (request, response) {
-  const { device, remember } = request.query
+  const { organization } = request.query
   request.session.nonce = generators.nonce()
   request.session.state = generators.state()
-  request.session.device = device
-  request.session.remember = remember
+  request.session.organization = organization || 'uio'
+  request.session.client = 'lti'
 
   let redirectUrl = CanvasLTIClient.authorizationUrl({
     lti_message_hint: request.body.lti_message_hint,
@@ -47,48 +49,18 @@ router.post('/canvas/login', function (request, response) {
 // STEP 2
 // POST Callback from Canvas contains the id_token for an OpenID LTI authentication
 router.post('/canvas/callback', function (request, response) {
-  const { device, remember } = request.session
+  const { state, organization, client } = request.session
+  request.session.canvasData = {}
   const idToken = request.body.id_token
   const decodedToken = jwt.decode(idToken, { complete: true })
 
-  if (request.session.state != response.req.body.state) {
+  if (state != request.body.state) {
     console.error('/canvas/callback: Session state does not match')
     return response.status(401).end()
   }
   if (decodedToken.payload.iss !== CanvasLTIIssuer.metadata.issuer) {
     console.error('/canvas/callback: Issuer does not match')
     return response.status(401).end()
-  }
-
-  // STEP 4: Using the LTI access_token, get user details using "Names & roles" LTI service
-  // Save the details to the User's profile including id_token
-  const requestUserInformation = (LTItokenSet, verified_decoded_id_token) => {
-    const user_id = verified_decoded_id_token.sub
-    const parsedUrl = new URL(verified_decoded_id_token['https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice'].context_memberships_url)
-    const options = {
-      hostname: parsedUrl.host,
-      path: parsedUrl.pathname,
-      method: 'GET',
-      headers: {
-          Authorization: `Bearer ${LTItokenSet.access_token}`
-      }
-    }
-    utilities.httpRequest(options)
-      .then(namesAndRoles => {
-        if (namesAndRoles) {
-          const myUser = namesAndRoles.members.find((n) => n.user_id === user_id)
-          createOrUpdateUser(
-            { id_token: idToken },
-            { sub: verified_decoded_id_token.sub },
-            myUser || {}
-          ).then((user) => {
-            return completeCallback(request, response, user, device, remember)
-          })
-        }
-      })
-      .catch(e => {
-        console.error(e)
-      });
   }
 
   // STEP 3: Authenticate using 'client_credentials' for a 'non-specific-user' LTI access_token
@@ -105,11 +77,11 @@ router.post('/canvas/callback', function (request, response) {
 
     const jwtContent = {
       sub: process.env.CANVAS_LTI_CLIENT_ID,
-      iss: 'https://canvas.instructure.com',
+      iss: `https://${process.env.CANVAS_ISSUER_DOMAIN}`,
       jti: '1234567890987654321', // Do we really need this?
       exp: expiryInSeconds,
       iat: issuedAtDate,
-      aud: 'https://uio.instructure.com/login/oauth2/token',
+      aud: `https://${process.env.CANVAS_ENDPOINT_DOMAIN}/login/oauth2/token`,
     }
     const signedTokenPayload = jwt.sign(jwtContent, privateKey, {
       algorithm: 'RS256',
@@ -121,13 +93,77 @@ router.post('/canvas/callback', function (request, response) {
       client_assertion_type:
         'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
       client_assertion: signedTokenPayload,
-      scope: 'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly',
+      scope:
+        'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly',
     }
 
     // Request a Token Grant, then request the User's information
-    CanvasLTIClient.grant(CCbody).then((LTItokenSet) => {
-      requestUserInformation(LTItokenSet, verified_decoded_id_token)
-    }).catch((error) => console.log(`Error granting access_token: ${error}`))
+    CanvasLTIClient.grant(CCbody)
+      .then((LTItokenSet) => {
+        requestUserInformation(LTItokenSet, verified_decoded_id_token)
+      })
+      .catch((error) => console.log(`Error granting access_token: ${error}`))
+  }
+
+  // STEP 4: Using the LTI access_token, get user details using "Names & roles" LTI service
+  // Save the details to the User's profile including id_token
+  // LTI must be configured with the "variable substitute" in 'Custom Fields' with:  `user_id=$Canvas.user.id`
+  const requestUserInformation = (LTItokenSet, verified_decoded_id_token) => {
+    // Configure data from 'variable substitutes'
+    const custom_vars =
+      verified_decoded_id_token[
+        'https://purl.imsglobal.org/spec/lti/claim/custom'
+      ]
+    const profile = {
+      provider: 'canvas',
+      provider_id: custom_vars.user_id,
+      login_id: custom_vars.login_id, // <-- THIS is intended to match Dataporten user ID and Canvas API token user ID
+      email: custom_vars.user_email || '',
+      fullName: custom_vars.person_name || '',
+      organization: organization || '',
+      ltiID: verified_decoded_id_token['sub'],
+      client,
+    }
+
+    // Note the course we are launching from
+    if (custom_vars.course_id)
+      request.session.canvasData.courseId = custom_vars.course_id
+
+    // Configure data from Names and Roles service
+    const parsedUrl = new URL(
+      verified_decoded_id_token[
+        'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice'
+      ].context_memberships_url
+    )
+    const options = {
+      hostname: parsedUrl.host,
+      path: parsedUrl.pathname,
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${LTItokenSet.access_token}`,
+      },
+    }
+    httpRequest(options).then((namesAndRoles) => {
+      if (namesAndRoles) {
+        request.session.canvasData.namesAndRoles = namesAndRoles.members.map(
+          (m) => {
+            return {
+              name: m.name || 'unknown',
+              ltiID: m.user_id || 'unknown',
+              email: m.email || 'unknown',
+              roles: m.roles,
+            }
+          }
+        )
+      }
+      const user = namesAndRoles.members.find(
+        (u) => u.name === profile.fullName
+      )
+      profile.ltiID = user.user_id
+      createOrUpdateUser({ id_token: idToken }, profile).then((u) => {
+        return completeCallback(request, response, u)
+      })
+    })
   }
 
   // Verify the token using a JWK specified by 'kid' in the decoded token's header
@@ -158,52 +194,40 @@ router.post('/canvas/callback', function (request, response) {
     })
   }
 
-  verifyTokenByRemoteJWK().then((verified_decoded_id_token) => {
-    requestLTIServicesAccessToken(verified_decoded_id_token)
-  }).catch((error) => {
-    console.log(`Token not valid with remote jwks.json: ${error}`)
-    response.status(401).end()
-  })
+  verifyTokenByRemoteJWK()
+    .then((verified_decoded_id_token) => {
+      requestLTIServicesAccessToken(verified_decoded_id_token)
+    })
+    .catch((error) => {
+      console.log(`Token not valid with remote jwks.json: ${error}`)
+      response.status(401).end()
+    })
 })
 
 // OPTIONAL
 // Authenticate a specific user by "authentication_flow" and retrieve a JWT API access_token
 // Use this procedure in addition to /login/initiate for specific user access to the Canvas API
-router.post('/canvas/login/user', function (request, response) {
-  const { device, remember } = request.query
-  const body = response.req.body
-  request.session.device = device
+router.get('/canvas/login/user', function (request, response) {
+  const { organization, remember, client } = request.query
+  request.session.organization = organization
+  request.session.client = client
   request.session.remember = remember
   request.session.state = generators.state()
 
-  request.session.userProfile = {
-    user_id: body.user_id,
-    email: body.custom_canvas_user_login_id,
-    username: body.custom_canvas_user_login_id.substring(
-      0,
-      body.custom_canvas_user_login_id.lastIndexOf('@')
-    )
-  }
-
   let redirectUrl = CanvasAPIClient.authorizationUrl({
     state: request.session.state,
-    // scope: '/auth/userinfo',
+    // prompt: 'none'
   })
-
-  console.log(redirectUrl, 'redirectUrl')
-  console.log(response.req.body, 'first response')
   response.redirect(redirectUrl)
 })
 
 // OPTIONAL
 // Callback for "authentication_flow" specific-user authorisation
 // GET Callback contains 'code' to exchange for a specific user's access_token
-router.get('/canvas/callback', function (request, response) {
-  const { device, remember, userProfile } = request.session
+router.get('/canvas/callback', function (request, response, next) {
   const { code } = request.query
+  const { organization, client } = request.session
   const params = CanvasAPIClient.callbackParams(request)
-
-  console.log(response.req.query, 'second reponse')
 
   if (!code) {
     console.error(
@@ -216,58 +240,22 @@ router.get('/canvas/callback', function (request, response) {
       code,
     }
     CanvasAPIClient.grant(body).then((tokenSet) => {
-      console.log(tokenSet)
-      // const tokenInfo = tokenSet.claims()
-      // if (tokenInfo.iss !== CanvasAPIClient.metadata.issuer) {
-      //   const e = 'Invalid Canvas token at login'
-      //   const error = new Error(e)
-      //   console.error(`Invalid token at login. Tokeninfo: `)
-      //   console.dir(tokenInfo)
-      //   return response.status(403).send(error)
-      // }
-      //const { device, remember } = request.session
-
-      request.session.access_token = tokenSet.access_token
-      let profile = tokenSet.user
-      profile.user_id = userProfile.user_id
-      profile.username = userProfile.username
-      profile.email = userProfile.email
-      console.log(profile, 'userProfile')
-      createOrUpdateUser(
-        tokenSet,
-        { username: profile.username },
-        profile
-      ).then((user) => {
-        console.log(user)
-        completeCallback(request, response, user, device, remember)
-        /* request.session.ref = user.id
-        let s = `${new Date().toLocaleString()}: Web App Login: ${
-          user.username
-        }`
-        // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
-        let redirectUrl =
-          process.env.NODE_ENV === 'testing'
-            ? `${utilities.baseUrl}/#/login`
-            : `${utilities.baseUrl}/login`
-        console.log(s)
-        return response.redirect(redirectUrl) */
-      })
-      // Now use the access_token to retrieve user profile information
-      // DPClient.userinfo(tokenSet.access_token) // => Promise
-      //   .then((profile) => {
-      //     console.log(
-      //       `\nGot Canvas user; logging in ${profile.name} : ${profile.email} ...`
-      //     )
-      //     // Save the access_token to the User profile
-      //     // Also update any extra user information
-      //     // We assume the user has already been logged in at /canvas/login
-      //     // There therefore should already be a session set for the user
-      //     console.log(profile)
-      //     // createOrUpdateUser(tokenSet, { sub: decoded.sub }, request.body.user || {}).then(() => response.status(200).end())
-      //   })
-      //   .catch((err) => {
-      //     console.error('Error caught at DPClient userinfo: ' + err)
-      //   })
+      userDetails(tokenSet.access_token, tokenSet.user.id)
+        .then((data) => {
+          const profile = {
+            provider: 'canvas',
+            provider_id: data.id,
+            login_id: data.login_id, // <-- THIS is intended to match Dataporten user ID and Canvas API token user ID
+            email: data.primary_email || '',
+            fullName: data.name || '',
+            organization: organization,
+            client,
+          }
+          createOrUpdateUser(tokenSet, profile).then((user) =>
+            completeCallback(request, response, user)
+          )
+        })
+        .catch((error) => next(error))
     })
   }
 })

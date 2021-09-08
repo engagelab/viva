@@ -1,20 +1,26 @@
 const router = require('express').Router()
 const { generators } = require('openid-client')
 const jwt = require('jsonwebtoken')
-const utilities = require('../utilities')
 const User = require('../../models/User')
+const { organizations } = require('../../constants')
+// const { httpRequest } = require('../../utilities')
 const { createOrUpdateUser, completeCallback } = require('./helpers')
 const openidClient = require('../../services/openid')
 
 // Activate the Dataporten Clients
 let DPClient
-openidClient.createClient('dataporten').then((struct) => (DPClient = struct.client))
+openidClient
+  .createClient('dataporten')
+  .then((struct) => (DPClient = struct.client))
 
 // --------------- For Dataporten Login -----------------
 
 router.get('/dataporten/login', (req, res) => {
-  const { device, remember, testing } = req.query
-  req.session.device = device
+  const { organization, remember, testing, client } = req.query
+  if (Object.keys(organizations).includes(organization)) {
+    req.session.organization = organization // Which organization is hosting the servive e.g. 'uio'
+  }
+  req.session.client = client // Administration: 'admin' or Recorder: 'webApp' / 'mobileApp'
   req.session.remember = remember
   req.session.testing = testing || ''
 
@@ -25,20 +31,20 @@ router.get('/dataporten/login', (req, res) => {
   const code_challenge = generators.codeChallenge(code_verifier)
 
   let redirectUrl = DPClient.authorizationUrl({
-    scope: 'openid groups profile email',
+    scope: 'openid groups profile email userid userid-feide groups-org groups-edu groups-other',
     // resource: 'https://my.api.example.com/resource/32178',
     code_challenge,
     code_challenge_method: 'S256',
   })
   if (process.env.NODE_ENV !== 'production' && testing) {
-    redirectUrl = `${utilities.baseUrl}/auth/dataporten/callback`
+    redirectUrl = `${process.env.VUE_APP_SERVER_HOST}/auth/dataporten/callback`
   }
   res.redirect(redirectUrl)
 })
 
 router.get('/dataporten/callback', function (request, response) {
   const params = DPClient.callbackParams(request)
-  const { device, code_verifier, testing, remember } = request.session
+  const { code_verifier, testing, organization, client } = request.session
 
   // FOR AUTOMATED TESTS ONLY
   if (process.env.NODE_ENV !== 'production' && testing) {
@@ -46,24 +52,26 @@ router.get('/dataporten/callback', function (request, response) {
       access_token: '',
       id_token: '',
     }
-    const tokenInfo = {
-      sub: testing === 'testuser' || testing === 'testuser2' ? testing : 'testuser',
-    }
     const profile = {
-      name: testing === 'testuser1' ? 'Test User - pedleder' : 'Test User - foresatt',
+      provider: 'dataporten',
+      provider_id: '',
+      login_id: 'testuser1', // <-- THIS is intended to match Dataporten user ID and Canvas LTI + API token user ID
       email: `${testing}@engagelab.uio.no`,
+      fullName: testing === 'testuser1'
+        ? 'Test User - pedleder'
+        : 'Test User - foresatt',
+      organization: organization,
+      client,
     }
-    return createOrUpdateUser(
-      tokenSet,
-      { sub: tokenInfo.sub },
-      profile
-    ).then((user) =>
-      completeCallback(request, response, user, device, remember)
+    return createOrUpdateUser(tokenSet, profile).then(
+      (user) => completeCallback(request, response, user)
     )
   }
 
   // Verify the received code with Dataporten, which should return the tokenSet
-  DPClient.callback(DPClient.metadata.redirect_uris[0], params, { code_verifier }) // => Promise
+  DPClient.callback(DPClient.metadata.redirect_uris[0], params, {
+    code_verifier,
+  }) // => Promise
     .then((tokenSet) => {
       const tokenInfo = tokenSet.claims()
       if (
@@ -78,20 +86,56 @@ router.get('/dataporten/callback', function (request, response) {
       }
 
       // Now use the access_token to retrieve user profile information
-      DPClient.userinfo(tokenSet.access_token) // => Promise
-        .then((profile) => {
-          console.log(
-            `\nGot DP user; logging in ${profile.name} : ${profile.email} ...`
-          )
+      DPClient.userinfo(tokenSet.access_token, { params: { scope: 'groups-org groups-edu groups-other' } }) // => Promise
+        .then((data) => {
 
-          // Configure the user profile in our DB, and finally respond to the client
-          createOrUpdateUser(
-            tokenSet,
-            { sub: tokenInfo.sub },
-            profile
-          ).then((user) =>
-            completeCallback(request, response, user, device, remember)
+          // Dataporten calls for retrieving GROUPS and ORGS (orgs not working..)
+
+/*           const options = {
+            host: 'groups-api.dataporten.no',
+            path: `/groups/me/groups`,
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${tokenSet.access_token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+          httpRequest(options, '').then((groups) => {
+            console.dir(groups)
+            const options2 = {
+              host: 'api.feide.no',
+              path: `/2/org/all`,
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${tokenSet.access_token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+            httpRequest(options2, '').then((orgs) => {
+              console.dir(orgs)
+            }).catch(error => console.log(error.toString()))
+          }) */
+
+           console.log(
+            `\nGot DP user; logging in ${data.name} : ${data.email} ...`
           )
+          const profile = {
+            provider: 'dataporten',
+            provider_id: data.sub,
+            login_id: '', // <-- THIS is intended to match Dataporten user ID and Canvas LTI + API token user ID
+            email: data.email || '',
+            fullName: data.name || '',
+            organization: organization,
+            client,
+          }
+          let provider_id =
+            data['dataporten-userid_sec'] || data['connect-userid_sec']
+          if (provider_id && provider_id.length > 0) {
+            provider_id = provider_id[0].split(':')
+            if (provider_id.length === 2) profile.login_id = provider_id[1]
+          }
+          // Configure the user profile in our DB, and finally respond to the client
+          createOrUpdateUser(tokenSet, profile).then((user) => completeCallback(request, response, user))
         })
         .catch((err) => {
           console.error('Error caught at DPClient userinfo: ' + err)

@@ -2,20 +2,24 @@
   <div
     class="flex flex-row items-center justify-between viva-item max-w-xs"
     :class="backgroundColour"
-    @click.native="openVideo()"
   >
     <div class="max-w-24">
       <p class="text-sm">{{ datasetName }}</p>
-      <p class="font-vagBold">{{ video.name }}</p>
-      <p>{{ video.description }}</p>
-      <p :class="videoStatus.textClass">{{ videoStatus.text }} {{ videoProgress }}</p>
+      <p class="font-vagBold">{{ video.details.name }}</p>
+      <p>{{ video.details.description }}</p>
+      <p :class="videoStatus.textClass">
+        {{ videoStatus.text }} {{ videoProgress }}
+      </p>
       <Button
-        v-if="video.status == 'edited' && videoStatus.google"
+        v-if="
+          video.status.main == VIDEO_STATUS_TYPES.edited && videoStatus.google
+        "
         logo="google"
         customWidth="250px"
         :disabled="disableTransfer"
-        @click="transferVideo()"
-      >{{ $t('Overføre') }}</Button>
+        @vclick="transferVideo()"
+        >{{ t('Overføre') }}</Button
+      >
     </div>
     <div class="pl-4" @click="clickItem(videoStatus)">
       <SVGSymbol
@@ -29,169 +33,203 @@
   </div>
 </template>
 
-<i18n>
-{
-  "no": {
-    "Overføre": "Overføre til permanent lagring"
-  },
-  "en": {
-    "Overføre": "Transfer to permanent storage"
-  }
+<script lang="ts">
+import {
+  defineComponent,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  ref,
+  toRefs,
+  PropType,
+} from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Video } from '@/types/main'
+import { useVideoStore } from '@/store/useVideoStore'
+
+const { actions: videoActions } = useVideoStore()
+
+import SVGSymbol from './base/SVGSymbol.vue'
+import Button from './base/Button.vue'
+import {
+  VIDEO_STATUS_TYPES,
+  VIDEO_STORAGE_TYPES,
+  videoProgressCheckInterval,
+} from '@/constants'
+
+interface VideoStatus {
+  text: string
+  textClass: string
+  status: string
+  symbol: string
+  symbolClass: string
+  google: boolean
 }
-</i18n>
 
-<script>
-import { mapGetters, mapActions } from 'vuex';
-import SVGSymbol from './base/SVGSymbol';
-import Button from './base/Button';
-import constants from '../constants';
-
-const { strings, baseUrl } = constants;
-export default {
+export default defineComponent({
   components: {
     SVGSymbol,
     Button,
   },
   props: {
     video: {
-      type: Object,
-      default: undefined,
-    },
-    isLastVideo: {
-      type: Boolean,
-      default: false,
+      type: Object as PropType<Video>,
+      required: true,
     },
   },
-  computed: {
-    ...mapGetters('setting', ['settingById']),
-    backgroundColour() {
-      const status = this.video.status == 'edited' ? 'bg-green' : '';
-      return this.itemSelected ? 'bg-white' : status;
-    },
-    datasetName() {
-      if (this.video.datasetInfo && this.video.datasetInfo.utvalg) {
-        const utvalg = this.video.datasetInfo.utvalg.reduce((acc, curr) => {
-          const split = curr.split(':')
-          return `${acc} > ${split[1]}`
+  setup(props, context) {
+    const messages = {
+      nb_NO: {
+        Overføre: 'Overføre til permanent lagring',
+      },
+      en: {
+        Overføre: 'Transfer to permanent storage',
+      },
+    }
+    const { t } = useI18n({ messages })
+    const { video } = toRefs(props)
+    const itemSelected = false
+    let progressUpdateTimeout: number
+    const disableTransfer = ref(false)
+    const backgroundColour = computed(() => {
+      const status =
+        video.value.status.main == VIDEO_STATUS_TYPES.edited ? 'bg-green' : ''
+      return itemSelected ? 'bg-white' : status
+    })
+    const datasetName = computed(() => {
+      if (video.value.dataset && video.value.dataset.selection) {
+        const selection = video.value.dataset.selection.reduce((acc, curr) => {
+          return `${acc} > ${curr.title}`
         }, '')
-        return `${this.video.datasetInfo.name} ${utvalg}`
+        return `${video.value.dataset.name} ${selection}`
       } else {
         return ''
       }
-    },
-    videoStatus() {
-      const status = {
+    })
+    const videoStatus = computed(() => {
+      const v = video.value
+      const status: VideoStatus = {
         text: 'Sjekk samtykker',
         textClass: 'text-viva-korall',
         status: 'draft',
         symbol: 'viva',
         symbolClass: 'text-viva-korall',
         google: false,
-      };
-      if (this.video.status == 'draft' && !this.video.subState.consented) {
-        status.text = 'Sjekk samtykker';
-      } else if (
-        this.video.status == 'draft' &&
-        !this.video.subState.classified
-      ) {
-        status.text = 'Må klassifiseres';
-      } else if (this.video.status == 'draft' && !this.video.subState.edited) {
-        status.text = 'Klipper og legger på filtre';
-        status.symbolClass = 'text-viva-korall';
-        status.textClass = 'text-viva-lilla';
-      } else if (this.video.status == 'complete') {
-        status.text = 'Opptak er lagret';
-        status.symbolClass = 'black';
-        status.textClass = 'black';
-        status.symbol = 'accept';
-      } else if (this.video.status == 'error') {
-        status.text = 'Error';
-        status.symbolClass = 'red';
-        status.textClass = 'red';
-      } else if (
-        this.video.status != 'draft' &&
-        this.video.status != 'edited' &&
-        this.video.status != 'error' &&
-        this.video.status != 'complete'
-      ) {
-        status.text = 'Opptak behandles av UiOs VIVA tjeneste ...';
-        status.symbol = 'wait';
-        status.symbolClass = 'black';
-        status.textClass = 'black';
-      } else if (this.video.status == 'edited') {
-        status.text = 'Klar til overføring';
-        status.symbol = 'accept';
-        status.symbolClass = 'green';
-        status.textClass = 'green';
-        status.google = this.video.storages.some(name => name == 'google');
       }
-      return status;
-    },
-    videoProgress: function() {
-      if (this.video.pipelineInProgress) {
-        return 'Opptak behandles...';
-      } else if (this.video.uploadInProgress) {
-        return 'Opptak sendes til lagring...';
-      } else if (this.video.encryptionInProgress) {
-        return 'Opptak krypteres...';
-      } else if (this.video.decryptionInProgress) {
-        return 'Opptak dekrypteres...';
+      if (v.status.main == VIDEO_STATUS_TYPES.draft && !v.status.isConsented) {
+        status.text = 'Sjekk samtykker'
+      } else if (
+        v.status.main == VIDEO_STATUS_TYPES.draft &&
+        !v.status.isClassified
+      ) {
+        status.text = 'Må klassifiseres'
+      } else if (
+        v.status.main == VIDEO_STATUS_TYPES.draft &&
+        !v.status.isEdited
+      ) {
+        status.text = 'Klipper og legger på filtre'
+        status.symbolClass = 'text-viva-korall'
+        status.textClass = 'text-viva-lilla'
+      } else if (
+        v.status.main == VIDEO_STATUS_TYPES.stored ||
+        v.status.main === VIDEO_STATUS_TYPES.complete
+      ) {
+        status.text = 'Opptak er lagret'
+        status.symbolClass = 'black'
+        status.textClass = 'black'
+        status.symbol = 'accept'
+      } else if (v.status.main == VIDEO_STATUS_TYPES.error) {
+        status.text = 'Error'
+        status.symbolClass = 'red'
+        status.textClass = 'red'
+      } else if (
+        v.status.main === VIDEO_STATUS_TYPES.uploaded ||
+        v.status.main === VIDEO_STATUS_TYPES.decrypted
+      ) {
+        status.text = 'Opptak behandles av UiOs VIVA tjeneste ...'
+        status.symbol = 'wait'
+        status.symbolClass = 'black'
+        status.textClass = 'black'
+      } else if (v.status.main == VIDEO_STATUS_TYPES.edited) {
+        status.text = 'Konvertert. venter på overføring ..'
+        status.symbol = 'wait'
+        status.symbolClass = 'green'
+        status.textClass = 'green'
+        status.google = video.value.storages.some(
+          (s) => s.kind == VIDEO_STORAGE_TYPES.google
+        )
+      }
+      return status
+    })
+    const videoProgress = computed(() => {
+      if (video.value.status.inPipeline) {
+        return 'Opptak behandles...'
+      } else if (video.value.status.uploadInProgress) {
+        return 'Opptak sendes til lagring...'
+      } else if (video.value.status.encryptionInProgress) {
+        return 'Opptak krypteres...'
+      } else if (video.value.status.decryptionInProgress) {
+        return 'Opptak dekrypteres...'
       } else {
-        return '';
+        return ''
       }
-    },
-  },
-  data() {
-    return {
-      itemSelected: false,
-      progressUpdateTimeout: undefined,
-      disableTransfer: false
-    };
-  },
-  mounted() {
-    this.progressUpdateTimeout = window.setInterval(() => {
-      if (
-        this.video.status != 'draft' &&
-        this.video.status != 'complete' &&
-        this.video.status != 'error'
-      ) {
-        this.checkVideoProgress(this.video).catch(() => {
-          window.clearInterval(this.progressUpdateTimeout);
-        });
-      } else if (this.progressUpdateTimeout) {
-        window.clearInterval(this.progressUpdateTimeout);
+    })
+
+    onMounted(() => {
+      progressUpdateTimeout = window.setInterval(() => {
+        if (
+          video.value.status.main != VIDEO_STATUS_TYPES.draft &&
+          video.value.status.main != VIDEO_STATUS_TYPES.complete &&
+          video.value.status.main != VIDEO_STATUS_TYPES.error
+        ) {
+          videoActions.fetchVideoStatus(video.value).catch(() => {
+            window.clearInterval(progressUpdateTimeout)
+          })
+        } else if (progressUpdateTimeout) {
+          window.clearInterval(progressUpdateTimeout)
+        }
+      }, videoProgressCheckInterval * 1000)
+    })
+
+    onBeforeUnmount(() => {
+      if (progressUpdateTimeout) {
+        window.clearInterval(progressUpdateTimeout)
       }
-    }, strings.videoProgressCheckInterval * 1000);
-  },
-  beforeDestroy() {
-    if (this.progressUpdateTimeout) {
-      window.clearInterval(this.progressUpdateTimeout);
-    }
-  },
-  methods: {
-    ...mapGetters('general', ['useCordova', 'isLoggedIn']),
-    ...mapActions('video', ['checkVideoProgress', 'initiateTransfer']),
-    clickItem(status) {
+    })
+
+    function clickItem(status: VideoStatus) {
       if (status.symbol == 'viva') {
-        // this.itemSelected = true;
         setTimeout(() => {
-          this.$emit('select-video', { video: this.video });
-        }, 100);
+          context.emit('select-video', video.value)
+        }, 100)
       }
-    },
+    }
     // Initiate transfer of the video from VIVA server to final storage location
-    transferVideo() {
-      if (!this.disableTransfer) {
-        this.initiateTransfer({
+    function transferVideo() {
+      if (!disableTransfer.value) {
+        /* this.initiateTransfer({
           video: this.video,
           settingId: this.video.settingId,
           mode: 'transfer',
-        });
+        }) */
       }
-      this.disableTransfer = true;
-    },
+      disableTransfer.value = true
+    }
+
+    return {
+      t,
+      disableTransfer,
+      videoProgress,
+      videoStatus,
+      datasetName,
+      backgroundColour,
+      VIDEO_STATUS_TYPES,
+
+      clickItem,
+      transferVideo,
+    }
   },
-};
+})
 </script>
 
 <style scoped>

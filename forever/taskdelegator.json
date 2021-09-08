@@ -1,0 +1,10 @@
+{
+  "uid": "viva-td",
+  "append": true,
+  "watch": false,
+  "script": "server/taskDelegator.js",
+  "sourceDir": "/engagelab/viva",
+  "logFile": "viva-td.log",
+  "outFile": "viva-td-stdout.log",
+  "errFile": "viva-td-stderr.log"
+}

@@ -1,0 +1,15 @@
+{
+  "cancel": "cancel",
+  "accept": "accept",
+  "save": "save",
+  "done": "done",
+  "back": "back",
+  "edit": "edit",
+  "close": "close",
+  "open": "open",
+  "add": "add",
+  "clear": "clear",
+  "privacyPolicy": "Privacy policy",
+  "mailtoBody": "Follow the URL in this link to give consent",
+  "mailtoSubject": "Samtykker"
+}

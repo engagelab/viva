@@ -1,13 +1,95 @@
 const { execSync } = require('child_process')
 const fs = require('fs')
 const dirPath = process.cwd()
-
-//const User = require('./models/User')
-//const Datasett = require('./models/Datasett')
-//const videoStorageTypes = require('./constants').videoStorageTypes
-//const pilotDatasett = require('./constants').pilotDatasett
+const Dataset = require('./models/Dataset')
+const Video = require('./models/Video')
+const { videoStorageTypes, consentTypes } = require('./constants')
+/* const { uploadS3File } = require('./services/storage') */
 const videoFolderNames = require('./constants').videoFolderNames
 
+Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
+  let dataSett = foundSetting
+  if (err) {
+    return console.log(err)
+  } else if (!dataSett) {
+    dataSett = {
+      name: 'test',
+      description: 'test description',
+      created: new Date(),
+      formId: 'none', // Nettskjema form ID
+      status: {
+        lastUpdated: new Date(), // Last time this Dataset was changed
+        active: true, // Only active datasetts who will be fetched
+        lockedBy: undefined, // Who has locked the datasett for editing
+      },
+
+      consent: {
+        kind: consentTypes.manual,
+      },
+      users: {
+        adminGroup: 'test',
+        groups: ['23222'],
+      },
+      selectionPriority: [], // Order of appearance of the utvalg categories
+      selection: {}, //  'utvalg' selection
+      storages: [
+        {
+          name: videoStorageTypes.educloud,
+          groupId: 'testGroupID',
+          file: {
+            // Path and name will be constructed from attributes from Video and Dataset based on these array entries
+            path: ['folder1', 'folder2'],
+            name: ['filename1', 'filename2'],
+          },
+          category: [],
+        },
+      ],
+    }
+    Dataset.create(dataSett)
+    console.log('Created a test Setting')
+  }
+})
+
+Video.findOne({ 'file.name': 'VideoTest' }, (error, v) => {
+  let video = v
+  if (error) {
+    return console.log(error)
+  } else if (!video) {
+    video = {
+      file: {
+        type: 'dna',
+        name: 'VideoTest',
+        mimeType: 'video/mp4',
+      },
+      details: {
+        id: 'videoTextid',
+        name: 'Video Tester',
+        category: 'green', // green, yellow, red
+        created: Date.now(),
+        description: 'Video Test description',
+        duration: '1000', // Seconds  created: { type: Date },
+        encryptionKey: 'Text encrypt',
+        encryptionIV: { type: {} }, // Mixed type. Mongoose has no type for UInt8Array..
+      },
+      status: {
+        main: 'uploaded',
+      },
+      users: {
+        sharedWith: [], // Users who can see this video. Used for easier searching
+        sharing: [],
+      },
+      consents: [], // These are the consents confirmed by the teacher in this recording
+      storages: [],
+    }
+    Video.create(video)
+    console.log('Created a video Setting')
+  }
+})
+
+/* uploadS3File({
+  path: './videos/uploaded/ForBiggerBlazes.mp4',
+  keyname: 'blazinghot',
+}).then((res) => console.log(res)) */
 /*const createReference = data =>
   require('crypto')
     .createHash('sha1')
@@ -46,39 +128,13 @@ const videoFolderNames = require('./constants').videoFolderNames
       }
     )
     // Not needed anymore
-    /*Datasett.findOne(
-        { 'storages[0].name': videoStorageTypes.google },
-        (err, foundSetting) => {
-          let dataSett = foundSetting
-          if (err) {
-            return console.log(err)
-          } else if (!dataSett) {
-            /* let storage = {
-              storageName: videoStorageTypes.google
-            }
-            dataSett = {
-              navn: 'Test Title',
-              storages: {
-                primary: {
-                  name: videoStorageTypes.google
-                }
-              },
 
-              created: Date.now(),
-              dataManager: 'engagelab',
-              elementer: 23
-            }
-            Datasett.create(dataSett)
-            console.log('Created a test Setting')
-          }
-        }
-      )
   }
 }
 
 const createPilotSchoolList = () => {
-  pilotDatasett.forEach(dataSett => {
-    Datasett.findOne({ navn: dataSett }, (err, foundSetting) => {
+  pilotDataset.forEach(dataSett => {
+    Dataset.findOne({ navn: dataSett }, (err, foundSetting) => {
       let setting = foundSetting
       if (err) {
         return console.log(err)
@@ -94,10 +150,10 @@ const createPilotSchoolList = () => {
             },
           navn: dataSett,
           created: Date.now(),
-          dataManager: 'engagelab',
+          owner: 'engagelab',
           elementer: 23
         }
-        Datasett.create(setting)
+        Dataset.create(setting)
         console.log(`Created a pilot school: ${dataSett}`)
       }
     })
@@ -108,9 +164,9 @@ const createVideoDirectories = () => {
   const videoDir = `${dirPath}/videos`
   const subDirs = Object.values(videoFolderNames)
 
-  const createVideoSubDirectory = subDir => {
+  const createVideoSubDirectory = (subDir) => {
     if (!fs.existsSync(subDir)) {
-      execSync(`mkdir ${subDir}`, error => {
+      execSync(`mkdir ${subDir}`, (error) => {
         if (error) {
           console.error('Unable to create video subdirectory')
         }
@@ -119,13 +175,13 @@ const createVideoDirectories = () => {
   }
 
   if (!fs.existsSync(videoDir)) {
-    execSync(`mkdir ${dirPath}/videos`, error => {
+    execSync(`mkdir ${dirPath}/videos`, (error) => {
       if (error) {
         console.error('Unable to create video storage directory')
       }
     })
   }
-  subDirs.forEach(subDir => createVideoSubDirectory(`${videoDir}/${subDir}`))
+  subDirs.forEach((subDir) => createVideoSubDirectory(`${videoDir}/${subDir}`))
 }
 
 module.exports = {

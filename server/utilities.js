@@ -1,15 +1,20 @@
 /*
  Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
-const Datasett = require('./models/Datasett')
-const moment = require('moment');
-const crypto = require('crypto');
-const bcrypt = require('bcrypt');
+const crypto = require('crypto')
+const bcrypt = require('bcrypt')
+const https = require('https')
+const jwt = require('jsonwebtoken')
+const ObjectId = require('mongoose').Types.ObjectId
+const User = require('./models/User')
+const { userRoles } = require('./constants')
 
-const addZero = i => {
+let TEST_MODE = false
+
+const addZero = (i) => {
   return i < 10 ? '0' + i : i
 }
-const asFormattedDateString = date => {
+const asFormattedDateString = (date) => {
   return (
     date.getDate() +
     '-' +
@@ -23,121 +28,175 @@ const asFormattedDateString = date => {
   )
 }
 
-const shuffleArray = array => {
-  const a = array.slice();
-  for (let i = a.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-};
-
 function createReference(data) {
-  return crypto
-    .createHash('sha256')
-    .update(data)
-    .digest('base64');
+  return crypto.createHash('sha256').update(data).digest('base64')
 }
 
 // Returns a Promise(hashed version of the password)
 const hash = (password) => bcrypt.hash(password, 10)
 // Returns a Promise(true) if password matches the hashed password
-const hashCompare = (password, hashedPassword) => bcrypt.compare(password, hashedPassword)
+const hashCompare = (password, hashedPassword) =>
+  bcrypt.compare(password, hashedPassword)
 
+const tempUserStore = {}
 
-const formPath = (path, datasett, video) => {
-  return new Promise((resolve, reject) => {
-    let folder = '';
-    // const regex = / /g;
-    path.forEach(p => {
-      if (p.length != 0) {
-        if (p == 'datasettName')
-          folder = folder + '/' + datasett.navn;
-        if (p == 'fileId')
-          folder =
-            folder + '/' + video.fileId.substring(0, 7);
-        if (p == 'timeStamp') {
-          folder =
-            folder + '/' + moment(video.created).format('DD-MMM-YYYY-hh-mm-ss');
-        }
-        if (p == 'dataManager') {
-          folder = folder + '/' + datasett.dataManager.name;
-        }
-        if (p == 'UserID') {
-          folder = folder + '/' + video.userId;
-        }
-      }
-
-    });
-    if (folder.indexOf('/') == 0)
-      folder = folder.slice(1);
-    if (folder)
-      resolve(folder)
-    else
-      reject('Path not found')
-  });
-
-
+const shuffleArray = (array) => {
+  const a = array.slice()
+  for (let i = a.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
 }
 
-/* Fetch Storage location from Datasett for selected video */
-const fetchStorage = async video => {
-  try {
-    let datasett = await Datasett.findById(video.settingId)
+const setTestMode = (mode) => {
+  TEST_MODE = mode
+}
 
-    let promises =  datasett.storages.map(async storage => {
-      let store= await fetchStore({
-         storage:storage,
-         datasett: datasett,
-         video:video
-      })
-      return store;
-    })
-    const stores = await Promise.all(promises)
-    return  stores;
+const getTestMode = () => TEST_MODE
+
+function createToken(req, res, next) {
+  const jwtToken = req.headers.authorization
+    ? req.headers.authorization.substring(4)
+    : req.query.jwt
+  try {
+    return jwt.verify(
+      jwtToken,
+      new Buffer.from(process.env.JWT_SECRET, 'base64')
+    )
   } catch (error) {
-    console.log(error)
+    return next(error)
   }
 }
-const fetchStore = (video) => {
-  return new Promise((resolve) => {
-    const store = {};
-    const slashes = /[/]/g;
-    let path = formPath(
-      video.storage.storagePath.path,
-      video.datasett,
-      video.video);
-    let fileName = formPath(
-      video.storage.storagePath.fileName,
-      video.datasett,
-      video.video);
-     Promise.all([path, fileName]).then((paths) => {
 
-      if (video.storage.name == 'lagringshotell') {
-        let basePath = '';
-        if (process.env.LAGRINGSHOTELL) {
-          basePath = process.env.LAGRINGSHOTELL;
-        }
-        else { basePath = '/Users/sharanya/Projects/sidok/videos' + '/' }
-        const regex = / /g
-        if (video.storage.groupId)
-          store.path = basePath + video.storage.groupId + '/' + paths[0]
-        else
-          store.path = basePath + paths[0]
-        store.path = store.path.replace(regex, "");
-        store.type = 'lagringshotell';
-        store.fileName = paths[1].replace(slashes, "-");
-      } else if (video.storage.name == 'google') {
-        store.path = paths[0]
-        store.type = 'google'
+function tokenAuth(req, res, next, googleMobileAppTransfer) {
+  // This is needed to compensate for an Android issue where session cookie is not being set in the webview.
+  // So we attempt to use the token for verification instead..
+  const token = createToken(req, res, next)
+  if (token && token.ref && tempUserStore[token.ref]) {
+    // Avoid a DB lookup if possible
+    req.session.ref = tempUserStore[token.ref]
+    req.session.save()
+    console.log(
+      `${new Date().toUTCString()} Authorisation by token (temp store) for userid: ${
+        req.session.ref
+      } ${googleMobileAppTransfer ? 'for Google Transfer' : ''}`
+    )
+    return next()
+  } else if (token && token.ref) {
+    User.findOne({ reference: token.ref }, (err2, user) => {
+      if (!err2 && user) {
+        req.session.ref = user.id
+        tempUserStore[token.ref] = user.id
+        req.session.save()
+        console.log(
+          `${new Date().toUTCString()} Authorisation by token for userid: ${
+            user.id
+          } username: ${user.username} ${
+            googleMobileAppTransfer ? 'for Google Transfer' : ''
+          }`
+        )
+        return next()
       } else {
-        store.path = ''
-        store.type = 'unknownStorageType'
+        return next(err2)
       }
-      resolve(store)
     })
-   })
+  }
 }
+
+const authoriseUser = (req, res, next) => {
+  const device = req.query.device
+  const mobileApp = typeof device === 'string' && device == 'mobileApp'
+  const googleMobileAppTransfer =
+    mobileApp && req.route.path == '/google_transfer'
+  if (req.method == 'OPTIONS') {
+    next()
+  } else if (req.session && req.session.id && req.session.ref) {
+    User.findById(req.session.ref, (usererr, user) => {
+      if (!usererr && user) {
+        res.locals.user = user
+        req.session.user = user
+        return next()
+      } else {
+        return next(usererr)
+      }
+    })
+  } else if (req.headers.authorization || googleMobileAppTransfer) {
+    tokenAuth(req, res, next, googleMobileAppTransfer)
+  } else {
+    var err = new Error('Invalid login')
+    err.status = 401
+    return next(err)
+  }
+}
+
+// Check that a user has at least the role requested
+const hasMinimumUserRole = (user, requestedRole) => {
+  if (!user) return false
+  switch (requestedRole) {
+    case userRoles.user:
+      return true
+    case userRoles.monitor:
+      return user.status.role === userRoles.monitor ||
+        user.status.role === userRoles.admin
+        ? true
+        : false
+    case userRoles.admin:
+      return user.status.role === userRoles.admin ? true : false
+    default:
+      return false
+  }
+}
+
+/**  https Request to TSD/ outside portal from  VIVA server */
+function httpRequest(options, postData) {
+  return new Promise(function (resolve, reject) {
+    const req = https.request(options, (res) => {
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        reject(
+          new Error(
+            `Rejected HTTP Response. statusCode: ${res.statusCode} calling: ${
+              options.host + options.path
+            } `
+          )
+        )
+      }
+      let data = []
+      res.on('data', function (chunk) {
+        data.push(chunk)
+      })
+      res.on('end', function () {
+        if (data.join('') === '') {
+          // You are being throttled - handle it
+          return reject(new Error('Remote server throttling'))
+        } else if (data.join('').startsWith('<!DOCTYPE html>')) {
+          // The user is invalid - handle it
+          return reject(new Error('Invalid response'))
+        } else {
+          // Everything is OK
+          // json = JSON.parse(Buffer.concat(data).toString())
+          const d = data.join('')
+          if (d === 'Invalid access token') reject(new Error('Access token not valid for this request'))
+          else {
+            const json = JSON.parse(d)
+            resolve(json)
+          }
+        }
+      })
+    })
+    req.on('error', function (error) {
+      console.log(`HTTP Request error: ${error}`)
+      reject(error)
+    })
+    if (postData) {
+      req.write(postData)
+    }
+    req.end()
+  })
+}
+
+const isValidObjectId = (id) =>
+  ObjectId.isValid(id) && String(new ObjectId(id) === id)
 
 module.exports = {
   asFormattedDateString,
@@ -145,6 +204,10 @@ module.exports = {
   createReference,
   hash,
   hashCompare,
-  fetchStorage,
-  formPath
+  authoriseUser,
+  hasMinimumUserRole,
+  setTestMode,
+  getTestMode,
+  httpRequest,
+  isValidObjectId,
 }

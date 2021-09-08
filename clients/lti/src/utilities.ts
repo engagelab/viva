@@ -1,6 +1,6 @@
 import { isRef, ref, Ref } from 'vue'
 import { User } from './types/main'
-import { USER_ROLE } from './constants'
+import { USER_ROLE, usernameColourMode } from './constants'
 
 const wrap = <T>(element: Ref<T> | T): Ref<T> => {
   if (isRef(element)) {
@@ -33,8 +33,39 @@ const shuffleItems = <T>(itemsArray: Array<T>): Array<T> => {
   return indexArray.map((index) => itemsArray[index])
 }
 
+// Input time as a number - seconds as whole with milliseconds as the decimal e.g. 12.65 = 12 seconds 650 milliseconds
+const formatTime = (timeInSeconds: number, offsetTime = 0): string => {
+  // Adjust for offset
+  const adjustedTimeInSeconds = Math.floor(timeInSeconds - offsetTime)
+
+  let minutes = Math.floor(adjustedTimeInSeconds / 60)
+  const hours = Math.floor(minutes / 60)
+  // prettier-ignore
+  minutes = hours > 0 ? Math.floor(minutes % (60 * hours)) : minutes
+  const seconds =
+    minutes > 0
+      ? Math.floor(adjustedTimeInSeconds % (60 * minutes + 60 * 60 * hours))
+      : Math.floor(adjustedTimeInSeconds)
+  const minutesString = minutes > 9 ? minutes : '0' + minutes
+  const secondsString = seconds > 9 ? seconds : '0' + seconds
+  return `${hours}:${minutesString}:${secondsString}`
+}
+
+// Reverse function to 'formatTime'
+// Expects a string in the form '0:00:00' (single hour:mins:seconds)
+const formattedTimeToSeconds = (timeString: string): number => {
+  const timeArray = timeString.split(':')
+  if (timeArray.length === 3)
+    return (
+      parseInt(timeArray[0]) * 3600 +
+      parseInt(timeArray[1]) * 60 +
+      parseInt(timeArray[2])
+    )
+  return -1
+}
+
 // https://stackoverflow.com/questions/3552461/how-to-format-a-javascript-date
-const dateToFormattedString = (date: Date): string => {
+const formatDate = (date: Date): string => {
   const monthNames = [
     'January',
     'February',
@@ -65,6 +96,28 @@ const dateToFormattedString = (date: Date): string => {
   )
 }
 
+function getBrightColour(hash: number): string {
+  return `hsla(${~~(360 * hash)},70%,70%,1)`
+}
+function getNormalColour(hash: number): string {
+  let colour = '#'
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xff
+    colour += ('00' + value.toString(16)).substr(-2)
+  }
+  return colour
+}
+
+const stringToColour = (str: string): string => {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return usernameColourMode === 'bright'
+    ? getBrightColour(hash)
+    : getNormalColour(hash)
+}
+
 // Random UUID. See https://gist.github.com/jed/982883
 const uuid = (a = ''): string =>
   a
@@ -78,18 +131,19 @@ const hasMinimumRole = (user: User, requestedRole: USER_ROLE): boolean => {
     case USER_ROLE.user:
       return true
     case USER_ROLE.monitor:
-      return user.role === USER_ROLE.monitor || user.role === USER_ROLE.admin
+      return user.status.role === USER_ROLE.monitor ||
+        user.status.role === USER_ROLE.admin
         ? true
         : false
     case USER_ROLE.admin:
-      return user.role === USER_ROLE.admin ? true : false
+      return user.status.role === USER_ROLE.admin ? true : false
     default:
       return false
   }
 }
 
 const emitError = (error: Error): void => {
-  const e = new CustomEvent<Error>('vivaerror', {
+  const e = new CustomEvent<Error>('slpluserror', {
     detail: error,
   })
   window.dispatchEvent(e)
@@ -104,51 +158,16 @@ const wait = (ms: number): Promise<void> => {
   })
 }
 
-enum WINDOW_SIZES {
-  OLD_HEIGHT = 768,
-  OLD_WIDTH = 1024,
-  /*  NEW_HEIGHT = window.innerHeight,
-  NEW_WIDTH = window.innerWidth, */
-  NEW_HEIGHT = 768,
-  NEW_WIDTH = 1024,
-  SCALE = Math.min(NEW_WIDTH / OLD_WIDTH, NEW_HEIGHT / OLD_HEIGHT),
-  SCALE_Y = NEW_HEIGHT / OLD_HEIGHT,
-  SCALE_X = NEW_WIDTH / OLD_WIDTH,
-}
-
-const scaleContent = (): number => {
-  return Math.min(
-    WINDOW_SIZES.NEW_WIDTH / WINDOW_SIZES.OLD_WIDTH,
-    WINDOW_SIZES.NEW_HEIGHT / WINDOW_SIZES.OLD_HEIGHT
-  )
-}
-
-interface Coordinates {
-  h: number
-  w: number
-  x: number
-  y: number
-}
-const getCoordinates = (coordinates: Coordinates): Coordinates => {
-  const scaledCoordinates = {
-    h: coordinates.h * WINDOW_SIZES.SCALE_Y,
-    w: coordinates.w * WINDOW_SIZES.SCALE_X,
-    x: coordinates.x * WINDOW_SIZES.SCALE_X,
-    y: coordinates.y * WINDOW_SIZES.SCALE_Y,
-  }
-  return scaledCoordinates
-}
-
 export {
   uuid,
-  dateToFormattedString,
+  formatDate,
+  formatTime,
+  formattedTimeToSeconds,
   wrap,
   convertFilePath,
   wait,
   hasMinimumRole,
   shuffleItems,
   emitError,
-  getCoordinates,
-  scaleContent,
-  WINDOW_SIZES,
+  stringToColour,
 }

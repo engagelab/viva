@@ -20,13 +20,13 @@
   </div>
 </template>
 
-<script>
-import { mapGetters, mapActions } from 'vuex';
-import SVGSymbol from '../../components/base/SVGSymbol';
-import constants from '../../constants';
+<script lang="ts">
+import { defineComponent, ref, computed } from 'vue'
 
-const { baseUrl } = constants;
-export default {
+import SVGSymbol from './SVGSymbol.vue'
+import { baseUrl } from '@/constants'
+
+export default defineComponent({
   components: {
     SVGSymbol,
   },
@@ -48,28 +48,28 @@ export default {
       default: undefined,
     },
   },
-  computed: {
-    backgroundColour() {
-      return this.itemSelected ? 'bg-white' : '';
-    },
-  },
-  data() {
-    return {
-      itemSelected: false,
-    };
-  },
-  methods: {
-    ...mapGetters('general', ['useCordova', 'isLoggedIn']),
-    ...mapActions('general', ['logout']),
-    clickItem() {
-      this.itemSelected = true;
+  setup(props, context) {
+    const itemSelected = ref(false)
+    const backgroundColour = computed(() => {
+      return itemSelected.value ? 'bg-white' : ''
+    })
+    function clickItem() {
+      itemSelected.value = true
       setTimeout(() => {
-        this.$emit('slider-change', { data: this.data, keyName: this.keyName });
-      }, 100);
-    },
+        context.emit('slider-change', {
+          data: props.data,
+          keyName: props.keyName,
+        })
+      }, 100)
+    }
+    return {
+      itemSelected,
+      backgroundColour,
+      clickItem,
+      baseUrl,
+    }
   },
-};
+})
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

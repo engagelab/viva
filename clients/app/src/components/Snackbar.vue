@@ -1,23 +1,56 @@
 <template>
-  <div class="snackbar" :class="snackbarClass">
-    <div class="text-sm" style="flex-grow : 1;">{{ snackbar ? snackbar.text : '' }}</div>
+  <div
+    class="abosolute bottom-0 left-0 flex z-0 p-1 text-white"
+    :class="snackbarClass"
+  >
+    <div class="text-sm break-all">
+      {{ snackbar ? snackbar.text : '' }}
+    </div>
 
-    <button class="snackbar-button" @click="closeSnackbar">{{ $t('close') }}</button>
+    <button class="snackbar-button" @click="closeSnackbar()">
+      {{ t('close') }}
+    </button>
   </div>
 </template>
 
-<i18n>
-{
-  "no": {
-    "close": "Lukk"
+<script lang="ts">
+import { defineComponent, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useNotifyStore } from '@/store/useNotifyStore'
+const { actions: notifyActions, getters: notifyGetters } = useNotifyStore()
+export default defineComponent({
+  setup() {
+    const { t } = useI18n()
+    const snackbar = notifyGetters.snackbar
+    const snackbarClass = computed(() => {
+      return {
+        'snackbar-show': snackbar.value.visibility,
+        'snackbar-hidden': !snackbar.value.visibility,
+        'bg-viva-korall': snackbar.value.type == 'error',
+        'bg-black': snackbar.value.type != 'error',
+      }
+    })
+    function closeSnackbar() {
+      const newSnackbar = {
+        visibility: false,
+        text: 'Closed',
+        type: 'none',
+        callback: undefined,
+      }
+      if (snackbar.value.callback) snackbar.value.callback()
+      notifyActions.setSnackbar(newSnackbar)
+    }
+    return {
+      t,
+      snackbar,
+      snackbarClass,
+      closeSnackbar,
+    }
   },
-  "en": {
-    "close": "Close"
-  }
-}
-</i18n>
+})
+</script>
 
-<style scoped>
+<style scoped lang="postcss">
 /* The snackbar - position it at the bottom and in the middle of the screen */
 .snackbar {
   display: flex;
@@ -101,33 +134,3 @@
   }
 }
 </style>
-
-<script>
-export default {
-  computed: {
-    snackbar() {
-      return this.$store.getters['general/snackbar'];
-    },
-    snackbarClass() {
-      return {
-        'snackbar-show': this.snackbar.visibility === true,
-        'snackbar-hidden': this.snackbar.visibility === false,
-        'bg-viva-korall': this.snackbar.type == 'error',
-        'bg-black': this.snackbar.type != 'error'
-      }
-    }
-  },
-  methods: {
-    closeSnackbar() {
-      const snackbar = {
-        visibility: false,
-        text: 'Closed',
-        type: 'none',
-        callback: undefined,
-      };
-      if (this.snackbar.callback) this.snackbar.callback();
-      this.$store.commit('general/setSnackbar', snackbar);
-    },
-  },
-};
-</script>

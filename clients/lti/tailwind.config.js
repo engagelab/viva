@@ -1,4 +1,6 @@
 const colors = require('tailwindcss/colors')
+const vivaColours = require('./tailwindCustomColors')
+const plugin = require('tailwindcss/plugin')
 
 module.exports = {
   purge: { content: ['./public/**/*.html', './src/**/*.vue'] },
@@ -26,6 +28,8 @@ module.exports = {
       indigo: colors.indigo,
       purple: colors.violet,
       pink: colors.pink,
+
+      viva: vivaColours,
     },
     spacing: {
       px: '1px',
@@ -62,7 +66,13 @@ module.exports = {
       64: '16rem',
       72: '18rem',
       80: '20rem',
+      88: '22rem',
       96: '24rem',
+      104: '26rem',
+      112: '28rem',
+      168: '42rem',
+      192: '48rem',
+      224: '56rem',
     },
     animation: {
       none: 'none',
@@ -283,6 +293,7 @@ module.exports = {
       serious: ['Inter'],
     },
     fontSize: {
+      xxs: ['0.65rem', { lineHeight: '0.8rem' }],
       xs: ['0.75rem', { lineHeight: '1rem' }],
       sm: ['0.875rem', { lineHeight: '1.25rem' }],
       base: ['1rem', { lineHeight: '1.5rem' }],
@@ -443,6 +454,7 @@ module.exports = {
       '4/6': '66.666667%',
       '5/6': '83.333333%',
       full: '100%',
+      screen90: '90vh',
       screen: '100vh',
     }),
     inset: (theme, { negative }) => ({
@@ -534,6 +546,7 @@ module.exports = {
     maxWidth: (theme, { breakpoints }) => ({
       none: 'none',
       0: '0rem',
+      xxs: '10rem',
       xs: '20rem',
       sm: '24rem',
       md: '28rem',
@@ -749,6 +762,9 @@ module.exports = {
       opacity: 'opacity',
       shadow: 'box-shadow',
       transform: 'transform',
+      maxheight: 'max-height',
+      maxwidth: 'max-width',
+      width: 'width',
     },
     transitionTimingFunction: {
       DEFAULT: 'cubic-bezier(0.4, 0, 0.2, 1)',
@@ -1027,5 +1043,28 @@ module.exports = {
     wordBreak: ['responsive'],
     zIndex: ['responsive', 'focus-within', 'focus'],
   },
-  plugins: [],
+  plugins: [
+    require('@vueform/slider/tailwind'),
+    plugin(function ({ addUtilities }) {
+      const newUtilities = {
+        '.skew-10deg': {
+          transform: 'skewY(-10deg)',
+        },
+        '.skew-15deg': {
+          transform: 'skewY(-15deg)',
+        },
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        '.no-scrollbar::-webkit-scrollbar': {
+          display: 'none',
+        },
+        /* Hide scrollbar for IE, Edge and Firefox */
+        '.no-scrollbar': {
+          '-ms-overflow-style': 'none', // IE and Edge
+          'scrollbar-width': 'none', // Firefox
+        },
+      }
+
+      addUtilities(newUtilities)
+    }),
+  ],
 }

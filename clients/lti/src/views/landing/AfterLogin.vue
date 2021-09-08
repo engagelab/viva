@@ -17,7 +17,7 @@ import router from '../../router'
 import { USER_ROLE } from '../../constants'
 import { LocalUser } from '../../types/main'
 import { useAppStore } from '../../store/useAppStore'
-import { useUserStore } from '../../store/useUserStore'
+import { useUserStore } from '@/store/useUserStore'
 import { useProjectStore } from '../../store/useProjectStore'
 import SlButton from '@/components/base/SlButton.vue'
 

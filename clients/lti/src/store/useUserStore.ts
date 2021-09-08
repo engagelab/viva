@@ -1,167 +1,156 @@
-import { computed, ref, Ref, ComputedRef } from 'vue'
-import { USER_ROLE } from '../constants'
-import { apiRequest } from '../api/apiRequest'
-import { hasMinimumRole } from '../utilities'
-import {
-  User,
-  UserData,
-  LocalUser,
-  Project,
-  APIRequestPayload,
-  XHR_REQUEST_TYPE,
-} from '../types/main'
-import { useAppStore } from './useAppStore'
+// import { computed, ref, Ref, ComputedRef } from 'vue'
+// import { USER_ROLE } from '../constants'
+// import { apiRequest } from '../api/apiRequest'
+// import { hasMinimumRole } from '../utilities'
+// import {
+//   User,
 
-const { actions: appActions } = useAppStore()
+//   LocalUser,
+//   APIRequestPayload,
+//   XHR_REQUEST_TYPE,
+// } from '../types/main'
+// import { useAppStore } from './useAppStore'
 
-// ------------  State (internal) --------------
+// const { actions: appActions } = useAppStore()
 
-interface State {
-  myUser: User
-  selectedUser: User
-  allUsers: User[]
-  cordovaPath: string[]
-}
+// // ------------  State (internal) --------------
 
-const state: Ref<State> = ref({
-  myUser: new User(), // The actual logged in User. Initialised after successful login
-  selectedUser: new User(), // This user is the model for making changes to a User
-  allUsers: [], // All users in the system, for admins
-  cordovaPath: [],
-})
-// ------------  Internal functions ------------
+// interface State {
+//   myUser: User
+//   selectedUser: User
+//   allUsers: User[]
+//   cordovaPath: string[]
+// }
 
-async function fetchMyUser(): Promise<UserData> {
-  const payload: APIRequestPayload = {
-    method: XHR_REQUEST_TYPE.GET,
-    credentials: true,
-    route: '/api/user',
-  }
-  return apiRequest<UserData>(payload)
-}
+// const state: Ref<State> = ref({
+//   myUser: new User(), // The actual logged in User. Initialised after successful login
+//   selectedUser: new User(), // This user is the model for making changes to a User
+//   allUsers: [], // All users in the system, for admins
+//   cordovaPath: [],
+// })
+// // ------------  Internal functions ------------
 
-async function fetchAllUsers(): Promise<UserData[]> {
-  const payload: APIRequestPayload = {
-    method: XHR_REQUEST_TYPE.GET,
-    credentials: true,
-    route: '/api/users',
-  }
-  return apiRequest<UserData[]>(payload)
-}
+// async function fetchMyUser(): Promise<UserData> {
+//   const payload: APIRequestPayload = {
+//     method: XHR_REQUEST_TYPE.GET,
+//     credentials: true,
+//     route: '/api/user',
+//   }
+//   return apiRequest<UserData>(payload)
+// }
 
-async function sendUpdateUser(user: User): Promise<void> {
-  const payload: APIRequestPayload = {
-    method: XHR_REQUEST_TYPE.PUT,
-    credentials: true,
-    route: '/api/user',
-    body: user,
-  }
-  return apiRequest(payload)
-}
+// async function fetchAllUsers(): Promise<UserData[]> {
+//   const payload: APIRequestPayload = {
+//     method: XHR_REQUEST_TYPE.GET,
+//     credentials: true,
+//     route: '/api/users',
+//   }
+//   return apiRequest<UserData[]>(payload)
+// }
 
-// ------------  Getters --------------
+// async function sendUpdateUser(user: User): Promise<void> {
+//   const payload: APIRequestPayload = {
+//     method: XHR_REQUEST_TYPE.PUT,
+//     credentials: true,
+//     route: '/api/user',
+//     body: user,
+//   }
+//   return apiRequest(payload)
+// }
 
-// Once a reactive getter has been gotten by a component
-// we cannot overwrite its instance here in the store - but we can write to its children reactively
-// Complex objects provided by a getter here should be represented by a Class and also have an update() function
-interface Getters {
-  myUser: ComputedRef<User>
-  selectedUser: ComputedRef<User>
-  allUsers: ComputedRef<User[]>
-  selectedUserProject: ComputedRef<Project>
-}
-const getters = {
-  get myUser(): ComputedRef<User> {
-    return computed(() => state.value.myUser) // This is the current logged in user and should not change during app usage
-  },
-  get selectedUser(): ComputedRef<User> {
-    return computed(() => state.value.selectedUser) // This is the 'currently selected' user and can change, must change by calling User.update()
-  },
-  get allUsers(): ComputedRef<User[]> {
-    return computed(() => state.value.allUsers) // Unlikely to change during app usage, but ok as long as the array itself is not overwitten
-  },
-  get selectedUserProject(): ComputedRef<Project> {
-    return computed(() => {
-      const currentPID = state.value.selectedUser.currentProjectId
-      const p = state.value.selectedUser.projects.find(
-        (pr) => pr._id === currentPID
-      )
-      return p ? p : new Project()
-    })
-  },
-}
+// // ------------  Getters --------------
 
-// ------------  Actions --------------
-interface Actions {
-  hasMinimumRole: (user: User, role: USER_ROLE) => boolean
-  selectUser: (user: User) => void
+// // Once a reactive getter has been gotten by a component
+// // we cannot overwrite its instance here in the store - but we can write to its children reactively
+// // Complex objects provided by a getter here should be represented by a Class and also have an update() function
+// interface Getters {
+//   myUser: ComputedRef<User>
+//   selectedUser: ComputedRef<User>
+//   allUsers: ComputedRef<User[]>
 
-  // Server
-  getMyUser: () => Promise<void>
-  getAllUsers: () => Promise<void>
-  updateUser: (user: User) => Promise<void>
-}
-const actions = {
-  // Retrieve from server the user details (called after login when online & not mobile)
-  getMyUser: async function (): Promise<void> {
-    appActions.setLoading(true)
-    const response: UserData = await fetchMyUser()
-    state.value.myUser.update(response)
-    state.value.selectedUser.update(state.value.myUser)
-    const newLocalUser: LocalUser = {
-      _id: state.value.myUser._id,
-      name: state.value.myUser.fullName,
-      lastLogin: new Date(),
-      jwt: localStorage.getItem('jwt') || '',
-      pin: '',
-      selected: true,
-    }
-    appActions.setCurrentLocalUser(newLocalUser)
-    appActions.setLoading(false)
-    return Promise.resolve()
-  },
+// }
+// const getters = {
+//   get myUser(): ComputedRef<User> {
+//     return computed(() => state.value.myUser) // This is the current logged in user and should not change during app usage
+//   },
+//   get selectedUser(): ComputedRef<User> {
+//     return computed(() => state.value.selectedUser) // This is the 'currently selected' user and can change, must change by calling User.update()
+//   },
+//   get allUsers(): ComputedRef<User[]> {
+//     return computed(() => state.value.allUsers) // Unlikely to change during app usage, but ok as long as the array itself is not overwitten
+//   },
 
-  // Retrieve from server a listing of all users
-  getAllUsers: async function (): Promise<void> {
-    appActions.setLoading(true)
-    const response: UserData[] = await fetchAllUsers()
-    const users = response.map((u: UserData) => new User(u))
-    state.value.allUsers = users
-    appActions.setLoading(false)
-  },
+// // ------------  Actions --------------
+// // interface Actions {
+// //   hasMinimumRole: (user: User, role: USER_ROLE) => boolean
+// //   selectUser: (user: User) => void
 
-  // Update a given user at server, and locally if it exists in allUsers
-  updateUser: async function (user: User): Promise<void> {
-    return sendUpdateUser(user).then(() => {
-      // Also update the user in local list
-      const modifiedUser = state.value.allUsers.find((u) => u._id === user._id)
-      if (modifiedUser) modifiedUser.update(user)
-    })
-  },
+// //   // Server
+// //   getMyUser: () => Promise<void>
+// //   getAllUsers: () => Promise<void>
+// //   updateUser: (user: User) => Promise<void>
+// // }
+// // const actions = {
+// //   // Retrieve from server the user details (called after login when online & not mobile)
+// //   getMyUser: async function (): Promise<void> {
+// //     appActions.setLoading(true)
+// //     const response: UserData = await fetchMyUser()
+// //     state.value.myUser.update(response)
+// //     state.value.selectedUser.update(state.value.myUser)
+// //     const newLocalUser: LocalUser = {
+// //       _id: state.value.myUser._id,
+// //       name: state.value.myUser.fullName,
+// //       lastLogin: new Date(),
+// //       jwt: localStorage.getItem('jwt') || '',
+// //       pin: '',
+// //       selected: true,
+// //     }
+// //     appActions.setCurrentLocalUser(newLocalUser)
+// //     appActions.setLoading(false)
+// //     return Promise.resolve()
+// //   },
 
-  // Check that the selected user has at least the role requested
-  // Direct reference to (utility function)
-  hasMinimumRole,
+// //   // Retrieve from server a listing of all users
+// //   getAllUsers: async function (): Promise<void> {
+// //     appActions.setLoading(true)
+// //     const response: UserData[] = await fetchAllUsers()
+// //     const users = response.map((u: UserData) => new User(u))
+// //     state.value.allUsers = users
+// //     appActions.setLoading(false)
+// //   },
 
-  selectUser: function (user: User) {
-    const u = state.value.allUsers.find((us) => us._id === user._id)
-    if (u) {
-      state.value.selectedUser = u
-    }
-  },
-}
+// //   // Update a given user at server, and locally if it exists in allUsers
+// //   updateUser: async function (user: User): Promise<void> {
+// //     return sendUpdateUser(user).then(() => {
+// //       // Also update the user in local list
+// //       const modifiedUser = state.value.allUsers.find((u) => u._id === user._id)
+// //       if (modifiedUser) modifiedUser.update(user)
+// //     })
+// //   },
 
-interface ServiceInterface {
-  actions: Actions
-  getters: Getters
-}
-// This defines the interface used externally
-export function useUserStore(): ServiceInterface {
-  return {
-    getters,
-    actions,
-  }
-}
+// //   // Check that the selected user has at least the role requested
+// //   // Direct reference to (utility function)
+// //   hasMinimumRole,
 
-export type UserStoreType = ReturnType<typeof useUserStore>
-// export const UserKey: InjectionKey<UseUser> = Symbol('UseUser')
+// //   selectUser: function (user: User) {
+// //     const u = state.value.allUsers.find((us) => us._id === user._id)
+// //     if (u) {
+// //       state.value.selectedUser = u
+// //     }
+// //   },
+// // }
+
+// // interface ServiceInterface {
+// //   actions: Actions
+// //   getters: Getters
+// // }
+// // This defines the interface used externally
+// // export function useUserStore(): ServiceInterface {
+// //   return {
+// //     getters,
+// //     actions,
+// //   }
+// // }
+
+// // export type UserStoreType = ReturnType<typeof useUserStore>
+// // export const UserKey: InjectionKey<UseUser> = Symbol('UseUser')

@@ -4,34 +4,38 @@
       <SVGSymbol
         class="text-viva-korall fill-current self-start p-2"
         applyClasses="w-4 md:w-8"
-        @click.native="back()"
+        @click="back()"
         width="25"
         rotation="180"
       ></SVGSymbol>
     </div>
     <div>
-      <p class="p-4">{{ selectedVideo.errorInfo }}</p>
+      <p v-if="selectedVideo" class="p-4">
+        {{ selectedVideo.status.error.errorInfo }}
+      </p>
     </div>
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex';
-import SVGSymbol from '../../components/base/SVGSymbol.vue';
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue'
+import router from '@/router'
+import SVGSymbol from '@/components/base/SVGSymbol.vue'
+import { useVideoStore } from '@/store/useVideoStore'
+const { getters: videoGetters } = useVideoStore()
+export default defineComponent({
   components: {
     SVGSymbol,
   },
-  computed: {
-    ...mapGetters('video', ['selectedVideo']),
+  setup() {
+    function back() {
+      router.push('/videos/list')
+    }
+    return {
+      back,
+      selectedVideo: videoGetters.selectedVideo,
+    }
   },
-  methods: {
-    back() {
-      this.$router.push('/videos/list');
-    },
-  },
-};
+})
 </script>
-<style scoped>
-
-</style>
+<style scoped></style>

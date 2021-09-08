@@ -12,17 +12,12 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "checkJs": false,
-    "baseUrl": "./",
-    "typeRoots": ["clients/lti/node_modules/@types", "clients/lti/src/types"],
-    "paths": {
-      "@/*": ["clients/lti/src/*", "clients/app/src/*"]
-    },
+    "baseUrl": "/",
     "lib": ["ES2020", "dom", "dom.iterable", "scripthost"]
   },
   "include": [
     "clients/**/src/**/*.ts",
     "clients/**/src/**/*.d.ts",
-    "clients/**/src-cordova/node_modules/**/*.d.ts",
     "clients/**/src/**/*.tsx",
     "clients/**/src/**/*.vue",
     "clients/**/src/**/*.json",

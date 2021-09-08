@@ -5,6 +5,7 @@ videos
 
 # local env files
 .env
+.env.old
 
 # Log files
 npm-debug.log*
@@ -20,3 +21,4 @@ yarn-error.log*
 *.sln
 *.sw?
 client/src-cordova/yarn.lock
+videos

@@ -1,0 +1,15 @@
+{
+  "cancel": "avbryt",
+  "accept": "aksept",
+  "save": "lagre",
+  "done": "ferdig",
+  "back": "tilbake",
+  "edit": "rediger",
+  "close": "lukk",
+  "open": "åpen",
+  "add": "legg til",
+  "clear": "fjerne",
+  "privacyPolicy": "Personvern",
+  "mailtoBody": "Follow the URL in this link to give consent",
+  "mailtoSubject": "Samtykker"
+}

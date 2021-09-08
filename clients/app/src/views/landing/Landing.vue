@@ -1,43 +1,43 @@
 <template>
-  <Slider class="flex flex-col flex-grow min-h-0 h-full" :pages="pages" :movePageTo="pageNumber" />
+  <Slider
+    class="flex flex-col flex-grow min-h-0 h-full"
+    :pages="rawPages"
+    :movePageTo="page"
+  />
 </template>
 
-<script>
-import Slider from '../../components/base/Slider.vue';
-import constants from '../../constants';
+<script lang="ts">
+import { defineComponent, markRaw } from 'vue'
+import Slider from '@/components/base/Slider.vue'
 
-import page0 from './pages/main';
-import page1 from './pages/detteErViva';
-import page2 from './pages/personvernIOpptak';
-import page3 from './pages/loggInn';
+import page0 from './pages/main.vue'
+import page1 from './pages/detteErViva.vue'
+import page2 from './pages/personvernIOpptak.vue'
+import page3 from './pages/loggInn.vue'
 
-export default {
+export default defineComponent({
   name: 'Landing',
   components: {
     Slider,
   },
   props: {
-    pageNumber: {
-      type: Number,
-      default: 0,
+    page: {
+      type: String,
+      default: '0',
     },
   },
   data() {
+    const rawPages = [
+      markRaw(page0),
+      markRaw(page1),
+      markRaw(page2),
+      markRaw(page3),
+    ]
     return {
-      pages: [page0, page1, page2, page3],
-    };
+      rawPages,
+    }
   },
-};
+})
 </script>
 
-<i18n>
-{
-  "no": {
-  },
-  "en": {
-  }
-}
-</i18n>
-
-<style scoped>
-</style>
+<style scoped></style>

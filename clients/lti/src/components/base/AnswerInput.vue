@@ -1,12 +1,5 @@
 <template>
   <div class="flex flex-col">
-    <label
-      class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
-      :class="{ 'pl-8': border }"
-      :for="elementId"
-    >
-      {{ label }}
-    </label>
     <p class="text-xs max-w-sm">{{ description }}</p>
     <template v-if="mode == 'binary'">
       <div class="flex flex-row items-center">
@@ -149,26 +142,23 @@
         </div>
       </div>
     </template>
-    <template v-if="mode == 'select'">
-      <div class="flex flex-col" :id="elementId">
-        <select
-          class="block appearance-none w-full cursor-pointer bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-          id="grid-state"
-          v-model="selection"
-          @change="updateSelect($event)"
-        >
-          <option value="" disabled selected>Choose..</option>
-          <option v-for="(o, i) in options" :key="i" :value="o.item">
-            {{ o.itemName }}
-          </option>
-        </select>
-      </div>
-    </template>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRefs, Ref, watch, computed } from 'vue'
+import {
+  defineComponent,
+  ref,
+  toRefs,
+  Ref,
+  watch,
+  computed,
+  PropType,
+} from 'vue'
+interface OptionItem {
+  id: string
+  title: string
+}
 export default defineComponent({
   name: 'AnswerInput',
   props: {
@@ -184,7 +174,7 @@ export default defineComponent({
       default: 'binary',
     },
     options: {
-      type: Array,
+      type: Array as PropType<OptionItem[]>,
       default: () => [],
     },
     label: {

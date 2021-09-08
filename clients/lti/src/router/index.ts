@@ -6,11 +6,11 @@ import {
   RouteRecordRaw,
 } from 'vue-router'
 
-import Dashboard from '../views/Dashboard.vue'
+import { useAppStore } from '../store/useAppStore'
+const { actions: appActions } = useAppStore()
 
-import Monitor from '../views/admin/Monitor.vue'
-import Dataset from '../views/admin/Dataset.vue'
-import VideoLogs from '../views/admin/Videologs.vue'
+import Dashboard from '../views/Dashboard.vue'
+import Share from '../views/Share.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -22,34 +22,25 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/dashboard',
   },
   {
+    path: '/postLogin',
+    redirect: '/dashboard',
+  },
+  {
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
+    beforeEnter: () => {
+      appActions.redirectedLogin().catch((error) => {
+        console.log(error)
+      })
+    },
+  },
+  {
+    path: '/share',
+    name: 'Share',
+    component: Share,
   },
   { path: '/index.html', redirect: '/' },
-
-  {
-    path: '/monitor',
-    redirect: '/monitor/dataset',
-    name: 'Monitor',
-    component: Monitor,
-    children: [
-      {
-        // UserProfile will be rendered inside User's <router-view>
-        // when /user/profile is matched
-        path: 'dataset',
-        name: 'Dataset',
-        component: Dataset,
-      },
-      {
-        // UserPosts will be rendered inside User's <router-view>
-        // when /user/projects is matched
-        path: 'videologs',
-        name: 'VideoLogs',
-        component: VideoLogs,
-      },
-    ],
-  },
 ]
 
 const router = createRouter({

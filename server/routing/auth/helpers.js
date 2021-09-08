@@ -1,117 +1,198 @@
 const jwt = require('jsonwebtoken')
-const utilities = require('../utilities')
+const { userRoles, organizations, platforms } = require('../../constants')
 const { createReference } = require('../../utilities')
 const User = require('../../models/User')
 
-function createOrUpdateUser(tokenSet, userIdentifier, profile) {
-  return new Promise(function (resolve, reject) {
-    const query = {}
-    if (userIdentifier.sub) query.oauthId = userIdentifier.sub
-    else if (userIdentifier.id) query._id = userIdentifier.id
-    const userProfile = profile.data ? profile.data : profile
-    User.findOne(query, async (err, usr) => {
-      let user
+const dataporten = require('../../services/dataporten')
+const canvas = require('../../services/canvas')
 
-      if (err) {
-        console.log(`Error checking user ${err}`)
-        reject(err)
-      } else if (!err && usr !== null) {
-        user = usr
-      } else {
-        user = new User()
-      }
+function signJWT(data) {
+  return jwt.sign(
+    { ref: data },
+    new Buffer.from(process.env.JWT_SECRET, 'base64'),
+    { expiresIn: process.env.VUE_APP_JWT_EXPIRY + 's' }
+  )
+}
 
-      if (!user.oauthId) {
-        user.oauthId = userIdentifier.sub || userIdentifier.id
-      }
-      if (!user.reference) {
-        user.reference = createReference(user.oauthId)
-      }
-      if (!user.username) {
-        if (userProfile.email) {
-          user.username = userProfile.email.substring(
-            0,
-            userProfile.email.lastIndexOf('@')
-          )
-        } else {
-          if (!user.fullName) {
-            user.fullName = userProfile.name
+/*
+Sample profile = {
+            provider: 'dataporten',
+            provider_id: data.sub,
+            login_id: '',    // <-- THIS is intended to match Dataporten user ID and Canvas LTI + API token user ID
+            email: data.email || '',
+            fullName: data.name || '',
+            organization: ''
           }
-          user.username = user.fullName.replace(/[^\d\s\wæøå&@]/gi, '')
-        }
-      }
-      if (
-        !user.lastLogin ||
-        (user.lastLogin &&
-          new Date().getTime() - new Date(user.lastLogin).getTime() >
-            1000 * 60 * 60)
-      ) {
-        user.lastLogin = new Date()
-      }
+*/
+function setUserAttributes(user, profile, tokenSet) {
+  user.profile.username = profile.login_id
+  user.profile.provider_id = profile.provider_id
+  user.profile.ltiID = profile.ltiID
+  user.profile.reference = createReference(
+    user.profile.provider_id || user.profile.ltiID || user.profile.username
+  )
+  user.profile.fullName = profile.fullName
+  user.profile.email = profile.email
+  user.profile.organization = profile.organization
+  // Tokens from Issuer service
+  if (tokenSet.access_token) user.tokens.access_token = tokenSet.access_token
+  if (tokenSet.id_token) user.tokens.id_token = tokenSet.id_token
+  // Token to validate a Google Drive transfer. To be used in conjunction with Dataporten Tokens
+  user.tokens.csrf_token = require('crypto').randomBytes(20).toString('hex')
+  // Token for API requests to VIVA
+  user.tokens.local_token = signJWT(user.id)
 
-      // Tokens from Issuer service
-      if (tokenSet.access_token) user.tokens.access_token = tokenSet.access_token
-      if (tokenSet.id_token) user.tokens.id_token = tokenSet.id_token
-      // Token to validate a Google Drive transfer. To be used in conjunction with Dataporten Tokens
-      user.tokens.csrf_token = require('crypto').randomBytes(20).toString('hex')
-      // Token for API requests to VIVA
-      user.tokens.local_token = jwt.sign(
-        { ref: user.id },
-        new Buffer.from(process.env.JWT_SECRET, 'base64'),
-        { expiresIn: process.env.VUE_APP_JWT_EXPIRY + 's' }
+  // Status update
+  user.status.provider = profile.provider
+  const tDiff = new Date().getTime() - new Date(user.status.lastLogin).getTime()
+  if (tDiff > 1000 * 60 * 60) user.status.lastLogin = new Date()
+}
+
+// Check the 'prerequisite' course has been completed
+// This is the course id environment variable: CANVAS_DEPENDENT_COURSE_ID
+// Set the env var to 'none' to skip this step
+// If the user is an admin, also skip this step
+function setPrerequisiteCourseProgress(user) {
+  if (
+    process.env.CANVAS_DEPENDENT_COURSE_ID === 'none' ||
+    user.status.role === userRoles.admin
+  ) {
+    user.status.prerequisiteCompleted = true
+    return Promise.resolve()
+  }
+  return canvas
+    .courseProgress(
+      `sis_login_id:${user.profile.username}`,
+      process.env.CANVAS_DEPENDENT_COURSE_ID
+    )
+    .then((progress) => {
+      user.status.prerequisiteCompleted =
+        progress.requirement_count == progress.requirement_completed_count
+      console.log(
+        `Depended course was completed: ${user.status.prerequisiteCompleted}`
       )
-      user.provider = Object.keys(userProfile).includes('lis_person_sourcedid')
-      ? 'canvas'
-      : 'Dataporten'
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+}
 
-      if (userProfile.roles) {
-        user.isAdmin = userProfile.roles.find(
-          (role) => role.includes('Admin') == true
-        )
-          ? true
-          : false
+// Configure the User model with the list of courses
+async function setUserGroups(user, coursesInAccount) {
+  let courses = []
+  if (user.status.role === userRoles.admin) courses = coursesInAccount
+  else {
+    for (let c of coursesInAccount) {
+      const users = await canvas.usersForCourse(c.id)
+      const t = users.some((u) => u.login_id === user.profile.username)
+      if (t) courses.push(c)
+    }
+  }
+  user.profile.groups = courses.map((c) => {
+    return { id: c.id, name: c.course_code }
+  })
+}
+
+function getUserGroups(user) {
+  // The 'organization' determines what system takes care of groups
+  const config = organizations[user.profile.organization]
+  if (config.platform === platforms.dataporten) {
+    return dataporten.groupsForUser(user).then((groups) => {
+      user.profile.groups = groups.map((g) => ({
+        id: g.id,
+        name: g.displayName,
+      }))
+    })
+  } else if (config.platform === platforms.canvas) {
+    return canvas
+      .coursesInAccount(process.env.CANVAS_VIVA_ACCOUNT_ID)
+      .then((coursesInAccount) => setUserGroups(user, coursesInAccount))
+      .catch((error) => console.log(error))
+  } else {
+    return Promise.resolve()
+  }
+}
+
+function setUserRole(user) {
+  return canvas
+    .usersForGroup(process.env.CANVAS_ADMIN_GROUP_ID)
+    .then((users) => {
+      if (users.some((u) => u.login_id === user.profile.username)) {
+        user.status.role = userRoles.admin
+        console.log(`User ${user.profile.username} was set to 'admin' role`)
+      } else user.status.role = userRoles.user
+    })
+    .catch((err) => {
+      console.error(err)
+    })
+}
+
+function createOrUpdateUser(tokenSet, profile) {
+  return new Promise((resolve, reject) => {
+    User.findOne({ 'profile.username': profile.login_id }, async (err, usr) => {
+      let user
+      if (err) return reject(`Error checking user ${err}`)
+      user = usr || new User()
+      setUserAttributes(user, profile, tokenSet)
+      if (profile.client === 'admin') {
+        await setUserRole(user)
       }
-
-      user
-        .save()
-        .then((savedUser) => {
-          resolve(savedUser)
-        })
-        .catch((error) => {
-          return reject(error)
-        })
+      await getUserGroups(user)
+      await setPrerequisiteCourseProgress(user)
+      try {
+        const savedUser = await user.save()
+        resolve(savedUser)
+      } catch (e) {
+        console.error(e)
+      }
     })
   })
 }
 
 // Return to the client with the correct data to continue login
-function completeCallback(request, response, user, device, remember) {
+function completeCallback(request, response, user) {
   let redirectUrl
   let s = ''
-  const mobileApp = typeof device === 'string' && device == 'mobileApp'
+  const { client, remember } = request.session
+  const host = process.env.VUE_APP_SERVER_HOST
 
+  if (client === 'lti') {
+    redirectUrl =
+      process.env.NODE_ENV === 'development' ? `${host}:8080` : `${host}/lti`
+    s = `${new Date().toLocaleString()}: LTI Login: ${user.profile.username}`
+  } else if (client === 'admin') {
+    redirectUrl =
+      process.env.NODE_ENV === 'development' ? `${host}:8081` : `${host}`
+    s = `${new Date().toLocaleString()}: Admin Login: ${user.profile.username}`
+  }
   // Mobile app will be passed a token via Apple's ASWebAuthenticationSession / Google Custom Tabs
   // which must then be passed back to the /token route obtain a Session
-  if (mobileApp) {
-    redirectUrl = `${process.env.APP_BUNDLE_ID}://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
-    s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
-  } else {
-    // Set the session here at last!
-    // Web app receives a Session immediately, does not need to pass a token
-    request.session.ref = user.id
-    s = `${new Date().toLocaleString()}: Web App Login: ${user.fullName}`
-    // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
-    redirectUrl =
-      process.env.NODE_ENV === 'testing'
-        ? `${utilities.baseUrl}/#/login`
-        : `${utilities.baseUrl}/login`
+  else if (client === 'mobileApp' || client === 'webApp') {
+    if (client === 'mobileApp') {
+      redirectUrl = `viva://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
+      s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
+    } else {
+      redirectUrl =
+        process.env.NODE_ENV === 'development' ? `${host}:8082` : `${host}/app`
+    }
   }
+
+  // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
+  if (process.env.NODE_ENV === 'testing') {
+    redirectUrl = redirectUrl + '/#/postlogin'
+  } else redirectUrl = redirectUrl + '/postlogin'
+
+  // Set the session here at last!
+  // Web app receives a Session immediately, does not need to pass a token
+  request.session.ref = user.id
   console.log(s)
   console.log(`Session: ${request.session.ref}`)
   return response.redirect(redirectUrl)
 }
 
+
 module.exports = {
   createOrUpdateUser,
   completeCallback,
+
 }

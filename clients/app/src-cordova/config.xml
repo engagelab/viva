@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="no.uio.mobileapps.viva" version="1.4.8" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="no.uio.mobileapps.viva2" version="2.0.3" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name short="VIVA">VIVA</name>
     <description>
         Securely record and process classroom videos
@@ -9,25 +9,27 @@
     </author>
     <hook src="../node_modules/vue-cli-plugin-cordova/serve-config-hook.js" type="after_prepare" />
     <content src="index.html" />
-    <access allows-arbitrary-loads-for-media="true" allows-arbitrary-loads-in-web-content="true" allows-local-networking="true" origin="*" />
+    <!--access allows-arbitrary-loads-for-media="true" allows-arbitrary-loads-in-web-content="true" allows-local-networking="true" origin="*" /-->
+    <plugin name="cordova-plugin-whitelist" spec="1" />
+    <access origin="*" />
     <access origin="cdvfile://*" />
-    <access origin="file:///*" />
-    <access origin="mailto:*" />
     <access origin="android-webview-video-poster:*" />
-    <allow-intent href="https://*.engagelab.uio.no/*"/>
-    <allow-intent href="https://*.viva.uio.no/*"/>
+    <allow-navigation href="viva:*" launch-external="yes" />
+    <allow-navigation href="mailto:*" launch-external="yes" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
     <allow-intent href="tel:*" />
     <allow-intent href="sms:*" />
-    <allow-intent href="oauth:*" />
     <allow-intent href="mailto:*" />
     <allow-intent href="geo:*" />
-    <allow-intent href="blob:*" />
-    <allow-intent href="polyblob:*" />
+    <allow-intent href="oauth:*" />
     <allow-intent href="android-webview-video-poster:*" />
     <hook src="scripts/patchVersionNumber.js" type="before_prepare" />
     <platform name="ios">
+        <preference name="scheme" value="viva" />
+        <preference name="hostname" value="localhost" />
+        <preference name="WKWebViewOnly" value="true" />
+
         <edit-config file="*-Info.plist" mode="merge" target="NSBluetoothAlwaysUsageDescription">
             <string>VIVA does not make use of bluetooth, but included libraries provide bluetooth functionality</string>
         </edit-config>
@@ -40,13 +42,17 @@
         <edit-config file="*-Info.plist" mode="merge" target="NSAllowsArbitraryLoads">
             <true />
         </edit-config>
+        <edit-config file="*-Info.plist" mode="merge" target="UIStatusBarHidden">
+            <true />
+        </edit-config>
+        <edit-config file="*-Info.plist" mode="merge" target="UIViewControllerBasedStatusBarAppearance">
+            <false />
+        </edit-config>
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
         <feature name="CDVWKWebViewEngine">
             <param name="ios-package" value="CDVWKWebViewEngine" />
         </feature>
-        <allow-navigation href="mailto:*" launch-external="yes" />
-
         <preference name="AllowInlineMediaPlayback" value="true" />
         <preference name="OverrideUserAgent" value="Mozilla/5.0 Google" />
         <preference name="CordovaWebViewEngine" value="CDVWKWebViewEngine" />
@@ -79,12 +85,12 @@
 
         <icon height="1024" src="../src/assets/icons/ios/config/icon-1024.png" width="1024" />
 
-        <splash src="../src/assets/launchimage/ios/config/Default@2x~universal~anyany.png" />
-        <splash src="../src/assets/launchimage/ios/config/Default@2x~universal~comany.png" />
-        <splash src="../src/assets/launchimage/ios/config/Default@2x~universal~comcom.png" />
-        <splash src="../src/assets/launchimage/ios/config/Default@3x~universal~anyany.png" />
-        <splash src="../src/assets/launchimage/ios/config/Default@3x~universal~anycom.png" />
-        <splash src="../src/assets/launchimage/ios/config/Default@3x~universal~comany.png" />
+        <splash src="res/screen/ios/Default@2x~universal~anyany.png" />
+        <splash src="res/screen/ios/Default@2x~universal~comany.png" />
+        <splash src="res/screen/ios/Default@2x~universal~comcom.png" />
+        <splash src="res/screen/ios/Default@3x~universal~anyany.png" />
+        <splash src="res/screen/ios/Default@3x~universal~anycom.png" />
+        <splash src="res/screen/ios/Default@3x~universal~comany.png" />
     </platform>
     <platform name="android">
         <preference name="AndroidLaunchMode" value="singleTask" />
@@ -115,30 +121,18 @@
         <icon density="xxhdpi" src="../src/assets/icons/android/xxhdpi.png" />
         <icon density="xxxhdpi" src="../src/assets/icons/android/xxxhdpi.png" />
 
-        <splash src="../src/assets/launchimage/android/splash-land-ldpi.png" density="land-ldpi"/>
-        <splash src="../src/assets/launchimage/android/splash-land-mdpi.png" density="land-mdpi"/>
-        <splash src="../src/assets/launchimage/android/splash-land-hdpi.png" density="land-hdpi"/>
-        <splash src="../src/assets/launchimage/android/splash-land-xhdpi.png" density="land-xhdpi"/>
-        <splash src="../src/assets/launchimage/android/splash-land-xxhdpi.png" density="land-xxhdpi"/>
-        <splash src="../src/assets/launchimage/android/splash-land-xxxhdpi.png" density="land-xxxhdpi"/>
+        <splash src="res/screen/android/splash-land-ldpi.png" density="land-ldpi"/>
+        <splash src="res/screen/android/splash-land-mdpi.png" density="land-mdpi"/>
+        <splash src="res/screen/android/splash-land-hdpi.png" density="land-hdpi"/>
+        <splash src="res/screen/android/splash-land-xhdpi.png" density="land-xhdpi"/>
+        <splash src="res/screen/android/splash-land-xxhdpi.png" density="land-xxhdpi"/>
+        <splash src="res/screen/android/splash-land-xxxhdpi.png" density="land-xxxhdpi"/>
 
-        <splash src="../src/assets/launchimage/android/splash-port-ldpi.png" density="port-ldpi"/>
-        <splash src="../src/assets/launchimage/android/splash-port-mdpi.png" density="port-mdpi"/>
-        <splash src="../src/assets/launchimage/android/splash-port-hdpi.png" density="port-hdpi"/>
-        <splash src="../src/assets/launchimage/android/splash-port-xhdpi.png" density="port-xhdpi"/>
-        <splash src="../src/assets/launchimage/android/splash-port-xxhdpi.png" density="port-xxhdpi"/>
-        <splash src="../src/assets/launchimage/android/splash-port-xxxhdpi.png" density="port-xxxhdpi"/>
+        <splash src="res/screen/android/splash-port-ldpi.png" density="port-ldpi"/>
+        <splash src="res/screen/android/splash-port-mdpi.png" density="port-mdpi"/>
+        <splash src="res/screen/android/splash-port-hdpi.png" density="port-hdpi"/>
+        <splash src="res/screen/android/splash-port-xhdpi.png" density="port-xhdpi"/>
+        <splash src="res/screen/android/splash-port-xxhdpi.png" density="port-xxhdpi"/>
+        <splash src="res/screen/android/splash-port-xxxhdpi.png" density="port-xxxhdpi"/>
     </platform>
-    <plugin name="cordova-plugin-whitelist" spec="1" />
-    <plugin name="cordova-plugin-wkwebview-engine" spec="~1.2.1" />
-    <plugin name="cordova-plugin-device" spec="^2.0.3" />
-    <plugin name="cordova-plugin-statusbar" spec="^2.4.3" />
-    <plugin name="cordova-plugin-file" spec="^6.0.2" />
-    <plugin name="cordova-plugin-media-capture" spec="^3.0.3" />
-    <plugin name="cordova.plugins.diagnostic" spec="^5.0.0">
-        <variable name="ANDROID_SUPPORT_VERSION" value="28.+" />
-    </plugin>
-    <plugin name="cordova-plugin-add-swift-support" spec="^2.0.2" />
-    <plugin name="eeschiavo-cordova-plugin-clipboard" spec="^1.0.2" />
-    <plugin name="cordova-plugin-android-permissions" spec="^1.0.2" />
 </widget>
