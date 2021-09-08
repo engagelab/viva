@@ -5,8 +5,8 @@
  *  Note: XMLHttpRequest must be used for cordova apps as Apple's simulator does not support client/server sessions when using Fetch
  */
 
-import { APIRequestPayload, XHRPayload, XHR_CONTENT_TYPE } from '../types/main'
-import { baseUrl } from '../constants'
+import { APIRequestPayload, XHRPayload, XHR_CONTENT_TYPE } from '@/types/main'
+import { baseUrl } from '@/constants'
 
 function xhrRequest<T>({
   method,

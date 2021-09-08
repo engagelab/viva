@@ -46,12 +46,10 @@ import router from '@/router'
 import { CONSENT_TYPES } from '@/constants'
 import { useI18n } from 'vue-i18n'
 import { Video, Consent } from '@/types/main'
-import { useAppStore } from '@/store/useAppStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useVideoStore } from '@/store/useVideoStore'
-const { actions: appActions } = useAppStore()
 const { actions: videoActions, getters: videoGetters } = useVideoStore()
-const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
+const { getters: datasetGetters } = useDatasetStore()
 
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
 import Button from '@/components/base/Button.vue'
@@ -91,7 +89,7 @@ export default defineComponent({
     const selectedVideo = videoGetters.selectedVideo
     const selectedDataset = datasetGetters.selectedDataset
     let manualConsent = true
-    const video = ref(new Video(selectedVideo.value))
+    const video = ref(new Video().updateFromVideo(selectedVideo.value))
     const consentList: Ref<Ref<Consent>[]> = ref([])
     const standardConsent: Ref<Consent> = ref({
       id: 'standardConsent-id',
@@ -121,7 +119,12 @@ export default defineComponent({
         video.value.updateStatus(v.status)
         standardConsent.value.checked = video.value.status.isConsented
         video.value.consents = v.consents
-        const datasetId = v.dataset.id
+
+        // 8/2021: Locking to a specific Utvalg selection causes problems if the Dataset is later modified to remove the
+        // 'selection priority' that leads to this lock
+        // Decided for this point in time to remove the lock feature
+
+        /* const datasetId = v.dataset.id
         const presetConfig = datasetGetters.presetDatasetConfig.value
         if (
           presetConfig &&
@@ -140,7 +143,7 @@ export default defineComponent({
             },
           })
           appActions.updateUserAtServer()
-        }
+        } */
       }
       consentList.value = manualConsent
         ? [standardConsent]
