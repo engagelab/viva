@@ -7,7 +7,7 @@
     <div class="flex flex-col flex-grow">
       <div class="flex flex-row">
         <div
-          class="p-2 text-white text-sm bg-viva-grey-450 rounded-2xl rounded-r-none cursor-pointer"
+          class="p-1 pl-2 flex flex-col justify-middle text-white text-sm bg-viva-grey-450 rounded-2xl rounded-r-none cursor-pointer"
         >
           <input
             v-if="editingStartTime"
@@ -16,22 +16,26 @@
             v-model="localStartTime"
             @keyup.enter="validateTime()"
           />
-          <span v-else @click="editingStartTime = !editingStartTime">
+          <p
+            class="text-center leading-2"
+            v-else
+            @click="editingStartTime = !editingStartTime"
+          >
             {{ formatTime(annotation.time[0], 0) }}
-          </span>
+          </p>
         </div>
         <div
-          class="ml-1 px-2 py-1 text-white text-sm bg-viva-grey-450 rounded-2xl rounded-l-none cursor-pointer"
+          class="ml-1 p-1 pr-3 flex flex-col justify-middle text-white text-sm bg-viva-grey-450 rounded-2xl rounded-l-none cursor-pointer"
           @click="editingEndTime = !editingEndTime"
         >
           <div v-if="editingEndTime"></div>
-          <div v-else>
-            <span v-if="annotation.time[1]">
+          <div v-else class="flex flex-col items-center">
+            <p class="text-center leading-2" v-if="annotation.time[1]">
               {{ formatTime(annotation.time[1], 0) }}
-            </span>
+            </p>
             <img
               v-else
-              class="w-5 h-5"
+              class="w-4 h-4"
               :src="plusButtonSVG"
               alt="addEndTime-button"
             />
