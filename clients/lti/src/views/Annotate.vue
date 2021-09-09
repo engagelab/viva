@@ -102,7 +102,7 @@ import { defineComponent, ref, ComputedRef, computed } from 'vue'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
 import { Annotation } from '@/types/main'
-import { stringToColour, formatDate, uuid } from '@/utilities'
+import { stringToColour, formatDate } from '@/utilities'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import trimButtonSVG from '@/assets/icons/svg/trim.svg'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
@@ -145,12 +145,14 @@ export default defineComponent({
         time: [currentPlayerTime.value],
         nowActive: false,
       }
-      videoActions.createAnnotation(selectedItemShare.value, newAnnotation)
+      console.log(newAnnotation)
+      // videoActions.createAnnotation(selectedItemShare.value, newAnnotation)
       annotationText.value = ''
     }
 
     const updateAnnotation = function (update: Annotation) {
-      videoActions.updateAnnotation(selectedItemShare.value, update)
+      console.log(update)
+      //videoActions.updateAnnotation(selectedItemShare.value, update)
     }
 
     // if 'sortByCreated' sort by creation date, otherwise by video time

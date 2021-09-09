@@ -154,13 +154,13 @@ export default defineComponent({
     }
 
     function editStartTime() {
-      if (annotation.value.creator === myLTIID) editingStartTime.value = true
+      editingStartTime.value = annotation.value.creator === myLTIID
     }
     function editEndTime() {
-      if (annotation.value.creator === myLTIID) editingEndTime.value = true
+      editingEndTime.value = annotation.value.creator === myLTIID
     }
     function editComment() {
-      if (annotation.value.creator === myLTIID) editingComment.value = true
+      editingComment.value = annotation.value.creator === myLTIID
     }
 
     return {
