@@ -22,6 +22,7 @@ import {
   VideoSharing,
   ListItemShare,
   VideoDetailsData,
+  Annotation,
 } from '../types/main'
 import { SORT_BY, VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
 import { apiRequest } from '../api/apiRequest'
@@ -213,6 +214,16 @@ interface Actions {
   updateShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
   deleteShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
   sortVideosBy: (mode: VIDEO_SHARING_MODE, sortby: SORT_BY) => void
+
+  createAnnotation: (listItem: ListItem) => Promise<void>
+  updateAnnotation: (
+    videoID: string,
+    videoSharing: VideoSharing
+  ) => Promise<void>
+  deleteAnnotation: (
+    videoID: string,
+    videoSharing: VideoSharing
+  ) => Promise<void>
 }
 const actions = {
   detailMode: function (
@@ -296,6 +307,30 @@ const actions = {
           (share) => share._id === videoSharing._id
         )
         if (sIndex >= 0) v.users.sharing.splice(sIndex, 1)
+      }
+    })
+  },
+
+  /******************SERVER calls for CRUD in annotations ********** */
+  createAnnotation: function (
+    videoID: string,
+    videoSharingId: string
+      ): Promise<void> {
+    const videoID = listItem.video.details.id
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.POST,
+      credentials: true,
+      query: { videioId: videoID, shareId: videoSharingId },
+      route: '/api/video/share/annotation',
+    }
+    return apiRequest<Annotation>(payload).then((newAnnotation: Annotation) => {
+      const v = state.value.videos.get(videoID)
+      if (v) {
+        const share = v.users.sharing.find(
+          (share) => share._id == videoSharingId
+        )
+        share?.annotations = newAnnotation
+        state.value.selectedItemShare?.share.annotations = newAnnotation
       }
     })
   },
