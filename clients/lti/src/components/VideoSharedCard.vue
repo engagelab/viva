@@ -1,7 +1,7 @@
 <template>
   <div
     class="relative flex flex-row items-center text-viva-grey-500 bg-viva-grey-400 my-1"
-    @click.stop="openShare(share)"
+    @click.stop="openAnnotation(share)"
     @mouseover="hover = true"
     @mouseleave="hover = false"
   >
@@ -79,18 +79,16 @@ export default defineComponent({
   props: {
     share: { type: Object as PropType<ListItemShare>, required: true },
   },
-  setup() {
+  emits: ['annotate'],
+  setup(props, context) {
     const { t } = useI18n({ messages })
     const myLTIID = appGetters.user.value.profile.ltiID
     const hover = ref(false)
     const menu = ref(false)
 
-    function openShare(share: ListItemShare) {
+    function openAnnotation(share: ListItemShare) {
       videoActions.selectShare(share)
-      videoActions.detailMode(
-        VIDEO_DETAIL_MODE.annotate,
-        VIDEO_DETAIL_MODE.none
-      )
+      context.emit('annotate')
     }
 
     function editShare(share: ListItemShare) {
@@ -123,7 +121,7 @@ export default defineComponent({
       menu,
       myLTIID,
       baseUrl,
-      openShare,
+      openAnnotation,
       editShare,
       deleteShare,
     }

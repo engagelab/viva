@@ -1,6 +1,6 @@
 <template>
   <div
-    class="my-6 flex flex-col bg-viva-grey-400 rounded-xl w-full lg:w-192"
+    class="flex flex-col bg-viva-grey-400 rounded-xl w-full"
     v-if="selectedItem"
     :key="selectedItem.video.details.id"
     @click.prevent.self
@@ -39,6 +39,7 @@
           :max="scrubberMax"
           :min="scrubberMin"
           @change="adjustProgress"
+          @update="$emit('currenttime', currentPlayerTime)"
         />
         <div
           class="flex flex-row flex-grow self-end w-full py-1 px-6 md:py-4 items-center bg-gradient-to-b from-transparent to-black"
@@ -101,6 +102,7 @@ import { EditDecriptionList, Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 const { getters: videoGetters } = useVideoStore()
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
+import { formatTime } from '@/utilities'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
 import pauseButtonSVG from '@/assets/icons/svg/pause.svg'
 import fullscreenButtonSVG from '@/assets/icons/svg/scale_up.svg'
@@ -113,7 +115,7 @@ export default defineComponent({
   components: {
     Slider,
   },
-  emits: ['trim'],
+  emits: ['trim', 'currenttime'],
   setup(props, context) {
     const selectedItem = videoGetters.selectedItem
     const selectedItemShare = videoGetters.selectedItemShare
@@ -133,7 +135,7 @@ export default defineComponent({
       return Math.floor(value * 100)
     }
     const formatProgressTooltip = function (value: number) {
-      return formatTime(value)
+      return formatTime(value, edl.value.trim[0])
     }
     // Called on initialisation of this view to create placeholder for edited data
     function setupVideo(): void {
@@ -168,29 +170,9 @@ export default defineComponent({
       return edl.value.trim[0] || 0
     })
 
-    // Input time as a number - seconds as whole with milliseconds as the decimal e.g. 12.65 = 12 seconds 650 milliseconds
-    function formatTime(timeInSeconds: number): string {
-      // Adjust for offset by trim[0]
-      const adjustedTimeInSeconds = Math.floor(
-        timeInSeconds - edl.value.trim[0]
-      )
-
-      let minutes = Math.floor(adjustedTimeInSeconds / 60)
-      let hours = Math.floor(minutes / 60)
-      // prettier-ignore
-      minutes = hours > 0 ? Math.floor(minutes % (60 * hours)) : minutes
-      let seconds =
-        minutes > 0
-          ? Math.floor(adjustedTimeInSeconds % (60 * minutes + 60 * 60 * hours))
-          : Math.floor(adjustedTimeInSeconds)
-      const minutesString = minutes > 9 ? minutes : '0' + minutes
-      const secondsString = seconds > 9 ? seconds : '0' + seconds
-      return `${hours}:${minutesString}:${secondsString}`
-    }
-
     const playerTime = computed(() => {
-      const currentTime = formatTime(currentPlayerTime.value)
-      const totalTime = formatTime(edl.value.trim[1])
+      const currentTime = formatTime(currentPlayerTime.value, edl.value.trim[0])
+      const totalTime = formatTime(edl.value.trim[1], edl.value.trim[0])
       return `${currentTime} / ${totalTime}`
     })
 
@@ -253,6 +235,7 @@ export default defineComponent({
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
         currentPlayerTime.value = player.currentTime
+        context.emit('currenttime', player.currentTime)
         if (player.currentTime >= edl.value.trim[1]) {
           stopPlaying()
         }
@@ -374,7 +357,7 @@ export default defineComponent({
   --slider-bg: #444;
   --slider-connect-bg: #ffffff;
 }
-.volume-slider >>> .slider-handle {
+.volume-slider ::v-deep(.slider-handle) {
   right: calc(
     var(--slider-handle-height, 16px) / 2 * -1 - var(--slider-height, 6px) / 2 *
       -1
@@ -393,7 +376,7 @@ export default defineComponent({
   --slider-tooltip-font-weight: 200;
   --slider-tooltip-line-height: 0.5rem;
 }
-.progress-slider >>> .slider-handle-upper {
+.progress-slider ::v-deep(.slider-handle-upper) {
   --slider-tooltip-line-height: 2rem !important;
 }
 .layout {

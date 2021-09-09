@@ -33,6 +33,37 @@ const shuffleItems = <T>(itemsArray: Array<T>): Array<T> => {
   return indexArray.map((index) => itemsArray[index])
 }
 
+// Input time as a number - seconds as whole with milliseconds as the decimal e.g. 12.65 = 12 seconds 650 milliseconds
+const formatTime = (timeInSeconds: number, offsetTime = 0): string => {
+  // Adjust for offset
+  const adjustedTimeInSeconds = Math.floor(timeInSeconds - offsetTime)
+
+  let minutes = Math.floor(adjustedTimeInSeconds / 60)
+  const hours = Math.floor(minutes / 60)
+  // prettier-ignore
+  minutes = hours > 0 ? Math.floor(minutes % (60 * hours)) : minutes
+  const seconds =
+    minutes > 0
+      ? Math.floor(adjustedTimeInSeconds % (60 * minutes + 60 * 60 * hours))
+      : Math.floor(adjustedTimeInSeconds)
+  const minutesString = minutes > 9 ? minutes : '0' + minutes
+  const secondsString = seconds > 9 ? seconds : '0' + seconds
+  return `${hours}:${minutesString}:${secondsString}`
+}
+
+// Reverse function to 'formatTime'
+// Expects a string in the form '0:00:00' (single hour:mins:seconds)
+const formattedTimeToSeconds = (timeString: string): number => {
+  const timeArray = timeString.split(':')
+  if (timeArray.length === 3)
+    return (
+      parseInt(timeArray[0]) * 3600 +
+      parseInt(timeArray[1]) * 60 +
+      parseInt(timeArray[2])
+    )
+  return -1
+}
+
 // https://stackoverflow.com/questions/3552461/how-to-format-a-javascript-date
 const formatDate = (date: Date): string => {
   const monthNames = [
@@ -130,6 +161,8 @@ const wait = (ms: number): Promise<void> => {
 export {
   uuid,
   formatDate,
+  formatTime,
+  formattedTimeToSeconds,
   wrap,
   convertFilePath,
   wait,

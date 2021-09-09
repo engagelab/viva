@@ -366,21 +366,21 @@ export default defineComponent({
       const presetID = presetConfig.value?.id || ''
       const dataset = datasets.value.find((d) => d._id == presetID)
       if (dataset && presetConfig.value) {
+        const entries = presetConfig.value.currentSelection.entries()
         datasetActions.selectDataset(dataset)
         const tempSelection: ListData[] = []
-        presetConfig.value.currentSelection.forEach((u, depth) => {
+        for (const [depth, u] of entries) {
           let list: DatasetSelection[] = []
           if (depth === 0) list = dataset.selection[u.keyName]
-          else {
-            const s = tempSelection[depth - 1].data.selection
-            if (s) list = s[u.keyName]
+          else if (tempSelection[depth - 1]) {
+            list = tempSelection[depth - 1].data.selection?.[u.keyName] || []
           }
           const data = list.find((item) => item.title == u.title)
           if (data) {
             const su: ListData = { data, keyName: u.keyName, title: u.title }
             tempSelection.push(su)
-          }
-        })
+          } else break
+        }
         currentSelection.value = tempSelection
       }
     }

@@ -1,7 +1,7 @@
 <template>
   <div class="relative p-4 flex flex-col">
     <div
-      class="flex flex-row justify-start font-serious font-extralight text-viva-grey-500 py-4"
+      class="flex flex-row justify-start font-serious font-extralight text-viva-grey-500 py-4 w-auto"
     >
       <!--div
         class="cursor-pointer mr-6"
@@ -31,8 +31,22 @@
       >
         Shared To Me
       </div>
+      <!-- Sort function  -->
+      <div class="flex flex-grow justify-end">
+        <select
+          class="col-end bg-transparent text-white"
+          v-model="sortOrder"
+          @change="sort"
+        >
+          <option disabled value="">Sort by</option>
+          <option v-for="(sort, index) in Object.keys(SORT_BY)" :key="index">
+            {{ sort }}
+          </option>
+        </select>
+      </div>
     </div>
-    <div class="w-auto lg:w-192 overflow-y-auto no-scrollbar">
+    <Annotate class="w-auto lg:w-192 no-scrollbar" v-if="annotateVisible" />
+    <div v-else class="w-auto lg:w-192 overflow-y-auto no-scrollbar">
       <div
         v-show="currentTab === VIDEO_SHARING_MODE.feed"
         class="flex flex-row flex-wrap"
@@ -49,22 +63,12 @@
       >
         <div class="grid grid-cols-3">
           <p class="col-span-2 text-lg text-white">My Videos</p>
-          <!-- Sort function  -->
-          <select
-            class="col-end bg-transparent text-white"
-            v-model="sortOrder"
-            @change="sort"
-          >
-            <option disabled value="">Sort by</option>
-            <option v-for="(sort, index) in Object.keys(SORT_BY)" :key="index">
-              {{ sort }}
-            </option>
-          </select>
         </div>
         <VideoMyCard
           v-for="(item, itemIndex) in myVideos"
           :key="itemIndex"
           :listitem="item"
+          @annotate="annotateVisible = true"
         />
       </div>
       <div
@@ -76,6 +80,7 @@
           v-for="(share, itemIndex) in sharedToMe"
           :key="itemIndex"
           :share="share"
+          @annotate="annotateVisible = true"
         />
       </div>
     </div>
@@ -85,12 +90,12 @@
       @mousedown.self="selectNone()"
     >
       <Player
+        class="lg:w-192"
         v-if="
           detailMode.mode === VIDEO_DETAIL_MODE.play ||
           detailMode.submode === VIDEO_DETAIL_MODE.play
         "
       />
-      <Annotate v-if="detailMode.mode === VIDEO_DETAIL_MODE.annotate" />
       <Share v-if="detailMode.mode === VIDEO_DETAIL_MODE.share" />
       <DialogBox v-if="dialogConfig.visible" />
     </div>
@@ -99,12 +104,11 @@
 
 <script lang="ts">
 // @ is an alias to /src
-import { defineComponent, ref, onMounted, Ref, watch } from 'vue'
-import { VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
+import { defineComponent, ref, onMounted, Ref } from 'vue'
+import { VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE, SORT_BY } from '@/constants'
 
 import { useAppStore } from '../store/useAppStore'
 import { useVideoStore } from '../store/useVideoStore'
-import { SORT_BY } from '@/constants'
 import VideoFeedCard from '@/components/VideoFeedCard.vue'
 import VideoMyCard from '@/components/VideoMyCard.vue'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'
@@ -112,7 +116,7 @@ import DialogBox from '@/components/DialogBox.vue'
 import Annotate from '@/views/Annotate.vue'
 import Player from '@/views/Player.vue'
 import Share from '@/views/Share.vue'
-// import { ListItem } from '../types/main'
+
 export default defineComponent({
   name: 'Dashboard',
   components: {
@@ -130,13 +134,15 @@ export default defineComponent({
     const user = appGetters.user.value
     const sortOrder = ref(SORT_BY.date)
     appActions.fetchLTIData()
-    const currentTab: Ref<string> = ref(VIDEO_SHARING_MODE.myVideos)
-    const myVideos = ref(videoGetters.myVideos)
+    const currentTab: Ref<VIDEO_SHARING_MODE> = ref(VIDEO_SHARING_MODE.myVideos)
+    const annotateVisible = ref(false)
+
     onMounted(() => {
       videoActions.getVideoMetadata()
     })
 
     function showTab(tabName: VIDEO_SHARING_MODE) {
+      annotateVisible.value = false
       currentTab.value = tabName
       console.log(currentTab.value)
       videoActions.selectNoOriginal()
@@ -145,7 +151,7 @@ export default defineComponent({
     videoActions.selectNoOriginal()
     videoActions.selectNoShare()
     const sort = () => {
-      videoActions.sortVideos(SORT_BY[sortOrder.value])
+      videoActions.sortVideosBy(currentTab.value, sortOrder.value)
     }
 
     function selectNone() {
@@ -180,44 +186,17 @@ export default defineComponent({
             videoActions.selectNoShare()
           }
           break
-        case VIDEO_DETAIL_MODE.annotate:
-          if (submode === VIDEO_DETAIL_MODE.play)
-            videoActions.detailMode(
-              VIDEO_DETAIL_MODE.annotate,
-              VIDEO_DETAIL_MODE.none
-            )
-          else {
-            videoActions.detailMode(
-              VIDEO_DETAIL_MODE.none,
-              VIDEO_DETAIL_MODE.none
-            )
-            videoActions.selectNoShare()
-          }
-          break
         default:
           break
       }
     }
-    function reloadData() {
-      console.log('hi')
-    }
 
-    watch(
-      () => sortOrder.value,
-      () => reloadData()
-    )
-    reloadData()
     return {
       VIDEO_SHARING_MODE,
       VIDEO_DETAIL_MODE,
       user,
       feed: videoGetters.feed,
-      // mySortedVideos: computed(() => {
-      //   return videoGetters.myVideos.value.sort((v1, v2) =>
-      //     v1.dataset.name.localeCompare(v2.dataset.name)
-      //   )
-      // }),
-      myVideos,
+      myVideos: videoGetters.myVideos,
       sharedToMe: videoGetters.sharedToMe,
       selectedItem: videoGetters.selectedItem,
       sort,
@@ -228,6 +207,7 @@ export default defineComponent({
       dialogConfig: appGetters.dialogConfig,
       showTab,
       currentTab,
+      annotateVisible,
     }
   },
 })

@@ -235,19 +235,31 @@ interface VideoStatus {
   hasUnsavedChanges: boolean
   hasNewDataAvailable: boolean
 }
-export interface SharingComment {
+export interface ShareComment {
   created: Date
   creator: string // LTI ID
   comment: string
 }
+export interface Annotation {
+  _id?: string
+  created: Date
+  creator: string // LTI ID
+  comment: string
+  time: number[] // e.g [2.35, 10.04] or just [2.35]
+
+  // front end only
+  nowActive: boolean
+}
 export interface VideoSharing {
   _id: string // DB ID of the share (not the video!)
   creator: string // LTI ID
+  created: Date
   users: string[]
   access: boolean
   title: string
   description: string
-  comments: SharingComment[]
+  annotations: Annotation[]
+  comments: ShareComment[]
   edl: EditDecriptionList
 }
 interface VideoUsersData {
@@ -461,6 +473,7 @@ export class Video {
       if (share) {
         share.access = s.access
         share.creator = s.creator
+        share.created = s.created || new Date(this.details.created) // To ensure a date is available for older videos
         share.title = s.title
         share.description = s.description
         share.comments = s.comments
