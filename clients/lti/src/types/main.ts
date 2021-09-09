@@ -387,6 +387,7 @@ export class Video {
       this.updateDetails(data.details)
       this.updateStatus(data.status)
       this.updateUsers(data.users)
+
       this.updateDataset(data.dataset)
       this.storages = data.storages
       this.consents = data.consents
@@ -470,12 +471,14 @@ export class Video {
   updateSharing(sharing: VideoSharing[]): void {
     sharing.forEach((s) => {
       const share = this.users.sharing.find((us) => us._id === s._id)
+
       if (share) {
         share.access = s.access
         share.creator = s.creator
         share.created = s.created || new Date(this.details.created) // To ensure a date is available for older videos
         share.title = s.title
         share.description = s.description
+        share.annotations = s.annotations
         share.comments = s.comments
         share.edl = s.edl
         share.users = s.users
@@ -484,6 +487,7 @@ export class Video {
       }
     })
   }
+
   updateDataset(dataset: VideoDatasetData): void {
     if (dataset.id) this.dataset.id = dataset.id
     if (dataset.name) this.dataset.name = dataset.name
