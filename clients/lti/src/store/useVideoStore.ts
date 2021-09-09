@@ -215,14 +215,19 @@ interface Actions {
   deleteShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
   sortVideosBy: (mode: VIDEO_SHARING_MODE, sortby: SORT_BY) => void
 
-  createAnnotation: (listItem: ListItem) => Promise<void>
-  updateAnnotation: (
-    videoID: string,
-    videoSharing: VideoSharing
+  createAnnotation: (
+    listItemShare: ListItemShare,
+    annotation: Annotation
   ) => Promise<void>
+
+  updateAnnotation: (
+    listItemShare: ListItemShare,
+    annotation: Annotation
+  ) => Promise<void>
+
   deleteAnnotation: (
-    videoID: string,
-    videoSharing: VideoSharing
+    listItemShare: ListItemShare,
+    annotation: Annotation
   ) => Promise<void>
 }
 const actions = {
@@ -313,14 +318,17 @@ const actions = {
 
   /******************SERVER calls for CRUD in annotations ********** */
   createAnnotation: function (
-    videoID: string,
-    videoSharingId: string
-      ): Promise<void> {
-    const videoID = listItem.video.details.id
+    listItemShare: ListItemShare,
+    annotation: Annotation
+  ): Promise<void> {
+    const videoID = listItemShare.item.video.details.id
+    const videoSharingId = listItemShare.share._id
+
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.POST,
       credentials: true,
-      query: { videioId: videoID, shareId: videoSharingId },
+      body: annotation,
+      query: { videoID, videoSharingId },
       route: '/api/video/share/annotation',
     }
     return apiRequest<Annotation>(payload).then((newAnnotation: Annotation) => {
@@ -329,8 +337,77 @@ const actions = {
         const share = v.users.sharing.find(
           (share) => share._id == videoSharingId
         )
-        share?.annotations = newAnnotation
-        state.value.selectedItemShare?.share.annotations = newAnnotation
+        share?.annotations.push(newAnnotation)
+        v.updateSharing([share])
+        // state.value.selectedItemShare?.share.annotations.push(newAnnotation)
+      }
+    })
+  },
+
+  updateAnnotation: function (
+    listItemShare: ListItemShare,
+    annotation: Annotation
+  ): Promise<void> {
+    const videoID = listItemShare.item.video.details.id
+    const videoSharingId = listItemShare.share._id
+    const annotationId = annotation._id
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.PUT,
+      credentials: true,
+      body: annotation,
+      query: { videoID, videoSharingId, annotationId },
+      route: '/api/video/share/annotate',
+    }
+    return apiRequest<Annotation>(payload).then(
+      (updatedAnnotation: Annotation) => {
+        const v = state.value.videos.get(videoID)
+        if (v) {
+          const share = v.users.sharing.find(
+            (share) => share._id == videoSharingId
+          )
+          const updatedAnnotations = share?.annotations.map((annotation) => {
+            if (annotation._id == updatedAnnotation._id) {
+              annotation.comment = updatedAnnotation.comment
+              annotation.created = updatedAnnotation.created
+              annotation.creator = updatedAnnotation.creator
+              annotation.nowActive = updatedAnnotation.nowActive
+              annotation.time = updatedAnnotation.time
+            }
+            return annotation
+          })
+          share?.annotations = [...updatedAnnotations]
+          v.updateSharing([share])
+        }
+      }
+    )
+  },
+
+  deleteAnnotation: function (
+    listItemShare: ListItemShare,
+    annotation: Annotation
+  ): Promise<void> {
+    const videoID = listItemShare.item.video.details.id
+    const videoSharingId = listItemShare.share._id
+
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.POST,
+      credentials: true,
+      body: annotation,
+      query: { videoID, videoSharingId },
+      route: '/api/video/share/annotation',
+    }
+
+    return apiRequest<Annotation>(payload).then(() => {
+      const v = state.value.videos.get(videoID)
+      if (v) {
+        const share = v.users.sharing.find(
+          (share) => share._id == videoSharingId
+        )
+        const aIndex = share?.annotations.findIndex(
+          (annotate) => annotate._id === annotation._id
+        )
+        if (aIndex >= 0) share?.annotations.splice(aIndex, 1)
+        v.updateSharing([share])
       }
     })
   },
