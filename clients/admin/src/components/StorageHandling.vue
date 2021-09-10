@@ -2,14 +2,14 @@
   <div class="ml-2 flex flex-col">
     <SelectionBox
       id="select-kind"
-      label="Kind"
+      :label="t('kind')"
       :options="storageKindOptions"
       v-model="storageKind"
       @change="setStorageKind"
     ></SelectionBox>
     <SelectionBox
       id="select-group"
-      label="Group"
+      :label="t('group')"
       :options="storageGroupOptions"
       v-model="storageGroup"
       @change="setStorageGroup"
@@ -17,16 +17,16 @@
     <AnswerInput
       mode="multiChoice"
       :border="false"
-      label="Categories"
+      :label="t('categories')"
       :options="storageCategoryOptions"
       :required="true"
       v-model="storageCategory"
       @change="setStorageCategory"
     ></AnswerInput>
-    <p class="text-red-600 mt-4">Path</p>
+    <p class="text-red-600 mt-4">{{ t('path') }}</p>
     <div class="flex flex-row m-2">
       <div class="flex flex-col">
-        <h3>Available options</h3>
+        <h3>{{ t('available options') }}</h3>
         <draggable
           class="flex flex-col p-1 border border-gray-400"
           style="min-height: 45px"
@@ -44,7 +44,7 @@
 
       <div class="flex flex-col ml-6 flex-grow">
         <div>
-          <h3>Path structure</h3>
+          <h3>{{ t('path structure') }}</h3>
         </div>
         <draggable
           class="flex flex-row p-1 h-12 border border-green-300 items-center"
@@ -64,10 +64,10 @@
         </draggable>
       </div>
     </div>
-    <p class="text-red-600 mt-4">File Name</p>
+    <p class="text-red-600 mt-4">{{ t('fileName') }}</p>
     <div class="flex flex-row m-2">
       <div class="flex flex-col">
-        <h3>Available options</h3>
+        <h3>{{ t('available options') }}</h3>
         <draggable
           class="flex flex-col border border-gray-400"
           style="min-height: 45px"
@@ -85,7 +85,7 @@
 
       <div class="flex flex-col ml-6 flex-grow">
         <div>
-          <h3>Filename structure</h3>
+          <h3>{{ t('fileName structure') }}</h3>
         </div>
         <draggable
           class="flex flex-row p-1 h-12 border border-green-300 items-center"
@@ -118,10 +118,24 @@ import { VIDEO_STORAGE_TYPES, storageKeys } from '@/constants'
 import { DatasetStorage } from '@/types/main'
 const messages = {
   nb_NO: {
-    dataset: 'Registrering',
+    kind: '',
+    group: '',
+    categories: '',
+    path: '',
+    'available options': '',
+    'path structure': '',
+    fileName: '',
+    'fileName structure': 'File name structure',
   },
   en: {
-    dataset: 'Registrering',
+    kind: 'Kind',
+    group: 'Group',
+    categories: 'Categories',
+    path: 'Path',
+    'available options': 'Available options',
+    'path structure': 'Path structure',
+    fileName: 'File name',
+    'fileName structure': 'File name structure',
   },
 }
 interface StorageStringListItem {

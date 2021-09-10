@@ -8,7 +8,7 @@ const Video = require('../../models/Video')
 
 const Dataset = require('../../models/Dataset')
 /* ---------------- Video activities ---------------- */
-
+// This is creating share for a particular video
 router.post(
   '/video/share',
   utilities.authoriseUser,
@@ -24,7 +24,7 @@ router.post(
           access: true,
           title: '',
           description: '',
-          edl: { trim: [0, v.details.duration] , blur: [] },
+          edl: { trim: [0, v.details.duration], blur: [] },
           annotations: [],
           comment: [],
           status: [],
@@ -142,4 +142,94 @@ router.get('/videos/share', utilities.authoriseUser, (request, response) => {
     )
   }
 })
+
+/***********************  CRUD Operations for annotations in a share ****************************** */
+
+// This is creating annotation for a share
+router.post(
+  '/video/share/annotation',
+  utilities.authoriseUser,
+  async (request, response, next) => {
+    const newAnnotation = request.body
+    const videoSharingId = request.query.videoSharingId
+    const videoID = request.query.videoID
+    Video.findOne({ 'details.id': videoID }, (error, v) => {
+      if (error || !v) {
+        return response.status(400).end()
+      } else {
+        v.users.sharing.map((share) => {
+          if (share._id == videoSharingId) {
+            share.annotation.push(newAnnotation)
+          }
+        })
+        console.log(v.users.sharing)
+        v.save((saveError) => {
+          if (saveError) return next(saveError)
+          response.send(newAnnotation)
+        })
+      }
+    })
+  }
+)
+
+// To update a annotate for a share ID
+router.put(
+  '/video/share/annotate',
+  utilities.authoriseUser,
+  async (request, response, next) => {
+    const updatedAnnotation = request.body
+    const videoSharingId = request.query.videoSharingId
+    const videoID = request.query.videoID
+    Video.findOne({ 'details.id': videoID }, (error, v) => {
+      if (error || !v || !updatedAnnotation._id) {
+        return response.status(400).end()
+      } else {
+        v.users.sharing.map((share) => {
+          if (share._id == videoSharingId) {
+            share.annotations.map((a) => {
+              if (a._id == updatedAnnotation._id) {
+                a.comment = updatedAnnotation.comment
+                a.created = updatedAnnotation.created
+                a.creator = updatedAnnotation.creator
+                a.time = updatedAnnotation.time
+              }
+            })
+          }
+        })
+        v.save((saveError) => {
+          if (saveError) return next(saveError)
+          response.send(updatedAnnotation)
+        })
+      }
+    })
+  }
+)
+// Do we really need this ??
+router.delete(
+  '/video/share/annotate',
+  utilities.authoriseUser,
+  async (request, response, next) => {
+    const deletedAnnotation = request.body
+    const videoSharingId = request.query.videoSharingId
+    const videoID = request.query.videoID
+
+    Video.findOne({ 'details.id': videoID }, (error, v) => {
+      if (error || !v || !deletedAnnotation._id || !videoSharingId) {
+        return response.status(400).end()
+      } else {
+        v.users.sharing.map(share=>{
+          if (share._id===videoSharingId){
+            share.annotations.id(deletedAnnotation._id).remove()
+          }
+        })
+      
+        v.save((saveError) => {
+          if (saveError) return next(saveError)
+          response.end()
+        })
+      }
+    })
+  }
+)
+
 module.exports = router
