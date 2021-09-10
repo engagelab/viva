@@ -334,9 +334,10 @@ const actions = {
     return apiRequest<Annotation>(payload).then((newAnnotation: Annotation) => {
       const v = state.value.videos.get(videoID)
       if (v) {
-        v.users.sharing.map((share) => {
-          if (share._id == videoSharingId) share.annotations.push(newAnnotation)
-        })
+        const share = v.users.sharing.find(
+          (s) => s._id === listItemShare.share._id
+        )
+        if (share) share.annotations.push(newAnnotation)
       }
     })
   },
@@ -358,22 +359,7 @@ const actions = {
     return apiRequest<Annotation>(payload).then(
       (updatedAnnotation: Annotation) => {
         const v = state.value.videos.get(videoID)
-        if (v) {
-          const share = v.users.sharing.find(
-            (share) => share._id == videoSharingId
-          )
-          if (share) {
-            share.annotations.map((annotation) => {
-              if (annotation._id == updatedAnnotation._id) {
-                annotation.comment = updatedAnnotation.comment
-                annotation.created = updatedAnnotation.created
-                annotation.creator = updatedAnnotation.creator
-                annotation.time = updatedAnnotation.time
-              }
-              v.updateSharing([share])
-            })
-          }
-        }
+        if (v) v.updateAnnotation(listItemShare.share, updatedAnnotation)
       }
     )
   },

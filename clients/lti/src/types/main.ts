@@ -487,6 +487,20 @@ export class Video {
       }
     })
   }
+  updateAnnotation(share: VideoSharing, updatedAnnotation: Annotation): void {
+    const s = this.users.sharing.find((us) => us._id === share._id)
+    if (s) {
+      const annotation = s.annotations.find(
+        (ua) => ua._id === updatedAnnotation._id
+      )
+      if (annotation) {
+        annotation.comment = updatedAnnotation.comment
+        annotation.created = updatedAnnotation.created
+        annotation.creator = updatedAnnotation.creator
+        annotation.time = updatedAnnotation.time
+      }
+    }
+  }
 
   updateDataset(dataset: VideoDatasetData): void {
     if (dataset.id) this.dataset.id = dataset.id
