@@ -27,7 +27,7 @@
               }}{{ selectedItemShare.item.dataset.selection }}
             </p>
             <Button
-              v-if="myLTIID === localShare.creator"
+              v-if="myLTIID === selectedItemShare.share.creator"
               :childclass="'w-24 h-10'"
               :backgroundcolour="'bg-viva-grey-450'"
               :textcolour="'text-white'"
@@ -62,10 +62,10 @@
           </div>
           <div class="flex flex-col pt-4">
             <p class="text-2xl text-white">
-              {{ localShare.title || 'no title' }}
+              {{ selectedItemShare.share.title || 'no title' }}
             </p>
             <p class="text-sm text-white">
-              {{ localShare.description || 'no descritpion' }}
+              {{ selectedItemShare.share.description || 'no descritpion' }}
             </p>
           </div>
         </div>
@@ -90,6 +90,7 @@
             v-for="a in annotations"
             :key="a._id"
             :annotation="a"
+            @updated="updateAnnotation"
           />
         </div>
       </div>
@@ -97,17 +98,11 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref, Ref, watch, ComputedRef, computed } from 'vue'
+import { defineComponent, ref, ComputedRef, computed } from 'vue'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
-import {
-  EditDecriptionList,
-  NameAndRole,
-  VideoSharing,
-  ListItemShare,
-  Annotation,
-} from '@/types/main'
-import { stringToColour, formatDate } from '@/utilities'
+import { Annotation } from '@/types/main'
+import { stringToColour, formatDate, uuid } from '@/utilities'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import trimButtonSVG from '@/assets/icons/svg/trim.svg'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
@@ -117,11 +112,6 @@ import Button from '@/components/base/Button.vue'
 
 const { getters: appGetters } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
-
-interface NARListItem {
-  itemName: string
-  item: NameAndRole
-}
 
 export default defineComponent({
   name: 'Annotate',
@@ -134,64 +124,11 @@ export default defineComponent({
     const selectedItemShare = videoGetters.selectedItemShare
     const showUsers = ref(false)
     const showAnnotations = ref(false)
-    const unsavedData = ref(false)
     const currentPlayerTime = ref(0)
     const sortByCreated = ref(false)
     const annotationText = ref('')
     const videoCurrentTime = ref(0)
     const myLTIID = appGetters.user.value.profile.ltiID
-    let NARList: NARListItem[] = appGetters.canvasData.value.namesAndRoles
-      .map((u) => ({ itemName: u.name, item: u }))
-      .filter((u) => u.item.ltiID !== myLTIID)
-
-    const localShare: Ref<VideoSharing> = ref({
-      _id: '',
-      creator: myLTIID,
-      created: new Date(),
-      users: [],
-      access: false,
-      title: '',
-      description: '',
-      edl: { trim: [0, 0], blur: [] },
-      annotations: [],
-      comments: [],
-    })
-
-    const resetData = (li: ListItemShare) => {
-      unsavedData.value = false
-      const s = li.share
-      if (s) {
-        localShare.value = {
-          _id: s._id || '',
-          creator: s.creator,
-          created: s.created,
-          users: s.users,
-          access: s.access,
-          title: s.title,
-          description: s.description,
-          edl: s.edl,
-          annotations: [],
-          comments: s.comments,
-        }
-      }
-    }
-
-    const updateEDL = (trim: EditDecriptionList['trim']) => {
-      localShare.value.edl.trim = trim
-      unsavedData.value = true
-    }
-
-    watch(
-      () => selectedItemShare.value,
-      (s) => {
-        if (s) {
-          resetData(s)
-        }
-      }
-    )
-    if (selectedItemShare.value) {
-      resetData(selectedItemShare.value)
-    }
 
     function editShare() {
       if (selectedItemShare.value) {
@@ -208,9 +145,12 @@ export default defineComponent({
         time: [currentPlayerTime.value],
         nowActive: false,
       }
-      // TODO: Send to server here, on return add it to the localShare
-      localShare.value.annotations.push(newAnnotation)
+      videoActions.createAnnotation(selectedItemShare.value, newAnnotation)
       annotationText.value = ''
+    }
+
+    const updateAnnotation = function (update: Annotation) {
+      videoActions.updateAnnotation(selectedItemShare.value, update)
     }
 
     // if 'sortByCreated' sort by creation date, otherwise by video time
@@ -224,8 +164,9 @@ export default defineComponent({
 
     const annotations: ComputedRef<Annotation[]> = computed(() => {
       const t1DisplayPeriod = 5 // Seconds
+      const ans = selectedItemShare.value?.share.annotations || []
       return (
-        localShare.value.annotations
+        ans
           // Remove annotations that are before the current video time
           // For single-time entries, allow several seconds for display (t1DisplayPeriod)
           // If sorting by 'created' instead return the whole list
@@ -256,17 +197,14 @@ export default defineComponent({
       selectedItemShare,
       stringToColour,
       formatDate,
-      NARList,
       annotations,
-      localShare,
       annotationText,
       showUsers,
       showAnnotations,
       editShare,
       currentPlayerTime,
       addAnnotation,
-      updateEDL,
-      unsavedData,
+      updateAnnotation,
       videoCurrentTime,
       detailMode: videoGetters.detailMode,
 

@@ -1,6 +1,25 @@
 
 #### Canvas setup
 
+##### General
+
+* ILS have a 'sub-account' for VIVA. This may be a different sub-account from others they might have.. but it might not matter too much
+* Under the 'sub-account' they create a Canvas Group that contains users who will have access to the VIVA Admin pages
+* The VIVA LTI itself should be "placed" in Canvas as a 'course' - that is it shows up as an item in the Courses list for that sub-account
+* Positioning of the LTI elsewhere may be possible, but we'd have to test that.  Nicolai and Tore/Joey should be the ones deciding where/how the LTI fits into Canvas.
+* We also have built an option to deny access to the LTI unless a "prerequisite course" has been completed (e.g. the Ethics Course)
+
+After these points are met, VIVA needs the following informatione entered in the `.env`:
+```
+# The Canvas Account ID where VIVA courses are created
+CANVAS_VIVA_ACCOUNT_ID=15120
+# The group representing who can administer Viva (created under the Cavnas Account)
+CANVAS_ADMIN_GROUP_ID=25591
+# ID of a course that must be completed before a user is allowed access to VIVA, or 'none' if no course
+CANVAS_DEPENDENT_COURSE_ID=28623
+#CANVAS_DEPENDENT_COURSE_ID=none
+```
+
 ##### Special Access Token
 The VIVA server relies on a special token granting access to Users and Courses inside Canvas' VIVA Account context
 This token needs to be entered as `CANVAS_VIVA_ACCESS_TOKEN`

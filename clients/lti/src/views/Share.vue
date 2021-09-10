@@ -164,6 +164,7 @@ export default defineComponent({
     const localShare: Ref<VideoSharing> = ref({
       _id: '',
       creator: myLTIID,
+      created: new Date(),
       users: [],
       access: false,
       title: '',
@@ -180,6 +181,7 @@ export default defineComponent({
         localShare.value = {
           _id: s._id || '',
           creator: s.creator,
+          created: s.created,
           users: s.users,
           access: s.access,
           title: s.title,

@@ -106,13 +106,23 @@ const actions = {
         state.value.datasets = []
         if (datasets.length > 0) {
           datasets.forEach((s) => {
-            const newDataset = new Dataset(s)
-            state.value.datasets.push(newDataset)
+            const d = new Dataset(s)
+            state.value.datasets.push(d)
             if (
               state.value.presetDatasetConfig &&
-              state.value.presetDatasetConfig.id == newDataset._id
+              state.value.presetDatasetConfig.id == d._id
             ) {
-              state.value.selectedDataset = newDataset
+              // If a Dataset was previously selected, select it again
+              state.value.selectedDataset = d
+              // If the Dataset selection priority was changed since last time, clear the preset
+              if (
+                !state.value.presetDatasetConfig.currentSelection.every((c) =>
+                  d.selectionPriority.includes(c.keyName)
+                )
+              ) {
+                state.value.presetDatasetConfig.currentSelection = []
+                delete state.value.presetDatasetConfig.locks[d._id]
+              }
             }
           })
         } else {
@@ -124,9 +134,9 @@ const actions = {
       })
   },
   setPresetDatasetConfig(config: UserDatasetConfig): void {
-    state.value.presetDatasetConfig = config
     const d = state.value.datasets.find((ds) => ds._id === config.id)
     if (d) state.value.selectedDataset = d
+    state.value.presetDatasetConfig = config
   },
   addSelectionToDataset(data: SelectionOptions): void {
     const newDataset = new Dataset(data.dataset)

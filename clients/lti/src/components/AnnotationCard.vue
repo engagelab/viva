@@ -7,31 +7,31 @@
     <div class="flex flex-col flex-grow">
       <div class="flex flex-row">
         <div
-          class="p-2 text-white text-sm bg-viva-grey-450 rounded-2xl rounded-r-none cursor-pointer"
+          class="p-1 pl-2 flex items-center justify-center text-white font-serious font-medium bg-viva-grey-450 rounded-2xl rounded-r-none cursor-pointer"
         >
           <input
             v-if="editingStartTime"
-            class="bg-viva-grey-400 text-white focus:bg-viva-grey-450 w-16 px-1"
+            class="bg-viva-grey-400 text-white text-xsv bg-viva-grey-450 w-14"
             placeholder="..:..:.."
             v-model="localStartTime"
-            @keyup.enter="validateTime()"
+            @keyup.enter="validateChanges()"
           />
-          <span v-else @click="editingStartTime = !editingStartTime">
+          <p v-else class="text-xsv" @click="editStartTime()">
             {{ formatTime(annotation.time[0], 0) }}
-          </span>
+          </p>
         </div>
         <div
-          class="ml-1 px-2 py-1 text-white text-sm bg-viva-grey-450 rounded-2xl rounded-l-none cursor-pointer"
+          class="p-1 ml-0.5 pr-2 flex items-center justify-center text-white text-sm bg-viva-grey-450 rounded-2xl rounded-l-none cursor-pointer"
           @click="editingEndTime = !editingEndTime"
         >
           <div v-if="editingEndTime"></div>
-          <div v-else>
-            <span v-if="annotation.time[1]">
+          <div v-else class="flex flex-col items-center">
+            <p class="text-center leading-2" v-if="annotation.time[1]">
               {{ formatTime(annotation.time[1], 0) }}
-            </span>
+            </p>
             <img
               v-else
-              class="w-5 h-5"
+              class="w-4 h-4"
               :src="plusButtonSVG"
               alt="addEndTime-button"
             />
@@ -39,10 +39,18 @@
         </div>
       </div>
       <div
-        class="text-white text-xs focus:bg-viva-grey-450 rounded-2xl mt-1"
+        class="text-white text-xs bg-viva-grey-450 font-serious rounded-2xl mt-1 cursor-pointer px-2 py-2"
         :class="[annotation.nowActive ? 'bg-yellow-500' : 'bg-viva-grey-450']"
       >
-        <p class="p-3">
+        <textarea
+          v-if="myLTIID === annotation.creator"
+          type="text"
+          class="bg-viva-grey-450 w-full"
+          placeholder="Add a comment"
+          v-model="localAnnotation.comment"
+          @input="() => validateChanges()"
+        />
+        <p v-else class="m-3" @click="editComment()">
           {{ annotation.comment }}
         </p>
       </div>
@@ -54,13 +62,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, toRefs, watch } from 'vue'
+import { defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import moment from 'moment'
 import { Annotation } from '../types/main'
 import { stringToColour, formatTime, formattedTimeToSeconds } from '@/utilities'
 import { baseUrl } from '@/constants'
 import plusButtonSVG from '@/assets/icons/svg/plus.svg'
+import { useAppStore } from '@/store/useAppStore'
+
+const { getters: appGetters } = useAppStore()
 
 const messages = {
   nb_NO: {
@@ -84,25 +95,38 @@ export default defineComponent({
   props: {
     annotation: { type: Object as PropType<Annotation>, required: true },
   },
-  emits: ['annotate', 'timeupdate'],
+  emits: ['annotate', 'updated'],
   setup(props, context) {
     const { t } = useI18n({ messages })
     const { annotation } = toRefs(props)
+    const myLTIID = appGetters.user.value.profile.ltiID
     const hover = ref(false)
     const menu = ref(false)
     const editingEndTime = ref(false)
     const editingStartTime = ref(false)
+    const editingComment = ref(false)
 
     const localStartTime = ref(formatTime(annotation.value.time[0]))
     const localEndTime = ref(
       annotation.value.time[1] ? formatTime(annotation.value.time[1]) : ''
     )
+    const localAnnotation: Ref<Annotation> = ref({
+      _id: annotation.value._id,
+      comment: annotation.value.comment,
+      time: annotation.value.time,
+      created: annotation.value.created,
+      creator: annotation.value.creator,
+      nowActive: annotation.value.nowActive,
+    })
 
     watch(
-      () => annotation.value.time,
-      (newTime) => {
-        localStartTime.value = formatTime(newTime[0])
-        localEndTime.value = newTime[1] ? formatTime(newTime[1]) : ''
+      () => annotation.value,
+      (newValue) => {
+        localStartTime.value = formatTime(newValue.time[0])
+        localEndTime.value = newValue.time[1]
+          ? formatTime(newValue.time[1])
+          : ''
+        localAnnotation.value = annotation.value
       }
     )
 
@@ -110,32 +134,55 @@ export default defineComponent({
       return moment(date).format('MMM Do Y - H:m')
     }
 
-    function validateTime() {
+    function validateChanges() {
       const regex = /^\d?:\d{2}:\d{2}$/
       if (
         localStartTime.value.match(regex) &&
-        localEndTime.value.match(regex)
+        (localEndTime.value === '' || localEndTime.value.match(regex))
       ) {
-        const startTime: number = formattedTimeToSeconds(localStartTime.value)
-        const endTime: number = formattedTimeToSeconds(localEndTime.value)
-        context.emit('timeupdate', [startTime, endTime])
+        localAnnotation.value.time = []
+        localAnnotation.value.time.push(
+          formattedTimeToSeconds(localStartTime.value)
+        )
+        const endTime = formattedTimeToSeconds(localEndTime.value)
+        if (endTime > 0) localAnnotation.value.time.push(endTime)
+        context.emit('updated', localAnnotation.value)
+        editingStartTime.value = false
+        editingEndTime.value = false
+        editingComment.value = false
       }
+    }
+
+    function editStartTime() {
+      if (annotation.value.creator === myLTIID) editingStartTime.value = true
+    }
+    function editEndTime() {
+      if (annotation.value.creator === myLTIID) editingEndTime.value = true
+    }
+    function editComment() {
+      if (annotation.value.creator === myLTIID) editingComment.value = true
     }
 
     return {
       t,
+      myLTIID,
       formatTime,
       stringToColour,
       formatCreationDate,
       hover,
       menu,
+      editStartTime,
+      editEndTime,
       editingEndTime,
       editingStartTime,
+      editingComment,
       baseUrl,
       plusButtonSVG,
       localStartTime,
       localEndTime,
-      validateTime,
+      localAnnotation,
+      editComment,
+      validateChanges,
     }
   },
 })
