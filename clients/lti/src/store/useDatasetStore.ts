@@ -1,8 +1,4 @@
-// Store to do dataset functions (Mostly in admin side)
-/* ---- Functionaltiy to be done  ----------------
-1. Display datasets
-2. Create / update dataset
-3. Fetch consents either using feide token or canvas token  */
+
 
 import { ref, Ref, computed, ComputedRef } from 'vue'
 import {

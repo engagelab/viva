@@ -6,6 +6,7 @@ const router = require('express').Router()
 const utilities = require('../../utilities')
 const Video = require('../../models/Video')
 
+const Dataset = require('../../models/Dataset')
 /* ---------------- Video activities ---------------- */
 
 router.post(
@@ -23,7 +24,7 @@ router.post(
           access: true,
           title: '',
           description: '',
-          edl: { trim: [] , blur: [] },
+          edl: { trim: [0, v.details.duration] , blur: [] },
           annotations: [],
           comment: [],
           status: [],
@@ -48,7 +49,7 @@ router.put(
       if (error || !v || !updatedShare._id) {
         return response.status(400).end()
       } else {
-        const s = v.users.sharing.id(updatedShare._id);
+        const s = v.users.sharing.id(updatedShare._id)
         if (s) {
           s.users = updatedShare.users
           s.creator = updatedShare.creator
@@ -77,7 +78,7 @@ router.delete(
       if (error || !v || !deletedShare._id) {
         return response.status(400).end()
       } else {
-        v.users.sharing.id(deletedShare._id).remove();
+        v.users.sharing.id(deletedShare._id).remove()
         v.save((saveError) => {
           if (saveError) return next(saveError)
           response.end()
@@ -86,4 +87,59 @@ router.delete(
     })
   }
 )
+// filter datasets for a canvas course
+function fetchDatasetsBasedOnCourse(courseId) {
+  return new Promise((resolve, reject) => {
+    let query = {}
+    query = {
+      $and: [{ 'users.groups': { $eq: courseId } }, { 'status.active': true }],
+    }
+    Dataset.find(query, (error, ds) => {
+      if (error) return reject('Error fetching datasets')
+      resolve(ds)
+    })
+  })
+}
+
+// Fetch all videos for a filtered dataset
+router.get('/videos/share', utilities.authoriseUser, (request, response) => {
+  let query = {}
+
+  // function to fetch datasets for a course
+  if (request.session.canvasData) {
+    fetchDatasetsBasedOnCourse(request.session.canvasData.courseId).then(
+      (datasets) => {
+        console.log(datasets)
+        // Filter video based on datasets for a course
+        const ids = datasets.map((dataset) => dataset._id)
+        query = {
+          $and: [
+            { 'dataset.id': { $in: ids } },
+            {
+              $or: [
+                {
+                  'users.sharing.users': {
+                    $in: [response.locals.user.profile.ltiID],
+                  },
+                },
+                { 'users.owner': response.locals.user._id },
+              ],
+            },
+          ],
+        }
+
+        Video.find(query, (error, videos) => {
+          let videosToReturn = []
+          if (error) {
+            console.error(error)
+            return response.status(400).end()
+          } else {
+            videosToReturn = videos.map((v) => v.redacted())
+            response.send(videosToReturn).status(200).end()
+          }
+        })
+      }
+    )
+  }
+})
 module.exports = router

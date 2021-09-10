@@ -27,7 +27,10 @@
             </div>
           </div>
           <div
-            v-if="myLTIID === localShare.creator"
+            v-if="
+              myLTIID === localShare.creator &&
+              selectedItemShare.share.annotations.length === 0
+            "
             @click.stop="trimVideo()"
             class="flex flex-row items-center mt-4 text-viva-blue-800 cursor-pointer"
           >
@@ -38,6 +41,7 @@
             </div>
             Trim the video
           </div>
+          <p></p>
         </div>
         <div class="flex flex-col flex-grow ml-4">
           <div class="flex flex-col">
@@ -115,11 +119,7 @@
       </div>
     </template>
     <template v-else-if="detailMode.submode === VIDEO_DETAIL_MODE.trim">
-      <Player
-        @currenttime="(t) => (videoCurrentTime = t)"
-        @duration="updateDuration"
-        @edl="updateEDL"
-      />
+      <Player @duration="updateDuration" @trim="updateEDL" class="lg:w-192" />
     </template>
   </div>
 </template>
@@ -157,7 +157,6 @@ export default defineComponent({
     const selectedItemShare = videoGetters.selectedItemShare
     const showUsers = ref(false)
     const unsavedData = ref(false)
-    const videoCurrentTime = ref(0)
     const myLTIID = appGetters.user.value.profile.ltiID
     let NARList: NARListItem[] = appGetters.canvasData.value.namesAndRoles
       .map((u) => ({ itemName: u.name, item: u }))
@@ -170,6 +169,7 @@ export default defineComponent({
       title: '',
       description: '',
       edl: { trim: [0, 0], blur: [] },
+      annotations: [],
       comments: [],
     })
 
@@ -185,6 +185,7 @@ export default defineComponent({
           title: s.title,
           description: s.description,
           edl: s.edl,
+          annotations: s.annotations,
           comments: s.comments,
         }
       }
@@ -203,9 +204,7 @@ export default defineComponent({
         }
       }
     )
-    if (selectedItemShare.value) {
-      resetData(selectedItemShare.value)
-    }
+    if (selectedItemShare.value) resetData(selectedItemShare.value)
 
     const updateShare = function () {
       if (unsavedData.value && selectedItemShare.value) {
@@ -251,7 +250,6 @@ export default defineComponent({
       unsavedData,
       trimVideo,
       playVideo,
-      videoCurrentTime,
       updateDuration,
       detailMode: videoGetters.detailMode,
 

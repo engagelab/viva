@@ -8,6 +8,7 @@ import {
   XHR_REQUEST_TYPE,
   User,
   NameAndRole,
+  DialogConfig,
 } from '../types/main'
 
 import { appVersion } from '../constants'
@@ -34,6 +35,7 @@ export interface AppState {
   currentLocalUser: LocalUser | undefined
   appIsOld: boolean
   disableDelays: boolean
+  dialogConfig: DialogConfig
 }
 // ------------  State (internal) --------------
 const _appState: Ref<AppState> = ref({
@@ -51,6 +53,15 @@ const _appState: Ref<AppState> = ref({
   currentLocalUser: undefined,
   appIsOld: false,
   disableDelays: process.env.VUE_APP_DISABLE_DELAYS === 'true',
+  dialogConfig: {
+    title: '',
+    text: '',
+    visible: false,
+    cancel: () => ({}),
+    cancelText: 'Cancel',
+    confirm: () => ({}),
+    confirmText: 'Confirm',
+  },
 })
 
 // This will be saved to device storage
@@ -67,6 +78,7 @@ interface Getters {
   persistedLocalUsers: ComputedRef<Record<string, LocalUser>>
   user: ComputedRef<User>
   canvasData: ComputedRef<CanvasData>
+  dialogConfig: ComputedRef<DialogConfig>
 }
 const getters = {
   get status(): ComputedRef<AppStatus> {
@@ -100,6 +112,9 @@ const getters = {
   get canvasData(): ComputedRef<CanvasData> {
     return computed(() => _appState.value.canvasData)
   },
+  get dialogConfig(): ComputedRef<DialogConfig> {
+    return computed(() => _appState.value.dialogConfig)
+  },
 }
 // ------------  Actions --------------
 interface Actions {
@@ -114,8 +129,13 @@ interface Actions {
   fetchLTIData: () => Promise<void>
   redirectedLogin: () => Promise<void>
   nameAndRole: (ltiID: string) => NameAndRole
+  setDialog: (visible: boolean, config?: DialogConfig) => void
 }
 const actions = {
+  setDialog(visible: boolean, config?: DialogConfig): void {
+    if (config) _appState.value.dialogConfig = config
+    _appState.value.dialogConfig.visible = visible
+  },
   nameAndRole(ltiID: string): NameAndRole {
     const namerole = _appState.value.canvasData.namesAndRoles.find(
       (nr) => nr.ltiID === ltiID

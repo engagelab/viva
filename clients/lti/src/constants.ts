@@ -56,9 +56,16 @@ if (
 
 enum CONSENT_TYPES {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
+
+enum SORT_BY {
+  date = 'date',
+  dataset = 'dataset',
+  selection = 'selection',
+}
+
 // Ensure enums match those defined in env file
 const ct = Object.values(CONSENT_TYPES)
 if (
@@ -88,7 +95,7 @@ enum VIDEO_STATUS_TYPES {
 
 enum CONSENT_SELECTION {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
 
@@ -110,7 +117,6 @@ enum VIDEO_DETAIL_MODE {
   play = 'play',
   share = 'share',
   trim = 'trim',
-  annotate = 'annotate',
 }
 
 export {
@@ -119,6 +125,7 @@ export {
   assetRoot,
   userRoles,
   USER_ROLE,
+  SORT_BY,
   CONSENT_TYPES,
   VIDEO_STORAGE_TYPES,
   CONSENT_SELECTION,

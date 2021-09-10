@@ -20,6 +20,10 @@
         {{ selection }}
       </option>
     </select>
+    <p v-if="d.selectionPriority.length == 0" class="text-red-500 text-sm">
+      Note: Atleast one selection priority must be created for dataset to be
+      reflected in app
+    </p>
     <div class="flex">
       <div
         v-for="(selection, index) in localSelectionPriority"
@@ -37,9 +41,15 @@
     </div>
 
     <p class="text-red-600 mt-4">Instances</p>
-    <SelectionItem
-      :localSelectionPriority="localSelectionPriority"
-    ></SelectionItem>
+    <Subset
+      v-if="localSelection"
+      :title="Object.keys(localSelection)[0]"
+      :label="Object.keys(localSelection)[0]"
+      :nodes="localSelection[Object.keys(localSelection)[0]]"
+      :depth="0"
+      :path="''"
+      :newInstancePath="''"
+    ></Subset>
   </div>
 </template>
 
@@ -47,10 +57,9 @@
 import { defineComponent, ref, computed, watch, Ref, ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { behandlings, UTVALG_SELECTION, CONSENT_TYPES } from '@/constants'
-// import { DatasetSelection } from '@/types/main'
+import { DatasetSelection } from '@/types/main'
 import { useDatasetStore } from '@/store/useDatasetStore'
-// import Button from '@/components/base/Button.vue'
-import SelectionItem from '@/components/SelectionItem.vue'
+import Subset from '@/components/Subset.vue'
 
 const messages = {
   nb_NO: {
@@ -75,20 +84,22 @@ const messages = {
 export default defineComponent({
   name: 'selectionHandling',
   components: {
-    SelectionItem,
+    Subset,
   },
-  emits: ['updated'],
-  setup(props, context) {
+
+  setup() {
     const { t } = useI18n({ messages })
-    const { getters: datasetGetters } = useDatasetStore()
+    const { getters: datasetGetters, actions: datasetActions } =
+      useDatasetStore()
 
     const currentSelection = ref('')
 
     const d = datasetGetters.selectedDataset
 
     const localSelectionPriority: Ref<string[]> = ref(d.value.selectionPriority)
-    // const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref({})
-
+    const localSelection: Ref<{ [key: string]: DatasetSelection[] }> = ref(
+      d.value.selection
+    )
     const selectionOptionList: ComputedRef<string[]> = computed(() => {
       return Object.values(UTVALG_SELECTION).filter(
         (r) => !localSelectionPriority.value.includes(r)
@@ -97,25 +108,42 @@ export default defineComponent({
 
     function reloadData() {
       localSelectionPriority.value = [...d.value.selectionPriority]
+      localSelection.value = d.value.selection
     }
 
     function addSelectionPriority() {
-      if (confirm('Modifying the priority resets instances , are you sure? ')) {
+      let check = false
+      if (d.value.selection && Object.keys(d.value.selection).length != 0) {
+        check = confirm(
+          'Modifying the priority resets instances , are you sure? '
+        )
+      } else check = true
+
+      if (check) {
         if (currentSelection.value) {
           localSelectionPriority.value.push(currentSelection.value)
-          context.emit('updated', localSelectionPriority.value)
+          // context.emit('updated', localSelectionPriority.value)
+          datasetActions.addSelection(localSelectionPriority.value, 'priority')
         }
       }
     }
 
     const removeSelectionPriority = (s: string) => {
-      if (confirm('Modifying the priority resets instances , are you sure? ')) {
+      let check = false
+      if (Object.keys(d.value.selection).length != 0) {
+        check = confirm(
+          'Modifying the priority resets instances , are you sure? '
+        )
+      } else check = true
+
+      if (check) {
         currentSelection.value = ''
         localSelectionPriority.value.splice(
           localSelectionPriority.value.indexOf(s),
           1
         )
-        context.emit('updated', localSelectionPriority.value)
+        // context.emit('updated', localSelectionPriority.value)
+        datasetActions.addSelection(localSelectionPriority.value, 'priority')
       }
     }
 
@@ -132,7 +160,7 @@ export default defineComponent({
       selectionOptionList,
       currentSelection,
       localSelectionPriority,
-
+      localSelection,
       // Methods
       addSelectionPriority,
       removeSelectionPriority,

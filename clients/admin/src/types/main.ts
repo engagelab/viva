@@ -267,6 +267,9 @@ interface VideoTableLayout {
   dataset: string
   shared: VideoUsers
   details: VideoDetails
+  selection: string
+  consenters: string[]
+  storages: VideoStorages[]
 }
 
 export class Video {
@@ -445,9 +448,14 @@ export class Video {
       dataset: this.dataset.name,
       shared: this.users,
       details: this.details,
+      selection: this.dataset.selection.reduce(
+        (acc, item) => acc + `${item.title} > `,
+        ''
+      ),
+      consenters: this.consents,
+      storages: this.storages,
     }
   }
-
   // Convert this to a Plain Old Javascript Object
   get asPOJO(): unknown {
     return { ...this }
@@ -503,6 +511,7 @@ export interface DataPath {
   nextKey: string
   currentValue: string
   title: string
+  mode: string
 }
 export interface DatasetSelection {
   title: string
@@ -565,12 +574,12 @@ export class Dataset {
     this.created = new Date()
     this.formId = ''
     this.status = {
-      active: true,
+      active: false,
       lastUpdated: new Date(),
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manuel,
+      kind: CONSENT_TYPES.manual,
       value: '',
       formId: 0,
     }
@@ -599,7 +608,7 @@ export class Dataset {
         lockedBy: data.status?.lockedBy ? data.status.lockedBy : '',
       }
       this.consent = {
-        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
+        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manual,
         // value: fetchValue(data.consent),
         value: data.consent?.value ? data.consent.value : '',
         formId: data.consent?.formId ? data.consent.formId : 0,

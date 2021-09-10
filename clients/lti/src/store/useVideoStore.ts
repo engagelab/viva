@@ -21,8 +21,9 @@ import {
   XHR_REQUEST_TYPE,
   VideoSharing,
   ListItemShare,
+  VideoDetailsData,
 } from '../types/main'
-import { VIDEO_DETAIL_MODE } from '@/constants'
+import { SORT_BY, VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
 import { apiRequest } from '../api/apiRequest'
 import { useAppStore } from './useAppStore'
 const { getters: appGetters, actions: appActions } = useAppStore()
@@ -33,6 +34,7 @@ interface State {
   selectedVideoURL: string
   videos: Map<string, Video>
   detailMode: { mode: VIDEO_DETAIL_MODE; submode: VIDEO_DETAIL_MODE }
+  sortMode: { [key in VIDEO_SHARING_MODE]: SORT_BY }
 }
 
 const state: Ref<State> = ref({
@@ -44,6 +46,11 @@ const state: Ref<State> = ref({
     mode: VIDEO_DETAIL_MODE.none,
     submode: VIDEO_DETAIL_MODE.none,
   },
+  sortMode: {
+    [VIDEO_SHARING_MODE.myVideos]: SORT_BY.date,
+    [VIDEO_SHARING_MODE.sharedToMe]: SORT_BY.date,
+    [VIDEO_SHARING_MODE.feed]: SORT_BY.date,
+  },
 })
 
 //----------------- Server side functions----------------//
@@ -52,9 +59,45 @@ async function fetchVideoMetadata(): Promise<VideoData[]> {
   const payload: APIRequestPayload = {
     method: XHR_REQUEST_TYPE.GET,
     credentials: true,
-    route: '/api/videos',
+    route: '/api/videos/share',
   }
   return apiRequest<VideoData[]>(payload)
+}
+
+// Returns a custom compare function for array.sort, based on given mode
+function sortVideos(mode: VIDEO_SHARING_MODE) {
+  return (l1: ListItem | ListItemShare, l2: ListItem | ListItemShare) => {
+    const sortBy: SORT_BY = state.value.sortMode[mode]
+    // Comparisons are different depending on which list we are viewing
+    if (mode === VIDEO_SHARING_MODE.myVideos) {
+      const ll1 = l1 as ListItem
+      const ll2 = l2 as ListItem
+      if (sortBy === SORT_BY.dataset)
+        return ll1.dataset.name.localeCompare(ll2.dataset.name)
+      else if (sortBy === SORT_BY.date)
+        // In Javascript Dates can be compared directly but in Typescript must be cast first
+        return (
+          Number(ll1.video.details.created) - Number(ll2.video.details.created)
+        )
+      else if (sortBy === SORT_BY.selection) {
+        // Selection is already present as a string
+        return ll1.dataset.selection.localeCompare(ll2.dataset.selection)
+      } else return 0
+    } else {
+      const ll1 = l1 as ListItemShare
+      const ll2 = l2 as ListItemShare
+      if (sortBy === SORT_BY.dataset)
+        return ll1.item.dataset.name.localeCompare(ll2.item.dataset.name)
+      else if (sortBy === SORT_BY.date)
+        // Comparison should be on Share creation, not Video creation
+        return Number(ll1.share.created) - Number(ll2.share.created)
+      else if (sortBy === SORT_BY.selection) {
+        return ll1.item.dataset.selection.localeCompare(
+          ll2.item.dataset.selection
+        )
+      } else return 0
+    }
+  }
 }
 
 interface Getters {
@@ -118,6 +161,7 @@ const getters = {
             return item
           }
         )
+        .sort(sortVideos(VIDEO_SHARING_MODE.myVideos))
     })
   },
   get sharedToMe(): ComputedRef<ListItemShare[]> {
@@ -150,21 +194,25 @@ const getters = {
             })
           })
       })
-      return sharedWithMe
+      return sharedWithMe.sort(sortVideos(VIDEO_SHARING_MODE.sharedToMe))
     })
   },
 }
 
 interface Actions {
   getVideoMetadata: () => Promise<void>
-  selectVideo: (video: ListItem) => void
+  selectOriginal: (video: ListItem) => void
   selectShare: (share: ListItemShare) => void
-  selectNoVideo: () => void
+  deleteOriginal: (videoID: string) => Promise<void>
+  selectNoOriginal: () => void
+  selectNoShare: () => void
   detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
-  updateMetadata: (video: Video) => Promise<void>
+  updateLocalVideo: (video: Video) => Promise<void>
+  updateVideoDetails: (id: string, details: VideoDetailsData) => Promise<void>
   createShare: (listItem: ListItem) => Promise<void>
   updateShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
   deleteShare: (videoID: string, videoSharing: VideoSharing) => Promise<void>
+  sortVideosBy: (mode: VIDEO_SHARING_MODE, sortby: SORT_BY) => void
 }
 const actions = {
   detailMode: function (
@@ -198,7 +246,6 @@ const actions = {
       }
     })
   },
-
   // Update sharing for a selected video
   updateShare: function (
     videoID: string,
@@ -216,6 +263,18 @@ const actions = {
       if (v) {
         v.updateSharing([s])
       }
+    })
+  },
+
+  deleteOriginal: function (videoID: string): Promise<void> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.DELETE,
+      credentials: true,
+      query: { id: videoID },
+      route: '/api/video',
+    }
+    return apiRequest<void>(payload).then(() => {
+      state.value.videos.delete(videoID)
     })
   },
 
@@ -248,12 +307,14 @@ const actions = {
       const v = new Video(video)
       state.value.videos.set(v.details.id, v)
     })
-    const videos = Array.from(state.value.videos.values())
-    console.log(videos)
     return Promise.resolve()
   },
 
-  selectVideo: function (video: ListItem): void {
+  sortVideosBy: (mode: VIDEO_SHARING_MODE, sortby: SORT_BY) => {
+    state.value.sortMode[mode] = sortby
+  },
+
+  selectOriginal: function (video: ListItem): void {
     if (video) state.value.selectedItem = video
   },
   selectShare: function (share: ListItemShare): void {
@@ -263,12 +324,15 @@ const actions = {
     }
   },
 
-  selectNoVideo: function (): void {
+  selectNoOriginal: function (): void {
     state.value.selectedItem = undefined
+  },
+  selectNoShare: function (): void {
+    state.value.selectedItemShare = undefined
   },
 
   // Update the video in store with the given video (by fileId) and save to local disk
-  updateMetadata: (video: Video): Promise<void> => {
+  updateLocalVideo: (video: Video): Promise<void> => {
     video.status.hasUnsavedChanges = false
     video.status.hasNewDataAvailable = false
     let videoToUpdate: Video | undefined = undefined
@@ -278,6 +342,25 @@ const actions = {
       videoToUpdate.updateFromVideo(video)
       return Promise.resolve()
     } else return Promise.resolve()
+  },
+
+  updateVideoDetails: function (
+    id: string, // should be video.details.id
+    details: VideoDetailsData
+  ): Promise<void> {
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.PUT,
+      credentials: true,
+      body: details,
+      query: { id },
+      route: '/api/video/details',
+    }
+    return apiRequest<VideoDetailsData>(payload).then((d: VideoDetailsData) => {
+      const v = state.value.videos.get(id)
+      if (v) {
+        v.updateDetails(d)
+      }
+    })
   },
 }
 // This defines the interface used externally

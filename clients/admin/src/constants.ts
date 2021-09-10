@@ -101,7 +101,7 @@ if (
 
 enum CONSENT_TYPES {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
 // Ensure enums match those defined in env file
@@ -131,7 +131,7 @@ enum VIDEO_STATUS_TYPES {
 
 enum CONSENT_SELECTION {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
 
@@ -165,7 +165,7 @@ const behandlings: Record<CONSENT_TYPES, Behandling> = {
     description:
       'Opptak er basert på samtykker som er gitt digitalt i UiOs samtykkeportal.',
   },
-  [CONSENT_TYPES.manuel]: {
+  [CONSENT_TYPES.manual]: {
     name: 'Manuelt samtykke',
     description: 'Opptak er basert på samtykker som er håndtert manuelt.',
   },

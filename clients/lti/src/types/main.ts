@@ -160,12 +160,22 @@ export interface ListItem {
   readonly shares: ListItemShare[] // sub-interface describing sharing for this item
 }
 
+export interface DialogConfig {
+  title: string
+  text: string
+  visible: boolean
+  confirm: Callback
+  confirmText: string
+  cancel: Callback
+  cancelText: string
+}
+
 // --------------------------   Video data --------------------------
 export interface EditDecriptionList {
   trim: number[]
   blur: number[][]
 }
-interface VideoDetailsData {
+export interface VideoDetailsData {
   id?: string // Used instead of video._id front end, and for QR Code.
   name?: string // A human-readable string for naming this video
   category?: string // green, yellow, red
@@ -225,19 +235,31 @@ interface VideoStatus {
   hasUnsavedChanges: boolean
   hasNewDataAvailable: boolean
 }
-export interface SharingComment {
+export interface ShareComment {
   created: Date
   creator: string // LTI ID
   comment: string
 }
+export interface Annotation {
+  _id?: string
+  created: Date
+  creator: string // LTI ID
+  comment: string
+  time: number[] // e.g [2.35, 10.04] or just [2.35]
+
+  // front end only
+  nowActive: boolean
+}
 export interface VideoSharing {
   _id: string // DB ID of the share (not the video!)
   creator: string // LTI ID
+  created: Date
   users: string[]
   access: boolean
   title: string
   description: string
-  comments: SharingComment[]
+  annotations: Annotation[]
+  comments: ShareComment[]
   edl: EditDecriptionList
 }
 interface VideoUsersData {
@@ -410,8 +432,10 @@ export class Video {
     if (details.category) this.details.category = details.category
     if (details.created) this.details.created = new Date(details.created)
     if (details.description) this.details.description = details.description
-    if (details.duration) this.details.duration = details.duration
+    if (details.duration) this.details.duration = details.duration || 0
     if (details.edl) this.details.edl = details.edl
+    if (this.details.edl.trim.length === 0)
+      this.details.edl.trim = [0, this.details.duration]
     if (details.encryptionKey)
       this.details.encryptionKey = details.encryptionKey
     if (details.id) this.details.id = details.id
@@ -449,6 +473,7 @@ export class Video {
       if (share) {
         share.access = s.access
         share.creator = s.creator
+        share.created = s.created || new Date(this.details.created) // To ensure a date is available for older videos
         share.title = s.title
         share.description = s.description
         share.comments = s.comments
@@ -571,7 +596,7 @@ export class Dataset {
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manuel,
+      kind: CONSENT_TYPES.manual,
     }
     this.users = { owner: '' }
     this.selection = {}
@@ -589,7 +614,7 @@ export class Dataset {
         lockedBy: data.status.lockedBy,
       }
       this.consent = {
-        kind: data.consent.kind || CONSENT_TYPES.manuel,
+        kind: data.consent.kind || CONSENT_TYPES.manual,
       }
       this.users = {
         owner: data.users.owner,

@@ -37,7 +37,10 @@ interface Actions {
   addDataset: (datasetName: string) => Promise<void>
   updateDataset: (d?: Dataset) => Promise<void>
   selectDatasetById: (datasetId: string) => void
-  addSelection: (localSelection: { [key: string]: DatasetSelection[] }) => void
+  addSelection: (
+    localSelection: { [key: string]: DatasetSelection[] } | string[],
+    mode: string
+  ) => void
   addConsentField: (value: string) => void
 }
 
@@ -89,8 +92,9 @@ const actions = {
 
     return apiRequest<Dataset>(payload)
       .then((dataset) => {
-        state.value.datasets.set(dataset._id, dataset)
-        actions.selectDatasetById(dataset._id)
+        const updatedDataset = new Dataset(dataset)
+        state.value.datasets.set(updatedDataset._id, updatedDataset)
+        actions.selectDatasetById(updatedDataset._id)
       })
       .catch((error: Error) => {
         appActions.errorMessage(error)
@@ -105,8 +109,24 @@ const actions = {
     if (d) state.value.selectedDataset = d
   },
 
-  addSelection(localSelection: { [key: string]: DatasetSelection[] }): void {
-    state.value.selectedDataset.selection = { ...localSelection }
+  addSelection(
+    value: { [key: string]: DatasetSelection[] } | string[],
+    mode: string
+  ): void {
+    if (mode == 'priority') {
+      const selectionPriority = value as string[]
+      if (selectionPriority.length > 0) {
+        state.value.selectedDataset.status.active = true
+      } else {
+        state.value.selectedDataset.status.active = false
+      }
+      state.value.selectedDataset.selectionPriority = selectionPriority
+      state.value.selectedDataset.selection = {}
+    } else if (mode == 'selection') {
+      state.value.selectedDataset.selection = {
+        ...(value as { [key: string]: DatasetSelection[] }),
+      }
+    }
     actions.updateDataset()
   },
 }

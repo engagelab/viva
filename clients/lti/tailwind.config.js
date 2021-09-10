@@ -293,6 +293,7 @@ module.exports = {
       serious: ['Inter'],
     },
     fontSize: {
+      xxs: ['0.65rem', { lineHeight: '0.8rem' }],
       xs: ['0.75rem', { lineHeight: '1rem' }],
       sm: ['0.875rem', { lineHeight: '1.25rem' }],
       base: ['1rem', { lineHeight: '1.5rem' }],
@@ -762,6 +763,8 @@ module.exports = {
       shadow: 'box-shadow',
       transform: 'transform',
       maxheight: 'max-height',
+      maxwidth: 'max-width',
+      width: 'width',
     },
     transitionTimingFunction: {
       DEFAULT: 'cubic-bezier(0.4, 0, 0.2, 1)',

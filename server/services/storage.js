@@ -2,7 +2,7 @@ const {
   S3Client,
   GetObjectCommand,
   PutObjectCommand,
-  // ListObjectsCommand,
+  DeleteObjectCommand,
 } = require('@aws-sdk/client-s3')
 
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
@@ -68,6 +68,18 @@ const uploadS3File = async ({ path, keyname, sseKey, sseMD5 }) => {
   return s3.send(new PutObjectCommand(objectParams))
 }
 
+const deleteS3File = async ({ keyname, sseKey, sseMD5 }) => {
+  const objectParams = {
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Key: keyname,
+    // ServerSideEncryption: 'AES256', // must be "AES256",
+    SSECustomerAlgorithm: 'AES256',
+    SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
+    SSECustomerKeyMD5: sseMD5,
+  }
+  return s3.send(new DeleteObjectCommand(objectParams))
+}
+
 /**
  * Download a file from S3
  *
@@ -89,6 +101,7 @@ const downloadS3File = async ({ keyname, sseKey, sseMD5 }) => {
 
 /**
  * Get presigned url to a file from S3
+ * NOTE: As Educloud uses client-supplied encryption keys, this method will not work from a browser unless those keys are sent with it
  *
  * @param {Object} meta - Object containing parameters.
  * @param {string} meta.keyname - Name to be used for the file in the S3 bucket.
@@ -210,6 +223,7 @@ function sendToLagringshotell({ video, store, subDirSrc }) {
 module.exports = {
   uploadS3File,
   downloadS3File,
+  deleteS3File,
   getSignedUrlS3URL,
   fetchStorage,
   sendVideoToEducloud,
