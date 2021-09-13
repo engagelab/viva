@@ -2,89 +2,124 @@ const { execSync } = require('child_process')
 const fs = require('fs')
 const dirPath = process.cwd()
 const Dataset = require('./models/Dataset')
+const User = require('./models/User')
 const Video = require('./models/Video')
 const { videoStorageTypes, consentTypes } = require('./constants')
-/* const { uploadS3File } = require('./services/storage') */
+
 const videoFolderNames = require('./constants').videoFolderNames
+const videoStatusTypes = require('./constants').videoStatusTypes
 
-Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
-  let dataSett = foundSetting
-  if (err) {
-    return console.log(err)
-  } else if (!dataSett) {
-    dataSett = {
-      name: 'test',
-      description: 'test description',
-      created: new Date(),
-      formId: 'none', // Nettskjema form ID
-      status: {
-        lastUpdated: new Date(), // Last time this Dataset was changed
-        active: true, // Only active datasetts who will be fetched
-        lockedBy: undefined, // Who has locked the datasett for editing
-      },
+let userID, datasetID = ''
 
-      consent: {
-        kind: consentTypes.manual,
-      },
-      users: {
-        adminGroup: 'test',
-        groups: ['23222'],
-      },
-      selectionPriority: [], // Order of appearance of the utvalg categories
-      selection: {}, //  'utvalg' selection
-      storages: [
-        {
-          name: videoStorageTypes.educloud,
-          groupId: 'testGroupID',
-          file: {
-            // Path and name will be constructed from attributes from Video and Dataset based on these array entries
-            path: ['folder1', 'folder2'],
-            name: ['filename1', 'filename2'],
-          },
-          category: [],
+const createTestDocuments = () => {
+  Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
+    let dataSett = foundSetting
+    if (err) {
+      return console.log(err)
+    } else if (!dataSett) {
+      dataSett = Dataset.create({
+        name: 'test',
+        description: 'test description',
+        created: new Date(),
+        formId: 'none', // Nettskjema form ID
+        status: {
+          lastUpdated: new Date(), // Last time this Dataset was changed
+          active: true, // Only active datasetts who will be fetched
+          lockedBy: undefined, // Who has locked the datasett for editing
         },
-      ],
-    }
-    Dataset.create(dataSett)
-    console.log('Created a test Setting')
-  }
-})
 
-Video.findOne({ 'file.name': 'VideoTest' }, (error, v) => {
-  let video = v
-  if (error) {
-    return console.log(error)
-  } else if (!video) {
-    video = {
-      file: {
-        type: 'dna',
-        name: 'VideoTest',
-        mimeType: 'video/mp4',
-      },
-      details: {
-        id: 'videoTextid',
-        name: 'Video Tester',
-        category: 'green', // green, yellow, red
-        created: Date.now(),
-        description: 'Video Test description',
-        duration: '1000', // Seconds  created: { type: Date },
-        encryptionKey: 'Text encrypt',
-        encryptionIV: { type: {} }, // Mixed type. Mongoose has no type for UInt8Array..
-      },
-      status: {
-        main: 'uploaded',
-      },
-      users: {
-        sharedWith: [], // Users who can see this video. Used for easier searching
-        sharing: [],
-      },
-      consents: [], // These are the consents confirmed by the teacher in this recording
-      storages: [],
+        consent: {
+          kind: consentTypes.manual,
+        },
+        users: {
+          adminGroup: 'test',
+          groups: ['23222'],
+        },
+        selectionPriority: [], // Order of appearance of the utvalg categories
+        selection: {}, //  'utvalg' selection
+        storages: [
+          {
+            name: videoStorageTypes.educloud,
+            groupId: 'testGroupID',
+            file: {
+              // Path and name will be constructed from attributes from Video and Dataset based on these array entries
+              path: ['folder1', 'folder2'],
+              name: ['filename1', 'filename2'],
+            },
+            category: [],
+          },
+        ],
+      })
+      console.log('Created a Dataset')
     }
-    Video.create(video)
-    console.log('Created a video Setting')
-  }
-})
+    datasetID = dataSett._id
+  })
+
+  // Find or create a test user
+  User.findOne({ 'profile.username': 'testuser1' }, (error, u) => {
+    let user = u
+    if (error) return console.log(error)
+    else if (!user) {
+      user = User.create({ profile: { username: 'testuser1' }})
+    }
+    userID = user._id
+    console.log('Created a User')
+  })
+
+  // Create one Video owned by the test user
+  Video.findOne({ 'users.owner': userID }, (error, v) => {
+    let video = v
+    if (error) {
+      return console.log(error)
+    } else if (!video) {
+      video = {
+        file: {
+          extension: 'mp4',
+          name: 'VideoTest',
+          mimeType: 'video/mp4',
+        },
+        details: {
+          id: 'videoTextid',
+          name: 'Video Tester',
+          category: 'green', // green, yellow, red
+          created: Date.now(),
+          description: 'Video Test description',
+          duration: '1000', // Seconds  created: { type: Date },
+        },
+        status: {
+          main: videoStatusTypes.uploaded,
+        },
+        users: {
+          owner: userID,
+          sharing: [
+            {
+              creator: '1',
+              created: new Date(),
+              users: [],
+              access: true,
+              title: 'Test share 1',
+              description: 'Test description 1',
+              edl: { trim: [], blur: [] },
+              tags: [],
+              annotations: [],
+              comment: [],
+            }
+          ],
+        },
+        dataset: {
+          id: datasetID,
+          name: 'test',
+          selection: [],
+          groups: []
+        },
+        consents: [],
+        storages: [],
+      }
+      Video.create(video)
+      console.log('Created a Video')
+    }
+  })
+}
 
 /* uploadS3File({
   path: './videos/uploaded/ForBiggerBlazes.mp4',
@@ -187,5 +222,6 @@ const createVideoDirectories = () => {
 module.exports = {
   //initialiseDatabase,
   createVideoDirectories,
+  createTestDocuments,
   // createPilotSchoolList
 }

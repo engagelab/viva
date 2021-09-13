@@ -10,14 +10,10 @@ const openidClient = require('../../services/openid')
 const { userDetails } = require('../../services/canvas')
 
 // Activate the Dataporten Clients
-let CanvasLTIClient, CanvasLTIIssuer, CanvasAPIClient
-openidClient.createClient('canvasLTI').then((struct) => {
-  CanvasLTIClient = struct.client
-  CanvasLTIIssuer = struct.issuer
-})
-openidClient
-  .createClient('canvasAPI')
-  .then((struct) => (CanvasAPIClient = struct.client))
+const canvasLTIStructures = openidClient.createClient('canvasLTI')
+const CanvasLTIClient = canvasLTIStructures.client
+const CanvasLTIIssuer = canvasLTIStructures.issuer
+const CanvasAPIClient = openidClient.createClient('canvasAPI').client
 
 // --------------- For Canvas Login  -----------------
 

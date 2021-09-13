@@ -145,12 +145,14 @@ export default defineComponent({
         time: [currentPlayerTime.value],
         nowActive: false,
       }
-      // videoActions.createAnnotation(selectedItemShare.value, newAnnotation)
+      if (selectedItemShare.value)
+        videoActions.createAnnotation(selectedItemShare.value, newAnnotation)
       annotationText.value = ''
     }
 
     const updateAnnotation = function (update: Annotation) {
-      // videoActions.updateAnnotation(selectedItemShare.value, update)
+      if (selectedItemShare.value)
+        videoActions.updateAnnotation(selectedItemShare.value, update)
     }
 
     // if 'sortByCreated' sort by creation date, otherwise by video time

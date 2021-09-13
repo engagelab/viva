@@ -6,7 +6,10 @@ const fs = require('fs');
 const dirPath = process.cwd();
 const { fork } = require('child_process');
 const nodeCleanup = require('node-cleanup');
-const app = require('./app');
+
+const db = require('./services/database')
+const openidClient = require('./services/openid')
+const setup = require('./setup')
 
 const port = process.env.VUE_APP_SERVER_PORT;
 const host = process.env.VUE_APP_SERVER_HOST;
@@ -14,7 +17,9 @@ const packageVersion = require('../package.json').version;
 const version = `VIVA v${packageVersion}`;
 
 // Task Delegator will be a child process
-let taskDelegator;
+let taskDelegator
+
+// App needs to be created after 3rd party service information is available
 
 nodeCleanup(function(exitCode, signal) {
   console.log(
@@ -59,4 +64,30 @@ const sslOptions = {
   cert: SSLfullchain,
   ca: null,
 }
-https.createServer(sslOptions, app).listen(process.env.VUE_APP_SERVER_PORT, startServerCallback)
+
+
+// Connect to database
+db.connect('VIVA Server').then(() => {
+  // Create directories if necessary
+  setup.createVideoDirectories()
+  // Create test documents if necessary
+  if (process.env.NODE_ENV !== 'production') setup.createTestDocuments()
+
+  // Get async Dataporten information before starting app
+  openidClient.discoverServices().then(() => {
+    const app = require('./app').app
+
+    // Redirect http calls to https
+    app.use((req, res, next) => {
+      if (!req.secure) {
+        const redirect = `https://${req.headers.host}${req.url}`
+        return res.redirect(redirect)
+      }
+      return next()
+    })
+
+    // Start server
+    https.createServer(sslOptions, app).listen(process.env.VUE_APP_SERVER_PORT, startServerCallback)
+  })
+})
+

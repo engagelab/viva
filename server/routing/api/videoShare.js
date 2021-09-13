@@ -5,6 +5,7 @@
 const router = require('express').Router()
 const utilities = require('../../utilities')
 const Video = require('../../models/Video')
+const ObjectId = require('mongoose').Types.ObjectId
 
 const Dataset = require('../../models/Dataset')
 /* ---------------- Video activities ---------------- */
@@ -150,85 +151,82 @@ router.post(
   '/video/share/annotation',
   utilities.authoriseUser,
   async (request, response, next) => {
-    const newAnnotation = request.body
-    const videoSharingId = request.query.videoSharingId
-    const videoID = request.query.videoID
-    Video.findOne({ 'details.id': videoID }, (error, v) => {
-      if (error || !v) {
-        return response.status(400).end()
-      } else {
-        v.users.sharing.map((share) => {
-          if (share._id == videoSharingId) {
-            share.annotation.push(newAnnotation)
-          }
-        })
-        console.log(v.users.sharing)
-        v.save((saveError) => {
-          if (saveError) return next(saveError)
-          response.send(newAnnotation)
-        })
-      }
+    const newAnnotation = Video.schema.path('users.sharing.annotations').cast([request.body])[0]
+    Video.findOneAndUpdate(
+      { 'details.id': request.query.videoID, 'users.sharing._id': ObjectId(request.query.shareID) },
+      { $push: { 'users.sharing.$.annotations': newAnnotation } }, // '$' is the first item that matches the query
+      { new: true },
+      (error, v) => {
+        if (error || !v) return next(error)
+        else response.send(newAnnotation)
     })
   }
 )
 
 // To update a annotate for a share ID
 router.put(
-  '/video/share/annotate',
+  '/video/share/annotation',
   utilities.authoriseUser,
-  async (request, response, next) => {
-    const updatedAnnotation = request.body
-    const videoSharingId = request.query.videoSharingId
-    const videoID = request.query.videoID
-    Video.findOne({ 'details.id': videoID }, (error, v) => {
+  (request, response, next) => {
+    delete request.body._id
+    Video.findOneAndUpdate(
+      {
+        'details.id': request.query.videoID,
+      },
+      { $set: { 'users.sharing.$[s].annotations.$[a]': request.body } },
+      { arrayFilters: [
+        {'s._id': ObjectId(request.query.shareID)},
+        {'a._id': ObjectId(request.query.annotationID)}
+      ]},
+      (error, updatedVideo) => {
+        console.dir(updatedVideo)
+        if (error) return next(error)
+        response.status(200).end()
+      }
+    )
+
+    /* Video.findOne({ 'details.id': videoID }, (error, v) => {
       if (error || !v || !updatedAnnotation._id) {
         return response.status(400).end()
       } else {
-        v.users.sharing.map((share) => {
-          if (share._id == videoSharingId) {
-            share.annotations.map((a) => {
-              if (a._id == updatedAnnotation._id) {
-                a.comment = updatedAnnotation.comment
-                a.created = updatedAnnotation.created
-                a.creator = updatedAnnotation.creator
-                a.time = updatedAnnotation.time
-              }
+        const share = v.users.sharing.find((s) => s._id === videoSharingId)
+        if (share) {
+          const annotation = share.annotations.find((a) => a._id === updatedAnnotation._id)
+          if (annotation) {
+            annotation.comment = updatedAnnotation.comment
+            annotation.created = updatedAnnotation.created
+            annotation.creator = updatedAnnotation.creator
+            annotation.time = updatedAnnotation.time
+            v.save((saveError) => {
+              if (saveError) return next(saveError)
+              response.status(200).end()
             })
-          }
-        })
-        v.save((saveError) => {
-          if (saveError) return next(saveError)
-          response.send(updatedAnnotation)
-        })
+          } else response.status(404).end()
+        } else response.status(404).end()
       }
-    })
+    }) */
   }
 )
-// Do we really need this ??
+
 router.delete(
   '/video/share/annotate',
   utilities.authoriseUser,
   async (request, response, next) => {
-    const deletedAnnotation = request.body
-    const videoSharingId = request.query.videoSharingId
-    const videoID = request.query.videoID
-
-    Video.findOne({ 'details.id': videoID }, (error, v) => {
-      if (error || !v || !deletedAnnotation._id || !videoSharingId) {
-        return response.status(400).end()
-      } else {
-        v.users.sharing.map(share=>{
-          if (share._id===videoSharingId){
-            share.annotations.id(deletedAnnotation._id).remove()
-          }
-        })
-      
-        v.save((saveError) => {
-          if (saveError) return next(saveError)
-          response.end()
-        })
+    Video.findOneAndUpdate(
+      {
+        'details.id': request.query.videoID,
+        'users.sharing._id': ObjectId(request.query.shareID),
+      },
+      {
+        $pull: { // $pull removes item(s) from an array
+          'users.sharing.annotations': { _id: ObjectId(request.query.annotationID) },
+        }
+      },
+      (error) => {
+        if (error) return next(error)
+        response.status(200).end()
       }
-    })
+    )
   }
 )
 

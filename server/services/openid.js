@@ -1,24 +1,33 @@
 const { Issuer } = require('openid-client')
+let dataportenIssuer
 
-async function createClient(mode) {
+// Async call for Dataporten information
+function discoverServices() {
+  return Issuer.discover(
+    'https://auth.dataporten.no/.well-known/openid-configuration'
+  ).catch((error) => {
+    console.error(`Dataporten Issuer did not respond. Closing..: ${error}`)
+    process.exit()
+  }).then((issuer) => dataportenIssuer = issuer)
+}
+
+function createClient(mode) {
   if (mode == 'dataporten') {
-    const dataportenIssuer = await Issuer.discover(
-      'https://auth.dataporten.no/.well-known/openid-configuration'
-    ).catch((error) => {
-      console.log(`Dataporten Issuer did not respond. Closing..: ${error}`)
-      process.exit()
-    })
     let authCallback = `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}/auth/dataporten/callback`
     if (process.env.NODE_ENV !== 'development') {
       authCallback = `${process.env.VUE_APP_SERVER_HOST}/auth/dataporten/callback`
     }
-    const theClient = new dataportenIssuer.Client({
-      client_id: process.env.FEIDE_CLIENT_ID,
-      client_secret: process.env.FEIDE_CLIENT_SECRET,
-      redirect_uris: [authCallback],
-      response_types: ['code'],
-    })
-    return { client: theClient, issuer: dataportenIssuer }
+    if (dataportenIssuer) {
+      const theClient = new dataportenIssuer.Client({
+        client_id: process.env.FEIDE_CLIENT_ID,
+        client_secret: process.env.FEIDE_CLIENT_SECRET,
+        redirect_uris: [authCallback],
+        response_types: ['code'],
+      })
+      return { client: theClient, issuer: dataportenIssuer }
+    } else {
+      return { client: {}, issuer: {} }
+    }
   } else if (mode == 'canvasLTI') {
     const canvasIssuer = new Issuer({
       issuer: `https://${process.env.CANVAS_ISSUER_DOMAIN}`,
@@ -58,4 +67,4 @@ async function createClient(mode) {
   }
 }
 
-module.exports = { createClient }
+module.exports = { createClient, discoverServices }

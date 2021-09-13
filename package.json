@@ -17,16 +17,14 @@
     "build:android": "env-cmd yarn --cwd clients/app run cordova-build-android",
     "build:android:production": "env-cmd yarn --cwd clients/app run cordova-build-android-production",
     "server": "node server/viva.js",
-    "test": "yarn run jest"
+    "test:server": "env-cmd yarn --cwd server run jest"
   },
   "displayName": "viva",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@vue/cli-plugin-unit-jest": "~4.5.8",
     "env-cmd": "^10.1.0",
     "eslint": "^7.1.0",
-    "eslint-config-prettier": "^6.11.0",
-    "supertest": "^5.0.0-0"
+    "eslint-config-prettier": "^6.11.0"
   },
   "dependencies": {
     "@types/node": "^14.0.11",

@@ -1,6 +1,8 @@
 /*
- Designed and developed by Richard Nesnass
+ Designed and developed by Richard Nesnass & Sharanya Manivasagam
 */
+
+require('dotenv').config({ silent: process.env.NODE_ENV !== 'development' })
 const mongoose = require('mongoose')
 
 // MongoDB configuration
@@ -12,12 +14,6 @@ const mongoDBConnectionString =
   `${process.env.MONGODB_PORT}/` +
   `${process.env.MONGODB_DATABASE_NAME}` +
   `?authSource=${process.env.MONGODB_AUTHSOURCE}`
- /*  const mongoDBConnectionString =
-  `mongodb://` +
-  `${process.env.MONGODB_HOST}:` +
-  `${process.env.MONGODB_PORT}/` +
-  `${process.env.MONGODB_DATABASE_NAME}` +
-  `?authSource=${process.env.MONGODB_AUTHSOURCE}` */
 
 // Exit gracefully if the server is killed
 process.on('SIGINT', () => {
@@ -27,28 +23,39 @@ process.on('SIGINT', () => {
 
 function connect (callerName) {
   // Start a MongoDB connection
-  mongoose.connect(
-    mongoDBConnectionString,
-    {
-      useCreateIndex: true,
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    },
-    error => {
-      if (error) {
-        console.error(
-          `${callerName}: Error connecting to MongoDB Database: ${error}`
-        )
-      } else {
-        console.log(
-          `${callerName} connected to Database: ${process.env.MONGODB_DATABASE_NAME} at ${process.env.MONGODB_HOST}`
-        )
+  return new Promise((resolve, reject) => {
+    mongoose.connect(
+      mongoDBConnectionString,
+      {
+        useCreateIndex: true,
+        useNewUrlParser: true,
+        useFindAndModify: false,
+        useUnifiedTopology: true
+      },
+      (error) => {
+        if (error) {
+          console.error(
+            `${callerName}: Error connecting to MongoDB Database: ${error}`
+          )
+          reject(error)
+        } else {
+          /* console.log(
+            `${callerName} connected to Database: ${process.env.MONGODB_DATABASE_NAME} at ${process.env.MONGODB_HOST}`
+          ) */
+          resolve()
+        }
       }
-    }
-  )
+    )
+  })
 }
+
+function disconnect () {
+  return mongoose.disconnect()
+}
+
 
 module.exports = {
   connect,
+  disconnect,
   mongoose
 }

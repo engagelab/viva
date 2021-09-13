@@ -14,7 +14,7 @@
             class="bg-viva-grey-400 text-white text-xsv bg-viva-grey-450 w-14"
             placeholder="..:..:.."
             v-model="localStartTime"
-            @keyup.enter="validateChanges()"
+            @keyup.enter="validateChanges(true)"
           />
           <p v-else class="text-xsv" @click="editStartTime()">
             {{ formatTime(annotation.time[0], 0) }}
@@ -48,7 +48,7 @@
           class="bg-viva-grey-450 w-full"
           placeholder="Add a comment"
           v-model="localAnnotation.comment"
-          @input="() => validateChanges()"
+          @input="() => validateChanges(false)"
         />
         <p v-else class="m-3" @click="editComment()">
           {{ annotation.comment }}
@@ -105,6 +105,7 @@ export default defineComponent({
     const editingEndTime = ref(false)
     const editingStartTime = ref(false)
     const editingComment = ref(false)
+    let saveTimer: ReturnType<typeof setTimeout>
 
     const localStartTime = ref(formatTime(annotation.value.time[0]))
     const localEndTime = ref(
@@ -134,7 +135,12 @@ export default defineComponent({
       return moment(date).format('MMM Do Y - H:m')
     }
 
-    function validateChanges() {
+    const saveChanges = () => {
+      context.emit('updated', localAnnotation.value)
+    }
+
+    function validateChanges(save: boolean) {
+      clearTimeout(saveTimer)
       const regex = /^\d?:\d{2}:\d{2}$/
       if (
         localStartTime.value.match(regex) &&
@@ -146,7 +152,8 @@ export default defineComponent({
         )
         const endTime = formattedTimeToSeconds(localEndTime.value)
         if (endTime > 0) localAnnotation.value.time.push(endTime)
-        context.emit('updated', localAnnotation.value)
+        if (save) saveChanges()
+        else saveTimer = setTimeout(() => saveChanges(), 2000)
         editingStartTime.value = false
         editingEndTime.value = false
         editingComment.value = false

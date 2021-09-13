@@ -322,21 +322,21 @@ const actions = {
     annotation: Annotation
   ): Promise<void> {
     const videoID = listItemShare.item.video.details.id
-    const videoSharingId = listItemShare.share._id
+    const shareID = listItemShare.share._id
 
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.POST,
       credentials: true,
       body: annotation,
-      query: { videoID, videoSharingId },
+      query: { videoID, shareID },
       route: '/api/video/share/annotation',
     }
+    // Server will return the created Annotation with an _id
     return apiRequest<Annotation>(payload).then((newAnnotation: Annotation) => {
+      newAnnotation.nowActive = false
       const v = state.value.videos.get(videoID)
       if (v) {
-        const share = v.users.sharing.find(
-          (s) => s._id === listItemShare.share._id
-        )
+        const share = v.users.sharing.find((s) => s._id === shareID)
         if (share) share.annotations.push(newAnnotation)
       }
     })
@@ -347,21 +347,20 @@ const actions = {
     annotation: Annotation
   ): Promise<void> {
     const videoID = listItemShare.item.video.details.id
-    const videoSharingId = listItemShare.share._id
+    const shareID = listItemShare.share._id
+    const annotationID = annotation._id || ''
 
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.PUT,
       credentials: true,
       body: annotation,
-      query: { videoID, videoSharingId },
-      route: '/api/video/share/annotate',
+      query: { videoID, shareID, annotationID },
+      route: '/api/video/share/annotation',
     }
-    return apiRequest<Annotation>(payload).then(
-      (updatedAnnotation: Annotation) => {
-        const v = state.value.videos.get(videoID)
-        if (v) v.updateAnnotation(listItemShare.share, updatedAnnotation)
-      }
-    )
+    return apiRequest<void>(payload).then(() => {
+      const v = state.value.videos.get(videoID)
+      if (v) v.updateAnnotation(listItemShare.share, annotation)
+    })
   },
 
   deleteAnnotation: function (
@@ -369,28 +368,25 @@ const actions = {
     annotation: Annotation
   ): Promise<void> {
     const videoID = listItemShare.item.video.details.id
-    const videoSharingId = listItemShare.share._id
+    const shareID = listItemShare.share._id
+    const annotationID = annotation._id || ''
 
     const payload: APIRequestPayload = {
-      method: XHR_REQUEST_TYPE.POST,
+      method: XHR_REQUEST_TYPE.DELETE,
       credentials: true,
-      body: annotation,
-      query: { videoID, videoSharingId },
+      query: { videoID, shareID, annotationID },
       route: '/api/video/share/annotation',
     }
 
-    return apiRequest<Annotation>(payload).then(() => {
+    return apiRequest<void>(payload).then(() => {
       const v = state.value.videos.get(videoID)
       if (v) {
-        const selectedShare = v.users.sharing.find(
-          (share) => share._id == videoSharingId
-        )
-        if (selectedShare) {
-          const aIndex = selectedShare.annotations.findIndex(
-            (annotate) => annotate._id === annotation._id
+        const share = v.users.sharing.find((s) => s._id == shareID)
+        if (share) {
+          const aIndex = share.annotations.findIndex(
+            (a) => a._id === annotationID
           )
-          if (aIndex >= 0) selectedShare.annotations.splice(aIndex, 1)
-          v.updateSharing([selectedShare])
+          if (aIndex >= 0) share.annotations.splice(aIndex, 1)
         }
       }
     })

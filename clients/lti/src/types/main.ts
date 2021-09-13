@@ -473,6 +473,7 @@ export class Video {
       const share = this.users.sharing.find((us) => us._id === s._id)
 
       if (share) {
+        share._id = s._id
         share.access = s.access
         share.creator = s.creator
         share.created = s.created || new Date(this.details.created) // To ensure a date is available for older videos

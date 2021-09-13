@@ -134,11 +134,13 @@ function createOrUpdateUser(tokenSet, profile) {
       if (err) return reject(`Error checking user ${err}`)
       user = usr || new User()
       setUserAttributes(user, profile, tokenSet)
-      if (profile.client === 'admin') {
-        await setUserRole(user)
+      if (process.env.NODE_ENV !== 'test') {
+        if (profile.client === 'admin') {
+          await setUserRole(user)
+        }
+        await getUserGroups(user)
+        await setPrerequisiteCourseProgress(user)
       }
-      await getUserGroups(user)
-      await setPrerequisiteCourseProgress(user)
       try {
         const savedUser = await user.save()
         resolve(savedUser)
@@ -185,8 +187,10 @@ function completeCallback(request, response, user) {
   // Set the session here at last!
   // Web app receives a Session immediately, does not need to pass a token
   request.session.ref = user.id
-  console.log(s)
-  console.log(`Session: ${request.session.ref}`)
+  if (process.env.NODE_ENV !== 'test') {
+    console.log(s)
+    console.log(`Session: ${request.session.ref}`)
+  }
   return response.redirect(redirectUrl)
 }
 

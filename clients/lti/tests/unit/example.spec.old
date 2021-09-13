@@ -1,0 +1,19 @@
+import { mount } from '@vue/test-utils'
+import AnnotationCard from '@/components/AnnotationCard.vue'
+
+describe('AnnotationCard.vue', () => {
+  it('renders annotation when passed', () => {
+    const annotation = {
+      _id: '1',
+      created: new Date(),
+      creator: 'creatorID',
+      comment: 'Test comment',
+      time: [], // e.g [2.35, 10.04] or just [2.35]
+      nowActive: false,
+    }
+    const wrapper = mount(AnnotationCard, {
+      propsData: { annotation },
+    })
+    expect(wrapper.text()).toMatch(annotation.comment)
+  })
+})
