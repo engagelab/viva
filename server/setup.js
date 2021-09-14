@@ -61,9 +61,9 @@ const createTestDocuments = () => {
     if (error) return console.log(error)
     else if (!user) {
       user = User.create({ profile: { username: 'testuser1' }})
+      console.log('Created a User')
     }
     userID = user._id
-    console.log('Created a User')
   })
 
   // Create one Video owned by the test user
@@ -87,7 +87,7 @@ const createTestDocuments = () => {
           duration: '1000', // Seconds  created: { type: Date },
         },
         status: {
-          main: videoStatusTypes.uploaded,
+          main: videoStatusTypes.completed,
         },
         users: {
           owner: userID,

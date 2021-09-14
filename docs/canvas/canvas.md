@@ -114,6 +114,8 @@ Set to 'none' if no such course exists
   So admins can allocate courses to a Dataset
   * Relies on `process.env.CANVAS_VIVA_ACCOUNT_ID` - referring to the VIVA 'Account' ID inside Canvas
 
+  Canvas route: `/api/v1/accounts/${accountId}/courses`
+
   see server/services/canvas.js > `coursesInAccount()`
 
   e.g.
@@ -125,6 +127,9 @@ Set to 'none' if no such course exists
   *Members of the 'VIVA admin group'*   (**DONE**)
 
   To ensure user is an Administrator
+
+  Canvas route: `/api/v1/groups/${groupId}/users`
+
   see server/services/canvas.js > `usersForGroup()`
 
   e.g.
@@ -140,13 +145,19 @@ MobileApp
 
   *Groups (courses) for a User*   (**DONE**)
   To know which Datasets (based on courses) a user is allowed to receive
+
+  Canvas route: `/api/v1/accounts/${accountId}/courses`
+                `/api/v1/courses/${courseId}/users?per_page=1000`
+
   see server/routing/auth/helpers.js > `getUserGroups()` and `setUserGroups()`
-  see server/services/canvas.js > `coursesForUser()`
 
 
   *Progress for a course*   (**DONE**)
   To grant access to VIVA depending on completion of a particular course e.g. Ethics course
   Set CANVAS_DEPENDENT_COURSE_ID to the course_id. Set it to 'none' if no such course exists
+
+  Canvas route: `/api/v1/courses/${canvasCourseId}/users/${canvasUserId}/progress`
+
   see server/routing/auth/helpers.js > `setPrerequisiteCourseProgress()`
 
 LTI for Video Sharing
