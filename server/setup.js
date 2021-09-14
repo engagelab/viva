@@ -3,121 +3,124 @@ const fs = require('fs')
 const dirPath = process.cwd()
 const Dataset = require('./models/Dataset')
 const User = require('./models/User')
-const Video = require('./models/Video')
+const Video = require('./models/Video').Video
 const { videoStorageTypes, consentTypes } = require('./constants')
 
 const videoFolderNames = require('./constants').videoFolderNames
 const videoStatusTypes = require('./constants').videoStatusTypes
 
-let userID, datasetID = ''
-
 const createTestDocuments = () => {
-  Dataset.findOne({ name: 'test' }, (err, foundSetting) => {
-    let dataSett = foundSetting
-    if (err) {
-      return console.log(err)
-    } else if (!dataSett) {
-      dataSett = Dataset.create({
-        name: 'test',
-        description: 'test description',
-        created: new Date(),
-        formId: 'none', // Nettskjema form ID
-        status: {
-          lastUpdated: new Date(), // Last time this Dataset was changed
-          active: true, // Only active datasetts who will be fetched
-          lockedBy: undefined, // Who has locked the datasett for editing
-        },
-
-        consent: {
-          kind: consentTypes.manual,
-        },
-        users: {
-          adminGroup: 'test',
-          groups: ['23222'],
-        },
-        selectionPriority: [], // Order of appearance of the utvalg categories
-        selection: {}, //  'utvalg' selection
-        storages: [
-          {
-            name: videoStorageTypes.educloud,
-            groupId: 'testGroupID',
-            file: {
-              // Path and name will be constructed from attributes from Video and Dataset based on these array entries
-              path: ['folder1', 'folder2'],
-              name: ['filename1', 'filename2'],
-            },
-            category: [],
-          },
-        ],
-      })
-      console.log('Created a Dataset')
-    }
-    datasetID = dataSett._id
-  })
-
-  // Find or create a test user
-  User.findOne({ 'profile.username': 'testuser1' }, (error, u) => {
-    let user = u
-    if (error) return console.log(error)
-    else if (!user) {
-      user = User.create({ profile: { username: 'testuser1' }})
-      console.log('Created a User')
-    }
-    userID = user._id
-  })
-
-  // Create one Video owned by the test user
-  Video.findOne({ 'users.owner': userID }, (error, v) => {
-    let video = v
-    if (error) {
-      return console.log(error)
-    } else if (!video) {
-      video = {
-        file: {
-          extension: 'mp4',
-          name: 'VideoTest',
-          mimeType: 'video/mp4',
-        },
-        details: {
-          id: 'videoTextid',
-          name: 'Video Tester',
-          category: 'green', // green, yellow, red
-          created: Date.now(),
-          description: 'Video Test description',
-          duration: '1000', // Seconds  created: { type: Date },
-        },
-        status: {
-          main: videoStatusTypes.completed,
-        },
-        users: {
-          owner: userID,
-          sharing: [
-            {
-              creator: '1',
-              created: new Date(),
-              users: [],
-              access: true,
-              title: 'Test share 1',
-              description: 'Test description 1',
-              edl: { trim: [], blur: [] },
-              tags: [],
-              annotations: [],
-              comment: [],
-            }
-          ],
-        },
-        dataset: {
-          id: datasetID,
+  return new Promise((resolve, reject) => {
+    Dataset.findOne({ name: 'test' }, async (err, foundSetting) => {
+      let dataSett = foundSetting
+      if (err) {
+        console.log(err)
+        return reject()
+      } else if (!dataSett) {
+        dataSett = await Dataset.create({
           name: 'test',
-          selection: [],
-          groups: []
-        },
-        consents: [],
-        storages: [],
+          description: 'test description',
+          created: new Date(),
+          formId: 'none', // Nettskjema form ID
+          status: {
+            lastUpdated: new Date(), // Last time this Dataset was changed
+            active: true, // Only active datasetts who will be fetched
+            lockedBy: undefined, // Who has locked the datasett for editing
+          },
+
+          consent: {
+            kind: consentTypes.manual,
+          },
+          users: {
+            adminGroup: 'test',
+            groups: ['23222'],
+          },
+          selectionPriority: [], // Order of appearance of the utvalg categories
+          selection: {}, //  'utvalg' selection
+          storages: [
+            {
+              name: videoStorageTypes.educloud,
+              groupId: 'testGroupID',
+              file: {
+                // Path and name will be constructed from attributes from Video and Dataset based on these array entries
+                path: ['folder1', 'folder2'],
+                name: ['filename1', 'filename2'],
+              },
+              category: [],
+            },
+          ],
+        })
+        console.log('Created a Dataset')
       }
-      Video.create(video)
-      console.log('Created a Video')
-    }
+
+      // Find or create a test user
+      User.findOne({ 'profile.username': 'testuser1' }, async (error, u) => {
+        let user = u
+        if (error) {
+          console.log(error)
+          return reject()
+        } else if (!user) {
+          user = await User.create({ profile: { username: 'testuser1' } })
+          console.log('Created a User')
+        }
+
+        // Create one Video owned by the test user
+        Video.findOne({ 'users.owner': user._id }, async (error2, v) => {
+          let video = v
+          if (error2) {
+            console.log(error2)
+            return reject()
+          } else if (!video) {
+            video = {
+              file: {
+                extension: 'mp4',
+                name: 'VideoTest',
+                mimeType: 'video/mp4',
+              },
+              details: {
+                id: 'videoTextid',
+                name: 'Video Tester',
+                category: 'green', // green, yellow, red
+                created: Date.now(),
+                description: 'Video Test description',
+                duration: '1000', // Seconds  created: { type: Date },
+              },
+              status: {
+                main: videoStatusTypes.completed,
+              },
+              users: {
+                owner: user._id,
+                sharing: [
+                  {
+                    creator: '1',
+                    created: new Date(),
+                    users: [],
+                    access: true,
+                    title: 'Test share 1',
+                    description: 'Test description 1',
+                    edl: { trim: [], blur: [] },
+                    tags: [],
+                    annotations: [],
+                    comment: [],
+                  },
+                ],
+              },
+              dataset: {
+                id: dataSett._id,
+                name: 'test',
+                selection: [],
+                groups: [],
+              },
+              consents: [],
+              storages: [],
+            }
+            await Video.create(video)
+            console.log('Created a Video')
+          }
+          resolve()
+        })
+      })
+    })
   })
 }
 

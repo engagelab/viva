@@ -4,7 +4,7 @@
 
 const router = require('express').Router()
 const utilities = require('../../utilities')
-const Video = require('../../models/Video')
+const { Video } = require('../../models/Video')
 const ObjectId = require('mongoose').Types.ObjectId
 
 const Dataset = require('../../models/Dataset')
@@ -15,11 +15,13 @@ router.post(
   utilities.authoriseUser,
   async (request, response, next) => {
     const ltiID = response.locals.user.profile.ltiID
-    Video.findOne({ 'details.id': request.query.id }, (error, v) => {
+    Video.findOne({ 'details.id': request.query.id }, async (error, v) => {
       if (error || !v) {
         return response.status(400).end()
       } else {
-        const newShare = v.users.sharing.create({
+        // Crate a subdocument based on the Videos 'users.sharing' schema
+        const newShare = await v.users.sharing.create({
+        //const newShare = await model('Share', shareSchema).create({
           creator: ltiID || '',
           users: [],
           access: true,
@@ -151,7 +153,9 @@ router.post(
   '/video/share/annotation',
   utilities.authoriseUser,
   async (request, response, next) => {
+    // Create a subdocument based on the Videos 'users.sharing.annotations' schema
     const newAnnotation = Video.schema.path('users.sharing.annotations').cast([request.body])[0]
+    // const newAnnotation = await model('Annotation', annotationSchema).create(request.body)
     Video.findOneAndUpdate(
       { 'details.id': request.query.videoID, 'users.sharing._id': ObjectId(request.query.shareID) },
       { $push: { 'users.sharing.$.annotations': newAnnotation } }, // '$' is the first item that matches the query
@@ -173,38 +177,28 @@ router.put(
       {
         'details.id': request.query.videoID,
       },
-      { $set: { 'users.sharing.$[s].annotations.$[a]': request.body } },
-      { arrayFilters: [
+      {
+        'users.sharing.$[s].annotations.$[a].comment': request.body.comment,
+        'users.sharing.$[s].annotations.$[a].time': request.body.time
+      },
+      { new: true, arrayFilters: [
         {'s._id': ObjectId(request.query.shareID)},
         {'a._id': ObjectId(request.query.annotationID)}
       ]},
       (error, updatedVideo) => {
-        console.dir(updatedVideo)
         if (error) return next(error)
-        response.status(200).end()
+        else if (process.env.NODE_ENV === 'test') {
+          const updatedShare = updatedVideo.users.sharing.find((s) => {
+            const id = s._id.toString()
+            return id === request.query.shareID
+          })
+          const updatedAnnotation = updatedShare.annotations.find((a) => a._id.toString() === request.query.annotationID)
+          response.send(updatedAnnotation)
+        } else {
+          response.status(200).end()
+        }
       }
     )
-
-    /* Video.findOne({ 'details.id': videoID }, (error, v) => {
-      if (error || !v || !updatedAnnotation._id) {
-        return response.status(400).end()
-      } else {
-        const share = v.users.sharing.find((s) => s._id === videoSharingId)
-        if (share) {
-          const annotation = share.annotations.find((a) => a._id === updatedAnnotation._id)
-          if (annotation) {
-            annotation.comment = updatedAnnotation.comment
-            annotation.created = updatedAnnotation.created
-            annotation.creator = updatedAnnotation.creator
-            annotation.time = updatedAnnotation.time
-            v.save((saveError) => {
-              if (saveError) return next(saveError)
-              response.status(200).end()
-            })
-          } else response.status(404).end()
-        } else response.status(404).end()
-      }
-    }) */
   }
 )
 

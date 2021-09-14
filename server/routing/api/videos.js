@@ -7,7 +7,7 @@ const utilities = require('../../utilities')
 const { downloadS3File, deleteS3File } = require('../../services/storage')
 const { userRoles } = require('../../constants')
 const videoStatusTypes = require('../../constants').videoStatusTypes
-const Video = require('../../models/Video')
+const Video = require('../../models/Video').Video
 
 /* ---------------- Video activities ---------------- */
 

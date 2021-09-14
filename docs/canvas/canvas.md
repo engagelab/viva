@@ -110,7 +110,6 @@ Set to 'none' if no such course exists
 
 
   *All groups (Courses) (under the Account)*   (**DONE**)
-
   So admins can allocate courses to a Dataset
   * Relies on `process.env.CANVAS_VIVA_ACCOUNT_ID` - referring to the VIVA 'Account' ID inside Canvas
 
@@ -125,7 +124,6 @@ Set to 'none' if no such course exists
 
 
   *Members of the 'VIVA admin group'*   (**DONE**)
-
   To ensure user is an Administrator
 
   Canvas route: `/api/v1/groups/${groupId}/users`
@@ -140,7 +138,7 @@ Set to 'none' if no such course exists
   ```
 
 
-MobileApp
+### MobileApp
 
 
   *Groups (courses) for a User*   (**DONE**)

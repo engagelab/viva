@@ -29,13 +29,5 @@
     "npm": ">=6.0.0"
   },
   "displayName": "viva",
-  "license": "Apache-2.0",
-  "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.7.0",
-    "jest": "^27.1.1",
-    "superagent": "^6.1.0",
-    "supertest": "^6.1.6",
-    "supertest-session": "^4.1.0"
-  }
+  "license": "Apache-2.0"
 }

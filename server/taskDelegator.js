@@ -11,7 +11,7 @@ const {
   videoStatusTypes,
   videoStorageTypes,
 } = require('./constants')
-const Video = require('./models/Video')
+const Video = require('./models/Video').Video
 const db = require('./services/database')
 const ffmpeg = require('./subprocesses/ffmpegOperation')
 const fileOperations = require('./subprocesses/fileOperations')

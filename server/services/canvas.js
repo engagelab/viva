@@ -86,6 +86,8 @@ const courseProgress = (canvasUserId, canvasCourseId, canvasAccessToken) => {
 }
 
 // Get user's Profile
+// Required if using a USER-specific Canvas token
+// NOTE: Currently not functional for superToken (token requires further access rights)
 // https://canvas.instructure.com/doc/api/users.html#method.profile.settings
 const userDetails = (canvasAccessToken, canvasUserId) => {
   let options = {

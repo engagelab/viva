@@ -18,7 +18,7 @@ const annotationSchema = new mongoose.Schema({
   time: { type: Array, default: [] }, // e.g [2.35, 10.04] or just [2.35]
 })
 
-const sharingSchema = new mongoose.Schema({
+const shareSchema = new mongoose.Schema({
   creator: { type: String }, // LTI ID of the creator
   created: { type: Date, default: Date.now },
   users: { type: Array },
@@ -88,7 +88,7 @@ const videoSchema = new mongoose.Schema({
     owner: { type: mongoose.Schema.ObjectId, ref: 'User' },
     sharing: {
       type: Array,
-      of: sharingSchema,
+      of: shareSchema,
       default: []
     },
   },
@@ -144,4 +144,6 @@ videoSchema.set('toObject', {
   virtuals: true,
 })
 
-module.exports = mongoose.model('Video', videoSchema)
+module.exports = {
+  Video: mongoose.model('Video', videoSchema)
+}

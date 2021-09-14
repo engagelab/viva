@@ -10,7 +10,7 @@ const googleOperations = require('../../services/google');
 const videoStatusTypes = require('../../constants').videoStatusTypes;
 const utilities = require('../../utilities');
 const Dataset = require('../../models/Dataset');
-const Video = require('../../models/Video');
+const Video = require('../../models/Video').Video;
 const User = require('../../models/User');
 
 /* --------------    UiO Google Suite ----------------- */
