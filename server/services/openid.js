@@ -9,7 +9,7 @@ async function createClient(mode) {
       process.exit()
     })
     let authCallback = `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}/auth/dataporten/callback`
-    if (process.env.NODE_ENV !== 'development') {
+    if (process.env.NODE_ENV !== 'development' || process.env.VUE_APP_SERVER_HOST.includes('engagelab')) {
       authCallback = `${process.env.VUE_APP_SERVER_HOST}/auth/dataporten/callback`
     }
     const theClient = new dataportenIssuer.Client({
@@ -27,7 +27,7 @@ async function createClient(mode) {
       jwks_uri: `https://${process.env.CANVAS_ENDPOINT_DOMAIN}/api/lti/security/jwks`,
     })
     let authCallback = `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}/auth/canvas/callback`
-    if (process.env.NODE_ENV !== 'development') {
+    if (process.env.NODE_ENV !== 'development' || process.env.VUE_APP_SERVER_HOST.includes('engagelab')) {
       authCallback = `${process.env.VUE_APP_SERVER_HOST}/auth/canvas/callback`
     }
     const theClient = new canvasIssuer.Client({
@@ -45,7 +45,7 @@ async function createClient(mode) {
       userinfo_endpoint: `https://${process.env.CANVAS_ENDPOINT_DOMAIN}/api/v1/users/`
     })
     let authCallback = `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}/auth/canvas/callback`
-    if (process.env.NODE_ENV !== 'development') {
+    if (process.env.NODE_ENV !== 'development' || process.env.VUE_APP_SERVER_HOST.includes('engagelab')) {
       authCallback = `${process.env.VUE_APP_SERVER_HOST}/auth/canvas/callback`
     }
     const theClient = new canvasIssuer.Client({
