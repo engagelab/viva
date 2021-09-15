@@ -10,13 +10,16 @@
       >
         <div class="w-auto relative">
           <Button
-            class="absolute top-4 right-4 z-10"
-            :childclass="'w-24 h-10'"
-            :backgroundcolour="'bg-viva-grey-450'"
+            class="absolute top-2 right-2 z-10"
+            :childclass="'w-10 h-10'"
             :textcolour="'text-white'"
             @vclick.stop="() => (showAnnotations = !showAnnotations)"
           >
-            Annotate
+            <img
+              :src="annotateButtonSVG"
+              class="w-5 h-5"
+              alt="annotate-button"
+            />
           </Button>
           <Player @currenttimetrimmed="(time) => (currentPlayerTime = time)" />
         </div>
@@ -78,7 +81,33 @@
           class="bg-viva-grey-400 text-viva-grey-500 rounded-xl ml-2 h-full flex flex-col"
           v-if="showAnnotations"
         >
-          <p class="px-4 pt-4 text-white">Annotations</p>
+          <div class="flex flex-row justify-between px-4 pt-4 text-white">
+            <p>Annotations</p>
+            <div class="flex flex-row">
+              <icon-base
+                icon-name="sortByVideoDate"
+                class="ml-2 stroke-current cursor-pointer"
+                :class="[sortByCreated ? 'text-yellow-500' : 'text-white']"
+                alt="created-sort-button"
+                @click="sortBy('creationtime')"
+                viewBox="0 0 68.37 68.37"
+                width="24"
+                height="24"
+                ><icon-sort-date />
+              </icon-base>
+              <icon-base
+                icon-name="sortByVideoTime"
+                class="ml-2 stroke-current cursor-pointer"
+                :class="[sortByCreated ? 'text-white' : 'text-yellow-500']"
+                alt="video-sort-button"
+                @click="sortBy('videotime')"
+                viewBox="0 0 68.37 68.37"
+                width="24"
+                height="24"
+                ><icon-sort-play />
+              </icon-base>
+            </div>
+          </div>
           <input
             class="m-3 p-3 bg-viva-grey-450 text-white text-xs focus:bg-viva-grey-450 rounded-full"
             placeholder="Write a comment"
@@ -107,9 +136,16 @@ import { stringToColour, formatDate } from '@/utilities'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import trimButtonSVG from '@/assets/icons/svg/trim.svg'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
+import annotateButtonSVG from '@/assets/icons/svg/annotate.svg'
+import SortByCreationTimeSVG from '@/assets/icons/svg/sort-date.svg'
+import sortByVideoTimeSVG from '@/assets/icons/svg/sort-play.svg'
 import Player from '@/views/Player.vue'
 import AnnotationCard from '@/components/AnnotationCard.vue'
 import Button from '@/components/base/Button.vue'
+
+import IconBase from '@/components/icons/IconBase.vue'
+import IconSortPlay from '@/components/icons/IconSortPlay.vue'
+import IconSortDate from '@/components/icons/IconSortDate.vue'
 
 const { getters: appGetters } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
@@ -120,6 +156,9 @@ export default defineComponent({
     Button,
     Player,
     AnnotationCard,
+    IconBase,
+    IconSortPlay,
+    IconSortDate,
   },
   setup() {
     const selectedItemShare = videoGetters.selectedItemShare
@@ -150,6 +189,10 @@ export default defineComponent({
       if (selectedItemShare.value)
         videoActions.createAnnotation(selectedItemShare.value, newAnnotation)
       annotationText.value = ''
+    }
+
+    const sortBy = function (type: string) {
+      sortByCreated.value = type === 'creationtime'
     }
 
     const updateAnnotation = function (update: Annotation) {
@@ -212,10 +255,15 @@ export default defineComponent({
       updateAnnotation,
       videoCurrentTime,
       detailMode: videoGetters.detailMode,
+      sortBy,
+      sortByCreated,
 
       // assets
       trimButtonSVG,
       playButtonSVG,
+      annotateButtonSVG,
+      SortByCreationTimeSVG,
+      sortByVideoTimeSVG,
     }
   },
 })

@@ -240,7 +240,12 @@ export interface ShareComment {
   creator: string // LTI ID
   comment: string
 }
-export interface Annotation {
+interface ShareCommentData {
+  created: string
+  creator: string // LTI ID
+  comment: string
+}
+export class Annotation {
   _id?: string
   created: Date
   creator: string // LTI ID
@@ -249,23 +254,79 @@ export interface Annotation {
 
   // front end only
   nowActive: boolean
+
+  constructor(a: Annotation | AnnotationData) {
+    this._id = a._id
+    this.created = new Date(a.created)
+    this.creator = a.creator
+    this.comment = a.comment
+    this.time = a.time
+    this.nowActive = false
+  }
 }
-export interface VideoSharing {
+export interface AnnotationData {
+  _id: string
+  created: string
+  creator: string // LTI ID
+  comment: string
+  time: number[] // e.g [2.35, 10.04] or just [2.35]
+}
+export class VideoSharing {
+  _id = '' // DB ID of the share (not the video!)
+  creator = '' // LTI ID
+  created = new Date()
+  users: string[] = []
+  access = true
+  title = ''
+  description = ''
+  annotations: Annotation[] = []
+  comments: ShareComment[] = []
+  edl: EditDecriptionList = { trim: [], blur: [] }
+
+  constructor(vs: VideoSharing | VideoSharingData) {
+    this.updateFromShare(vs)
+  }
+
+  updateFromShare(vs: VideoSharing | VideoSharingData): void {
+    this._id = vs._id
+    this.access = vs.access
+    this.creator = vs.creator
+    this.created = vs.created ? new Date(vs.created) : new Date() // To ensure a date is available for older videos
+    this.title = vs.title
+    this.description = vs.description
+    this.edl = vs.edl
+    this.users = vs.users
+    if (vs.annotations) {
+      this.annotations = vs.annotations.map((a) => new Annotation(a))
+    }
+    if (vs.comments) {
+      this.comments = vs.comments.map((c: ShareComment | ShareCommentData) => {
+        return {
+          created: new Date(c.created),
+          creator: c.creator,
+          comment: c.comment,
+        }
+      })
+    }
+  }
+}
+
+interface VideoSharingData {
   _id: string // DB ID of the share (not the video!)
   creator: string // LTI ID
-  created: Date
+  created: string
   users: string[]
   access: boolean
   title: string
   description: string
-  annotations: Annotation[]
-  comments: ShareComment[]
+  annotations: AnnotationData[]
+  comments: ShareCommentData[]
   edl: EditDecriptionList
 }
 interface VideoUsersData {
   owner?: string
   sharedWith?: string[]
-  sharing?: VideoSharing[]
+  sharing?: VideoSharingData[]
 }
 interface VideoUsers {
   owner: string
@@ -468,24 +529,11 @@ export class Video {
     if (users.sharedWith) this.users.sharedWith = users.sharedWith
     if (users.sharing) this.updateSharing(users.sharing)
   }
-  updateSharing(sharing: VideoSharing[]): void {
-    sharing.forEach((s) => {
-      const share = this.users.sharing.find((us) => us._id === s._id)
-
-      if (share) {
-        share._id = s._id
-        share.access = s.access
-        share.creator = s.creator
-        share.created = s.created || new Date(this.details.created) // To ensure a date is available for older videos
-        share.title = s.title
-        share.description = s.description
-        share.annotations = s.annotations
-        share.comments = s.comments
-        share.edl = s.edl
-        share.users = s.users
-      } else {
-        this.users.sharing.push(s)
-      }
+  updateSharing(updatedSharing: VideoSharing[] | VideoSharingData[]): void {
+    updatedSharing.forEach((newShare: VideoSharing | VideoSharingData) => {
+      const oldShare = this.users.sharing.find((os) => os._id === newShare._id)
+      if (oldShare) oldShare.updateFromShare(newShare)
+      else this.users.sharing.push(new VideoSharing(newShare))
     })
   }
   updateAnnotation(share: VideoSharing, updatedAnnotation: Annotation): void {
