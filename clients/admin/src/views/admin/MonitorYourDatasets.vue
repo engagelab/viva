@@ -3,7 +3,7 @@
     <div class="flex flex-row flex-wrap mb-4">
       <!-- Sidebar -->
       <div class="h-full w-1/4">
-        <h2 class="font-bold">Datasets</h2>
+        <h2 class="font-bold">{{ t('datasets') }}</h2>
         <ul class="mt-2" style="list-style-type: none">
           <li
             v-for="(dataset, datasetIndex) in datasets"
@@ -22,14 +22,14 @@
     </div>
     <div class="flex flex-row mt-8">
       <Button v-if="!showInput" @vclick="showInput = !showInput">
-        Create new dataset
+        {{ t('create') }}
       </Button>
       <div class="flex flex-row" v-if="showInput">
         <input
           v-model="newDatasetName"
           type="String"
           class="border-2 text-center"
-          placeholder="Navn på dataset"
+          placeholder="Navn på datasett"
           @keypress="restrict($event)"
         />
         <Button class="ml-4 text-white bg-blue-600" @vclick="createDataset()">
@@ -44,36 +44,22 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  ComputedRef,
-  defineComponent,
-  onMounted,
-  ref,
-  // Ref,
-  // watch,
-} from 'vue'
+import { computed, ComputedRef, defineComponent, onMounted, ref } from 'vue'
 import { Dataset } from '@/types/main'
 import { useDatasetStore } from '../../store/useDatasetStore'
 const { actions: datasetActions, getters: datasetGetters } = useDatasetStore()
 import DatasetItem from '@/components/DatasetItem.vue'
 import Button from '@/components/base/Button.vue'
-// i18n
+
 import { useI18n } from 'vue-i18n'
 const messages = {
   nb_NO: {
-    'Your datasets': 'Din datasetter',
-    Datasett: 'Opptak',
-    Opprettet: 'Dato',
-    'Antall opptak': 'Datainnsamler',
-    Behandlingsansvarlig: 'Datasett',
+    datasets: 'Datasets',
+    create: 'Create new dataset',
   },
   en: {
-    'Your datasets': 'Datasets',
-    Datasett: 'Dataset',
-    Opprettet: 'Created',
-    'Antall opptak': 'Total recordings',
-    Behandlingsansvarlig: 'Responsible',
+    datasets: 'Datasets',
+    create: 'Create new dataset',
   },
 }
 

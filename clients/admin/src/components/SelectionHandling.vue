@@ -1,7 +1,7 @@
 <template>
   <!-- Component handles only selection priority  -->
   <div class="ml-2">
-    <p class="text-red-600 my-4">Selection Priority</p>
+    <p class="text-red-600 my-4">{{ t('instanceStructure') }}</p>
     <select
       span
       ref="selects"
@@ -21,8 +21,7 @@
       </option>
     </select>
     <p v-if="d.selectionPriority.length == 0" class="text-red-500 text-sm">
-      Note: Atleast one selection priority must be created for dataset to be
-      reflected in app
+      * {{ t('warning') }}
     </p>
     <div class="flex">
       <div
@@ -40,7 +39,7 @@
       </div>
     </div>
 
-    <p class="text-red-600 mt-4">Instances</p>
+    <p class="text-red-600 mt-4">{{ t('instances') }}</p>
     <Subset
       v-if="localSelection"
       :title="Object.keys(localSelection)[0]"
@@ -63,21 +62,16 @@ import Subset from '@/components/Subset.vue'
 
 const messages = {
   nb_NO: {
-    dataset: 'Registrering',
-    description: 'Til forsiden',
-    selection: 'Ko-hort',
-    'data controller group': 'Data controller group',
-    owner: 'Owner',
-    name: 'Name',
+    instanceStructure: '',
+    warning:
+      'Note: Atleast one selection priority must be created for dataset to be reflected in app',
+    instances: 'Instances',
   },
   en: {
-    dataset: 'Registrering',
-    description: ' Description',
-    'choose one or more': 'Choose one or several kindergartens..',
-    selection: 'Cohort',
-    'data controller group': 'Data controller group',
-    owner: 'Owner',
-    name: 'Name',
+    instanceStructure: 'Build selection structure for data subjects',
+    warning:
+      'Note: Atleast one selection priority must be created for dataset to be reflected in app',
+    instances: 'Instances',
   },
 }
 
