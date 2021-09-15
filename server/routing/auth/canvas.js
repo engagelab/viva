@@ -159,10 +159,16 @@ router.post('/canvas/callback', function (request, response) {
       const user = namesAndRoles.members.find(
         (u) => u.name === profile.fullName
       )
-      profile.ltiID = user.user_id
-      createOrUpdateUser({ id_token: idToken }, profile).then((u) => {
-        return completeCallback(request, response, u)
-      })
+      if (user) {
+        profile.ltiID = user.user_id
+        createOrUpdateUser({ id_token: idToken }, profile).then((u) => {
+          return completeCallback(request, response, u)
+        })
+      } else {
+        console.log(`User ${profile.fullName} not found in Names and Roles`)
+        console.dir(namesAndRoles)
+        console.dir(profile)
+      }
     })
   }
 
