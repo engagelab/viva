@@ -177,7 +177,7 @@ export default defineComponent({
       return `${currentTime} / ${totalTime}`
     })
 
-    // The current relative time (given a trimmed offset)
+    // The current time relative to a trimmed offset
     const currentTimeTrimmed = () =>
       Math.floor(currentPlayerTime.value - edl.value.trim[0])
 

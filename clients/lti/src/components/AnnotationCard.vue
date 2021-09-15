@@ -11,7 +11,9 @@
         >
           <input
             v-if="editingStartTime"
+            ref="startTimeInputRef"
             class="bg-viva-grey-400 text-white text-xsv bg-viva-grey-450 w-14"
+            :class="[incorrectStartTime ? 'text-red-600' : '']"
             v-model="localStartTime"
             @keyup.enter="validateChanges(true)"
           />
@@ -20,16 +22,22 @@
           </p>
         </div>
         <div
-          class="p-1 ml-0.5 pr-2 flex items-center justify-center text-white text-sm bg-viva-grey-450 rounded-2xl rounded-l-none cursor-pointer"
+          class="p-1 ml-0.5 pr-2 flex items-center justify-center text-white font-serious font-medium bg-viva-grey-450 rounded-2xl rounded-l-none cursor-pointer"
         >
           <input
-            v-if="editingEndTime"
+            v-show="editingEndTime"
+            ref="endTimeInputRef"
             class="bg-viva-grey-400 text-white text-xsv bg-viva-grey-450 w-14"
+            :class="[incorrectEndTime ? 'text-red-600' : '']"
             v-model="localEndTime"
             @keyup.enter="validateChanges(true)"
           />
-          <div v-else class="flex flex-col items-center" @click="editEndTime()">
-            <p class="text-center leading-2" v-if="annotation.time[1]">
+          <div
+            v-show="!editingEndTime"
+            class="flex flex-col items-center"
+            @click="editEndTime()"
+          >
+            <p class="text-xsv" v-if="annotation.time[1]">
               {{ formatTime(annotation.time[1], 0) }}
             </p>
             <img
@@ -47,6 +55,7 @@
       >
         <textarea
           v-if="myLTIID === annotation.creator"
+          ref="commentInputRef"
           type="text"
           class="bg-viva-grey-450 w-full"
           placeholder="Add a comment"
@@ -65,7 +74,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue'
+import {
+  defineComponent,
+  PropType,
+  Ref,
+  ref,
+  toRefs,
+  watch,
+  nextTick,
+} from 'vue'
 import { useI18n } from 'vue-i18n'
 import moment from 'moment'
 import { Annotation } from '../types/main'
@@ -106,6 +123,9 @@ export default defineComponent({
     const myLTIID = appGetters.user.value.profile.ltiID
     const hover = ref(false)
     const menu = ref(false)
+    const startTimeInputRef = ref()
+    const endTimeInputRef = ref()
+    const commentInputRef = ref()
     const editingEndTime = ref(false)
     const editingStartTime = ref(false)
     const editingComment = ref(false)
@@ -145,26 +165,9 @@ export default defineComponent({
       context.emit('updated', localAnnotation.value)
     }
 
-    function validateChanges(save: boolean) {
-      clearTimeout(saveTimer)
-      const regex = /^(\d{1}:)?\d{2}:\d{2}$/
-      if (
-        localStartTime.value.match(regex) &&
-        (localEndTime.value === '' || localEndTime.value.match(regex))
-      ) {
-        localAnnotation.value.time = []
-        const startTime = formattedTimeToSeconds(localStartTime.value)
-        if (startTime >= 0) {
-          incorrectStartTime.value = false
-          localAnnotation.value.time.push(
-            formattedTimeToSeconds(localStartTime.value)
-          )
-        } else incorrectStartTime.value = true
-        const endTime = formattedTimeToSeconds(localEndTime.value)
-        if (endTime > 0 && endTime <= upperBound.value) {
-          incorrectEndTime.value = false
-          localAnnotation.value.time.push(endTime)
-        } else incorrectEndTime.value = true
+    // If all is correct, save to server
+    const runSave = (save: boolean) => {
+      if (!incorrectStartTime.value && !incorrectEndTime.value) {
         if (save) saveChanges()
         else saveTimer = setTimeout(() => saveChanges(), 2000)
         editingStartTime.value = false
@@ -173,14 +176,52 @@ export default defineComponent({
       }
     }
 
+    // Validate the latest change, save if it is correct, show 'error' otherwise
+    function validateChanges(save: boolean) {
+      clearTimeout(saveTimer)
+      const regex = /^(\d{1}:)?\d{2}:\d{2}$/
+      const startTime = formattedTimeToSeconds(localStartTime.value)
+      const endTime = formattedTimeToSeconds(localEndTime.value)
+
+      if (
+        localStartTime.value.match(regex) &&
+        startTime >= 0 &&
+        startTime <= upperBound.value
+      ) {
+        localAnnotation.value.time = []
+        incorrectStartTime.value = false
+        localAnnotation.value.time.push(startTime)
+      } else incorrectStartTime.value = true
+
+      if (
+        (localEndTime.value === '' || localEndTime.value.match(regex)) &&
+        endTime > 0 &&
+        endTime <= upperBound.value &&
+        endTime > startTime
+      ) {
+        incorrectEndTime.value = false
+        localAnnotation.value.time.push(endTime)
+      } else incorrectEndTime.value = true
+      runSave(save)
+    }
+
     function editStartTime() {
       editingStartTime.value = annotation.value.creator === myLTIID
+      nextTick(() => {
+        if (endTimeInputRef.value) startTimeInputRef.value.focus()
+      })
     }
     function editEndTime() {
       editingEndTime.value = annotation.value.creator === myLTIID
+      nextTick(() => {
+        if (endTimeInputRef.value) endTimeInputRef.value.focus()
+      })
     }
     function editComment() {
       editingComment.value = annotation.value.creator === myLTIID
+      nextTick(() => {
+        if (endTimeInputRef.value) commentInputRef.value.focus()
+      })
     }
 
     return {
@@ -191,6 +232,9 @@ export default defineComponent({
       formatCreationDate,
       hover,
       menu,
+      endTimeInputRef,
+      startTimeInputRef,
+      commentInputRef,
       editStartTime,
       editEndTime,
       editingEndTime,

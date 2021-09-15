@@ -55,12 +55,15 @@ const formatTime = (timeInSeconds: number, offsetTime = 0): string => {
 // Expects a string in the form '0:00:00' (single hour:mins:seconds)
 const formattedTimeToSeconds = (timeString: string): number => {
   const timeArray = timeString.split(':')
-  if (timeArray.length === 3)
+  if (timeArray.length === 2) {
+    return parseInt(timeArray[0]) * 60 + parseInt(timeArray[1])
+  } else if (timeArray.length === 3) {
     return (
       parseInt(timeArray[0]) * 3600 +
       parseInt(timeArray[1]) * 60 +
       parseInt(timeArray[2])
     )
+  }
   return -1
 }
 
