@@ -157,6 +157,7 @@ function completeCallback(request, response, user) {
   let s = ''
   const { client, remember } = request.session
   const host = process.env.VUE_APP_SERVER_HOST
+  const isEngagelab = request.host.includes('engagelab')
 
   if (client === 'lti') {
     redirectUrl =
@@ -180,7 +181,7 @@ function completeCallback(request, response, user) {
   }
 
   // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
-  if (process.env.NODE_ENV === 'testing') {
+  if (isEngagelab) {
     redirectUrl = redirectUrl + '/#/postlogin'
   } else redirectUrl = redirectUrl + '/postlogin'
 

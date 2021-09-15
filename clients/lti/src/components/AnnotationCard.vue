@@ -12,7 +12,6 @@
           <input
             v-if="editingStartTime"
             class="bg-viva-grey-400 text-white text-xsv bg-viva-grey-450 w-14"
-            placeholder="..:..:.."
             v-model="localStartTime"
             @keyup.enter="validateChanges(true)"
           />
@@ -22,10 +21,14 @@
         </div>
         <div
           class="p-1 ml-0.5 pr-2 flex items-center justify-center text-white text-sm bg-viva-grey-450 rounded-2xl rounded-l-none cursor-pointer"
-          @click="editingEndTime = !editingEndTime"
         >
-          <div v-if="editingEndTime"></div>
-          <div v-else class="flex flex-col items-center">
+          <input
+            v-if="editingEndTime"
+            class="bg-viva-grey-400 text-white text-xsv bg-viva-grey-450 w-14"
+            v-model="localEndTime"
+            @keyup.enter="validateChanges(true)"
+          />
+          <div v-else class="flex flex-col items-center" @click="editEndTime()">
             <p class="text-center leading-2" v-if="annotation.time[1]">
               {{ formatTime(annotation.time[1], 0) }}
             </p>
@@ -94,17 +97,20 @@ export default defineComponent({
   name: 'AnnotationCard',
   props: {
     annotation: { type: Object as PropType<Annotation>, required: true },
+    upperBound: { type: Number, required: true },
   },
   emits: ['annotate', 'updated'],
   setup(props, context) {
     const { t } = useI18n({ messages })
-    const { annotation } = toRefs(props)
+    const { annotation, upperBound } = toRefs(props)
     const myLTIID = appGetters.user.value.profile.ltiID
     const hover = ref(false)
     const menu = ref(false)
     const editingEndTime = ref(false)
     const editingStartTime = ref(false)
     const editingComment = ref(false)
+    const incorrectStartTime = ref(false)
+    const incorrectEndTime = ref(false)
     let saveTimer: ReturnType<typeof setTimeout>
 
     const localStartTime = ref(formatTime(annotation.value.time[0]))
@@ -141,17 +147,24 @@ export default defineComponent({
 
     function validateChanges(save: boolean) {
       clearTimeout(saveTimer)
-      const regex = /^\d?:\d{2}:\d{2}$/
+      const regex = /^(\d{1}:)?\d{2}:\d{2}$/
       if (
         localStartTime.value.match(regex) &&
         (localEndTime.value === '' || localEndTime.value.match(regex))
       ) {
         localAnnotation.value.time = []
-        localAnnotation.value.time.push(
-          formattedTimeToSeconds(localStartTime.value)
-        )
+        const startTime = formattedTimeToSeconds(localStartTime.value)
+        if (startTime >= 0) {
+          incorrectStartTime.value = false
+          localAnnotation.value.time.push(
+            formattedTimeToSeconds(localStartTime.value)
+          )
+        } else incorrectStartTime.value = true
         const endTime = formattedTimeToSeconds(localEndTime.value)
-        if (endTime > 0) localAnnotation.value.time.push(endTime)
+        if (endTime > 0 && endTime <= upperBound.value) {
+          incorrectEndTime.value = false
+          localAnnotation.value.time.push(endTime)
+        } else incorrectEndTime.value = true
         if (save) saveChanges()
         else saveTimer = setTimeout(() => saveChanges(), 2000)
         editingStartTime.value = false
@@ -183,6 +196,8 @@ export default defineComponent({
       editingEndTime,
       editingStartTime,
       editingComment,
+      incorrectStartTime,
+      incorrectEndTime,
       baseUrl,
       plusButtonSVG,
       localStartTime,

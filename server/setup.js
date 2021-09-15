@@ -4,10 +4,7 @@ const dirPath = process.cwd()
 const Dataset = require('./models/Dataset')
 const User = require('./models/User')
 const Video = require('./models/Video').Video
-const { videoStorageTypes, consentTypes } = require('./constants')
-
-const videoFolderNames = require('./constants').videoFolderNames
-const videoStatusTypes = require('./constants').videoStatusTypes
+const { videoStorageTypes, consentTypes, videoStatusTypes, videoFolderNames } = require('./constants')
 
 const createTestDocuments = () => {
   return new Promise((resolve, reject) => {
@@ -86,7 +83,7 @@ const createTestDocuments = () => {
                 duration: '1000', // Seconds  created: { type: Date },
               },
               status: {
-                main: videoStatusTypes.completed,
+                main: videoStatusTypes.complete,
               },
               users: {
                 owner: user._id,

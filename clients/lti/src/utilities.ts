@@ -48,7 +48,7 @@ const formatTime = (timeInSeconds: number, offsetTime = 0): string => {
       : Math.floor(adjustedTimeInSeconds)
   const minutesString = minutes > 9 ? minutes : '0' + minutes
   const secondsString = seconds > 9 ? seconds : '0' + seconds
-  return `${hours}:${minutesString}:${secondsString}`
+  return `${hours > 0 ? hours + ':' : ''}${minutesString}:${secondsString}`
 }
 
 // Reverse function to 'formatTime'

@@ -1,5 +1,17 @@
 ### Settings
 
+#### Setup
+
+Testing the server API relies automating login by 'skipping over' the Dataporten authentication process
+This requires NODE_ENV be set to 'test' in `.env` as follows:
+```
+NODE_ENV=test
+VUE_APP_SERVER_HOST=http://localhost
+VUE_APP_SERVER_PORT=8000
+BASE_URL='/'
+VUE_APP_DISABLE_DELAYS=true
+```
+
 #### Node Server tests
 API tests are run using Mocha and Chai. Find tests in `test/server/`
 

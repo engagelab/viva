@@ -82,11 +82,12 @@
         </Button>
         <Button
           v-else
-          :childclass="'w-32'"
+          :childclass="'w-36'"
           :backgroundcolour="'bg-viva-blue-800'"
           @vclick.stop="newShare(listitem)"
         >
-          New share
+          <img :src="shareButtonSVG" class="w-4 h-4" alt="share-button" />
+          <p class="pl-2">New share</p>
         </Button>
         <Button
           v-if="editing"
@@ -128,6 +129,7 @@ import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'
 import Button from '@/components/base/Button.vue'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
+import shareButtonSVG from '@/assets/icons/svg/share.svg'
 import arrowTopSVG from '@/assets/icons/svg/arrow_top.svg'
 import { useVideoStore } from '@/store/useVideoStore'
 import { useAppStore } from '@/store/useAppStore'
@@ -257,6 +259,7 @@ export default defineComponent({
       localVideoDetails,
       // assets
       playButtonSVG,
+      shareButtonSVG,
       arrowTopSVG,
     }
   },

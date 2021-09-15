@@ -18,7 +18,7 @@
           >
             Annotate
           </Button>
-          <Player @currenttime="(time) => (currentPlayerTime = time)" />
+          <Player @currenttimetrimmed="(time) => (currentPlayerTime = time)" />
         </div>
         <div class="flex flex-col text-white p-6">
           <div class="flex flex-row w-full justify-between">
@@ -90,6 +90,7 @@
             v-for="a in annotations"
             :key="a._id"
             :annotation="a"
+            :upperBound="upperBound"
             @updated="updateAnnotation"
           />
         </div>
@@ -127,6 +128,7 @@ export default defineComponent({
     const currentPlayerTime = ref(0)
     const sortByCreated = ref(false)
     const annotationText = ref('')
+    const upperBound = ref(selectedItemShare.value?.share.edl.trim[1] || 0)
     const videoCurrentTime = ref(0)
     const myLTIID = appGetters.user.value.profile.ltiID
 
@@ -196,6 +198,7 @@ export default defineComponent({
       VIDEO_DETAIL_MODE,
       baseUrl,
       myLTIID,
+      upperBound,
       selectedItemShare,
       stringToColour,
       formatDate,

@@ -39,7 +39,7 @@
           :max="scrubberMax"
           :min="scrubberMin"
           @change="adjustProgress"
-          @update="$emit('currenttime', currentPlayerTime)"
+          @update="$emit('currenttimetrimmed', currentTimeTrimmed())"
         />
         <div
           class="flex flex-row flex-grow self-end w-full py-1 px-6 md:py-4 items-center bg-gradient-to-b from-transparent to-black"
@@ -115,7 +115,7 @@ export default defineComponent({
   components: {
     Slider,
   },
-  emits: ['trim', 'currenttime'],
+  emits: ['trim', 'currenttimetrimmed'],
   setup(props, context) {
     const selectedItem = videoGetters.selectedItem
     const selectedItemShare = videoGetters.selectedItemShare
@@ -170,11 +170,16 @@ export default defineComponent({
       return edl.value.trim[0] || 0
     })
 
+    // Text to display UI for the current video time and total
     const playerTime = computed(() => {
       const currentTime = formatTime(currentPlayerTime.value, edl.value.trim[0])
       const totalTime = formatTime(edl.value.trim[1], edl.value.trim[0])
       return `${currentTime} / ${totalTime}`
     })
+
+    // The current relative time (given a trimmed offset)
+    const currentTimeTrimmed = () =>
+      Math.floor(currentPlayerTime.value - edl.value.trim[0])
 
     // Always video/mp4
     const videoMimeType = computed(() => {
@@ -235,7 +240,7 @@ export default defineComponent({
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
         currentPlayerTime.value = player.currentTime
-        context.emit('currenttime', player.currentTime)
+        context.emit('currenttimetrimmed', currentTimeTrimmed())
         if (player.currentTime >= edl.value.trim[1]) {
           stopPlaying()
         }
@@ -329,6 +334,7 @@ export default defineComponent({
       videoMimeType,
       playbackVideo,
       currentPlayerTime,
+      currentTimeTrimmed,
       localEDL,
       // booleans
       playing,
