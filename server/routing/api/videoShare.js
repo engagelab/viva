@@ -203,22 +203,16 @@ router.put(
 )
 
 router.delete(
-  '/video/share/annotate',
+  '/video/share/annotation',
   utilities.authoriseUser,
-  async (request, response, next) => {
+  (request, response, next) => {
     Video.findOneAndUpdate(
-      {
-        'details.id': request.query.videoID,
-        'users.sharing._id': ObjectId(request.query.shareID),
-      },
-      {
-        $pull: { // $pull removes item(s) from an array
-          'users.sharing.annotations': { _id: ObjectId(request.query.annotationID) },
-        }
-      },
+      { 'details.id': request.query.videoID, 'users.sharing._id': ObjectId(request.query.shareID) },
+      { $pull: { 'users.sharing.$.annotations': { '_id' : request.query.annotationID } } },
+      { new: true },
       (error) => {
         if (error) return next(error)
-        response.status(200).end()
+        else response.status(200).end()
       }
     )
   }

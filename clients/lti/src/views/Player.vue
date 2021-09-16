@@ -77,6 +77,7 @@
                   :min="0"
                   :max="1"
                   v-model="volumeLevel"
+                  @change="adjustVolume"
                 />
               </div>
               <img

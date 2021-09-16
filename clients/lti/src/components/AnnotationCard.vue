@@ -1,74 +1,123 @@
 <template>
   <div
-    class="relative flex flex-row items-center text-viva-grey-500 bg-viva-grey-400 my-1"
+    class="relative flex flex-row items-center text-viva-grey-500 my-1"
     @mouseover="hover = true"
     @mouseleave="hover = false"
   >
     <div class="flex flex-col flex-grow">
-      <div class="flex flex-row">
-        <div
-          class="p-1 pl-2 flex items-center justify-center text-white font-serious font-medium bg-viva-grey-450 rounded-2xl rounded-r-none cursor-pointer"
+      <div class="relative flex flex-row w-full">
+        <p
+          class="font-serious font-medium mx-2 my-1 text-xs"
+          :style="{
+            color: stringToColour(nameAndRole.name),
+          }"
         >
-          <input
-            v-if="editingStartTime"
-            ref="startTimeInputRef"
-            class="bg-viva-grey-400 text-white text-xsv bg-viva-grey-450 w-14"
-            :class="[incorrectStartTime ? 'text-red-600' : '']"
-            v-model="localStartTime"
-            @keyup.enter="validateChanges(true)"
-          />
-          <p v-else class="text-xsv" @click="editStartTime()">
-            {{ formatTime(annotation.time[0], 0) }}
-          </p>
+          {{ nameAndRole.name }}
+        </p>
+        <div
+          class="absolute top-0 right-0 flex bg-viva-grey-300 z-50 cursor-pointer rounded-full"
+          v-show="menu || hover"
+          @click.stop="menu = !menu"
+        >
+          <icon-base
+            icon-name="menuDots"
+            class="text-white stroke-current cursor-pointer"
+            alt="annotation-menu"
+            viewBox="0 0 30 30"
+            width="25"
+            height="25"
+            ><icon-menu-dots />
+          </icon-base>
         </div>
         <div
-          class="p-1 ml-0.5 pr-2 flex items-center justify-center text-white font-serious font-medium bg-viva-grey-450 rounded-2xl rounded-l-none cursor-pointer"
+          class="absolute flex flex-col top-6 right-1 bg-viva-grey-300 p-2 gap-2 w-24 z-50 rounded-md text-xs text-white cursor-pointer"
+          v-show="menu"
         >
-          <input
-            v-show="editingEndTime"
-            ref="endTimeInputRef"
-            class="bg-viva-grey-400 text-white text-xsv bg-viva-grey-450 w-14"
-            :class="[incorrectEndTime ? 'text-red-600' : '']"
-            v-model="localEndTime"
-            @keyup.enter="validateChanges(true)"
-          />
+          <p @click.stop="newComment()">Comment</p>
           <div
-            v-show="!editingEndTime"
-            class="flex flex-col items-center"
-            @click="editEndTime()"
+            v-if="myLTIID === annotation.creator"
+            class="flex flex-col gap-2"
           >
-            <p class="text-xsv" v-if="annotation.time[1]">
-              {{ formatTime(annotation.time[1], 0) }}
-            </p>
-            <img
-              v-else
-              class="w-4 h-4"
-              :src="plusButtonSVG"
-              alt="addEndTime-button"
-            />
+            <p @click.stop="editMainText()">Edit</p>
+            <p @click.stop="editEndTime()">Timeframe</p>
+            <p @click.stop="deleteAnnotation()">Delete</p>
           </div>
         </div>
       </div>
-      <div
-        class="text-white text-xs font-serious rounded-2xl mt-1 cursor-pointer px-2 py-2"
-        :class="[annotation.nowActive ? 'bg-yellow-500' : 'bg-viva-grey-450']"
-      >
-        <textarea
-          v-if="myLTIID === annotation.creator"
-          ref="commentInputRef"
-          type="text"
-          class="w-full bg-transparent"
-          :class="[annotation.nowActive ? 'text-black' : 'text-white']"
-          placeholder="Add a comment"
-          v-model="localAnnotation.comment"
-          @input="() => validateChanges(false)"
-        />
-        <p v-else class="m-3" @click="editComment()">
-          {{ annotation.comment }}
-        </p>
-      </div>
-      <div class="flex flex-row justify-end text-xxs p-2">
-        <p>{{ formatCreationDate(annotation.created) }}</p>
+      <div class="flex flex-col flex-grow rounded-2xl bg-viva-grey-430 mt-1">
+        <div class="flex flex-row p-2">
+          <div
+            class="p-1 pl-2 flex items-center justify-center text-white font-serious font-medium bg-viva-grey-425 rounded-2xl rounded-r-none cursor-pointer"
+          >
+            <input
+              v-if="editingStartTime"
+              ref="startTimeInputRef"
+              class="bg-viva-grey-400 text-white text-xsv bg-viva-grey-450 w-14"
+              :class="[incorrectStartTime ? 'text-red-600' : '']"
+              v-model="localStartTime"
+              @keyup.enter="validateChanges(true)"
+            />
+            <p
+              v-else
+              class="text-xsv"
+              :class="[annotation.nowActive ? 'text-yellow-500' : 'text-white']"
+              @click="editStartTime()"
+            >
+              {{ formatTime(annotation.time[0], 0) }}
+            </p>
+          </div>
+          <div
+            class="p-1 ml-0.5 pr-2 flex items-center justify-center text-white font-serious font-medium bg-viva-grey-425 rounded-2xl rounded-l-none cursor-pointer"
+          >
+            <input
+              v-show="editingEndTime"
+              ref="endTimeInputRef"
+              class="bg-viva-grey-400 text-white text-xsv bg-viva-grey-450 w-14"
+              :class="[incorrectEndTime ? 'text-red-600' : '']"
+              v-model="localEndTime"
+              @keyup.enter="validateChanges(true)"
+            />
+            <div
+              v-show="!editingEndTime"
+              class="flex flex-col items-center"
+              @click="editEndTime()"
+            >
+              <p
+                class="text-xsv"
+                :class="[
+                  annotation.nowActive ? 'text-yellow-500' : 'text-white',
+                ]"
+                v-if="annotation.time[1]"
+              >
+                {{ formatTime(annotation.time[1], 0) }}
+              </p>
+              <img
+                v-else
+                class="w-4 h-4"
+                :src="plusButtonSVG"
+                alt="addEndTime-button"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="text-white text-xs font-serious mt-1 cursor-pointer px-3">
+          <textarea
+            v-if="myLTIID === annotation.creator"
+            ref="commentInputRef"
+            type="text"
+            class="w-full bg-transparent"
+            :class="[annotation.nowActive ? 'text-yellow-500' : 'text-white']"
+            placeholder="Add a comment"
+            v-model="localAnnotation.comment"
+            @input="() => validateChanges(false)"
+          />
+          <p v-else class="m-3" @click="editMainText()">
+            {{ annotation.comment }}
+          </p>
+        </div>
+        <div class="flex flex-row justify-end text-xxs p-2">
+          <p>{{ formatCreationDate(annotation.created) }}</p>
+        </div>
       </div>
     </div>
   </div>
@@ -80,32 +129,35 @@ import {
   PropType,
   Ref,
   ref,
+  computed,
   toRefs,
   watch,
   nextTick,
 } from 'vue'
 import { useI18n } from 'vue-i18n'
 import moment from 'moment'
-import { Annotation } from '../types/main'
+import { Annotation, DialogConfig } from '../types/main'
 import { stringToColour, formatTime, formattedTimeToSeconds } from '@/utilities'
 import { baseUrl } from '@/constants'
 import plusButtonSVG from '@/assets/icons/svg/plus.svg'
 import { useAppStore } from '@/store/useAppStore'
 
-const { getters: appGetters } = useAppStore()
+import IconBase from '@/components/icons/IconBase.vue'
+import IconMenuDots from '@/components/icons/IconMenuDots.vue'
+
+const { getters: appGetters, actions: appActions } = useAppStore()
 
 const messages = {
   nb_NO: {
-    dialogDeleteTitle: 'Slett denne delingen',
+    dialogDeleteTitle: 'Slett denne merknad',
     dialogDeleteText:
-      'Hvis du sletter, fjernes også alle merknader fra andre, kommentarer og triminnstillinger',
+      'Hvis du sletter, fjernes også alle kommentarer fra andre',
     dialogDeleteConfirm: 'Slette',
     dialogDeleteCancel: 'Avbryt',
   },
   en: {
-    dialogDeleteTitle: 'Delete this share',
-    dialogDeleteText:
-      'Deleting will also remove all annotations from others, comments, and trim settings',
+    dialogDeleteTitle: 'Delete this annotation',
+    dialogDeleteText: 'Deleting will also remove all comments from others',
     dialogDeleteConfirm: 'Delete',
     dialogDeleteCancel: 'Cancel',
   },
@@ -113,11 +165,15 @@ const messages = {
 
 export default defineComponent({
   name: 'AnnotationCard',
+  components: {
+    IconBase,
+    IconMenuDots,
+  },
   props: {
     annotation: { type: Object as PropType<Annotation>, required: true },
     upperBound: { type: Number, required: true },
   },
-  emits: ['annotate', 'updated'],
+  emits: ['updated', 'deleted'],
   setup(props, context) {
     const { t } = useI18n({ messages })
     const { annotation, upperBound } = toRefs(props)
@@ -133,6 +189,10 @@ export default defineComponent({
     const incorrectStartTime = ref(false)
     const incorrectEndTime = ref(false)
     let saveTimer: ReturnType<typeof setTimeout>
+
+    const nameAndRole = computed(() => {
+      return appActions.nameAndRole(annotation.value.creator)
+    })
 
     const localStartTime = ref(formatTime(annotation.value.time[0]))
     const localEndTime = ref(
@@ -159,7 +219,11 @@ export default defineComponent({
     )
 
     function formatCreationDate(date: Date) {
-      return moment(date).format('MMM Do Y - H:m')
+      return moment(date).format('MMM Do Y - H:mm')
+    }
+
+    function newComment() {
+      menu.value = false
     }
 
     const saveChanges = () => {
@@ -207,22 +271,41 @@ export default defineComponent({
     }
 
     function editStartTime() {
+      menu.value = false
       editingStartTime.value = annotation.value.creator === myLTIID
       nextTick(() => {
         if (endTimeInputRef.value) startTimeInputRef.value.focus()
       })
     }
     function editEndTime() {
+      menu.value = false
       editingEndTime.value = annotation.value.creator === myLTIID
       nextTick(() => {
         if (endTimeInputRef.value) endTimeInputRef.value.focus()
       })
     }
-    function editComment() {
+    function editMainText() {
+      menu.value = false
       editingComment.value = annotation.value.creator === myLTIID
       nextTick(() => {
         if (endTimeInputRef.value) commentInputRef.value.focus()
       })
+    }
+    function deleteAnnotation() {
+      menu.value = false
+      const dialogConfig: DialogConfig = {
+        title: t('dialogDeleteTitle'),
+        visible: true,
+        text: t('dialogDeleteText'),
+        cancel: () => appActions.setDialog(false),
+        cancelText: t('dialogDeleteCancel'),
+        confirm: () => {
+          context.emit('deleted', localAnnotation.value)
+          appActions.setDialog(false)
+        },
+        confirmText: t('dialogDeleteConfirm'),
+      }
+      appActions.setDialog(true, dialogConfig)
     }
 
     return {
@@ -231,8 +314,10 @@ export default defineComponent({
       formatTime,
       stringToColour,
       formatCreationDate,
+      nameAndRole,
       hover,
       menu,
+      newComment,
       endTimeInputRef,
       startTimeInputRef,
       commentInputRef,
@@ -248,8 +333,9 @@ export default defineComponent({
       localStartTime,
       localEndTime,
       localAnnotation,
-      editComment,
+      editMainText,
       validateChanges,
+      deleteAnnotation,
     }
   },
 })

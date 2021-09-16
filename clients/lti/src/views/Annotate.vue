@@ -78,7 +78,8 @@
         :class="[showAnnotations ? 'w-1/3' : 'w-0']"
       >
         <div
-          class="bg-viva-grey-400 text-viva-grey-500 rounded-xl ml-2 flex flex-col max-h-1/2"
+          class="bg-viva-grey-400 text-viva-grey-350 rounded-xl ml-2 flex flex-col"
+          style="max-height: 50vh"
           v-if="showAnnotations"
         >
           <div class="flex flex-row justify-between px-4 pt-4 text-white">
@@ -122,6 +123,7 @@
               :annotation="a"
               :upperBound="upperBound"
               @updated="updateAnnotation"
+              @deleted="deleteAnnotation"
             />
           </div>
         </div>
@@ -197,9 +199,14 @@ export default defineComponent({
       sortByCreated.value = type === 'creationtime'
     }
 
-    const updateAnnotation = function (update: Annotation) {
+    const updateAnnotation = function (a: Annotation) {
       if (selectedItemShare.value)
-        videoActions.updateAnnotation(selectedItemShare.value, update)
+        videoActions.updateAnnotation(selectedItemShare.value, a)
+    }
+
+    const deleteAnnotation = function (a: Annotation) {
+      if (selectedItemShare.value)
+        videoActions.deleteAnnotation(selectedItemShare.value, a)
     }
 
     // if 'sortByCreated' sort by creation date, otherwise by video time
@@ -255,6 +262,7 @@ export default defineComponent({
       currentPlayerTime,
       addAnnotation,
       updateAnnotation,
+      deleteAnnotation,
       videoCurrentTime,
       detailMode: videoGetters.detailMode,
       sortBy,
