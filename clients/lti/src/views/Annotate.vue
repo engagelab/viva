@@ -78,7 +78,7 @@
         :class="[showAnnotations ? 'w-1/3' : 'w-0']"
       >
         <div
-          class="bg-viva-grey-400 text-viva-grey-500 rounded-xl ml-2 h-full flex flex-col"
+          class="bg-viva-grey-400 text-viva-grey-500 rounded-xl ml-2 flex flex-col max-h-1/2"
           v-if="showAnnotations"
         >
           <div class="flex flex-row justify-between px-4 pt-4 text-white">
@@ -114,14 +114,16 @@
             v-model="annotationText"
             @keyup.enter="addAnnotation()"
           />
-          <AnnotationCard
-            class="mx-3"
-            v-for="a in annotations"
-            :key="a._id"
-            :annotation="a"
-            :upperBound="upperBound"
-            @updated="updateAnnotation"
-          />
+          <div class="no-scrollbar overflow-y-auto flex flex-col flex-grow">
+            <AnnotationCard
+              class="mx-3"
+              v-for="a in annotations"
+              :key="a._id"
+              :annotation="a"
+              :upperBound="upperBound"
+              @updated="updateAnnotation"
+            />
+          </div>
         </div>
       </div>
     </div>

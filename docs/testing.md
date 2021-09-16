@@ -15,6 +15,7 @@ VUE_APP_DISABLE_DELAYS=true
 #### Node Server tests
 API tests are run using Mocha and Chai. Find tests in `test/server/`
 
+Run tests by callling `yarn run test`
 
 #### VS Code launch config to run Mocha testing (IN USE):
 

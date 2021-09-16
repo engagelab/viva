@@ -50,14 +50,15 @@
         </div>
       </div>
       <div
-        class="text-white text-xs bg-viva-grey-450 font-serious rounded-2xl mt-1 cursor-pointer px-2 py-2"
+        class="text-white text-xs font-serious rounded-2xl mt-1 cursor-pointer px-2 py-2"
         :class="[annotation.nowActive ? 'bg-yellow-500' : 'bg-viva-grey-450']"
       >
         <textarea
           v-if="myLTIID === annotation.creator"
           ref="commentInputRef"
           type="text"
-          class="bg-viva-grey-450 w-full"
+          class="w-full bg-transparent"
+          :class="[annotation.nowActive ? 'text-black' : 'text-white']"
           placeholder="Add a comment"
           v-model="localAnnotation.comment"
           @input="() => validateChanges(false)"
