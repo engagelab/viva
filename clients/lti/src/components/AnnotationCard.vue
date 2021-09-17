@@ -381,13 +381,14 @@ export default defineComponent({
       } else incorrectStartTime.value = true
 
       if (
-        (localEndTime.value === '' || localEndTime.value.match(regex)) &&
-        endTime > 0 &&
-        endTime <= upperBound.value &&
-        endTime > startTime
+        localEndTime.value === '' ||
+        (localEndTime.value.match(regex) &&
+          endTime > 0 &&
+          endTime <= upperBound.value &&
+          endTime > startTime)
       ) {
         incorrectEndTime.value = false
-        localAnnotation.value.time.push(endTime)
+        if (localEndTime.value !== '') localAnnotation.value.time.push(endTime)
       } else incorrectEndTime.value = true
       runSave(save)
     }

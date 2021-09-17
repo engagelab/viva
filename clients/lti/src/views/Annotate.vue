@@ -271,8 +271,9 @@ export default defineComponent({
             const t = currentPlayerTime.value
             const tDiff = t - a.time[0]
             a.nowActive =
-              (a.time[1] && a.time[1] > t && a.time[0] <= t) ||
-              (tDiff <= t1DisplayPeriod && tDiff >= 0)
+              !sortByCreated.value &&
+              ((a.time[1] && a.time[1] > t && a.time[0] <= t) ||
+                (tDiff <= t1DisplayPeriod && tDiff >= 0))
             return a
           })
       )

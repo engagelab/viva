@@ -35,8 +35,8 @@
           class="text-white stroke-current cursor-pointer"
           alt="annotation-menu"
           viewBox="0 0 30 30"
-          width="25"
-          height="25"
+          width="24"
+          height="24"
           ><IconMenuDots />
         </IconBase>
       </div>
