@@ -8,7 +8,7 @@ let baseUrl = process.env.BASE_URL || '/'
 
 if (process.env.NODE_ENV === 'development') {
   baseUrl = ''
-} else if (process.env.NODE_ENV === 'testing') {
+} else if (host.includes('engagelab')) {
   baseUrl = '/viva/lti/'
 } else {
   baseUrl = '/lti/'
