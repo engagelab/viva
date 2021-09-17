@@ -1,3 +1,23 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import {
   USER_ROLE,
   CONSENT_TYPES,
@@ -249,8 +269,13 @@ export class Annotation {
   _id?: string
   created: Date
   creator: string // LTI ID
-  comment: string
+  text: string
   time: number[] // e.g [2.35, 10.04] or just [2.35]
+  comments: {
+    created: Date
+    creator: string
+    text: string
+  }[]
 
   // front end only
   nowActive: boolean
@@ -259,8 +284,15 @@ export class Annotation {
     this._id = a._id
     this.created = new Date(a.created)
     this.creator = a.creator
-    this.comment = a.comment
+    this.text = a.text
     this.time = a.time
+    this.comments = a.comments.map((c) => {
+      return {
+        creator: c.creator,
+        created: new Date(c.created),
+        text: c.text,
+      }
+    })
     this.nowActive = false
   }
 }
@@ -268,8 +300,15 @@ export interface AnnotationData {
   _id: string
   created: string
   creator: string // LTI ID
-  comment: string
+  text: string
   time: number[] // e.g [2.35, 10.04] or just [2.35]
+  comments: [
+    {
+      created: string
+      creator: string
+      text: string
+    }
+  ]
 }
 export class VideoSharing {
   _id = '' // DB ID of the share (not the video!)
@@ -543,7 +582,8 @@ export class Video {
         (ua) => ua._id === updatedAnnotation._id
       )
       if (annotation) {
-        annotation.comment = updatedAnnotation.comment
+        annotation.text = updatedAnnotation.text
+        annotation.comments = updatedAnnotation.comments
         annotation.created = updatedAnnotation.created
         annotation.creator = updatedAnnotation.creator
         annotation.time = updatedAnnotation.time

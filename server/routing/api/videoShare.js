@@ -1,6 +1,23 @@
 /*
- Designed and developed by Richard Nesnass & Sharanya Manivasagam
-*/
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 const router = require('express').Router()
 const utilities = require('../../utilities')
@@ -170,6 +187,41 @@ router.post(
 // To update a annotate for a share ID
 router.put(
   '/video/share/annotation',
+  utilities.authoriseUser,
+  (request, response, next) => {
+    delete request.body._id
+    Video.findOneAndUpdate(
+      {
+        'details.id': request.query.videoID,
+      },
+      {
+        'users.sharing.$[s].annotations.$[a].comment': request.body.comment,
+        'users.sharing.$[s].annotations.$[a].time': request.body.time
+      },
+      { new: true, arrayFilters: [
+        {'s._id': ObjectId(request.query.shareID)},
+        {'a._id': ObjectId(request.query.annotationID)}
+      ]},
+      (error, updatedVideo) => {
+        if (error) return next(error)
+        else if (process.env.NODE_ENV === 'test') {
+          const updatedShare = updatedVideo.users.sharing.find((s) => {
+            const id = s._id.toString()
+            return id === request.query.shareID
+          })
+          const updatedAnnotation = updatedShare.annotations.find((a) => a._id.toString() === request.query.annotationID)
+          response.send(updatedAnnotation)
+        } else {
+          response.status(200).end()
+        }
+      }
+    )
+  }
+)
+
+// Add a comment to an existing annotation
+router.put(
+  '/video/share/annotation/comment',
   utilities.authoriseUser,
   (request, response, next) => {
     delete request.body._id

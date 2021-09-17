@@ -1,3 +1,21 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div
     class="relative flex flex-row items-center text-viva-grey-500 my-1"
@@ -108,11 +126,11 @@
             class="w-full bg-transparent"
             :class="[annotation.nowActive ? 'text-yellow-500' : 'text-white']"
             placeholder="Add a comment"
-            v-model="localAnnotation.comment"
+            v-model="localAnnotation.text"
             @input="() => validateChanges(false)"
           />
           <p v-else class="m-3" @click="editMainText()">
-            {{ annotation.comment }}
+            {{ annotation.text }}
           </p>
         </div>
         <div class="flex flex-row justify-end text-xxs p-2">
@@ -200,10 +218,11 @@ export default defineComponent({
     )
     const localAnnotation: Ref<Annotation> = ref({
       _id: annotation.value._id,
-      comment: annotation.value.comment,
+      text: annotation.value.text,
       time: annotation.value.time,
       created: annotation.value.created,
       creator: annotation.value.creator,
+      comments: annotation.value.comments,
       nowActive: annotation.value.nowActive,
     })
 

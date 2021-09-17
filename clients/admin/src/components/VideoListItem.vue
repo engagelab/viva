@@ -1,3 +1,21 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div
     class="flex flex-row items-center justify-between viva-item max-w-xs"
@@ -10,16 +28,6 @@
       <p :class="videoStatus.textClass">
         {{ videoStatus.text }} {{ videoProgress }}
       </p>
-      <Button
-        v-if="
-          video.status.main == VIDEO_STATUS_TYPES.edited && videoStatus.google
-        "
-        logo="google"
-        customWidth="250px"
-        :disabled="disableTransfer"
-        @click="transferVideo()"
-        >{{ t('Overføre') }}</Button
-      >
     </div>
     <div class="pl-4" @click="clickItem(videoStatus)">
       <SVGSymbol
@@ -50,7 +58,6 @@ import { useVideoStore } from '@/store/useVideoStore'
 const { actions: videoActions } = useVideoStore()
 
 import SVGSymbol from './base/SVGSymbol.vue'
-import Button from './base/Button.vue'
 import { VIDEO_STATUS_TYPES, videoProgressCheckInterval } from '@/constants'
 
 interface VideoStatus {
@@ -59,18 +66,16 @@ interface VideoStatus {
   status: string
   symbol: string
   symbolClass: string
-  google: boolean
 }
 
 export default defineComponent({
   components: {
     SVGSymbol,
-    Button,
   },
   props: {
     video: {
       type: Object as PropType<Video>,
-      default: undefined,
+      required: true,
     },
   },
   setup(props, context) {
@@ -111,7 +116,6 @@ export default defineComponent({
         status: 'draft',
         symbol: 'viva',
         symbolClass: 'text-viva-korall',
-        google: false,
       }
       if (v.status.main == VIDEO_STATUS_TYPES.draft && !v.status.isConsented) {
         status.text = 'Sjekk samtykker'
@@ -150,7 +154,6 @@ export default defineComponent({
         status.symbol = 'accept'
         status.symbolClass = 'green'
         status.textClass = 'green'
-        status.google = video.value.storages.some((name) => name == 'google')
       }
       return status
     })

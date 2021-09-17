@@ -47,3 +47,8 @@ Use `forever start forever/test-viva.json` & `forever start forever/test-td.json
 * removes the above development / test features
 
 Use `forever start forever/prod-viva.json` & `forever start forever/prod-td.json`
+
+## Contact
+
+VIVA is produced by Engagelab, UiO, Oslo, Norway
+Contact us at engagelab@uv.uio.no
