@@ -195,7 +195,7 @@ router.put(
         'details.id': request.query.videoID,
       },
       {
-        'users.sharing.$[s].annotations.$[a].comment': request.body.comment,
+        'users.sharing.$[s].annotations.$[a].text': request.body.text,
         'users.sharing.$[s].annotations.$[a].time': request.body.time
       },
       { new: true, arrayFilters: [
@@ -224,31 +224,18 @@ router.put(
   '/video/share/annotation/comment',
   utilities.authoriseUser,
   (request, response, next) => {
-    delete request.body._id
     Video.findOneAndUpdate(
+      { 'details.id': request.query.videoID },
       {
-        'details.id': request.query.videoID,
+        $push: { 'users.sharing.$[s].annotations.$[a].comments': request.body }
       },
-      {
-        'users.sharing.$[s].annotations.$[a].comment': request.body.comment,
-        'users.sharing.$[s].annotations.$[a].time': request.body.time
-      },
-      { new: true, arrayFilters: [
+      { arrayFilters: [
         {'s._id': ObjectId(request.query.shareID)},
         {'a._id': ObjectId(request.query.annotationID)}
       ]},
-      (error, updatedVideo) => {
+      (error) => {
         if (error) return next(error)
-        else if (process.env.NODE_ENV === 'test') {
-          const updatedShare = updatedVideo.users.sharing.find((s) => {
-            const id = s._id.toString()
-            return id === request.query.shareID
-          })
-          const updatedAnnotation = updatedShare.annotations.find((a) => a._id.toString() === request.query.annotationID)
-          response.send(updatedAnnotation)
-        } else {
-          response.status(200).end()
-        }
+        else response.status(200).end()
       }
     )
   }

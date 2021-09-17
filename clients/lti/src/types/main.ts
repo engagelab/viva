@@ -265,17 +265,18 @@ interface ShareCommentData {
   creator: string // LTI ID
   comment: string
 }
+export interface AnnotationComment {
+  created: Date
+  creator: string
+  text: string
+}
 export class Annotation {
   _id?: string
   created: Date
   creator: string // LTI ID
   text: string
   time: number[] // e.g [2.35, 10.04] or just [2.35]
-  comments: {
-    created: Date
-    creator: string
-    text: string
-  }[]
+  comments: AnnotationComment[]
 
   // front end only
   nowActive: boolean

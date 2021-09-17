@@ -142,6 +142,7 @@
               :upperBound="upperBound"
               @updated="updateAnnotation"
               @deleted="deleteAnnotation"
+              @newcomment="newComment"
             />
           </div>
         </div>
@@ -153,7 +154,7 @@
 import { defineComponent, ref, ComputedRef, computed } from 'vue'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
-import { Annotation } from '@/types/main'
+import { Annotation, AnnotationComment } from '@/types/main'
 import { stringToColour, formatDate } from '@/utilities'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import trimButtonSVG from '@/assets/icons/svg/trim.svg'
@@ -228,6 +229,18 @@ export default defineComponent({
         videoActions.deleteAnnotation(selectedItemShare.value, a)
     }
 
+    const newComment = function (data: {
+      c: AnnotationComment
+      a: Annotation
+    }) {
+      if (selectedItemShare.value)
+        videoActions.createAnnotationComment(
+          selectedItemShare.value,
+          data.a,
+          data.c
+        )
+    }
+
     // if 'sortByCreated' sort by creation date, otherwise by video time
     function compareAnnotations(a: Annotation, b: Annotation) {
       const aTime = sortByCreated.value ? a.created.getTime() : a.time[0]
@@ -282,6 +295,7 @@ export default defineComponent({
       addAnnotation,
       updateAnnotation,
       deleteAnnotation,
+      newComment,
       videoCurrentTime,
       detailMode: videoGetters.detailMode,
       sortBy,

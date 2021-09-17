@@ -190,6 +190,7 @@ export default defineComponent({
       edl: { trim: [0, 0], blur: [] },
       annotations: [],
       comments: [],
+      updateFromShare: VideoSharing.prototype.updateFromShare,
     })
 
     const resetData = (li: ListItemShare) => {
@@ -207,6 +208,7 @@ export default defineComponent({
           edl: s.edl,
           annotations: s.annotations,
           comments: s.comments,
+          updateFromShare: VideoSharing.prototype.updateFromShare,
         }
       }
     }

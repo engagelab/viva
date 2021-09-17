@@ -18,20 +18,6 @@
  You should have received a copy of the GNU Affero General Public License
  along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-//Store to video operations
-/**
- *
- TODO:
- 1. Route call to mongoDB to fetch own and shared video metadata  for the logged in user
- 2. httpsRequest to S3 bucket  fetch the video based on the video metadata
- 3. Route call to canvas to  fetch users and roles for the  course ÍD
- 4. Action function to play the video (if it is shared video , just play trim part of it )
- 5. Action function to store the sharing info  , also  checks number of sharing possible -to check dataset
- 6. Action function to retrive access to sharing
- 7. Route call to mongoDB to update video metadata
- */
-
 import { ref, Ref, computed, ComputedRef } from 'vue'
 import {
   Video,
@@ -44,6 +30,7 @@ import {
   ListItemShare,
   VideoDetailsData,
   Annotation,
+  AnnotationComment,
 } from '../types/main'
 import { SORT_BY, VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
 import { apiRequest } from '../api/apiRequest'
@@ -250,6 +237,12 @@ interface Actions {
     listItemShare: ListItemShare,
     annotation: Annotation
   ) => Promise<void>
+
+  createAnnotationComment: (
+    listItemShare: ListItemShare,
+    annotation: Annotation,
+    comment: AnnotationComment
+  ) => Promise<void>
 }
 const actions = {
   detailMode: function (
@@ -410,6 +403,28 @@ const actions = {
           if (aIndex >= 0) share.annotations.splice(aIndex, 1)
         }
       }
+    })
+  },
+
+  createAnnotationComment: function (
+    listItemShare: ListItemShare,
+    annotation: Annotation,
+    comment: AnnotationComment
+  ): Promise<void> {
+    const videoID = listItemShare.item.video.details.id
+    const shareID = listItemShare.share._id
+    const annotationID = annotation._id || ''
+
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.PUT,
+      credentials: true,
+      body: comment,
+      query: { videoID, shareID, annotationID },
+      route: '/api/video/share/annotation/comment',
+    }
+    return apiRequest<void>(payload).then(() => {
+      const v = state.value.videos.get(videoID)
+      if (v) v.updateAnnotation(listItemShare.share, annotation)
     })
   },
 
