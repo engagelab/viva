@@ -6,10 +6,10 @@ const https_key = fs.readFileSync(process.env.SSL_KEY_FILE)
 const https_cert = fs.readFileSync(process.env.SSL_CERT_FILE)
 let baseUrl = process.env.BASE_URL || '/'
 
-if (process.env.NODE_ENV === 'development') {
-  baseUrl = ''
-} else if (host.includes('engagelab')) {
+if (host.includes('engagelab')) {
   baseUrl = '/viva/lti/'
+} else if (process.env.NODE_ENV === 'development') {
+  baseUrl = ''
 } else {
   baseUrl = '/lti/'
 }
