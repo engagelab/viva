@@ -142,9 +142,77 @@
               :upperBound="upperBound"
               @updated="updateAnnotation"
               @deleted="deleteAnnotation"
-              @newcomment="newComment"
+              @newcomment="newAnnotationComment"
             />
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- Comments panel -->
+    <div
+      class="bg-viva-grey-400 flex flex-col h-full p-4 no-scrollbar overflow-y-auto"
+      v-if="selectedItemShare"
+    >
+      <div class="flex flex-col w-full justify-end">
+        <div class="flex flex-row w-full">
+          <div
+            class="flex items-center justify-center w-10 h-10 rounded-full text-white text-xs"
+            :style="{
+              'background-color': stringToColour(nameAndRole(myLTIID).name),
+            }"
+          >
+            {{ nameAndRole(myLTIID).abbreviation }}
+          </div>
+          <div
+            class="flex flex-grow ml-4 w-auto rounded-2xl bg-viva-grey-430 p-4"
+          >
+            <textarea
+              type="text"
+              class="w-full bg-transparent text-white"
+              placeholder="Write a comment"
+              v-model="commentText"
+            />
+          </div>
+        </div>
+        <div class="flex flex-row m-2 w-full justify-end p-2">
+          <Button
+            :childclass="'w-24 h-10'"
+            :backgroundcolour="'bg-viva-blue-800'"
+            :textcolour="'text-white'"
+            @vclick.stop="saveComment()"
+          >
+            Publish
+          </Button>
+        </div>
+      </div>
+      <div
+        v-for="(s, i) in selectedItemShare.share.comments"
+        :key="`share-comment-${i}`"
+        class="flex flex-col"
+      >
+        <div class="flex flex-row items-center text-xs mt-4">
+          <div
+            class="flex items-center justify-center w-10 h-10 rounded-full text-white"
+            :style="{
+              'background-color': stringToColour(nameAndRole(s.creator).name),
+            }"
+          >
+            {{ nameAndRole(s.creator).abbreviation }}
+          </div>
+          <p
+            class="font-serious font-medium h-4 ml-4"
+            :style="{
+              color: stringToColour(nameAndRole(s.creator).name),
+            }"
+          >
+            {{ nameAndRole(s.creator).name }}
+          </p>
+          <p class="leading-4 text-viva-grey-500">
+            &nbsp;•&nbsp;{{ formatCreationDate(s.created) }}
+          </p>
+        </div>
+        <div class="flex flex-row items-center text-xs text-white mt-4">
+          <p>{{ s.text }}</p>
         </div>
       </div>
     </div>
@@ -152,9 +220,10 @@
 </template>
 <script lang="ts">
 import { defineComponent, ref, ComputedRef, computed } from 'vue'
+import moment from 'moment'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
-import { Annotation, AnnotationComment } from '@/types/main'
+import { Annotation, AnnotationComment, ShareComment } from '@/types/main'
 import { stringToColour, formatDate } from '@/utilities'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import trimButtonSVG from '@/assets/icons/svg/trim.svg'
@@ -170,7 +239,7 @@ import IconBase from '@/components/icons/IconBase.vue'
 import IconSortPlay from '@/components/icons/IconSortPlay.vue'
 import IconSortDate from '@/components/icons/IconSortDate.vue'
 
-const { getters: appGetters } = useAppStore()
+const { getters: appGetters, actions: appActions } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
 export default defineComponent({
@@ -190,6 +259,7 @@ export default defineComponent({
     const currentPlayerTime = ref(0)
     const sortByCreated = ref(false)
     const annotationText = ref('')
+    const commentText = ref('')
     const upperBound = ref(selectedItemShare.value?.share.edl.trim[1] || 0)
     const videoCurrentTime = ref(0)
     const myLTIID = appGetters.user.value.profile.ltiID
@@ -199,6 +269,10 @@ export default defineComponent({
         videoActions.selectShare(selectedItemShare.value)
         videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
       }
+    }
+
+    function formatCreationDate(date: Date) {
+      return moment(date).format('MMM Do Y - H:mm')
     }
 
     const addAnnotation = function () {
@@ -215,6 +289,18 @@ export default defineComponent({
       annotationText.value = ''
     }
 
+    const saveComment = function () {
+      if (selectedItemShare.value) {
+        const comment: ShareComment = {
+          created: new Date(),
+          creator: myLTIID,
+          text: commentText.value,
+        }
+        videoActions.createComment(selectedItemShare.value, comment)
+        commentText.value = ''
+      }
+    }
+
     const sortBy = function (type: string) {
       sortByCreated.value = type === 'creationtime'
     }
@@ -229,7 +315,7 @@ export default defineComponent({
         videoActions.deleteAnnotation(selectedItemShare.value, a)
     }
 
-    const newComment = function (data: {
+    const newAnnotationComment = function (data: {
       c: AnnotationComment
       a: Annotation
     }) {
@@ -289,18 +375,22 @@ export default defineComponent({
       formatDate,
       annotations,
       annotationText,
+      commentText,
       showUsers,
       showAnnotations,
       editShare,
+      saveComment,
       currentPlayerTime,
       addAnnotation,
       updateAnnotation,
       deleteAnnotation,
-      newComment,
+      newAnnotationComment,
       videoCurrentTime,
       detailMode: videoGetters.detailMode,
       sortBy,
       sortByCreated,
+      nameAndRole: appActions.nameAndRole,
+      formatCreationDate,
 
       // assets
       trimButtonSVG,

@@ -50,20 +50,30 @@ const shareSchema = new mongoose.Schema({
     of: annotationSchema,
     default: []
   },
-  comment: [{
-    created: { type: Date, default: Date.now },
-    creator: { type: String }, // LTI ID
-    comment: { type: String },
-  }],
-  status: [{
-    created: { type: Date, default: Date.now },
-    user: { type: String }, // LTI ID
-    status: {
-      type: String,
-      enum: Object.values(videoSharingStatusTypes),
-      default: videoSharingStatusTypes.uploaded, // Status of this change to the share
-    },
-  }]
+  comments: {
+    type: [
+      {
+        created: { type: Date, default: Date.now },
+        creator: { type: String }, // LTI ID
+        text: { type: String },
+      }
+    ],
+    default: [],
+  },
+  status: {
+    type: [
+      {
+        created: { type: Date, default: Date.now },
+        user: { type: String }, // LTI ID
+        status: {
+          type: String,
+          enum: Object.values(videoSharingStatusTypes),
+          default: videoSharingStatusTypes.uploaded, // Status of this change to the share
+        },
+      }
+    ],
+    default: [],
+  }
 })
 
 const videoSchema = new mongoose.Schema({

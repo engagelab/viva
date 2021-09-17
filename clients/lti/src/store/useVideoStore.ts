@@ -28,9 +28,11 @@ import {
   XHR_REQUEST_TYPE,
   VideoSharing,
   ListItemShare,
+  VideoSharingData,
   VideoDetailsData,
   Annotation,
   AnnotationComment,
+  ShareComment,
 } from '../types/main'
 import { SORT_BY, VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
 import { apiRequest } from '../api/apiRequest'
@@ -243,6 +245,11 @@ interface Actions {
     annotation: Annotation,
     comment: AnnotationComment
   ) => Promise<void>
+
+  createComment: (
+    listItemShare: ListItemShare,
+    comment: ShareComment
+  ) => Promise<void>
 }
 const actions = {
   detailMode: function (
@@ -426,6 +433,28 @@ const actions = {
       const v = state.value.videos.get(videoID)
       if (v) v.updateAnnotation(listItemShare.share, annotation)
     })
+  },
+
+  createComment: function (
+    listItemShare: ListItemShare,
+    comment: ShareComment
+  ): Promise<void> {
+    const videoID = listItemShare.item.video.details.id
+    const shareID = listItemShare.share._id
+
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.PUT,
+      credentials: true,
+      body: comment,
+      query: { videoID, shareID },
+      route: '/api/video/share/comment',
+    }
+    return apiRequest<VideoSharingData>(payload).then(
+      (vsd: VideoSharingData) => {
+        const v = state.value.videos.get(videoID)
+        if (v) v.updateSharing([vsd])
+      }
+    )
   },
 
   //Fetch videometadata from mongoDB

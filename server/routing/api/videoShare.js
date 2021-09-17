@@ -77,7 +77,6 @@ router.put(
           s.title = updatedShare.title
           s.description = updatedShare.description
           s.edl = updatedShare.edl
-          s.comment = updatedShare.comment
           s.status = updatedShare.status
           v.save((saveError) => {
             if (saveError) return next(saveError)
@@ -252,6 +251,30 @@ router.delete(
       (error) => {
         if (error) return next(error)
         else response.status(200).end()
+      }
+    )
+  }
+)
+
+// Add a comment to an existing share
+// Returns the updated share so it can be updated front-end
+router.put(
+  '/video/share/comment',
+  utilities.authoriseUser,
+  (request, response, next) => {
+    const shareID = ObjectId(request.query.shareID)
+    Video.findOneAndUpdate(
+      { 'details.id': request.query.videoID, 'users.sharing._id': shareID },
+      {
+        $push: { 'users.sharing.$.comments': request.body }
+      },
+      { new: true },
+      (error, updatedVideo) => {
+        if (error) return next(error)
+        else {
+          const share = updatedVideo.users.sharing.id(shareID)
+          response.send(share)
+        }
       }
     )
   }

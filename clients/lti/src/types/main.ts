@@ -258,12 +258,12 @@ interface VideoStatus {
 export interface ShareComment {
   created: Date
   creator: string // LTI ID
-  comment: string
+  text: string
 }
 interface ShareCommentData {
   created: string
   creator: string // LTI ID
-  comment: string
+  text: string
 }
 export interface AnnotationComment {
   created: Date
@@ -344,14 +344,14 @@ export class VideoSharing {
         return {
           created: new Date(c.created),
           creator: c.creator,
-          comment: c.comment,
+          text: c.text,
         }
       })
     }
   }
 }
 
-interface VideoSharingData {
+export interface VideoSharingData {
   _id: string // DB ID of the share (not the video!)
   creator: string // LTI ID
   created: string
