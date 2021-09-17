@@ -65,7 +65,7 @@ function startServerCallback() {
   console.log(version);
   console.log(`Your server is listening at ${host}:${port}`);
 
-  if (process.env.NODE_ENV == 'development') {
+  if (process.env.NODE_ENV == 'development' && !host.includes('engagelab')) {
     forkTaskDelegator();
   }
 }
