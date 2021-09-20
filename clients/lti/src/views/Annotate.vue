@@ -17,10 +17,22 @@
  You should have received a copy of the GNU Affero General Public License
  along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
-  <div>
+  <div class="flex flex-col my-6">
+    <div class="flex flex-row justify-end p-2">
+      <IconBase
+        icon-name="selectNoneCross"
+        class="text-white cursor-pointer"
+        alt="created-sort-button"
+        @click="selectNone()"
+        viewBox="0 0 144.54 144.54"
+        width="18"
+        height="18"
+        ><IconCross />
+      </IconBase>
+    </div>
     <div
       v-if="selectedItemShare"
-      class="my-6 flex flex-row flex-wrap bg-viva-grey-300 text-viva-grey-500 rounded-xl w-full"
+      class="flex flex-row flex-wrap bg-viva-grey-300 text-viva-grey-500 rounded-xl w-full"
     >
       <div
         class="flex flex-col transition-width duration-500 ease-in-out"
@@ -103,7 +115,7 @@
           <div class="flex flex-row justify-between px-4 pt-4 text-white">
             <p>Annotations</p>
             <div class="flex flex-row">
-              <icon-base
+              <IconBase
                 icon-name="sortByVideoDate"
                 class="ml-2 stroke-current cursor-pointer"
                 :class="[sortByCreated ? 'text-yellow-500' : 'text-white']"
@@ -112,8 +124,8 @@
                 viewBox="0 0 68.37 68.37"
                 width="24"
                 height="24"
-                ><icon-sort-date />
-              </icon-base>
+                ><IconSortDate />
+              </IconBase>
               <icon-base
                 icon-name="sortByVideoTime"
                 class="ml-2 stroke-current cursor-pointer"
@@ -238,6 +250,7 @@ import Button from '@/components/base/Button.vue'
 import IconBase from '@/components/icons/IconBase.vue'
 import IconSortPlay from '@/components/icons/IconSortPlay.vue'
 import IconSortDate from '@/components/icons/IconSortDate.vue'
+import IconCross from '@/components/icons/IconCross.vue'
 
 const { getters: appGetters, actions: appActions } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
@@ -251,6 +264,7 @@ export default defineComponent({
     IconBase,
     IconSortPlay,
     IconSortDate,
+    IconCross,
   },
   setup() {
     const selectedItemShare = videoGetters.selectedItemShare
@@ -387,6 +401,7 @@ export default defineComponent({
       newAnnotationComment,
       videoCurrentTime,
       detailMode: videoGetters.detailMode,
+      selectNone: videoActions.selectNone,
       sortBy,
       sortByCreated,
       nameAndRole: appActions.nameAndRole,

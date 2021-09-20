@@ -135,6 +135,7 @@ enum VIDEO_SHARING_STATUS {
 
 enum VIDEO_DETAIL_MODE {
   none = 'none',
+  annotate = 'annotate',
   play = 'play',
   share = 'share',
   trim = 'trim',

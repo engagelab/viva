@@ -576,6 +576,12 @@ export class Video {
       else this.users.sharing.push(new VideoSharing(newShare))
     })
   }
+  deleteSharing(deletedSharing: VideoSharing): void {
+    const sIndex = this.users.sharing.findIndex(
+      (share) => share._id === deletedSharing._id
+    )
+    if (sIndex > -1) this.users.sharing.splice(sIndex, 1)
+  }
   updateAnnotation(share: VideoSharing, updatedAnnotation: Annotation): void {
     const s = this.users.sharing.find((us) => us._id === share._id)
     if (s) {

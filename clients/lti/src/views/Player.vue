@@ -18,12 +18,28 @@
  along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div
-    class="flex flex-col bg-viva-grey-400 rounded-xl w-full"
+    class="flex flex-col w-full"
     v-if="selectedItem"
     :key="selectedItem.video.details.id"
-    @click.prevent.self
   >
-    <div class="flex flex-col scrolling-touch w-full relative">
+    <div
+      v-if="detailMode.mode === VIDEO_DETAIL_MODE.play"
+      class="flex flex-row justify-end m-2"
+    >
+      <IconBase
+        icon-name="selectNoneCross"
+        class="text-white cursor-pointer"
+        alt="created-sort-button"
+        @click="selectNone()"
+        viewBox="0 0 144.54 144.54"
+        width="18"
+        height="18"
+        ><IconCross />
+      </IconBase>
+    </div>
+    <div
+      class="flex flex-col scrolling-touch w-full relative bg-viva-grey-400 rounded-xl"
+    >
       <div class="flex-none">
         <video
           :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
@@ -119,7 +135,6 @@
 import { defineComponent, ref, Ref, computed, onMounted } from 'vue'
 import { EditDecriptionList, Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
-const { getters: videoGetters } = useVideoStore()
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import { formatTime } from '@/utilities'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
@@ -127,12 +142,18 @@ import pauseButtonSVG from '@/assets/icons/svg/pause.svg'
 import fullscreenButtonSVG from '@/assets/icons/svg/scale_up.svg'
 import soundOnButtonSVG from '@/assets/icons/svg/sound_on.svg'
 import soundOffButtonSVG from '@/assets/icons/svg/sound_off.svg'
+import IconBase from '@/components/icons/IconBase.vue'
+import IconCross from '@/components/icons/IconCross.vue'
 import Slider from '@vueform/slider'
+
+const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
 export default defineComponent({
   name: 'Player',
   components: {
     Slider,
+    IconBase,
+    IconCross,
   },
   emits: ['trim', 'currenttimetrimmed'],
   setup(props, context) {
@@ -343,6 +364,7 @@ export default defineComponent({
       formatProgressTooltip,
       adjustProgress,
       adjustTrim,
+      selectNone: videoActions.selectNone,
       // data
       baseUrl,
       VIDEO_DETAIL_MODE,

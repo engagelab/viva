@@ -218,6 +218,7 @@ interface Actions {
   selectNoOriginal: () => void
   selectNoShare: () => void
   detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
+  selectNone: () => void
   updateLocalVideo: (video: Video) => Promise<void>
   updateVideoDetails: (id: string, details: VideoDetailsData) => Promise<void>
   createShare: (listItem: ListItem) => Promise<void>
@@ -258,6 +259,31 @@ const actions = {
   ): void {
     state.value.detailMode.mode = mode
     state.value.detailMode.submode = submode
+  },
+  selectNone(): void {
+    const { mode, submode } = state.value.detailMode
+    switch (mode) {
+      case VIDEO_DETAIL_MODE.annotate:
+      case VIDEO_DETAIL_MODE.play:
+        state.value.detailMode.mode = VIDEO_DETAIL_MODE.none
+        state.value.detailMode.submode = VIDEO_DETAIL_MODE.none
+        actions.selectNoOriginal()
+        actions.selectNoShare()
+        break
+      case VIDEO_DETAIL_MODE.share:
+        if (
+          submode === VIDEO_DETAIL_MODE.play ||
+          submode === VIDEO_DETAIL_MODE.trim
+        )
+          actions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
+        else {
+          actions.detailMode(VIDEO_DETAIL_MODE.none, VIDEO_DETAIL_MODE.none)
+          actions.selectNoShare()
+        }
+        break
+      default:
+        break
+    }
   },
   createShare: function (listItem: ListItem): Promise<void> {
     const videoID = listItem.video.details.id

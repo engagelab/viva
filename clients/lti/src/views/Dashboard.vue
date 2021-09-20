@@ -63,8 +63,7 @@
         </select>
       </div>
     </div>
-    <Annotate class="w-auto lg:w-192 no-scrollbar" v-if="annotateVisible" />
-    <div v-else class="w-auto lg:w-192 overflow-y-auto no-scrollbar">
+    <div class="w-auto lg:w-192 overflow-y-auto no-scrollbar">
       <div
         v-show="currentTab === VIDEO_SHARING_MODE.feed"
         class="flex flex-row flex-wrap"
@@ -79,34 +78,37 @@
         v-show="currentTab === VIDEO_SHARING_MODE.myVideos"
         class="flex flex-col"
       >
-        <div class="grid grid-cols-3">
-          <p class="col-span-2 text-lg text-white">My Videos</p>
-        </div>
         <VideoMyCard
           v-for="(item, itemIndex) in myVideos"
           :key="itemIndex"
           :listitem="item"
-          @annotate="annotateVisible = true"
+          @annotate="
+            setDetailMode(VIDEO_DETAIL_MODE.annotate, VIDEO_DETAIL_MODE.none)
+          "
         />
       </div>
       <div
         v-show="currentTab === VIDEO_SHARING_MODE.sharedToMe"
         class="flex flex-col"
       >
-        <p class="text-lg text-white">Shared with me</p>
         <VideoSharedCard
           v-for="(share, itemIndex) in sharedToMe"
           :key="itemIndex"
           :share="share"
-          @annotate="annotateVisible = true"
+          @annotate="
+            setDetailMode(VIDEO_DETAIL_MODE.annotate, VIDEO_DETAIL_MODE.none)
+          "
         />
       </div>
     </div>
     <div
       v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none || dialogConfig.visible"
       class="fixed top-0 left-0 flex flex-col items-center justify-center w-full h-full bg-black bg-opacity-75 rounded-xl"
-      @mousedown.self="selectNone()"
     >
+      <Annotate
+        class="w-auto lg:w-192 no-scrollbar"
+        v-if="detailMode.mode === VIDEO_DETAIL_MODE.annotate"
+      />
       <Player
         class="lg:w-192"
         v-if="
@@ -153,14 +155,13 @@ export default defineComponent({
     const sortOrder = ref(SORT_BY.date)
     appActions.fetchLTIData()
     const currentTab: Ref<VIDEO_SHARING_MODE> = ref(VIDEO_SHARING_MODE.myVideos)
-    const annotateVisible = ref(false)
 
     onMounted(() => {
       videoActions.getVideoMetadata()
     })
 
     function showTab(tabName: VIDEO_SHARING_MODE) {
-      annotateVisible.value = false
+      videoActions.selectNone()
       currentTab.value = tabName
       console.log(currentTab.value)
       videoActions.selectNoOriginal()
@@ -170,43 +171,6 @@ export default defineComponent({
     videoActions.selectNoShare()
     const sort = () => {
       videoActions.sortVideosBy(currentTab.value, sortOrder.value)
-    }
-
-    function selectNone() {
-      const { mode, submode } = videoGetters.detailMode.value
-      switch (mode) {
-        case VIDEO_DETAIL_MODE.play:
-          videoActions.detailMode(
-            VIDEO_DETAIL_MODE.none,
-            VIDEO_DETAIL_MODE.none
-          )
-          videoActions.detailMode(
-            VIDEO_DETAIL_MODE.none,
-            VIDEO_DETAIL_MODE.none
-          )
-          videoActions.selectNoOriginal()
-          videoActions.selectNoShare()
-          break
-        case VIDEO_DETAIL_MODE.share:
-          if (
-            submode === VIDEO_DETAIL_MODE.play ||
-            submode === VIDEO_DETAIL_MODE.trim
-          )
-            videoActions.detailMode(
-              VIDEO_DETAIL_MODE.share,
-              VIDEO_DETAIL_MODE.none
-            )
-          else {
-            videoActions.detailMode(
-              VIDEO_DETAIL_MODE.none,
-              VIDEO_DETAIL_MODE.none
-            )
-            videoActions.selectNoShare()
-          }
-          break
-        default:
-          break
-      }
     }
 
     return {
@@ -220,12 +184,11 @@ export default defineComponent({
       sort,
       sortOrder,
       SORT_BY,
-      selectNone,
       detailMode: videoGetters.detailMode,
       dialogConfig: appGetters.dialogConfig,
       showTab,
       currentTab,
-      annotateVisible,
+      setDetailMode: videoActions.detailMode,
     }
   },
 })
