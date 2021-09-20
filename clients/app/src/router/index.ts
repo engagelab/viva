@@ -39,7 +39,7 @@ import { useVideoStore } from '../store/useVideoStore'
 const { actions: datasetActions } = useDatasetStore()
 const { getters: appGetters, actions: appActions } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
-import { idleTimeout } from '../constants'
+import { baseUrl, idleTimeout } from '../constants'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -124,10 +124,9 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  history:
-    process.env.NODE_ENV === 'testing' // As engagelab server uses proxying for multiple apps, this is the easiest way..
-      ? createWebHashHistory()
-      : createWebHistory(process.env.BASE_URL),
+  history: baseUrl.includes('engagelab') // As engagelab server uses proxying for multiple apps, this is the easiest way..
+    ? createWebHashHistory()
+    : createWebHistory(process.env.BASE_URL),
   routes,
 })
 
