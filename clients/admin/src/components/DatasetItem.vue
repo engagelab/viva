@@ -87,14 +87,24 @@
           {{ t('storage') }}
           <span class="mt-4 ml-6 text-xs text-black">*{{ t('warning1') }}</span>
         </p>
-        <div v-for="s in dataset.storages" :key="s._id">
+        <div
+          class="flex flex-col"
+          v-for="s in configurableStorages"
+          :key="s._id"
+        >
           <StorageHandling :storage="s" @updated="storageUpdated" />
+          <Button
+            class="mt-2 p-0 rounded-lg self-end"
+            id="button-accept"
+            @click="removeStorage"
+            >{{ t('removeStorage') }}
+          </Button>
         </div>
         <Button
           class="mt-2 p-0 rounded-lg"
           id="button-accept"
           @click="addStorage"
-          >+ {{ t('Add') }}
+          >{{ t('addStorage') }}
         </Button>
       </div>
 
@@ -109,7 +119,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, watch } from 'vue'
+import { defineComponent, ref, Ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { uuid } from '@/utilities'
 import { useDatasetStore } from '@/store/useDatasetStore'
@@ -131,7 +141,8 @@ const messages = {
     'canvas courses': 'Canvas courses',
     storage: '',
     warning1: '',
-    add: '',
+    addStorage: 'add storage',
+    removeStorage: 'remove storage',
   },
   en: {
     dataset: 'Dataset',
@@ -142,7 +153,8 @@ const messages = {
     'canvas courses': 'Canvas courses',
     storage: 'Storage',
     warning1: 'Note: EduCloud storage not configurable here',
-    add: 'Add new storage',
+    addStorage: 'Add new storage',
+    removeStorage: 'Remove storage',
   },
 }
 
@@ -198,6 +210,14 @@ export default defineComponent({
       dataset.value.storages.push(newStorage)
     }
 
+    const removeStorage = (id: string) => {
+      const index = dataset.value.storages.findIndex((s) => s._id === id)
+      if (index) {
+        dataset.value.storages.splice(index, 1)
+        unsavedData.value = true
+      }
+    }
+
     const selectionUpdated = (s: string[]) => {
       dataset.value.selection = {}
       dataset.value.selectionPriority = s
@@ -223,6 +243,12 @@ export default defineComponent({
       datasetActions.updateDataset(dataset.value)
       unsavedData.value = false
     }
+
+    const configurableStorages = computed(() => {
+      return dataset.value.storages.filter(
+        (s) => s.kind !== VIDEO_STORAGE_TYPES.educloud
+      )
+    })
     return {
       t,
       dataset,
@@ -234,7 +260,9 @@ export default defineComponent({
       storageUpdated,
       unsavedData,
       addStorage,
+      removeStorage,
       save,
+      configurableStorages,
     }
   },
 })
