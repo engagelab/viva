@@ -197,34 +197,36 @@
           </Button>
         </div>
       </div>
-      <div
-        v-for="(s, i) in selectedItemShare.share.comments"
-        :key="`share-comment-${i}`"
-        class="flex flex-col"
-      >
-        <div class="flex flex-row items-center text-xs mt-4">
-          <div
-            class="flex items-center justify-center w-10 h-10 rounded-full text-white"
-            :style="{
-              'background-color': stringToColour(nameAndRole(s.creator).name),
-            }"
-          >
-            {{ nameAndRole(s.creator).abbreviation }}
+      <div class="flex flex-col no-scrollbar overflow-y-auto max-h-60">
+        <div
+          v-for="(s, i) in selectedItemShare.share.comments"
+          :key="`share-comment-${i}`"
+          class="flex flex-col"
+        >
+          <div class="flex flex-row items-center text-xs mt-4">
+            <div
+              class="flex items-center justify-center w-10 h-10 rounded-full text-white"
+              :style="{
+                'background-color': stringToColour(nameAndRole(s.creator).name),
+              }"
+            >
+              {{ nameAndRole(s.creator).abbreviation }}
+            </div>
+            <p
+              class="font-serious font-medium h-4 ml-4"
+              :style="{
+                color: stringToColour(nameAndRole(s.creator).name),
+              }"
+            >
+              {{ nameAndRole(s.creator).name }}
+            </p>
+            <p class="leading-4 text-viva-grey-500">
+              &nbsp;•&nbsp;{{ formatCreationDate(s.created) }}
+            </p>
           </div>
-          <p
-            class="font-serious font-medium h-4 ml-4"
-            :style="{
-              color: stringToColour(nameAndRole(s.creator).name),
-            }"
-          >
-            {{ nameAndRole(s.creator).name }}
-          </p>
-          <p class="leading-4 text-viva-grey-500">
-            &nbsp;•&nbsp;{{ formatCreationDate(s.created) }}
-          </p>
-        </div>
-        <div class="flex flex-row items-center text-xs text-white mt-4">
-          <p>{{ s.text }}</p>
+          <div class="flex flex-row items-center text-xs text-white mt-4">
+            <p>{{ s.text }}</p>
+          </div>
         </div>
       </div>
     </div>
