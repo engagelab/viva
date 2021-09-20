@@ -372,7 +372,7 @@ export class Video {
       name: data.dataset.name,
       selection: data.selection,
     })
-    this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
+    this.updateUsers({ owner: data.user.id, sharedWith: [], sharing: [] })
     this.storages = data.dataset.storages.map((storage) => ({
       kind: storage.kind,
       path: '',
@@ -548,11 +548,7 @@ export interface DatasetConsent {
   formId: number
 }
 interface DatasetUsers {
-  owner: {
-    profile: {
-      username: string
-    }
-  }
+  owner: string // ID of User who created this Dataset
   groups: string[]
 }
 export interface DatasetStorage {
@@ -604,12 +600,8 @@ export class Dataset {
       formId: 0,
     }
     this.users = {
-      owner: {
-        profile: {
-          username: '',
-        },
-      },
-      groups: [],
+      owner: data?.users.owner || '(unknown)',
+      groups: data?.users.groups || [],
     }
     this.selection = {}
     this.selectionPriority = []
@@ -633,9 +625,6 @@ export class Dataset {
         value: data.consent?.value ? data.consent.value : '',
         formId: data.consent?.formId ? data.consent.formId : 0,
       }
-
-      this.users.owner.profile.username = data.users?.owner?.profile?.username
-      this.users.groups = data.users?.groups || []
 
       this.selection = data?.selection ? data.selection : {}
       this.selectionPriority = data.selectionPriority || []
@@ -714,14 +703,14 @@ export interface UserRecordingInProcess {
 }
 
 export class User {
-  _id: string
+  id: string
   status: UserStatus
   profile: UserProfile
   datasetConfig: UserDatasetConfig
   videos: UserVideos
 
   constructor(data?: User) {
-    this._id = ''
+    this.id = ''
     this.status = {
       role: USER_ROLE.user,
       created: new Date(),
@@ -751,7 +740,7 @@ export class User {
       removedDraftIDs: [],
     }
     if (data) {
-      this._id = data._id
+      this.id = data.id
       this.status = data.status
       this.profile = data.profile
       this.datasetConfig = {

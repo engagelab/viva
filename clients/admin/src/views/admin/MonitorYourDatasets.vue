@@ -22,7 +22,7 @@
       <!-- Sidebar -->
       <div class="h-full w-1/4">
         <h2 class="font-bold">{{ t('datasets') }}</h2>
-        <ul class="mt-2" style="list-style-type: none">
+        <ul class="my-2" style="list-style-type: none">
           <li
             v-for="(dataset, datasetIndex) in datasets"
             :key="datasetIndex"
@@ -30,8 +30,16 @@
             @click="setSelectedDataset(dataset._id)"
           >
             {{ dataset.name }}
+            <span
+              class="text-xs text-gray-600"
+              v-if="dataset.users.owner === user.id"
+              >({{ t('createdByYou') }})</span
+            >
           </li>
         </ul>
+        <Button v-if="!showInput" @vclick="showInput = !showInput">
+          {{ t('create') }}
+        </Button>
       </div>
       <!-- Table -->
       <div class="w-3/4">
@@ -39,9 +47,6 @@
       </div>
     </div>
     <div class="flex flex-row mt-8">
-      <Button v-if="!showInput" @vclick="showInput = !showInput">
-        {{ t('create') }}
-      </Button>
       <div class="flex flex-row" v-if="showInput">
         <input
           v-model="newDatasetName"
@@ -65,7 +70,9 @@
 import { computed, ComputedRef, defineComponent, onMounted, ref } from 'vue'
 import { Dataset } from '@/types/main'
 import { useDatasetStore } from '../../store/useDatasetStore'
+import { useAppStore } from '../../store/useAppStore'
 const { actions: datasetActions, getters: datasetGetters } = useDatasetStore()
+const { getters: appGetters } = useAppStore()
 import DatasetItem from '@/components/DatasetItem.vue'
 import Button from '@/components/base/Button.vue'
 
@@ -73,11 +80,13 @@ import { useI18n } from 'vue-i18n'
 const messages = {
   nb_NO: {
     datasets: 'Datasets',
-    create: 'Create new dataset',
+    create: 'Ny dataset',
+    createdByYou: 'laget av deg',
   },
   en: {
     datasets: 'Datasets',
-    create: 'Create new dataset',
+    create: 'New dataset',
+    createdByYou: 'made by you',
   },
 }
 
@@ -133,6 +142,7 @@ export default defineComponent({
       datasets,
       headers,
       selectedDataset: datasetGetters.selectedDataset,
+      user: appGetters.user,
       //Methods
       createDataset,
       setSelectedDataset,
