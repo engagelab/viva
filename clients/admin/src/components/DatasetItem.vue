@@ -80,7 +80,10 @@
 
       <SelectionHandling @updated="selectionUpdated"></SelectionHandling>
 
-      <ConsentHandling @updated="consentUpdated"></ConsentHandling>
+      <ConsentHandling
+        @updated="consentUpdated"
+        :consent="dataset.consent"
+      ></ConsentHandling>
 
       <div>
         <p class="text-red-600 mt-4 ml-2">
@@ -158,11 +161,6 @@ const messages = {
   },
 }
 
-interface OptionListItem {
-  itemName: string
-  item: string
-}
-
 // This component completes setup of the app after login
 export default defineComponent({
   name: 'DatasetItem',
@@ -182,11 +180,9 @@ export default defineComponent({
 
     const { getters: appGetters } = useAppStore()
     const currentSubset = ref('')
-    const groups: OptionListItem[] = []
     let dataset: Ref<Dataset> = ref(new Dataset())
 
     const resetData = (d: Dataset) => {
-      groups.length = 0
       dataset.value = new Dataset(d)
     }
 

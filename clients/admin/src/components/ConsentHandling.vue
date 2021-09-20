@@ -65,7 +65,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref } from 'vue'
+import { defineComponent, ref, Ref, PropType, toRefs, watch } from 'vue'
 import { behandlings, CONSENT_TYPES } from '@/constants'
 import { DatasetConsent } from '@/types/main'
 import { useI18n } from 'vue-i18n'
@@ -84,8 +84,12 @@ export default defineComponent({
   components: {
     AnswerInput,
   },
+  props: {
+    consent: { type: Object as PropType<DatasetConsent>, required: true },
+  },
   emits: ['updated'],
   setup(props, context) {
+    const { consent } = toRefs(props)
     const { getters: appGetters } = useAppStore()
     const { t } = useI18n({ messages })
     const consentData: Ref<DatasetConsent> = ref({
@@ -93,6 +97,20 @@ export default defineComponent({
       value: '',
       formId: 0,
     })
+
+    const resetData = (c: DatasetConsent) => {
+      consentData.value.kind = c.kind
+      consentData.value.value = c.value
+      consentData.value.formId = c.formId
+    }
+
+    watch(
+      () => consent.value,
+      (c) => {
+        if (c) resetData(c)
+      }
+    )
+    resetData(consent.value)
 
     function updatedConsent() {
       context.emit('updated', consentData.value)

@@ -595,9 +595,9 @@ export class Dataset {
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manual,
-      value: '',
-      formId: 0,
+      kind: data?.consent.kind || CONSENT_TYPES.manual,
+      value: data?.consent.value || '',
+      formId: data?.consent.formId || 0,
     }
     this.users = {
       owner: data?.users.owner || '(unknown)',
