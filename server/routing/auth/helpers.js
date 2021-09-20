@@ -209,8 +209,8 @@ function completeCallback(request, response, user) {
   // Web app receives a Session immediately, does not need to pass a token
   request.session.ref = user.id
   if (process.env.NODE_ENV !== 'test') {
-    console.log(s)
-    console.log(`Session: ${request.session.ref}`)
+    console.log(`Redirecting client to: ${redirectUrl}`)
+    console.log(`${s} Session: ${request.session.ref}`)
   }
   return response.redirect(redirectUrl)
 }
