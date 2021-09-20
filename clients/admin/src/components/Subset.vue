@@ -132,8 +132,8 @@
         <div class="flex flex-row" v-if="showInput">
           <input
             v-model="currentDataPath.title"
-            type="String"
-            class="border-2 text-center rounded-full"
+            type="text"
+            class="border-2 text-center"
             placeholder="Add value to selected instance"
           />
           <SlButton

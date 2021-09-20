@@ -96,8 +96,8 @@
           cursor-pointer
         "
         id="button-return"
-        @click="restart()"
-        >Return</a
+        @click="logout()"
+        >Log Out</a
       >
     </div>
   </div>
@@ -105,8 +105,11 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
-import router from '../../router'
 import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/store/useAppStore'
+
+const { actions: appActions } = useAppStore()
+
 const messages = {
   nb_NO: {
     dataset: 'Registrering',
@@ -126,8 +129,8 @@ export default defineComponent({
       selectedSubTab.value = secondary
     }
 
-    const restart = () => {
-      router.push(`/`)
+    const logout = () => {
+      appActions.logout()
     }
 
     return {
@@ -135,7 +138,7 @@ export default defineComponent({
       selectedSubTab,
       t,
       // Methods
-      restart,
+      logout,
       selectTab,
     }
   },
