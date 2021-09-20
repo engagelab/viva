@@ -28,7 +28,7 @@ import {
 
 import { useAppStore } from '../store/useAppStore'
 const { actions: appActions } = useAppStore()
-
+import { baseUrl } from '../constants'
 import Dashboard from '../views/Dashboard.vue'
 import Share from '../views/Share.vue'
 
