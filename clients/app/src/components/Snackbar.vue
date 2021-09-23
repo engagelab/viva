@@ -18,14 +18,26 @@
  along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div
-    class="abosolute bottom-0 left-0 flex z-0 p-1 text-white"
+    class="
+      abosolute
+      bottom-0
+      left-0
+      flex flex-row
+      justify-end
+      z-0
+      p-1
+      text-white
+    "
     :class="snackbarClass"
   >
-    <div class="text-sm break-all">
+    <div class="text-sm break-all flex flex-grow p-1">
       {{ snackbar ? snackbar.text : '' }}
     </div>
 
-    <button class="snackbar-button" @click="closeSnackbar()">
+    <button
+      class="h-10 p-2 m-1 bg-white text-black rounded-sm"
+      @click="closeSnackbar()"
+    >
       {{ t('close') }}
     </button>
   </div>

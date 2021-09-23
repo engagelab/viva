@@ -478,8 +478,10 @@ interface DatasetStatus {
   lastUpdated: Date
   lockedBy: string
 }
-interface DatasetConsent {
+export interface DatasetConsent {
   kind: CONSENT_TYPES
+  value: string
+  formId: number
 }
 interface DatasetUsers {
   owner: string
@@ -506,7 +508,6 @@ export class Dataset {
   name: string
   description: string
   created: Date
-  formId: string
   status: DatasetStatus
   consent: DatasetConsent
   users: DatasetUsers
@@ -519,13 +520,14 @@ export class Dataset {
     this.name = ''
     this.description = ''
     this.created = new Date()
-    this.formId = ''
     this.status = {
       lastUpdated: new Date(),
       lockedBy: '',
     }
     this.consent = {
       kind: CONSENT_TYPES.manual,
+      value: data?.consent.value || '',
+      formId: data?.consent.formId || 0,
     }
     this.users = {
       owner: '',
@@ -540,13 +542,15 @@ export class Dataset {
       this.name = data.name
       this.description = data.description
       this.created = new Date(data.created)
-      this.formId = data.formId
       this.status = {
         lastUpdated: new Date(data.status.lastUpdated),
         lockedBy: data.status.lockedBy,
       }
       this.consent = {
-        kind: data.consent.kind || CONSENT_TYPES.manual,
+        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manual,
+        // value: fetchValue(data.consent),
+        value: data.consent?.value ? data.consent.value : '',
+        formId: data.consent?.formId ? data.consent.formId : 0,
       }
       this.users = {
         owner: data.users.owner,

@@ -41,7 +41,6 @@ const datasetSchema = new mongoose.Schema({
   name: { type: String, required: true }, // name of dataset must be unique
   description: { type: String, default: '' },
   created: { type: Date, default: Date.now },
-  formId: { type: String }, // Nettskjema form ID
   status: {
     lastUpdated: { type: Date, default: Date.now }, // Last time this Dataset was changed
     active: { type: Boolean, default: false }, // Only active datasetts who will be fetched
@@ -54,7 +53,7 @@ const datasetSchema = new mongoose.Schema({
       default: consentTypes.manual,
     },
     value: { type: String },
-    formId: { type: Number },
+    formId: { type: Number },  // Nettskjema form ID
   },
 
   users: {

@@ -520,11 +520,7 @@ export class Video {
     this.status.hasUnsavedChanges = false
   }
 }
-// const fetchValue = (consent: DatasetConsent) => {
-//   if (consent.value) return consent.value
-//   //else if (consent.kind) return behandlings[consent.kind].description
-//   else return ''
-// }
+
 export interface DataPath {
   path: string
   currentKey: string

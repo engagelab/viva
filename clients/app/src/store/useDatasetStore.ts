@@ -209,7 +209,7 @@ const actions = {
         query: {
           datasetId: video.dataset.id,
           utvalg,
-          formId: datasetForVideo.formId,
+          formId: datasetForVideo.consent.formId,
         },
         credentials: true,
         body: undefined,

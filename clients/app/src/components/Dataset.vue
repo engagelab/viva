@@ -253,7 +253,7 @@ export default defineComponent({
         ''
       )
       if (selectedDataset.value) {
-        return `https://nettskjema.no/a/${selectedDataset.value.formId}?CBdataset=${selectedDataset.value._id}?CBsubset=${subsetString}`
+        return `https://nettskjema.no/a/${selectedDataset.value.consent.formId}?LCKdataset=true&CBdataset=${selectedDataset.value._id}&LCKsubset=true&CBsubset=${subsetString}`
       } else return ''
     })
     const mailtoURI = computed(() => {
@@ -452,7 +452,7 @@ export default defineComponent({
           callback: undefined,
         })
       }
-      if (appGetters.useCordova) {
+      if (appGetters.useCordova.value) {
         cordovaService.copyToClipboard(
           getConsentUrl.value,
           copySuccess,
