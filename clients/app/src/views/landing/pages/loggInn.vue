@@ -35,12 +35,6 @@
           class="m-4 focus:outline-none"
           @click="login('canvas', 'canvas')"
         /-->
-        <p class="m-2 text-red-600 font-bold" v-if="!browserOk">
-          {{ t('browserNotOk') }}
-        </p>
-        <p class="m-2 text-red-600 font-bold" v-if="appIsOld">
-          {{ t('appIsOld') }}
-        </p>
         <Button v-if="isLoggedIn" class="m-4" @vclick="listView()">{{
           t('MineOpptak')
         }}</Button>
@@ -51,6 +45,12 @@
           >{{ t('LoggUt') }}</Button
         >
       </div>
+      <p class="m-2 text-red-600 font-bold" v-if="!browserOk">
+        {{ t('browserNotOk') }}
+      </p>
+      <p class="m-2 text-red-600 font-bold" v-if="appIsOld">
+        {{ t('appIsOld') }}
+      </p>
       <p class="text-viva-lilla text-sm mb-1">{{ t('GoogleSuite') }}</p>
       <p class="text-viva-lilla text-sm">{{ t('UseOfGoogle') }}</p>
       <p class="text-xs mt-2">v{{ appVersion }}</p>

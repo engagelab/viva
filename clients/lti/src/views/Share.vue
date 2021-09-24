@@ -17,23 +17,23 @@
  You should have received a copy of the GNU Affero General Public License
  along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
-  <div>
+  <div class="flex flex-col">
+    <div class="flex flex-row justify-end p-2">
+      <IconBase
+        icon-name="selectNoneCross"
+        class="text-white cursor-pointer"
+        alt="created-sort-button"
+        @click="selectNone()"
+        viewBox="0 0 144.54 144.54"
+        width="18"
+        height="18"
+        ><IconCross />
+      </IconBase>
+    </div>
     <template
       class="my-6"
       v-if="detailMode.submode === VIDEO_DETAIL_MODE.none && selectedItemShare"
     >
-      <div class="flex flex-row justify-end p-2">
-        <IconBase
-          icon-name="selectNoneCross"
-          class="text-white cursor-pointer"
-          alt="created-sort-button"
-          @click="selectNone()"
-          viewBox="0 0 144.54 144.54"
-          width="18"
-          height="18"
-          ><IconCross />
-        </IconBase>
-      </div>
       <div
         class="flex flex-row flex-wrap bg-viva-grey-400 text-viva-grey-500 rounded-xl p-6 w-auto lg:w-192"
       >

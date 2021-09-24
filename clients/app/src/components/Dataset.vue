@@ -32,7 +32,7 @@
       ></SVGSymbol>
       <span
         v-if="selectedDataset"
-        class="text-black"
+        class="text-black whitespace-pre"
         style="width: min-content"
         >{{ selectedDataset.name }}</span
       >
@@ -389,8 +389,9 @@ export default defineComponent({
         const tempSelection: ListData[] = []
         for (const [depth, u] of entries) {
           let list: DatasetSelection[] = []
-          if (depth === 0) list = dataset.selection[u.keyName]
-          else if (tempSelection[depth - 1]) {
+          if (depth === 0 && dataset.selection[u.keyName]) {
+            list = dataset.selection[u.keyName]
+          } else if (tempSelection[depth - 1]) {
             list = tempSelection[depth - 1].data.selection?.[u.keyName] || []
           }
           const data = list.find((item) => item.title == u.title)
