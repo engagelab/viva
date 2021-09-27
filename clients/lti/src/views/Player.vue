@@ -56,6 +56,7 @@
       </div>
 
       <div class="absolute bottom-0 flex flex-col w-full">
+        <!-- Trimming slider -->
         <Slider
           v-if="detailMode.submode === VIDEO_DETAIL_MODE.trim"
           class="progress-slider top-0 left-0 w-full"
@@ -65,6 +66,7 @@
           :min="scrubberMin"
           @change="adjustTrim"
         />
+        <!-- Play progress slider -->
         <Slider
           v-else
           class="progress-slider top-0 left-0 w-full"
@@ -128,6 +130,30 @@
         </div>
       </div>
     </div>
+    <div
+      class="flex flex-row justify-end"
+      v-if="detailMode.submode === VIDEO_DETAIL_MODE.trim"
+    >
+      <Button
+        class="self-end mr-4"
+        :childclass="'w-32'"
+        :backgroundcolour="'bg-white'"
+        :textcolour="'text-black'"
+        @vclick.stop="cancelTrim()"
+      >
+        Cancel
+      </Button>
+      <Button
+        class="self-end"
+        :childclass="'w-32'"
+        :disabled="updatedTrim.length === 0"
+        :backgroundcolour="'bg-viva-blue-800'"
+        :textcolour="'text-white'"
+        @vclick.stop="confirmTrim()"
+      >
+        Done
+      </Button>
+    </div>
   </div>
 </template>
 
@@ -142,6 +168,7 @@ import pauseButtonSVG from '@/assets/icons/svg/pause.svg'
 import fullscreenButtonSVG from '@/assets/icons/svg/scale_up.svg'
 import soundOnButtonSVG from '@/assets/icons/svg/sound_on.svg'
 import soundOffButtonSVG from '@/assets/icons/svg/sound_off.svg'
+import Button from '@/components/base/Button.vue'
 import IconBase from '@/components/icons/IconBase.vue'
 import IconCross from '@/components/icons/IconCross.vue'
 import Slider from '@vueform/slider'
@@ -151,6 +178,7 @@ const { getters: videoGetters, actions: videoActions } = useVideoStore()
 export default defineComponent({
   name: 'Player',
   components: {
+    Button,
     Slider,
     IconBase,
     IconCross,
@@ -168,6 +196,7 @@ export default defineComponent({
     const localEDL = ref({ trim: [0, 0], blur: [] })
     const playing = ref(false)
 
+    let updatedTrim: Ref<number[]> = ref([])
     let currentVolume = ref(0)
     let currentPlayerTime = ref(0)
 
@@ -246,7 +275,7 @@ export default defineComponent({
           player.currentTime = newValue[1]
           currentPlayerTime.value = player.currentTime
         }
-        context.emit('trim', newValue)
+        updatedTrim.value = newValue
       }
     }
 
@@ -348,6 +377,16 @@ export default defineComponent({
       }
     }
 
+    function cancelTrim(): void {
+      videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
+    }
+
+    function confirmTrim(): void {
+      context.emit('trim', updatedTrim.value)
+      updatedTrim.value = []
+      videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
+    }
+
     return {
       // computed
       duration,
@@ -365,6 +404,8 @@ export default defineComponent({
       adjustProgress,
       adjustTrim,
       selectNone: videoActions.selectNone,
+      cancelTrim,
+      confirmTrim,
       // data
       baseUrl,
       VIDEO_DETAIL_MODE,
@@ -377,6 +418,7 @@ export default defineComponent({
       currentPlayerTime,
       currentTimeTrimmed,
       localEDL,
+      updatedTrim,
       // booleans
       playing,
       fullScreenMode,

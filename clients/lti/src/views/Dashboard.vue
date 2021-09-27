@@ -103,7 +103,7 @@
     </div>
     <div
       v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none || dialogConfig.visible"
-      class="fixed top-0 left-0 flex flex-col items-center my-6 w-full max-h-full bg-black bg-opacity-75 rounded-xl no-scrollbar overflow-y-auto"
+      class="fixed top-0 left-0 flex flex-col items-center my-6 w-full h-full bg-black bg-opacity-75 rounded-xl no-scrollbar overflow-y-auto"
     >
       <Annotate
         class="w-auto lg:w-192 no-scrollbar"
@@ -127,8 +127,8 @@
 import { defineComponent, ref, onMounted, Ref } from 'vue'
 import { VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE, SORT_BY } from '@/constants'
 
-import { useAppStore } from '../store/useAppStore'
-import { useVideoStore } from '../store/useVideoStore'
+import { useAppStore } from '@/store/useAppStore'
+import { useVideoStore } from '@/store/useVideoStore'
 import VideoFeedCard from '@/components/VideoFeedCard.vue'
 import VideoMyCard from '@/components/VideoMyCard.vue'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'

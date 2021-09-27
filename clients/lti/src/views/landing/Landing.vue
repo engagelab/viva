@@ -34,11 +34,11 @@ import {
   Ref,
   onBeforeUnmount,
 } from 'vue'
-// import router from '../../router'
+
 import moment from 'moment'
-import { useAppStore } from '../../store/useAppStore'
-import { LocalUser } from '../../types/main'
-import { useVideoStore } from '../../store/useVideoStore'
+import { useAppStore } from '@/store/useAppStore'
+import { LocalUser } from '@/types/main'
+import { useVideoStore } from '@/store/useVideoStore'
 const jwtExpiryConstant = process.env.VUE_APP_JWT_EXPIRY || '0'
 const jwtExpiry = Number.parseInt(jwtExpiryConstant)
 
@@ -78,7 +78,7 @@ export default defineComponent({
     showTestLogin.value = true
 
     function selectUser(u: LocalUser) {
-      localUsers.forEach((u) => (u.selected = false))
+      localUsers.forEach((lu) => (lu.selected = false))
       u.selected = true
       selectedUser.value = u
       mode.value = 'pp'
