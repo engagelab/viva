@@ -112,12 +112,12 @@
                   :step="-1"
                   :min="0"
                   :max="1"
-                  v-model="volumeLevel"
+                  v-model="currentVolume"
                   @change="adjustVolume"
                 />
               </div>
               <img
-                v-if="volumeLevel > 0"
+                v-if="currentVolume > 0"
                 :src="soundOnButtonSVG"
                 alt="volumeOn-button"
               />
@@ -191,14 +191,13 @@ export default defineComponent({
     const video: Ref<Video> = ref(new Video())
     const edl: Ref<EditDecriptionList> = ref({ trim: [0, 0], blur: [] })
     const fullScreenMode = ref(false)
-    const volumeLevel = ref(0)
     const volumeMenu = ref(false)
     const localEDL = ref({ trim: [0, 0], blur: [] })
     const playing = ref(false)
 
-    let updatedTrim: Ref<number[]> = ref([])
-    let currentVolume = ref(0)
-    let currentPlayerTime = ref(0)
+    const updatedTrim: Ref<number[]> = ref([])
+    const currentVolume = ref(0.5)
+    const currentPlayerTime = ref(0)
 
     const formatVolumeTooltip = function (value: number) {
       return Math.floor(value * 100)
@@ -255,9 +254,11 @@ export default defineComponent({
       return 'video/mp4'
     })
 
+    // Event listener for UI volume adjustment
     function adjustVolume(level: number): void {
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) player.volume = level
+      // 'currentVolume' will be adjusted automatically by v-model
     }
 
     function adjustProgress(value: number): void {
@@ -267,6 +268,8 @@ export default defineComponent({
       }
     }
 
+    // Event listener for UI trim adjustment
+    // Trim value is only emitted upon 'save'. See 'confirmTrim()'
     function adjustTrim(newValue: number[]): void {
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
@@ -319,7 +322,7 @@ export default defineComponent({
     function startPlaying() {
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
-        currentVolume.value = player.volume
+        player.volume = currentVolume.value
         if (playing.value) {
           player.pause()
           playing.value = false
@@ -412,11 +415,11 @@ export default defineComponent({
       selectedItem,
       video,
       playerTime,
-      volumeLevel,
       videoMimeType,
       playbackVideo,
       currentPlayerTime,
       currentTimeTrimmed,
+      currentVolume,
       localEDL,
       updatedTrim,
       // booleans

@@ -47,6 +47,9 @@
       <p class="mt-1 text-xs">
         By <span class="text-white">{{ share.creatorName.name }}</span>
       </p>
+      <p class="text-xs">
+        {{ formatDate(share.share.created) }}
+      </p>
     </div>
     <div class="flex flex-row">
       <div
@@ -67,6 +70,7 @@
 <script lang="ts">
 import { defineComponent, PropType, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import moment from 'moment'
 import { DialogConfig, ListItemShare } from '../types/main'
 import { stringToColour } from '@/utilities'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
@@ -104,6 +108,10 @@ export default defineComponent({
     const hover = ref(false)
     const menu = ref(false)
 
+    function formatDate(date: Date) {
+      return moment(date).format('MMM Do H:mm')
+    }
+
     function openAnnotation(share: ListItemShare) {
       videoActions.selectShare(share)
       context.emit('annotate')
@@ -134,6 +142,7 @@ export default defineComponent({
     }
 
     return {
+      formatDate,
       stringToColour,
       hover,
       menu,

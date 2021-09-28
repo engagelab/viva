@@ -170,7 +170,6 @@ router.post(
   async (request, response, next) => {
     // Create a subdocument based on the Videos 'users.sharing.annotations' schema
     const newAnnotation = Video.schema.path('users.sharing.annotations').cast([request.body])[0]
-    // const newAnnotation = await model('Annotation', annotationSchema).create(request.body)
     Video.findOneAndUpdate(
       { 'details.id': request.query.videoID, 'users.sharing._id': ObjectId(request.query.shareID) },
       { $push: { 'users.sharing.$.annotations': newAnnotation } }, // '$' is the first item that matches the query

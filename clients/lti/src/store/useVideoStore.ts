@@ -293,21 +293,26 @@ const actions = {
       query: { id: videoID },
       route: '/api/video/share',
     }
-    return apiRequest<VideoSharing>(payload).then((newShare: VideoSharing) => {
-      const v = state.value.videos.get(videoID)
-      if (v) {
-        const share: ListItemShare = {
-          id: newShare._id,
-          creator: newShare.creator,
-          creatorName: appActions.nameAndRole(newShare.creator),
-          users: newShare.users.map((u) => appActions.nameAndRole(u)),
-          share: newShare,
-          item: listItem,
+    return apiRequest<VideoSharingData>(payload).then(
+      (newShareData: VideoSharingData) => {
+        const newShare: VideoSharing = new VideoSharing().updateFromShare(
+          newShareData
+        )
+        const v = state.value.videos.get(videoID)
+        if (v) {
+          const share: ListItemShare = {
+            id: newShare._id,
+            creator: newShare.creator,
+            creatorName: appActions.nameAndRole(newShare.creator),
+            users: newShare.users.map((u) => appActions.nameAndRole(u)),
+            share: newShare,
+            item: listItem,
+          }
+          state.value.selectedItemShare = share
+          v.users.sharing.push(newShare)
         }
-        state.value.selectedItemShare = share
-        v.users.sharing.push(newShare)
       }
-    })
+    )
   },
   // Update sharing for a selected video
   updateShare: function (

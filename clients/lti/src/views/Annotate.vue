@@ -32,7 +32,7 @@
     </div>
     <div
       v-if="selectedItemShare"
-      class="flex flex-row flex-wrap bg-viva-grey-300 text-viva-grey-500 rounded-xl w-full"
+      class="flex flex-row flex-wrap bg-viva-grey-300 text-viva-grey-500 rounded-xl rounded-b-none w-full"
     >
       <div
         class="flex flex-col transition-width duration-500 ease-in-out"

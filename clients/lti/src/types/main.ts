@@ -323,11 +323,11 @@ export class VideoSharing {
   comments: ShareComment[] = []
   edl: EditDecriptionList = { trim: [], blur: [] }
 
-  constructor(vs: VideoSharing | VideoSharingData) {
-    this.updateFromShare(vs)
+  constructor(vs: VideoSharing | VideoSharingData | void) {
+    if (vs) this.updateFromShare(vs)
   }
 
-  updateFromShare(vs: VideoSharing | VideoSharingData): void {
+  updateFromShare(vs: VideoSharing | VideoSharingData): VideoSharing {
     this._id = vs._id
     this.access = vs.access
     this.creator = vs.creator
@@ -348,6 +348,7 @@ export class VideoSharing {
         }
       })
     }
+    return this
   }
 }
 
@@ -573,7 +574,11 @@ export class Video {
     updatedSharing.forEach((newShare: VideoSharing | VideoSharingData) => {
       const oldShare = this.users.sharing.find((os) => os._id === newShare._id)
       if (oldShare) oldShare.updateFromShare(newShare)
-      else this.users.sharing.push(new VideoSharing(newShare))
+      else {
+        const createdShare = new VideoSharing()
+        createdShare.updateFromShare(newShare)
+        this.users.sharing.push(createdShare)
+      }
     })
   }
   deleteSharing(deletedSharing: VideoSharing): void {

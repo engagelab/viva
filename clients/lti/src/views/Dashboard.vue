@@ -102,7 +102,7 @@
       </div>
     </div>
     <div
-      v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none || dialogConfig.visible"
+      v-if="detailMode.mode !== VIDEO_DETAIL_MODE.none"
       class="fixed top-0 left-0 flex flex-col items-center my-6 w-full h-full bg-black bg-opacity-75 rounded-xl no-scrollbar overflow-y-auto"
     >
       <Annotate
@@ -117,6 +117,12 @@
         "
       />
       <Share v-if="detailMode.mode === VIDEO_DETAIL_MODE.share" />
+      <DialogBox v-if="dialogConfig.visible" />
+    </div>
+    <div
+      v-if="dialogConfig.visible"
+      class="fixed top-0 left-0 flex flex-col items-center justify-center my-6 w-full h-full bg-black bg-opacity-75 rounded-xl no-scrollbar overflow-y-auto"
+    >
       <DialogBox v-if="dialogConfig.visible" />
     </div>
   </div>

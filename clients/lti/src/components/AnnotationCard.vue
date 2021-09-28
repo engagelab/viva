@@ -164,12 +164,15 @@
         :key="`${annotation._id}-comment-${i}`"
         class="flex flex-col flex-grow ml-2"
       >
-        <div class="relative flex flex-row items-end h-6 w-full px-3">
-          <p class="font-serious font-medium h-4 text-xs text-white">
-            <span :style="{ color: stringToColour(nameAndRole.name) }">
+        <div class="relative flex flex-row items-end w-full px-3">
+          <p class="font-serious font-medium text-xs text-white mt-2">
+            <span
+              class="h-4"
+              :style="{ color: stringToColour(nameAndRole.name) }"
+            >
               {{ nameAndRole.name }}
             </span>
-            commented
+            <span class="h-4">&nbsp;{{ t('commented') }}</span>
           </p>
         </div>
         <div class="flex flex-col flex-grow rounded-2xl bg-viva-grey-430 mt-1">
@@ -185,7 +188,6 @@
               class="w-full bg-transparent mt-1"
               placeholder="Add a comment"
               v-model="localComment.text"
-              @blur="() => (editingComment = false)"
             />
             <p v-else>
               {{ comment.text }}
@@ -241,12 +243,14 @@ const messages = {
       'Hvis du sletter, fjernes også alle kommentarer fra andre',
     dialogDeleteConfirm: 'Slette',
     dialogDeleteCancel: 'Avbryt',
+    commented: 'sa',
   },
   en: {
     dialogDeleteTitle: 'Delete this annotation',
     dialogDeleteText: 'Deleting will also remove all comments from others',
     dialogDeleteConfirm: 'Delete',
     dialogDeleteCancel: 'Cancel',
+    commented: 'commented',
   },
 }
 

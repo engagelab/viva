@@ -243,6 +243,7 @@ export default defineComponent({
     const selectionReady = computed(() => {
       return (
         selectedDataset.value &&
+        selectedDataset.value.selectionPriority.length > 0 &&
         currentSelection.value.length ==
           selectedDataset.value.selectionPriority.length
       )
