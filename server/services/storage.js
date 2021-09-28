@@ -29,6 +29,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const fs = require('fs')
 const crypto = require('crypto')
 const Dataset = require('../models/Dataset')
+const User = require('../models/User.js')
 const moment = require('moment')
 
 const { videoStorageTypes, videoFolderNames } = require('../constants')
@@ -171,32 +172,37 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
 // RECOMMENDED
 const fetchStorage = (video) => {
   return new Promise((resolve, reject) => {
-    Dataset.findById(video.dataset.id).populate('users.owner').exec((error, dataset) => {
-      if (error || !dataset) return reject(error)
-      let stores = []
-      dataset.storages.forEach((storage) => {
-        let path = generatePath(
-          { list: storage.file.path, dataset, video },
-          '/'
-        )
-        const fileName = generatePath(
-          { list: storage.file.name, dataset, video },
-          '-'
-        )
-        // TODO: Can 'groupId' be integrated into storage.file.path ?
-        if (storage.kind === videoStorageTypes.lagringshotell) {
-          const basePath = process.env.LAGRINGSHOTELL || '/tmp/'
-          if (storage.groupId) path = storage.groupId + '/' + path
-          path = basePath + path
-        }
-        stores.push({
-          kind: storage.kind,
-          path,
-          fileName,
-        })
+    Dataset.findById(video.dataset.id)
+      .populate({
+        path: 'users.owner',
+        model: User,
       })
-      resolve(stores)
-    })
+      .exec((error, dataset) => {
+        if (error || !dataset) return reject(error)
+        let stores = []
+        dataset.storages.forEach((storage) => {
+          let path = generatePath(
+            { list: storage.file.path, dataset, video },
+            '/'
+          )
+          const fileName = generatePath(
+            { list: storage.file.name, dataset, video },
+            '-'
+          )
+          // TODO: Can 'groupId' be integrated into storage.file.path ?
+          if (storage.kind === videoStorageTypes.lagringshotell) {
+            const basePath = process.env.LAGRINGSHOTELL || '/tmp/'
+            if (storage.groupId) path = storage.groupId + '/' + path
+            path = basePath + path
+          }
+          stores.push({
+            kind: storage.kind,
+            path,
+            fileName,
+          })
+        })
+        resolve(stores)
+      })
   })
 }
 
@@ -213,18 +219,20 @@ function sendVideoToEducloud({ video, subDirSrc }) {
   const sseMD5 = crypto.createHash('md5').update(sseKey).digest('base64')
   video.file.encryptionKey = sseKey
   video.file.encryptionMD5 = sseMD5
-  return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
-    console.log(`Video sent to Educloud at key: ${keyname}`)
-    video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
-    path = getPath(videoFolderNames.thumbnails, video.file.name, 'jpg')
-    keyname = `${video.users.owner.toString()}/${video.file.name}.jpg`
-    return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
-      console.log(`Thumbnail sent to Educloud at key: ${keyname}`)
+  return uploadS3File({ path, keyname, sseKey, sseMD5 })
+    .then(() => {
+      console.log(`Video sent to Educloud at key: ${keyname}`)
+      video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
+      path = getPath(videoFolderNames.thumbnails, video.file.name, 'jpg')
+      keyname = `${video.users.owner.toString()}/${video.file.name}.jpg`
+      return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
+        console.log(`Thumbnail sent to Educloud at key: ${keyname}`)
+      })
     })
-  }).catch((error) => {
-    console.log(error)
-    return Promise.reject(error)
-  })
+    .catch((error) => {
+      console.log(error)
+      return Promise.reject(error)
+    })
 }
 
 // Create a copy of the uploaded video to the lagringshotell
