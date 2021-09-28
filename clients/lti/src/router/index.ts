@@ -69,14 +69,5 @@ const router = createRouter({
     : createWebHistory(process.env.BASE_URL),
   routes,
 })
-// router.beforeEach((to, from, next) => {
-//   if (
-//     !(from.name || to.redirectedFrom?.name) &&
-//     to.name !== 'Login' &&
-//     to.name !== 'Landing'
-//   ) {
-//     next('login')
-//   } else next()
-// })
 
 export default router

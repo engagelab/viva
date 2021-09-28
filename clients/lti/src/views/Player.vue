@@ -159,6 +159,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, Ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { EditDecriptionList, Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
@@ -175,6 +176,17 @@ import Slider from '@vueform/slider'
 
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
+const messages = {
+  nb_NO: {
+    myVideos: 'Videoer min',
+    sharedVideos: 'Delt med meg',
+  },
+  en: {
+    myVideos: 'My Videos',
+    sharedVideos: 'Shared to me',
+  },
+}
+
 export default defineComponent({
   name: 'Player',
   components: {
@@ -185,6 +197,7 @@ export default defineComponent({
   },
   emits: ['trim', 'currenttimetrimmed'],
   setup(props, context) {
+    const { t } = useI18n({ messages })
     const selectedItem = videoGetters.selectedItem
     const selectedItemShare = videoGetters.selectedItemShare
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
@@ -391,6 +404,7 @@ export default defineComponent({
     }
 
     return {
+      t,
       // computed
       duration,
       scrubberMax,

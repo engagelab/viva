@@ -156,6 +156,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, ref, Ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
 import {
@@ -175,6 +176,17 @@ import IconCross from '@/components/icons/IconCross.vue'
 const { getters: appGetters } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
+const messages = {
+  nb_NO: {
+    myVideos: 'Videoer min',
+    sharedVideos: 'Delt med meg',
+  },
+  en: {
+    myVideos: 'My Videos',
+    sharedVideos: 'Shared to me',
+  },
+}
+
 interface NARListItem {
   itemName: string
   item: NameAndRole
@@ -189,6 +201,7 @@ export default defineComponent({
     IconCross,
   },
   setup() {
+    const { t } = useI18n({ messages })
     const selectedItemShare = videoGetters.selectedItemShare
     const showUsers = ref(false)
     const unsavedData = ref(false)
@@ -276,6 +289,7 @@ export default defineComponent({
     }
 
     return {
+      t,
       VIDEO_DETAIL_MODE,
       baseUrl,
       myLTIID,

@@ -191,9 +191,10 @@ router.put(
       } else {
         v.details.name = updatedVideo.name
         v.details.description = updatedVideo.description
-        v.save((saveError) => {
-          if (saveError) return next(saveError)
-          response.send(v.details)
+        v.save().then((savedVideo) => {
+          response.send(savedVideo.details)
+        }).catch((saveError) => {
+          return next(saveError)
         })
       }
     })

@@ -24,8 +24,14 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { useI18n } from 'vue-i18n'
 import router from '../router'
 import Button from '../components/base/Button.vue'
+
+const messages = {
+  nb_NO: {},
+  en: {},
+}
 
 export default defineComponent({
   name: 'HelloWorld',
@@ -33,7 +39,9 @@ export default defineComponent({
     Button,
   },
   setup() {
+    const { t } = useI18n({ messages })
     return {
+      t,
       monitor: () => router.push('/monitor'),
     }
   },

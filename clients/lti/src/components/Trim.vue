@@ -70,9 +70,15 @@
 
 <script lang="ts">
 import { defineComponent, ref, Ref, PropType, toRefs } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { EditDecriptionList } from '@/types/main'
 
 import SVGSymbol from '@/components/base/SVGSymbol.vue'
+
+const messages = {
+  nb_NO: {},
+  en: {},
+}
 
 export default defineComponent({
   components: {
@@ -90,6 +96,7 @@ export default defineComponent({
   },
   emits: ['updated'],
   setup(props, context) {
+    const { t } = useI18n({ messages })
     const { edl, videoCurrentTime } = toRefs(props)
     const localEDL: Ref<EditDecriptionList> = ref(edl)
 
@@ -113,6 +120,7 @@ export default defineComponent({
     }
 
     return {
+      t,
       trimButtonDisabled,
       setTrim,
       localEDL,

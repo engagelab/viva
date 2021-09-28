@@ -37,7 +37,7 @@
         }"
         @click="showTab(VIDEO_SHARING_MODE.myVideos)"
       >
-        My Videos
+        {{ t('myVideos') }}
       </div>
       <div
         class="cursor-pointer mr-6"
@@ -47,7 +47,7 @@
         }"
         @click="showTab(VIDEO_SHARING_MODE.sharedToMe)"
       >
-        Shared To Me
+        {{ t('sharedVideos') }}
       </div>
       <!-- Sort function  -->
       <div class="flex flex-grow justify-end">
@@ -132,7 +132,7 @@
 // @ is an alias to /src
 import { defineComponent, ref, onMounted, Ref } from 'vue'
 import { VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE, SORT_BY } from '@/constants'
-
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
 import VideoFeedCard from '@/components/VideoFeedCard.vue'
@@ -142,6 +142,17 @@ import DialogBox from '@/components/DialogBox.vue'
 import Annotate from '@/views/Annotate.vue'
 import Player from '@/views/Player.vue'
 import Share from '@/views/Share.vue'
+
+const messages = {
+  nb_NO: {
+    myVideos: 'Videoer min',
+    sharedVideos: 'Delt med meg',
+  },
+  en: {
+    myVideos: 'My Videos',
+    sharedVideos: 'Shared to me',
+  },
+}
 
 export default defineComponent({
   name: 'Dashboard',
@@ -155,6 +166,7 @@ export default defineComponent({
     DialogBox,
   },
   setup() {
+    const { t } = useI18n({ messages })
     const { getters: appGetters, actions: appActions } = useAppStore()
     const { getters: videoGetters, actions: videoActions } = useVideoStore()
     const user = appGetters.user.value
@@ -180,6 +192,7 @@ export default defineComponent({
     }
 
     return {
+      t,
       VIDEO_SHARING_MODE,
       VIDEO_DETAIL_MODE,
       user,

@@ -235,6 +235,7 @@
 <script lang="ts">
 import { defineComponent, ref, ComputedRef, computed } from 'vue'
 import moment from 'moment'
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
 import { Annotation, AnnotationComment, ShareComment } from '@/types/main'
@@ -257,6 +258,17 @@ import IconCross from '@/components/icons/IconCross.vue'
 const { getters: appGetters, actions: appActions } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
 
+const messages = {
+  nb_NO: {
+    myVideos: 'Videoer min',
+    sharedVideos: 'Delt med meg',
+  },
+  en: {
+    myVideos: 'My Videos',
+    sharedVideos: 'Shared to me',
+  },
+}
+
 export default defineComponent({
   name: 'Annotate',
   components: {
@@ -269,6 +281,7 @@ export default defineComponent({
     IconCross,
   },
   setup() {
+    const { t } = useI18n({ messages })
     const selectedItemShare = videoGetters.selectedItemShare
     const showUsers = ref(false)
     const showAnnotations = ref(false)
@@ -382,6 +395,7 @@ export default defineComponent({
     })
 
     return {
+      t,
       VIDEO_DETAIL_MODE,
       baseUrl,
       myLTIID,

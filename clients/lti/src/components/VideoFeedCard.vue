@@ -29,8 +29,14 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { FeedListItem } from '../types/main'
 import { baseUrl } from '@/constants'
+
+const messages = {
+  nb_NO: {},
+  en: {},
+}
 
 export default defineComponent({
   name: 'videofeedcard',
@@ -38,7 +44,9 @@ export default defineComponent({
     statusItem: { type: Object as PropType<FeedListItem>, required: true },
   },
   setup() {
+    const { t } = useI18n({ messages })
     return {
+      t,
       baseUrl,
     }
   },
