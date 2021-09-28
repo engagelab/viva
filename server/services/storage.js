@@ -145,6 +145,7 @@ const getSignedUrlS3URL = async ({ keyname }) => {
 const generatePath = function ({ list, dataset, video }, delimiter) {
   const separator = delimiter || '/'
   const whitespace = / /g
+  let owner = 'unknownOwner'
   if (list.length < 1) return ''
   return list
     .map((p) => {
@@ -156,7 +157,8 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
         case 'timeStamp':
           return moment(video.details.created).format('dd-mmm-YYYY-h-mm-ss')
         case 'owner':
-          return dataset.users.owner.replace(whitespace, '')
+          owner = dataset.users.owner.profile.fullName || 'unknownOwner'
+          return owner.replace(whitespace, '')
         case 'userID':
           return video.users.owner
         default:
@@ -169,7 +171,7 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
 // RECOMMENDED
 const fetchStorage = (video) => {
   return new Promise((resolve, reject) => {
-    Dataset.findById(video.dataset.id, (error, dataset) => {
+    Dataset.findById(video.dataset.id).populate('users.owner').exec((error, dataset) => {
       if (error || !dataset) return reject(error)
       let stores = []
       dataset.storages.forEach((storage) => {

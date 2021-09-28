@@ -108,7 +108,7 @@ router.post('/dataset', utilities.authoriseUser, (request, response, next) => {
   )
 })
 
-// UPDATE dataset selection (for all users)
+// UPDATE dataset selection (for all users - mobile app)
 router.put(
   '/dataset/selection',
   utilities.authoriseUser,
