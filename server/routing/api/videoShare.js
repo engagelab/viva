@@ -128,7 +128,6 @@ router.get('/videos/share', utilities.authoriseUser, (request, response) => {
   if (request.session.canvasData) {
     fetchDatasetsBasedOnCourse(request.session.canvasData.courseId).then(
       (datasets) => {
-        console.log(datasets)
         // Filter video based on datasets for a course
         const ids = datasets.map((dataset) => dataset._id)
         query = {
