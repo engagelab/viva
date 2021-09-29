@@ -1,3 +1,21 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div>
     <p class="text-red-600 ml-2">{{ t('dataset') }}</p>
@@ -62,21 +80,34 @@
 
       <SelectionHandling @updated="selectionUpdated"></SelectionHandling>
 
-      <ConsentHandling @updated="consentUpdated"></ConsentHandling>
+      <ConsentHandling
+        @updated="consentUpdated"
+        :consent="dataset.consent"
+      ></ConsentHandling>
 
       <div>
         <p class="text-red-600 mt-4 ml-2">
           {{ t('storage') }}
           <span class="mt-4 ml-6 text-xs text-black">*{{ t('warning1') }}</span>
         </p>
-        <div v-for="s in dataset.storages" :key="s._id">
+        <div
+          class="flex flex-col"
+          v-for="s in configurableStorages"
+          :key="s._id"
+        >
           <StorageHandling :storage="s" @updated="storageUpdated" />
+          <Button
+            class="mt-2 p-0 rounded-lg self-end"
+            id="button-accept"
+            @click="removeStorage"
+            >{{ t('removeStorage') }}
+          </Button>
         </div>
         <Button
           class="mt-2 p-0 rounded-lg"
           id="button-accept"
           @click="addStorage"
-          >+ {{ t('Add') }}
+          >{{ t('addStorage') }}
         </Button>
       </div>
 
@@ -91,7 +122,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, watch } from 'vue'
+import { defineComponent, ref, Ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { uuid } from '@/utilities'
 import { useDatasetStore } from '@/store/useDatasetStore'
@@ -113,7 +144,8 @@ const messages = {
     'canvas courses': 'Canvas courses',
     storage: '',
     warning1: '',
-    add: '',
+    addStorage: 'add storage',
+    removeStorage: 'remove storage',
   },
   en: {
     dataset: 'Dataset',
@@ -124,13 +156,9 @@ const messages = {
     'canvas courses': 'Canvas courses',
     storage: 'Storage',
     warning1: 'Note: EduCloud storage not configurable here',
-    add: 'Add new storage',
+    addStorage: 'Add new storage',
+    removeStorage: 'Remove storage',
   },
-}
-
-interface OptionListItem {
-  itemName: string
-  item: string
 }
 
 // This component completes setup of the app after login
@@ -152,11 +180,9 @@ export default defineComponent({
 
     const { getters: appGetters } = useAppStore()
     const currentSubset = ref('')
-    const groups: OptionListItem[] = []
     let dataset: Ref<Dataset> = ref(new Dataset())
 
     const resetData = (d: Dataset) => {
-      groups.length = 0
       dataset.value = new Dataset(d)
     }
 
@@ -178,6 +204,14 @@ export default defineComponent({
         category: [],
       }
       dataset.value.storages.push(newStorage)
+    }
+
+    const removeStorage = (id: string) => {
+      const index = dataset.value.storages.findIndex((s) => s._id === id)
+      if (index) {
+        dataset.value.storages.splice(index, 1)
+        unsavedData.value = true
+      }
     }
 
     const selectionUpdated = (s: string[]) => {
@@ -205,6 +239,12 @@ export default defineComponent({
       datasetActions.updateDataset(dataset.value)
       unsavedData.value = false
     }
+
+    const configurableStorages = computed(() => {
+      return dataset.value.storages.filter(
+        (s) => s.kind !== VIDEO_STORAGE_TYPES.educloud
+      )
+    })
     return {
       t,
       dataset,
@@ -216,7 +256,9 @@ export default defineComponent({
       storageUpdated,
       unsavedData,
       addStorage,
+      removeStorage,
       save,
+      configurableStorages,
     }
   },
 })

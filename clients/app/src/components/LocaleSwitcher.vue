@@ -1,4 +1,4 @@
-<!-- Designed and developed by Richard Nesnass, Hoang Bao Ngo, Sharanya Manivasagam, Ole Smørdal, Ingvill Rasmussen, and Jesus Gonzalez Torres
+<!-- Copyright 2020, 2021 Richard Nesnass, Hoang Bao Ngo, Sharanya Manivasagam, Ole Smørdal, Ingvill Rasmussen, and Jesus Gonzalez Torres
 
  This file is part of Talkwall.
 

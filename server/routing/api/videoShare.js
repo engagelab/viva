@@ -1,6 +1,23 @@
 /*
- Designed and developed by Richard Nesnass & Sharanya Manivasagam
-*/
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 const router = require('express').Router()
 const utilities = require('../../utilities')
@@ -60,7 +77,6 @@ router.put(
           s.title = updatedShare.title
           s.description = updatedShare.description
           s.edl = updatedShare.edl
-          s.comment = updatedShare.comment
           s.status = updatedShare.status
           v.save((saveError) => {
             if (saveError) return next(saveError)
@@ -112,7 +128,6 @@ router.get('/videos/share', utilities.authoriseUser, (request, response) => {
   if (request.session.canvasData) {
     fetchDatasetsBasedOnCourse(request.session.canvasData.courseId).then(
       (datasets) => {
-        console.log(datasets)
         // Filter video based on datasets for a course
         const ids = datasets.map((dataset) => dataset._id)
         query = {
@@ -155,7 +170,6 @@ router.post(
   async (request, response, next) => {
     // Create a subdocument based on the Videos 'users.sharing.annotations' schema
     const newAnnotation = Video.schema.path('users.sharing.annotations').cast([request.body])[0]
-    // const newAnnotation = await model('Annotation', annotationSchema).create(request.body)
     Video.findOneAndUpdate(
       { 'details.id': request.query.videoID, 'users.sharing._id': ObjectId(request.query.shareID) },
       { $push: { 'users.sharing.$.annotations': newAnnotation } }, // '$' is the first item that matches the query
@@ -178,7 +192,7 @@ router.put(
         'details.id': request.query.videoID,
       },
       {
-        'users.sharing.$[s].annotations.$[a].comment': request.body.comment,
+        'users.sharing.$[s].annotations.$[a].text': request.body.text,
         'users.sharing.$[s].annotations.$[a].time': request.body.time
       },
       { new: true, arrayFilters: [
@@ -202,23 +216,63 @@ router.put(
   }
 )
 
-router.delete(
-  '/video/share/annotate',
+// Add a comment to an existing annotation
+router.put(
+  '/video/share/annotation/comment',
   utilities.authoriseUser,
-  async (request, response, next) => {
+  (request, response, next) => {
     Video.findOneAndUpdate(
+      { 'details.id': request.query.videoID },
       {
-        'details.id': request.query.videoID,
-        'users.sharing._id': ObjectId(request.query.shareID),
+        $push: { 'users.sharing.$[s].annotations.$[a].comments': request.body }
       },
-      {
-        $pull: { // $pull removes item(s) from an array
-          'users.sharing.annotations': { _id: ObjectId(request.query.annotationID) },
-        }
-      },
+      { arrayFilters: [
+        {'s._id': ObjectId(request.query.shareID)},
+        {'a._id': ObjectId(request.query.annotationID)}
+      ]},
       (error) => {
         if (error) return next(error)
-        response.status(200).end()
+        else response.status(200).end()
+      }
+    )
+  }
+)
+
+router.delete(
+  '/video/share/annotation',
+  utilities.authoriseUser,
+  (request, response, next) => {
+    Video.findOneAndUpdate(
+      { 'details.id': request.query.videoID, 'users.sharing._id': ObjectId(request.query.shareID) },
+      { $pull: { 'users.sharing.$.annotations': { '_id' : request.query.annotationID } } },
+      { new: true },
+      (error) => {
+        if (error) return next(error)
+        else response.status(200).end()
+      }
+    )
+  }
+)
+
+// Add a comment to an existing share
+// Returns the updated share so it can be updated front-end
+router.put(
+  '/video/share/comment',
+  utilities.authoriseUser,
+  (request, response, next) => {
+    const shareID = ObjectId(request.query.shareID)
+    Video.findOneAndUpdate(
+      { 'details.id': request.query.videoID, 'users.sharing._id': shareID },
+      {
+        $push: { 'users.sharing.$.comments': request.body }
+      },
+      { new: true },
+      (error, updatedVideo) => {
+        if (error) return next(error)
+        else {
+          const share = updatedVideo.users.sharing.id(shareID)
+          response.send(share)
+        }
       }
     )
   }

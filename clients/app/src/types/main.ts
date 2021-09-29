@@ -1,3 +1,23 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import {
   USER_ROLE,
   CONSENT_TYPES,
@@ -458,8 +478,10 @@ interface DatasetStatus {
   lastUpdated: Date
   lockedBy: string
 }
-interface DatasetConsent {
+export interface DatasetConsent {
   kind: CONSENT_TYPES
+  value: string
+  formId: number
 }
 interface DatasetUsers {
   owner: string
@@ -486,7 +508,6 @@ export class Dataset {
   name: string
   description: string
   created: Date
-  formId: string
   status: DatasetStatus
   consent: DatasetConsent
   users: DatasetUsers
@@ -499,13 +520,14 @@ export class Dataset {
     this.name = ''
     this.description = ''
     this.created = new Date()
-    this.formId = ''
     this.status = {
       lastUpdated: new Date(),
       lockedBy: '',
     }
     this.consent = {
       kind: CONSENT_TYPES.manual,
+      value: data?.consent.value || '',
+      formId: data?.consent.formId || 0,
     }
     this.users = {
       owner: '',
@@ -520,13 +542,15 @@ export class Dataset {
       this.name = data.name
       this.description = data.description
       this.created = new Date(data.created)
-      this.formId = data.formId
       this.status = {
         lastUpdated: new Date(data.status.lastUpdated),
         lockedBy: data.status.lockedBy,
       }
       this.consent = {
-        kind: data.consent.kind || CONSENT_TYPES.manual,
+        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manual,
+        // value: fetchValue(data.consent),
+        value: data.consent?.value ? data.consent.value : '',
+        formId: data.consent?.formId ? data.consent.formId : 0,
       }
       this.users = {
         owner: data.users.owner,

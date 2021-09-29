@@ -1,10 +1,41 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
-  <div>
+  <div class="flex flex-col">
+    <div class="flex flex-row justify-end p-2">
+      <IconBase
+        icon-name="selectNoneCross"
+        class="text-white cursor-pointer"
+        alt="created-sort-button"
+        @click="selectNone()"
+        viewBox="0 0 144.54 144.54"
+        width="18"
+        height="18"
+        ><IconCross />
+      </IconBase>
+    </div>
     <template
+      class="my-6"
       v-if="detailMode.submode === VIDEO_DETAIL_MODE.none && selectedItemShare"
     >
       <div
-        class="my-6 flex flex-row flex-wrap bg-viva-grey-400 text-viva-grey-500 rounded-xl p-6 w-auto lg:w-192"
+        class="flex flex-row flex-wrap bg-viva-grey-400 text-viva-grey-500 rounded-xl p-6 w-auto lg:w-192"
       >
         <div class="flex flex-col w-auto lg:w-72">
           <div
@@ -125,6 +156,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, ref, Ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
 import {
@@ -138,9 +170,22 @@ import Player from '@/views/Player.vue'
 import Button from '@/components/base/Button.vue'
 import trimButtonSVG from '@/assets/icons/svg/trim.svg'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
+import IconBase from '@/components/icons/IconBase.vue'
+import IconCross from '@/components/icons/IconCross.vue'
 
 const { getters: appGetters } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
+
+const messages = {
+  nb_NO: {
+    myVideos: 'Videoer min',
+    sharedVideos: 'Delt med meg',
+  },
+  en: {
+    myVideos: 'My Videos',
+    sharedVideos: 'Shared to me',
+  },
+}
 
 interface NARListItem {
   itemName: string
@@ -152,8 +197,11 @@ export default defineComponent({
   components: {
     Button,
     Player,
+    IconBase,
+    IconCross,
   },
   setup() {
+    const { t } = useI18n({ messages })
     const selectedItemShare = videoGetters.selectedItemShare
     const showUsers = ref(false)
     const unsavedData = ref(false)
@@ -172,6 +220,7 @@ export default defineComponent({
       edl: { trim: [0, 0], blur: [] },
       annotations: [],
       comments: [],
+      updateFromShare: VideoSharing.prototype.updateFromShare,
     })
 
     const resetData = (li: ListItemShare) => {
@@ -189,6 +238,7 @@ export default defineComponent({
           edl: s.edl,
           annotations: s.annotations,
           comments: s.comments,
+          updateFromShare: VideoSharing.prototype.updateFromShare,
         }
       }
     }
@@ -239,6 +289,7 @@ export default defineComponent({
     }
 
     return {
+      t,
       VIDEO_DETAIL_MODE,
       baseUrl,
       myLTIID,
@@ -254,6 +305,7 @@ export default defineComponent({
       playVideo,
       updateDuration,
       detailMode: videoGetters.detailMode,
+      selectNone: videoActions.selectNone,
 
       // assets
       trimButtonSVG,

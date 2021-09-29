@@ -1,3 +1,23 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import {
   USER_ROLE,
   CONSENT_TYPES,
@@ -352,7 +372,7 @@ export class Video {
       name: data.dataset.name,
       selection: data.selection,
     })
-    this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
+    this.updateUsers({ owner: data.user.id, sharedWith: [], sharing: [] })
     this.storages = data.dataset.storages.map((storage) => ({
       kind: storage.kind,
       path: '',
@@ -500,11 +520,7 @@ export class Video {
     this.status.hasUnsavedChanges = false
   }
 }
-// const fetchValue = (consent: DatasetConsent) => {
-//   if (consent.value) return consent.value
-//   //else if (consent.kind) return behandlings[consent.kind].description
-//   else return ''
-// }
+
 export interface DataPath {
   path: string
   currentKey: string
@@ -528,11 +544,7 @@ export interface DatasetConsent {
   formId: number
 }
 interface DatasetUsers {
-  owner: {
-    profile: {
-      username: string
-    }
-  }
+  owner: string // ID of User who created this Dataset
   groups: string[]
 }
 export interface DatasetStorage {
@@ -579,17 +591,13 @@ export class Dataset {
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manual,
-      value: '',
-      formId: 0,
+      kind: data?.consent.kind || CONSENT_TYPES.manual,
+      value: data?.consent.value || '',
+      formId: data?.consent.formId || 0,
     }
     this.users = {
-      owner: {
-        profile: {
-          username: '',
-        },
-      },
-      groups: [],
+      owner: data?.users.owner || '(unknown)',
+      groups: data?.users.groups || [],
     }
     this.selection = {}
     this.selectionPriority = []
@@ -613,9 +621,6 @@ export class Dataset {
         value: data.consent?.value ? data.consent.value : '',
         formId: data.consent?.formId ? data.consent.formId : 0,
       }
-
-      this.users.owner.profile.username = data.users?.owner?.profile?.username
-      this.users.groups = data.users?.groups || []
 
       this.selection = data?.selection ? data.selection : {}
       this.selectionPriority = data.selectionPriority || []
@@ -694,14 +699,14 @@ export interface UserRecordingInProcess {
 }
 
 export class User {
-  _id: string
+  id: string
   status: UserStatus
   profile: UserProfile
   datasetConfig: UserDatasetConfig
   videos: UserVideos
 
   constructor(data?: User) {
-    this._id = ''
+    this.id = ''
     this.status = {
       role: USER_ROLE.user,
       created: new Date(),
@@ -731,7 +736,7 @@ export class User {
       removedDraftIDs: [],
     }
     if (data) {
-      this._id = data._id
+      this.id = data.id
       this.status = data.status
       this.profile = data.profile
       this.datasetConfig = {

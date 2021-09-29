@@ -1,3 +1,21 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div class="ml-2">
     <p class="text-red-600 my-4">Legal grounds</p>
@@ -47,7 +65,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref } from 'vue'
+import { defineComponent, ref, Ref, PropType, toRefs, watch } from 'vue'
 import { behandlings, CONSENT_TYPES } from '@/constants'
 import { DatasetConsent } from '@/types/main'
 import { useI18n } from 'vue-i18n'
@@ -66,8 +84,12 @@ export default defineComponent({
   components: {
     AnswerInput,
   },
+  props: {
+    consent: { type: Object as PropType<DatasetConsent>, required: true },
+  },
   emits: ['updated'],
   setup(props, context) {
+    const { consent } = toRefs(props)
     const { getters: appGetters } = useAppStore()
     const { t } = useI18n({ messages })
     const consentData: Ref<DatasetConsent> = ref({
@@ -75,6 +97,20 @@ export default defineComponent({
       value: '',
       formId: 0,
     })
+
+    const resetData = (c: DatasetConsent) => {
+      consentData.value.kind = c.kind
+      consentData.value.value = c.value
+      consentData.value.formId = c.formId
+    }
+
+    watch(
+      () => consent.value,
+      (c) => {
+        if (c) resetData(c)
+      }
+    )
+    resetData(consent.value)
 
     function updatedConsent() {
       context.emit('updated', consentData.value)

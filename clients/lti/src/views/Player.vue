@@ -1,11 +1,45 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div
-    class="flex flex-col bg-viva-grey-400 rounded-xl w-full"
+    class="flex flex-col w-full"
     v-if="selectedItem"
     :key="selectedItem.video.details.id"
-    @click.prevent.self
   >
-    <div class="flex flex-col scrolling-touch w-full relative">
+    <div
+      v-if="detailMode.mode === VIDEO_DETAIL_MODE.play"
+      class="flex flex-row justify-end m-2"
+    >
+      <IconBase
+        icon-name="selectNoneCross"
+        class="text-white cursor-pointer"
+        alt="created-sort-button"
+        @click="selectNone()"
+        viewBox="0 0 144.54 144.54"
+        width="18"
+        height="18"
+        ><IconCross />
+      </IconBase>
+    </div>
+    <div
+      class="flex flex-col scrolling-touch w-full relative bg-viva-grey-400 rounded-xl"
+    >
       <div class="flex-none">
         <video
           :class="fullScreenMode ? 'playbackVideo' : 'playbackVideoSmall'"
@@ -22,6 +56,7 @@
       </div>
 
       <div class="absolute bottom-0 flex flex-col w-full">
+        <!-- Trimming slider -->
         <Slider
           v-if="detailMode.submode === VIDEO_DETAIL_MODE.trim"
           class="progress-slider top-0 left-0 w-full"
@@ -31,6 +66,7 @@
           :min="scrubberMin"
           @change="adjustTrim"
         />
+        <!-- Play progress slider -->
         <Slider
           v-else
           class="progress-slider top-0 left-0 w-full"
@@ -76,11 +112,12 @@
                   :step="-1"
                   :min="0"
                   :max="1"
-                  v-model="volumeLevel"
+                  v-model="currentVolume"
+                  @change="adjustVolume"
                 />
               </div>
               <img
-                v-if="volumeLevel > 0"
+                v-if="currentVolume > 0"
                 :src="soundOnButtonSVG"
                 alt="volumeOn-button"
               />
@@ -93,14 +130,38 @@
         </div>
       </div>
     </div>
+    <div
+      class="flex flex-row justify-end"
+      v-if="detailMode.submode === VIDEO_DETAIL_MODE.trim"
+    >
+      <Button
+        class="self-end mr-4"
+        :childclass="'w-32'"
+        :backgroundcolour="'bg-white'"
+        :textcolour="'text-black'"
+        @vclick.stop="cancelTrim()"
+      >
+        Cancel
+      </Button>
+      <Button
+        class="self-end"
+        :childclass="'w-32'"
+        :disabled="updatedTrim.length === 0"
+        :backgroundcolour="'bg-viva-blue-800'"
+        :textcolour="'text-white'"
+        @vclick.stop="confirmTrim()"
+      >
+        Done
+      </Button>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, Ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { EditDecriptionList, Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
-const { getters: videoGetters } = useVideoStore()
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import { formatTime } from '@/utilities'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
@@ -108,28 +169,48 @@ import pauseButtonSVG from '@/assets/icons/svg/pause.svg'
 import fullscreenButtonSVG from '@/assets/icons/svg/scale_up.svg'
 import soundOnButtonSVG from '@/assets/icons/svg/sound_on.svg'
 import soundOffButtonSVG from '@/assets/icons/svg/sound_off.svg'
+import Button from '@/components/base/Button.vue'
+import IconBase from '@/components/icons/IconBase.vue'
+import IconCross from '@/components/icons/IconCross.vue'
 import Slider from '@vueform/slider'
+
+const { getters: videoGetters, actions: videoActions } = useVideoStore()
+
+const messages = {
+  nb_NO: {
+    myVideos: 'Videoer min',
+    sharedVideos: 'Delt med meg',
+  },
+  en: {
+    myVideos: 'My Videos',
+    sharedVideos: 'Shared to me',
+  },
+}
 
 export default defineComponent({
   name: 'Player',
   components: {
+    Button,
     Slider,
+    IconBase,
+    IconCross,
   },
   emits: ['trim', 'currenttimetrimmed'],
   setup(props, context) {
+    const { t } = useI18n({ messages })
     const selectedItem = videoGetters.selectedItem
     const selectedItemShare = videoGetters.selectedItemShare
     const playbackVideo: Ref<HTMLVideoElement | null> = ref(null)
     const video: Ref<Video> = ref(new Video())
     const edl: Ref<EditDecriptionList> = ref({ trim: [0, 0], blur: [] })
     const fullScreenMode = ref(false)
-    const volumeLevel = ref(0)
     const volumeMenu = ref(false)
     const localEDL = ref({ trim: [0, 0], blur: [] })
     const playing = ref(false)
 
-    let currentVolume = ref(0)
-    let currentPlayerTime = ref(0)
+    const updatedTrim: Ref<number[]> = ref([])
+    const currentVolume = ref(0.5)
+    const currentPlayerTime = ref(0)
 
     const formatVolumeTooltip = function (value: number) {
       return Math.floor(value * 100)
@@ -186,9 +267,11 @@ export default defineComponent({
       return 'video/mp4'
     })
 
+    // Event listener for UI volume adjustment
     function adjustVolume(level: number): void {
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) player.volume = level
+      // 'currentVolume' will be adjusted automatically by v-model
     }
 
     function adjustProgress(value: number): void {
@@ -198,6 +281,8 @@ export default defineComponent({
       }
     }
 
+    // Event listener for UI trim adjustment
+    // Trim value is only emitted upon 'save'. See 'confirmTrim()'
     function adjustTrim(newValue: number[]): void {
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
@@ -206,7 +291,7 @@ export default defineComponent({
           player.currentTime = newValue[1]
           currentPlayerTime.value = player.currentTime
         }
-        context.emit('trim', newValue)
+        updatedTrim.value = newValue
       }
     }
 
@@ -250,7 +335,7 @@ export default defineComponent({
     function startPlaying() {
       const player: HTMLVideoElement | null = playbackVideo.value
       if (player) {
-        currentVolume.value = player.volume
+        player.volume = currentVolume.value
         if (playing.value) {
           player.pause()
           playing.value = false
@@ -308,7 +393,18 @@ export default defineComponent({
       }
     }
 
+    function cancelTrim(): void {
+      videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
+    }
+
+    function confirmTrim(): void {
+      context.emit('trim', updatedTrim.value)
+      updatedTrim.value = []
+      videoActions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
+    }
+
     return {
+      t,
       // computed
       duration,
       scrubberMax,
@@ -324,18 +420,22 @@ export default defineComponent({
       formatProgressTooltip,
       adjustProgress,
       adjustTrim,
+      selectNone: videoActions.selectNone,
+      cancelTrim,
+      confirmTrim,
       // data
       baseUrl,
       VIDEO_DETAIL_MODE,
       selectedItem,
       video,
       playerTime,
-      volumeLevel,
       videoMimeType,
       playbackVideo,
       currentPlayerTime,
       currentTimeTrimmed,
+      currentVolume,
       localEDL,
+      updatedTrim,
       // booleans
       playing,
       fullScreenMode,

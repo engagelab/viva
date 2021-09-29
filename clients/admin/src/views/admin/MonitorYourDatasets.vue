@@ -1,10 +1,28 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div class="flex flex-col">
     <div class="flex flex-row flex-wrap mb-4">
       <!-- Sidebar -->
       <div class="h-full w-1/4">
         <h2 class="font-bold">{{ t('datasets') }}</h2>
-        <ul class="mt-2" style="list-style-type: none">
+        <ul class="my-2" style="list-style-type: none">
           <li
             v-for="(dataset, datasetIndex) in datasets"
             :key="datasetIndex"
@@ -12,8 +30,16 @@
             @click="setSelectedDataset(dataset._id)"
           >
             {{ dataset.name }}
+            <span
+              class="text-xs text-gray-600"
+              v-if="dataset.users.owner === user.id"
+              >({{ t('createdByYou') }})</span
+            >
           </li>
         </ul>
+        <Button v-if="!showInput" @vclick="showInput = !showInput">
+          {{ t('create') }}
+        </Button>
       </div>
       <!-- Table -->
       <div class="w-3/4">
@@ -21,9 +47,6 @@
       </div>
     </div>
     <div class="flex flex-row mt-8">
-      <Button v-if="!showInput" @vclick="showInput = !showInput">
-        {{ t('create') }}
-      </Button>
       <div class="flex flex-row" v-if="showInput">
         <input
           v-model="newDatasetName"
@@ -47,7 +70,9 @@
 import { computed, ComputedRef, defineComponent, onMounted, ref } from 'vue'
 import { Dataset } from '@/types/main'
 import { useDatasetStore } from '../../store/useDatasetStore'
+import { useAppStore } from '../../store/useAppStore'
 const { actions: datasetActions, getters: datasetGetters } = useDatasetStore()
+const { getters: appGetters } = useAppStore()
 import DatasetItem from '@/components/DatasetItem.vue'
 import Button from '@/components/base/Button.vue'
 
@@ -55,11 +80,13 @@ import { useI18n } from 'vue-i18n'
 const messages = {
   nb_NO: {
     datasets: 'Datasets',
-    create: 'Create new dataset',
+    create: 'Ny dataset',
+    createdByYou: 'laget av deg',
   },
   en: {
     datasets: 'Datasets',
-    create: 'Create new dataset',
+    create: 'New dataset',
+    createdByYou: 'made by you',
   },
 }
 
@@ -115,6 +142,7 @@ export default defineComponent({
       datasets,
       headers,
       selectedDataset: datasetGetters.selectedDataset,
+      user: appGetters.user,
       //Methods
       createDataset,
       setSelectedDataset,

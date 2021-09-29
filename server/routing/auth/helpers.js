@@ -1,3 +1,23 @@
+/*
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 const jwt = require('jsonwebtoken')
 const { userRoles, organizations, platforms } = require('../../constants')
 const { createReference } = require('../../utilities')
@@ -189,8 +209,8 @@ function completeCallback(request, response, user) {
   // Web app receives a Session immediately, does not need to pass a token
   request.session.ref = user.id
   if (process.env.NODE_ENV !== 'test') {
-    console.log(s)
-    console.log(`Session: ${request.session.ref}`)
+    console.log(`Redirecting client to: ${redirectUrl}`)
+    console.log(`${s} Session: ${request.session.ref}`)
   }
   return response.redirect(redirectUrl)
 }

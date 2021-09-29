@@ -1,16 +1,23 @@
-//Store to video operations
-/**
- *
- TODO:
- 1. Route call to mongoDB to fetch own and shared video metadata  for the logged in user
- 2. httpsRequest to S3 bucket  fetch the video based on the video metadata
- 3. Route call to canvas to  fetch users and roles for the  course ÍD
- 4. Action function to play the video (if it is shared video , just play trim part of it )
- 5. Action function to store the sharing info  , also  checks number of sharing possible -to check dataset
- 6. Action function to retrive access to sharing
- 7. Route call to mongoDB to update video metadata
- */
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
 
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import { ref, Ref, computed, ComputedRef } from 'vue'
 import {
   Video,
@@ -21,8 +28,11 @@ import {
   XHR_REQUEST_TYPE,
   VideoSharing,
   ListItemShare,
+  VideoSharingData,
   VideoDetailsData,
   Annotation,
+  AnnotationComment,
+  ShareComment,
 } from '../types/main'
 import { SORT_BY, VIDEO_DETAIL_MODE, VIDEO_SHARING_MODE } from '@/constants'
 import { apiRequest } from '../api/apiRequest'
@@ -208,6 +218,7 @@ interface Actions {
   selectNoOriginal: () => void
   selectNoShare: () => void
   detailMode: (mode: VIDEO_DETAIL_MODE, submode: VIDEO_DETAIL_MODE) => void
+  selectNone: () => void
   updateLocalVideo: (video: Video) => Promise<void>
   updateVideoDetails: (id: string, details: VideoDetailsData) => Promise<void>
   createShare: (listItem: ListItem) => Promise<void>
@@ -229,6 +240,17 @@ interface Actions {
     listItemShare: ListItemShare,
     annotation: Annotation
   ) => Promise<void>
+
+  createAnnotationComment: (
+    listItemShare: ListItemShare,
+    annotation: Annotation,
+    comment: AnnotationComment
+  ) => Promise<void>
+
+  createComment: (
+    listItemShare: ListItemShare,
+    comment: ShareComment
+  ) => Promise<void>
 }
 const actions = {
   detailMode: function (
@@ -238,6 +260,31 @@ const actions = {
     state.value.detailMode.mode = mode
     state.value.detailMode.submode = submode
   },
+  selectNone(): void {
+    const { mode, submode } = state.value.detailMode
+    switch (mode) {
+      case VIDEO_DETAIL_MODE.annotate:
+      case VIDEO_DETAIL_MODE.play:
+        state.value.detailMode.mode = VIDEO_DETAIL_MODE.none
+        state.value.detailMode.submode = VIDEO_DETAIL_MODE.none
+        actions.selectNoOriginal()
+        actions.selectNoShare()
+        break
+      case VIDEO_DETAIL_MODE.share:
+        if (
+          submode === VIDEO_DETAIL_MODE.play ||
+          submode === VIDEO_DETAIL_MODE.trim
+        )
+          actions.detailMode(VIDEO_DETAIL_MODE.share, VIDEO_DETAIL_MODE.none)
+        else {
+          actions.detailMode(VIDEO_DETAIL_MODE.none, VIDEO_DETAIL_MODE.none)
+          actions.selectNoShare()
+        }
+        break
+      default:
+        break
+    }
+  },
   createShare: function (listItem: ListItem): Promise<void> {
     const videoID = listItem.video.details.id
     const payload: APIRequestPayload = {
@@ -246,21 +293,26 @@ const actions = {
       query: { id: videoID },
       route: '/api/video/share',
     }
-    return apiRequest<VideoSharing>(payload).then((newShare: VideoSharing) => {
-      const v = state.value.videos.get(videoID)
-      if (v) {
-        const share: ListItemShare = {
-          id: newShare._id,
-          creator: newShare.creator,
-          creatorName: appActions.nameAndRole(newShare.creator),
-          users: newShare.users.map((u) => appActions.nameAndRole(u)),
-          share: newShare,
-          item: listItem,
+    return apiRequest<VideoSharingData>(payload).then(
+      (newShareData: VideoSharingData) => {
+        const newShare: VideoSharing = new VideoSharing().updateFromShare(
+          newShareData
+        )
+        const v = state.value.videos.get(videoID)
+        if (v) {
+          const share: ListItemShare = {
+            id: newShare._id,
+            creator: newShare.creator,
+            creatorName: appActions.nameAndRole(newShare.creator),
+            users: newShare.users.map((u) => appActions.nameAndRole(u)),
+            share: newShare,
+            item: listItem,
+          }
+          state.value.selectedItemShare = share
+          v.users.sharing.push(newShare)
         }
-        state.value.selectedItemShare = share
-        v.users.sharing.push(newShare)
       }
-    })
+    )
   },
   // Update sharing for a selected video
   updateShare: function (
@@ -390,6 +442,50 @@ const actions = {
         }
       }
     })
+  },
+
+  createAnnotationComment: function (
+    listItemShare: ListItemShare,
+    annotation: Annotation,
+    comment: AnnotationComment
+  ): Promise<void> {
+    const videoID = listItemShare.item.video.details.id
+    const shareID = listItemShare.share._id
+    const annotationID = annotation._id || ''
+
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.PUT,
+      credentials: true,
+      body: comment,
+      query: { videoID, shareID, annotationID },
+      route: '/api/video/share/annotation/comment',
+    }
+    return apiRequest<void>(payload).then(() => {
+      const v = state.value.videos.get(videoID)
+      if (v) v.updateAnnotation(listItemShare.share, annotation)
+    })
+  },
+
+  createComment: function (
+    listItemShare: ListItemShare,
+    comment: ShareComment
+  ): Promise<void> {
+    const videoID = listItemShare.item.video.details.id
+    const shareID = listItemShare.share._id
+
+    const payload: APIRequestPayload = {
+      method: XHR_REQUEST_TYPE.PUT,
+      credentials: true,
+      body: comment,
+      query: { videoID, shareID },
+      route: '/api/video/share/comment',
+    }
+    return apiRequest<VideoSharingData>(payload).then(
+      (vsd: VideoSharingData) => {
+        const v = state.value.videos.get(videoID)
+        if (v) v.updateSharing([vsd])
+      }
+    )
   },
 
   //Fetch videometadata from mongoDB

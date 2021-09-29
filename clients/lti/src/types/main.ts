@@ -1,3 +1,23 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import {
   USER_ROLE,
   CONSENT_TYPES,
@@ -238,19 +258,25 @@ interface VideoStatus {
 export interface ShareComment {
   created: Date
   creator: string // LTI ID
-  comment: string
+  text: string
 }
 interface ShareCommentData {
   created: string
   creator: string // LTI ID
-  comment: string
+  text: string
+}
+export interface AnnotationComment {
+  created: Date
+  creator: string
+  text: string
 }
 export class Annotation {
   _id?: string
   created: Date
   creator: string // LTI ID
-  comment: string
+  text: string
   time: number[] // e.g [2.35, 10.04] or just [2.35]
+  comments: AnnotationComment[]
 
   // front end only
   nowActive: boolean
@@ -259,8 +285,15 @@ export class Annotation {
     this._id = a._id
     this.created = new Date(a.created)
     this.creator = a.creator
-    this.comment = a.comment
+    this.text = a.text
     this.time = a.time
+    this.comments = a.comments.map((c) => {
+      return {
+        creator: c.creator,
+        created: new Date(c.created),
+        text: c.text,
+      }
+    })
     this.nowActive = false
   }
 }
@@ -268,8 +301,15 @@ export interface AnnotationData {
   _id: string
   created: string
   creator: string // LTI ID
-  comment: string
+  text: string
   time: number[] // e.g [2.35, 10.04] or just [2.35]
+  comments: [
+    {
+      created: string
+      creator: string
+      text: string
+    }
+  ]
 }
 export class VideoSharing {
   _id = '' // DB ID of the share (not the video!)
@@ -283,11 +323,11 @@ export class VideoSharing {
   comments: ShareComment[] = []
   edl: EditDecriptionList = { trim: [], blur: [] }
 
-  constructor(vs: VideoSharing | VideoSharingData) {
-    this.updateFromShare(vs)
+  constructor(vs: VideoSharing | VideoSharingData | void) {
+    if (vs) this.updateFromShare(vs)
   }
 
-  updateFromShare(vs: VideoSharing | VideoSharingData): void {
+  updateFromShare(vs: VideoSharing | VideoSharingData): VideoSharing {
     this._id = vs._id
     this.access = vs.access
     this.creator = vs.creator
@@ -304,14 +344,15 @@ export class VideoSharing {
         return {
           created: new Date(c.created),
           creator: c.creator,
-          comment: c.comment,
+          text: c.text,
         }
       })
     }
+    return this
   }
 }
 
-interface VideoSharingData {
+export interface VideoSharingData {
   _id: string // DB ID of the share (not the video!)
   creator: string // LTI ID
   created: string
@@ -533,8 +574,18 @@ export class Video {
     updatedSharing.forEach((newShare: VideoSharing | VideoSharingData) => {
       const oldShare = this.users.sharing.find((os) => os._id === newShare._id)
       if (oldShare) oldShare.updateFromShare(newShare)
-      else this.users.sharing.push(new VideoSharing(newShare))
+      else {
+        const createdShare = new VideoSharing()
+        createdShare.updateFromShare(newShare)
+        this.users.sharing.push(createdShare)
+      }
     })
+  }
+  deleteSharing(deletedSharing: VideoSharing): void {
+    const sIndex = this.users.sharing.findIndex(
+      (share) => share._id === deletedSharing._id
+    )
+    if (sIndex > -1) this.users.sharing.splice(sIndex, 1)
   }
   updateAnnotation(share: VideoSharing, updatedAnnotation: Annotation): void {
     const s = this.users.sharing.find((us) => us._id === share._id)
@@ -543,7 +594,8 @@ export class Video {
         (ua) => ua._id === updatedAnnotation._id
       )
       if (annotation) {
-        annotation.comment = updatedAnnotation.comment
+        annotation.text = updatedAnnotation.text
+        annotation.comments = updatedAnnotation.comments
         annotation.created = updatedAnnotation.created
         annotation.creator = updatedAnnotation.creator
         annotation.time = updatedAnnotation.time

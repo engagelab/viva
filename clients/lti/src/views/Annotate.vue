@@ -1,8 +1,38 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
-  <div>
+  <div class="flex flex-col my-6">
+    <div class="flex flex-row justify-end p-2">
+      <IconBase
+        icon-name="selectNoneCross"
+        class="text-white cursor-pointer"
+        alt="created-sort-button"
+        @click="selectNone()"
+        viewBox="0 0 144.54 144.54"
+        width="18"
+        height="18"
+        ><IconCross />
+      </IconBase>
+    </div>
     <div
       v-if="selectedItemShare"
-      class="my-6 flex flex-row flex-wrap bg-viva-grey-300 text-viva-grey-500 rounded-xl w-full"
+      class="flex flex-row flex-wrap bg-viva-grey-300 text-viva-grey-500 rounded-xl rounded-b-none w-full"
     >
       <div
         class="flex flex-col transition-width duration-500 ease-in-out"
@@ -78,13 +108,14 @@
         :class="[showAnnotations ? 'w-1/3' : 'w-0']"
       >
         <div
-          class="bg-viva-grey-400 text-viva-grey-500 rounded-xl ml-2 flex flex-col max-h-1/2"
+          class="bg-viva-grey-400 text-viva-grey-350 rounded-xl ml-2 flex flex-col"
+          style="max-height: 50vh"
           v-if="showAnnotations"
         >
           <div class="flex flex-row justify-between px-4 pt-4 text-white">
             <p>Annotations</p>
             <div class="flex flex-row">
-              <icon-base
+              <IconBase
                 icon-name="sortByVideoDate"
                 class="ml-2 stroke-current cursor-pointer"
                 :class="[sortByCreated ? 'text-yellow-500' : 'text-white']"
@@ -93,8 +124,8 @@
                 viewBox="0 0 68.37 68.37"
                 width="24"
                 height="24"
-                ><icon-sort-date />
-              </icon-base>
+                ><IconSortDate />
+              </IconBase>
               <icon-base
                 icon-name="sortByVideoTime"
                 class="ml-2 stroke-current cursor-pointer"
@@ -122,7 +153,79 @@
               :annotation="a"
               :upperBound="upperBound"
               @updated="updateAnnotation"
+              @deleted="deleteAnnotation"
+              @newcomment="newAnnotationComment"
             />
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Comments panel -->
+    <div
+      class="bg-viva-grey-400 flex flex-col h-full p-4 no-scrollbar overflow-y-auto"
+      v-if="selectedItemShare"
+    >
+      <div class="flex flex-col w-full justify-end">
+        <div class="flex flex-row w-full">
+          <div
+            class="flex items-center justify-center w-10 h-10 rounded-full text-white text-xs"
+            :style="{
+              'background-color': stringToColour(nameAndRole(myLTIID).name),
+            }"
+          >
+            {{ nameAndRole(myLTIID).abbreviation }}
+          </div>
+          <div
+            class="flex flex-grow ml-4 w-auto rounded-2xl bg-viva-grey-430 p-4"
+          >
+            <textarea
+              type="text"
+              class="w-full bg-transparent text-white"
+              placeholder="Write a comment"
+              v-model="commentText"
+            />
+          </div>
+        </div>
+        <div class="flex flex-row m-2 w-full justify-end p-2">
+          <Button
+            :childclass="'w-24 h-10'"
+            :backgroundcolour="'bg-viva-blue-800'"
+            :textcolour="'text-white'"
+            @vclick.stop="saveComment()"
+          >
+            Publish
+          </Button>
+        </div>
+      </div>
+      <div class="flex flex-col no-scrollbar overflow-y-auto max-h-60">
+        <div
+          v-for="(s, i) in selectedItemShare.share.comments"
+          :key="`share-comment-${i}`"
+          class="flex flex-col"
+        >
+          <div class="flex flex-row items-center text-xs mt-4">
+            <div
+              class="flex items-center justify-center w-10 h-10 rounded-full text-white"
+              :style="{
+                'background-color': stringToColour(nameAndRole(s.creator).name),
+              }"
+            >
+              {{ nameAndRole(s.creator).abbreviation }}
+            </div>
+            <p
+              class="font-serious font-medium h-4 ml-4"
+              :style="{
+                color: stringToColour(nameAndRole(s.creator).name),
+              }"
+            >
+              {{ nameAndRole(s.creator).name }}
+            </p>
+            <p class="leading-4 text-viva-grey-500">
+              &nbsp;•&nbsp;{{ formatCreationDate(s.created) }}
+            </p>
+          </div>
+          <div class="flex flex-row items-center text-xs text-white mt-4">
+            <p>{{ s.text }}</p>
           </div>
         </div>
       </div>
@@ -131,9 +234,11 @@
 </template>
 <script lang="ts">
 import { defineComponent, ref, ComputedRef, computed } from 'vue'
+import moment from 'moment'
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/store/useAppStore'
 import { useVideoStore } from '@/store/useVideoStore'
-import { Annotation } from '@/types/main'
+import { Annotation, AnnotationComment, ShareComment } from '@/types/main'
 import { stringToColour, formatDate } from '@/utilities'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import trimButtonSVG from '@/assets/icons/svg/trim.svg'
@@ -148,9 +253,21 @@ import Button from '@/components/base/Button.vue'
 import IconBase from '@/components/icons/IconBase.vue'
 import IconSortPlay from '@/components/icons/IconSortPlay.vue'
 import IconSortDate from '@/components/icons/IconSortDate.vue'
+import IconCross from '@/components/icons/IconCross.vue'
 
-const { getters: appGetters } = useAppStore()
+const { getters: appGetters, actions: appActions } = useAppStore()
 const { getters: videoGetters, actions: videoActions } = useVideoStore()
+
+const messages = {
+  nb_NO: {
+    myVideos: 'Videoer min',
+    sharedVideos: 'Delt med meg',
+  },
+  en: {
+    myVideos: 'My Videos',
+    sharedVideos: 'Shared to me',
+  },
+}
 
 export default defineComponent({
   name: 'Annotate',
@@ -161,14 +278,17 @@ export default defineComponent({
     IconBase,
     IconSortPlay,
     IconSortDate,
+    IconCross,
   },
   setup() {
+    const { t } = useI18n({ messages })
     const selectedItemShare = videoGetters.selectedItemShare
     const showUsers = ref(false)
     const showAnnotations = ref(false)
     const currentPlayerTime = ref(0)
     const sortByCreated = ref(false)
     const annotationText = ref('')
+    const commentText = ref('')
     const upperBound = ref(selectedItemShare.value?.share.edl.trim[1] || 0)
     const videoCurrentTime = ref(0)
     const myLTIID = appGetters.user.value.profile.ltiID
@@ -180,12 +300,17 @@ export default defineComponent({
       }
     }
 
+    function formatCreationDate(date: Date) {
+      return moment(date).format('MMM Do Y - H:mm')
+    }
+
     const addAnnotation = function () {
       const newAnnotation: Annotation = {
         created: new Date(),
         creator: myLTIID,
-        comment: annotationText.value,
+        text: annotationText.value,
         time: [currentPlayerTime.value],
+        comments: [],
         nowActive: false,
       }
       if (selectedItemShare.value)
@@ -193,13 +318,42 @@ export default defineComponent({
       annotationText.value = ''
     }
 
+    const saveComment = function () {
+      if (selectedItemShare.value) {
+        const comment: ShareComment = {
+          created: new Date(),
+          creator: myLTIID,
+          text: commentText.value,
+        }
+        videoActions.createComment(selectedItemShare.value, comment)
+        commentText.value = ''
+      }
+    }
+
     const sortBy = function (type: string) {
       sortByCreated.value = type === 'creationtime'
     }
 
-    const updateAnnotation = function (update: Annotation) {
+    const updateAnnotation = function (a: Annotation) {
       if (selectedItemShare.value)
-        videoActions.updateAnnotation(selectedItemShare.value, update)
+        videoActions.updateAnnotation(selectedItemShare.value, a)
+    }
+
+    const deleteAnnotation = function (a: Annotation) {
+      if (selectedItemShare.value)
+        videoActions.deleteAnnotation(selectedItemShare.value, a)
+    }
+
+    const newAnnotationComment = function (data: {
+      c: AnnotationComment
+      a: Annotation
+    }) {
+      if (selectedItemShare.value)
+        videoActions.createAnnotationComment(
+          selectedItemShare.value,
+          data.a,
+          data.c
+        )
     }
 
     // if 'sortByCreated' sort by creation date, otherwise by video time
@@ -232,14 +386,16 @@ export default defineComponent({
             const t = currentPlayerTime.value
             const tDiff = t - a.time[0]
             a.nowActive =
-              (a.time[1] && a.time[1] > t && a.time[0] <= t) ||
-              (tDiff <= t1DisplayPeriod && tDiff >= 0)
+              !sortByCreated.value &&
+              ((a.time[1] && a.time[1] > t && a.time[0] <= t) ||
+                (tDiff <= t1DisplayPeriod && tDiff >= 0))
             return a
           })
       )
     })
 
     return {
+      t,
       VIDEO_DETAIL_MODE,
       baseUrl,
       myLTIID,
@@ -249,16 +405,23 @@ export default defineComponent({
       formatDate,
       annotations,
       annotationText,
+      commentText,
       showUsers,
       showAnnotations,
       editShare,
+      saveComment,
       currentPlayerTime,
       addAnnotation,
       updateAnnotation,
+      deleteAnnotation,
+      newAnnotationComment,
       videoCurrentTime,
       detailMode: videoGetters.detailMode,
+      selectNone: videoActions.selectNone,
       sortBy,
       sortByCreated,
+      nameAndRole: appActions.nameAndRole,
+      formatCreationDate,
 
       // assets
       trimButtonSVG,

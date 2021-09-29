@@ -1,3 +1,21 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div
     class="flex flex-col text-viva-grey-500 rounded-xl bg-viva-grey-400 my-1 overflow-hidden"
@@ -8,11 +26,19 @@
       class="relative flex flex-col justify-between h-96 bg-opacity-40 bg-viva-grey-300"
     >
       <div
-        class="absolute top-2 right-2 flex bg-viva-grey-300 items-center justify-center w-6 h-6 z-50 rounded-full text-xs cursor-pointer"
+        class="absolute top-2 right-2 flex bg-viva-grey-300 items-center justify-center w-8 h-8 z-50 rounded-full text-xs cursor-pointer"
         v-show="menu || hover"
         @click.stop="menu = !menu"
       >
-        •••
+        <IconBase
+          icon-name="menuDots"
+          class="text-white stroke-current cursor-pointer"
+          alt="annotation-menu"
+          viewBox="0 0 30 30"
+          width="24"
+          height="24"
+          ><IconMenuDots />
+        </IconBase>
       </div>
       <div
         class="absolute flex flex-col top-10 right-2 bg-viva-grey-300 p-2 gap-2 w-24 z-50 rounded-md text-xs text-white cursor-pointer"
@@ -128,6 +154,8 @@ import { ListItem, VideoDetailsData, DialogConfig } from '../types/main'
 import { baseUrl, VIDEO_DETAIL_MODE } from '@/constants'
 import VideoSharedCard from '@/components/VideoSharedCard.vue'
 import Button from '@/components/base/Button.vue'
+import IconBase from '@/components/icons/IconBase.vue'
+import IconMenuDots from '@/components/icons/IconMenuDots.vue'
 import playButtonSVG from '@/assets/icons/svg/play.svg'
 import shareButtonSVG from '@/assets/icons/svg/share.svg'
 import arrowTopSVG from '@/assets/icons/svg/arrow_top.svg'
@@ -158,6 +186,8 @@ export default defineComponent({
   components: {
     VideoSharedCard,
     Button,
+    IconBase,
+    IconMenuDots,
   },
   props: {
     listitem: { type: Object as PropType<ListItem>, required: true },

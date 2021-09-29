@@ -1,3 +1,21 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div>
     <div class="p-4">
@@ -17,12 +35,6 @@
           class="m-4 focus:outline-none"
           @click="login('canvas', 'canvas')"
         /-->
-        <p class="m-2 text-red-600 font-bold" v-if="!browserOk">
-          {{ t('browserNotOk') }}
-        </p>
-        <p class="m-2 text-red-600 font-bold" v-if="appIsOld">
-          {{ t('appIsOld') }}
-        </p>
         <Button v-if="isLoggedIn" class="m-4" @vclick="listView()">{{
           t('MineOpptak')
         }}</Button>
@@ -33,6 +45,12 @@
           >{{ t('LoggUt') }}</Button
         >
       </div>
+      <p class="m-2 text-red-600 font-bold" v-if="!browserOk">
+        {{ t('browserNotOk') }}
+      </p>
+      <p class="m-2 text-red-600 font-bold" v-if="appIsOld">
+        {{ t('appIsOld') }}
+      </p>
       <p class="text-viva-lilla text-sm mb-1">{{ t('GoogleSuite') }}</p>
       <p class="text-viva-lilla text-sm">{{ t('UseOfGoogle') }}</p>
       <p class="text-xs mt-2">v{{ appVersion }}</p>

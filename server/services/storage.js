@@ -1,3 +1,23 @@
+/*
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 const {
   S3Client,
   GetObjectCommand,
@@ -9,6 +29,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const fs = require('fs')
 const crypto = require('crypto')
 const Dataset = require('../models/Dataset')
+const User = require('../models/User.js')
 const moment = require('moment')
 
 const { videoStorageTypes, videoFolderNames } = require('../constants')
@@ -125,6 +146,7 @@ const getSignedUrlS3URL = async ({ keyname }) => {
 const generatePath = function ({ list, dataset, video }, delimiter) {
   const separator = delimiter || '/'
   const whitespace = / /g
+  let owner = 'unknownOwner'
   if (list.length < 1) return ''
   return list
     .map((p) => {
@@ -136,7 +158,8 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
         case 'timeStamp':
           return moment(video.details.created).format('dd-mmm-YYYY-h-mm-ss')
         case 'owner':
-          return dataset.users.owner.replace(whitespace, '')
+          owner = dataset.users.owner.profile.fullName || 'unknownOwner'
+          return owner.replace(whitespace, '')
         case 'userID':
           return video.users.owner
         default:
@@ -149,32 +172,37 @@ const generatePath = function ({ list, dataset, video }, delimiter) {
 // RECOMMENDED
 const fetchStorage = (video) => {
   return new Promise((resolve, reject) => {
-    Dataset.findById(video.dataset.id, (error, dataset) => {
-      if (error || !dataset) return reject(error)
-      let stores = []
-      dataset.storages.forEach((storage) => {
-        let path = generatePath(
-          { list: storage.file.path, dataset, video },
-          '/'
-        )
-        const fileName = generatePath(
-          { list: storage.file.name, dataset, video },
-          '-'
-        )
-        // TODO: Can 'groupId' be integrated into storage.file.path ?
-        if (storage.kind === videoStorageTypes.lagringshotell) {
-          const basePath = process.env.LAGRINGSHOTELL || '/tmp/'
-          if (storage.groupId) path = storage.groupId + '/' + path
-          path = basePath + path
-        }
-        stores.push({
-          kind: storage.kind,
-          path,
-          fileName,
-        })
+    Dataset.findById(video.dataset.id)
+      .populate({
+        path: 'users.owner',
+        model: User,
       })
-      resolve(stores)
-    })
+      .exec((error, dataset) => {
+        if (error || !dataset) return reject(error)
+        let stores = []
+        dataset.storages.forEach((storage) => {
+          let path = generatePath(
+            { list: storage.file.path, dataset, video },
+            '/'
+          )
+          const fileName = generatePath(
+            { list: storage.file.name, dataset, video },
+            '-'
+          )
+          // TODO: Can 'groupId' be integrated into storage.file.path ?
+          if (storage.kind === videoStorageTypes.lagringshotell) {
+            const basePath = process.env.LAGRINGSHOTELL || '/tmp/'
+            if (storage.groupId) path = storage.groupId + '/' + path
+            path = basePath + path
+          }
+          stores.push({
+            kind: storage.kind,
+            path,
+            fileName,
+          })
+        })
+        resolve(stores)
+      })
   })
 }
 
@@ -191,18 +219,20 @@ function sendVideoToEducloud({ video, subDirSrc }) {
   const sseMD5 = crypto.createHash('md5').update(sseKey).digest('base64')
   video.file.encryptionKey = sseKey
   video.file.encryptionMD5 = sseMD5
-  return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
-    console.log(`Video sent to Educloud at key: ${keyname}`)
-    video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
-    path = getPath(videoFolderNames.thumbnails, video.file.name, 'jpg')
-    keyname = `${video.users.owner.toString()}/${video.file.name}.jpg`
-    return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
-      console.log(`Thumbnail sent to Educloud at key: ${keyname}`)
+  return uploadS3File({ path, keyname, sseKey, sseMD5 })
+    .then(() => {
+      console.log(`Video sent to Educloud at key: ${keyname}`)
+      video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
+      path = getPath(videoFolderNames.thumbnails, video.file.name, 'jpg')
+      keyname = `${video.users.owner.toString()}/${video.file.name}.jpg`
+      return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
+        console.log(`Thumbnail sent to Educloud at key: ${keyname}`)
+      })
     })
-  }).catch((error) => {
-    console.log(error)
-    return Promise.reject(error)
-  })
+    .catch((error) => {
+      console.log(error)
+      return Promise.reject(error)
+    })
 }
 
 // Create a copy of the uploaded video to the lagringshotell
