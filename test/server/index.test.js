@@ -107,6 +107,21 @@ describe('Create, update and remove a Videos Sharing, Annotations, Comments, Sta
       })
   })
 
+  it('should update a video details', async () => {
+    // Body should be Video Detail
+    const copy = {...selectedVideo.details}
+    copy.name = 'test'
+    return authenticatedSession
+    .put(`/api/video/details`)
+    .query({ id: selectedVideo.details.id})
+    .send(copy)
+    .expect(200)
+    .then((response) => {
+      console.log(response.body)
+      expect(response.body.name).to.equal('test')
+    })
+  })
+
   after(function() {
     return manageServer.stopHTTPServer()
   });
