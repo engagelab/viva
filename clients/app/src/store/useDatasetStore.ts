@@ -25,6 +25,7 @@
 3. Fetch consents either using feide token or canvas token  */
 
 import { ref, Ref, computed, ComputedRef } from 'vue'
+import i18n from '@/i18n'
 import {
   Dataset,
   Video,
@@ -38,6 +39,8 @@ import {
 import { apiRequest } from '../api/apiRequest'
 import { useNotifyStore } from './useNotifyStore'
 const { actions: notifyActions } = useNotifyStore()
+const { t } = i18n.global
+
 //State
 interface DatasetState {
   datasets: Dataset[]
@@ -146,7 +149,7 @@ const actions = {
             }
           })
         } else {
-          notifyActions.errorMessage(new Error('No datasets found'))
+          notifyActions.errorMessage(t('noDataset'))
         }
       })
       .catch((error: Error) => {
@@ -222,7 +225,7 @@ const actions = {
               checked: false,
             }))
           } else {
-            notifyActions.errorMessage(new Error('No consents found'))
+            notifyActions.errorMessage(t('noConsents'))
           }
         })
         .catch((error: Error) => {

@@ -48,7 +48,7 @@ const idleTimeout = 12000 // 200 minutes (in seconds)
 const recordingDataInterval = 5 // seconds
 const recordingMaxDuration = 2700 // seconds (2700 = 45 mins)
 const recordingMaxDurationWeb = 600 // seconds (600 = 10 mins)
-const videoExpiryTime = 1209600000 // milliseconds (1209600000 = 2 weeks)
+const videoExpiryTime = 1209600000 // milliseconds (1209600000 = 2 weeks). ms units are required by moment.duration()
 const cryptoAlgorithm = 'AES-GCM'
 const videoProgressCheckInterval = 20 // seconds
 const dbVersion = 1

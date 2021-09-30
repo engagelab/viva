@@ -74,8 +74,8 @@ function setUserAttributes(user, profile, tokenSet) {
 // If the user is an admin, also skip this step
 function setPrerequisiteCourseProgress(user) {
   if (
-    process.env.CANVAS_DEPENDENT_COURSE_ID === 'none' ||
-    user.status.role === userRoles.admin
+    process.env.CANVAS_DEPENDENT_COURSE_ID === 'none'
+    // || user.status.role === userRoles.admin
   ) {
     user.status.prerequisiteCompleted = true
     return Promise.resolve()
@@ -89,11 +89,12 @@ function setPrerequisiteCourseProgress(user) {
       user.status.prerequisiteCompleted =
         progress.requirement_count == progress.requirement_completed_count
       console.log(
-        `Depended course was completed: ${user.status.prerequisiteCompleted}`
+        `Dependent course was completed: ${user.status.prerequisiteCompleted}`
       )
     })
     .catch((error) => {
-      console.log(error)
+      console.log(`Error requesting prerequisite course progress from Canvas: ${error}. Check that at least one 'requirement' is added to a module`)
+      return Promise.resolve()
     })
 }
 

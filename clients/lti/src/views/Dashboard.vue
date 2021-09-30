@@ -183,6 +183,7 @@ export default defineComponent({
       currentTab.value = tabName
       console.log(currentTab.value)
       videoActions.selectNoOriginal()
+      videoActions.getVideoMetadata()
     }
 
     videoActions.selectNoOriginal()

@@ -20,11 +20,9 @@
  */
 import './tailwind.css'
 import { createApp } from 'vue'
-import { createI18n } from 'vue-i18n'
-import { globalTranslations } from './translations'
+import i18n from './i18n'
 import router from './router'
 import App from './App.vue'
-
 import { useAppStore } from './store/useAppStore'
 
 const { actions: appActions } = useAppStore()
@@ -47,22 +45,6 @@ window.addEventListener('message', function (event) {
       router.push('/')
     }
   }
-})
-
-const i18n = createI18n({
-  locale: navigator.language || 'nb_NO',
-  globalInjection: true,
-  fallbackLocale: {
-    'nb-NO': ['nb_NO'],
-    nb: ['nb_NO'],
-    'nn-NO': ['nn_NO'],
-    nn: ['nn_NO'],
-    'en-AU': ['en'],
-  },
-  legacy: false,
-  silentTranslationWarn: true,
-  silentFallbackWarn: true,
-  messages: globalTranslations,
 })
 
 /* interface SLPlusCustomEventDetail {

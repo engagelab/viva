@@ -61,7 +61,7 @@ describe('Create, update and remove a Videos Sharing, Annotations, Comments, Sta
     annotation1 = {
       created: new Date(),
       creator: user.profile.ltiID,
-      comment: '1st test annotation',
+      text: '1st test annotation',
       time: [0, 0.5]
     }
     return authenticatedSession
@@ -79,7 +79,7 @@ describe('Create, update and remove a Videos Sharing, Annotations, Comments, Sta
     annotation2 = {
       created: new Date(),
       creator: '2',
-      comment: '2nd test annotation',
+      text: '2nd test annotation',
       time: [0.5, 1]
     }
     return authenticatedSession
@@ -95,7 +95,7 @@ describe('Create, update and remove a Videos Sharing, Annotations, Comments, Sta
   })
   it('should update the second Annotation (PUT /api/video/share/annotation)', async function() {
     const newComment = 'UPDATED 2nd test annotation'
-    annotation2.comment = newComment
+    annotation2.text = newComment
     return authenticatedSession
       .put(`/api/video/share/annotation`)
       .query({ videoID: selectedVideo.details.id, shareID: selectedShare._id, annotationID: annotation2._id })
@@ -103,7 +103,7 @@ describe('Create, update and remove a Videos Sharing, Annotations, Comments, Sta
       .expect(200)
       .then((response) => {
         //console.log(response.body)
-        expect(response.body.comment).to.equal(newComment)
+        expect(response.body.text).to.equal(newComment)
       })
   })
 

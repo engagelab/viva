@@ -19,6 +19,7 @@
  along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
  */
 import { ref, computed, ComputedRef, Ref } from 'vue'
+import i18n from '@/i18n'
 import router from '../router'
 import { apiRequest } from '../api/apiRequest'
 import {
@@ -27,6 +28,7 @@ import {
   APIRequestPayload,
   XHR_REQUEST_TYPE,
 } from '../types/main'
+import { appVersion } from '../constants'
 import { useDeviceService, CordovaPathName } from './useDevice'
 
 import { useVideoStore } from './useVideoStore'
@@ -36,7 +38,7 @@ const { actions: notifyActions } = useNotifyStore()
 const { actions: deviceActions } = useDeviceService()
 const { actions: videoActions } = useVideoStore()
 const { getters: datasetGetters, actions: datasetActions } = useDatasetStore()
-import { appVersion } from '../constants'
+const { t } = i18n.global
 
 // ------------  Types --------------
 interface ServerStatus {
@@ -234,6 +236,12 @@ const actions = {
             _appState.value.isLoggedIn = true
             _appState.value.isAuthorised = true
 
+            // Enforce completion of prerequisite course before allowing recording
+            if (!user.status.prerequisiteCompleted) {
+              notifyActions.errorMessage(t('noPrerequisite'))
+              actions.logout()
+            }
+
             actions.activeNow()
             _appState.value.selectedUser = user
             actions.setCordovaPath([CordovaPathName.users, user._id])
@@ -241,7 +249,7 @@ const actions = {
             videoActions.setCordovaPath([CordovaPathName.users, user._id])
             datasetActions.setPresetDatasetConfig(user.datasetConfig)
           } else {
-            notifyActions.errorMessage('User not found')
+            notifyActions.errorMessage(t('userNotFound'))
             actions.logout()
           }
         })
