@@ -234,17 +234,24 @@ export default defineComponent({
       // recursive to iterate throught the nested Object
       const subsetPath = (subsets: DatasetSelection[]) => {
         subsets?.forEach((set, index) => {
-          depthIndex = depthIndex + 1
+          depthIndex++
           p = localSelectionPriority.value[depthIndex - 1]
             ? p.toLowerCase() +
               '+' +
               localSelectionPriority.value[depthIndex - 1].toLowerCase() +
               '-' +
               set.title.toLowerCase()
-            : ''
+            : '+' + localSelectionPriority.value[depthIndex].toLowerCase() + '-'
 
           if (p === props.path && mode.value == 'current') {
-            set.selection[currentDataPath.currentKey].push(nySubset)
+            // check for duplicate
+            if (
+              !set.selection[currentDataPath.currentKey].find(
+                (item) => item.title == nySubset.title
+              )
+            )
+              set.selection[currentDataPath.currentKey].push(nySubset)
+            else alert('Duplicate path')
           } else if (p === newPath && mode.value == 'new') {
             Object.assign(set, {
               selection: { [currentDataPath.nextKey]: [nySubset] },
@@ -259,8 +266,9 @@ export default defineComponent({
           if (set.selection) {
             subsetPath(set.selection[Object.keys(set.selection)[0]])
           } else {
+            console.log(subsets)
             p = ''
-            depthIndex = 0
+            depthIndex = 1
           }
         })
       }
