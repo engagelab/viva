@@ -6,6 +6,18 @@ Easiest way: Use mkcert
 
   Follow directions on this site, and don't forget to copy the root certificate to the mobile device, and trust it
 
+iOS and Android require the root CA certificate installed to allow HTTPS requests to succeed
+Follow instructions for mobile devices at [mkcert](https://github.com/FiloSottile/mkcert)
+
+iOS:
+* Find the root CA using `mkcert -CAROOT`
+* Airdrop the root CA to the ipad/iphone, enable the profile, then also enable "full trust" in Settings > About > Certificate Trust Settings
+
+Android:
+* Find the root CA using `mkcert -CAROOT`
+* Host the .pem certificate in the server's /public folder and access it from the tablet e.g `https://SERVER_ADDRESS:8000/mkcert.pem`
+
+
 Alternative:
 
 1. Create a CA in keychain
