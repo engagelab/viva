@@ -66,7 +66,7 @@ router.get('/dataporten/login', (req, res) => {
 function getProviderLoginID(pdata) {
   let login_id = ''
   let provider_id =
-  pdata['dataporten-userid_sec'] || pdata['connect-userid_sec']
+    pdata['dataporten-userid_sec'] || pdata['connect-userid_sec']
   provider_id = provider_id.length > 0 ? provider_id[0].split(':') : []
   login_id = provider_id.length === 2 ? provider_id[1] : ''
   return login_id
@@ -84,13 +84,21 @@ router.get('/dataporten/callback', function (request, response) {
     const profile = {
       provider: 'dataporten',
       provider_id: '',
-      login_id: 'testuser1', // <-- THIS is intended to match Dataporten user ID and Canvas LTI + API token user ID
       email: `${testing}@engagelab.uio.no`,
+      login_id: 'testuser1',
       fullName: 'Test User',
       organization: organization,
       ltiID: '1',
       client,
     }
+
+    if (client == 'admin') {
+      profile.email = `${testing}@engagelab.uio.no`
+      profile.fullName = 'Test Admin'
+      profile.client = 'admin'
+      profile.login_id = 'testadmin1' // <-- THIS is intended to match Dataporten user ID and Canvas LTI + API token user ID
+    }
+
     return createOrUpdateUser(tokenSet, profile).then((user) =>
       completeCallback(request, response, user)
     )
@@ -119,7 +127,6 @@ router.get('/dataporten/callback', function (request, response) {
         params: { scope: 'groups-org groups-edu groups-other' },
       }) // => Promise
         .then((data) => {
-
           // Dataporten calls for retrieving GROUPS and ORGS (orgs not working..)
 
           /*           const options = {
