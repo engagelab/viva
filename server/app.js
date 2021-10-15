@@ -54,13 +54,15 @@ const sessionOptions = {
 // We encounter CORS issues if the server is serving the webpage locally
 // CORS (Cross-Origin Resource Sharing) headers to support Cross-site HTTP requests
 if (process.env.NODE_ENV === 'development') {
-  let origin = ''
+  let origin = 'https://localhost'
   app.use((req, res, next) => {
     const allowedOrigins = [
       `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}`,
-      `${process.env.VUE_APP_SERVER_HOST}:8080`,
-      `${process.env.VUE_APP_SERVER_HOST}:8081`,
-      `${process.env.VUE_APP_SERVER_HOST}:8082`,
+      `${process.env.VUE_APP_SERVER_HOST}:8080`, // LTI dev
+      `${process.env.VUE_APP_SERVER_HOST}:8081`, // Admin dev
+      `${process.env.VUE_APP_SERVER_HOST}:8082`, // App dev
+      `${process.env.ANDROID_CLIENT}`, // Android app dev
+      `${process.env.IOS_CLIENT}`, // iOS app dev
       'https://auth.dataporten.no',
     ]
     let referer = req.headers.referer || req.headers.Referer
@@ -71,6 +73,9 @@ if (process.env.NODE_ENV === 'development') {
         origin = referer
         res.header('Access-Control-Allow-Origin', origin)
       }
+    } else {
+      const ip = req.ip.split(':').pop()
+      res.header('Access-Control-Allow-Origin', `https://${ip}`)
     }
     // add details of what is allowed in HTTP request headers to the response headers
     res.header(
