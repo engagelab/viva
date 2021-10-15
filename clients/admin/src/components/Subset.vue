@@ -214,8 +214,61 @@ export default defineComponent({
       showInput.value = !showInput.value
     }
 
+    // let depth = -1
+    // let p = ''
+    // let pParent = ''
+    // let title = Object.keys(localSelection.value)[0]
+    let p = ''
+    let depthIndex = -1
+    let pParent = ''
+    let title = Object.keys(localSelection.value)[0]
+
+    // const printPath = (nodes: DatasetSelection[], tit: string) => {
+    //   nodes.forEach((node, index) => {
+    //     if (depth == 0) {
+    //       depth = 1
+    //     }
+    //     if (depth < 0) {
+    //       depth = 0
+    //     }
+
+    //     if (index > 0) {
+    //       pParent = pParent.split('+')[1]
+    //       p = ''
+    //     }
+    //     if (depth == 0 && index == 1) {
+    //       pParent = ''
+    //     }
+
+    //     if (pParent.length > 0 && !p.includes(pParent)) p = '+' + pParent + p
+    //     title = node.title.toLowerCase()
+
+    //     p =
+    //       localSelectionPriority.value[depth - 1] && index == 0
+    //         ? p.toLowerCase() + '+' + tit + '-' + title
+    //         : p.toLowerCase() + '+' + tit + '-' + title
+
+    //     console.log(p)
+
+    //     if (node.selection) {
+    //       depth++
+    //       printPath(
+    //         node.selection[Object.keys(node.selection)[0]],
+    //         Object.keys(node.selection)[0]
+    //       )
+    //     }
+    //     depth--
+    //     pParent = p
+    //   })
+    // }
+
     // Check the datapath and if it matches and the new subset
     const addSubset = (currentDataPath: DataPath) => {
+      // printPath(
+      //   localSelection.value[Object.keys(localSelection.value)[0]],
+      //   Object.keys(localSelection.value)[0]
+      // )
+
       let nySubset: DatasetSelection = {
         title: currentDataPath.title,
         selection: {},
@@ -228,39 +281,69 @@ export default defineComponent({
         currentDataPath.currentValue?.toLowerCase()
 
       //  Match the path and add the subset
-      let p = ''
-      let depthIndex = 0
 
       // recursive to iterate throught the nested Object
-      const subsetPath = (subsets: DatasetSelection[]) => {
+      const subsetPath = (subsets: DatasetSelection[], tit: string) => {
         subsets?.forEach((set, index) => {
-          depthIndex = depthIndex + 1
-          p = localSelectionPriority.value[depthIndex - 1]
-            ? p.toLowerCase() +
-              '+' +
-              localSelectionPriority.value[depthIndex - 1].toLowerCase() +
-              '-' +
-              set.title.toLowerCase()
-            : ''
+          if (depthIndex == 0) {
+            depthIndex = 1
+          }
+          if (depthIndex < 0) {
+            depthIndex = 0
+          }
 
+          if (index > 0) {
+            pParent = pParent.split('+')[1]
+            p = ''
+          }
+          if (
+            (depthIndex == 0 && index == 1) ||
+            (pParent && pParent.includes(tit))
+          ) {
+            pParent = ''
+          }
+
+          if (pParent && pParent.length > 0 && !p.includes(pParent))
+            p = '+' + pParent + p
+          title = set.title.toLowerCase()
+
+          p =
+            localSelectionPriority.value[depthIndex - 1] && index == 0
+              ? p.toLowerCase() + '+' + tit + '-' + title
+              : p.toLowerCase() + '+' + tit + '-' + title
+          console.log(p)
           if (p === props.path && mode.value == 'current') {
-            set.selection[currentDataPath.currentKey].push(nySubset)
+            // check for duplicate
+            if (
+              !set.selection[currentDataPath.currentKey].find(
+                (item) => item.title == nySubset.title
+              )
+            )
+              set.selection[currentDataPath.currentKey].push(nySubset)
+            else alert('Duplicate path')
+            return
           } else if (p === newPath && mode.value == 'new') {
             Object.assign(set, {
               selection: { [currentDataPath.nextKey]: [nySubset] },
             })
+            return
           } else if (
             p === newPath &&
             set.title == currentDataPath.currentValue &&
             currentDataPath.mode == 'delete'
           ) {
             subsets.splice(index, 1)
+            return
           }
           if (set.selection) {
-            subsetPath(set.selection[Object.keys(set.selection)[0]])
+            depthIndex++
+            subsetPath(
+              set.selection[Object.keys(set.selection)[0]],
+              Object.keys(set.selection)[0]
+            )
           } else {
-            p = ''
-            depthIndex = 0
+            depthIndex--
+            pParent = p
           }
         })
       }
@@ -272,7 +355,10 @@ export default defineComponent({
       ) {
         localSelection.value[currentDataPath.currentKey].push(nySubset)
       } else if (Object.keys(localSelection.value).length > 0) {
-        subsetPath(localSelection.value[Object.keys(localSelection.value)[0]])
+        subsetPath(
+          localSelection.value[Object.keys(localSelection.value)[0]],
+          Object.keys(localSelection.value)[0]
+        )
       } else {
         // first instance added
         Object.assign(localSelection.value, {
