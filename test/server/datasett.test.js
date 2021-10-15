@@ -1,7 +1,7 @@
 const expect = require('chai').expect
 const session = require('supertest-session')
 const manageServer = require('./manageServer')
-let server, authenticatedSession, user, videos
+let server, authenticatedSession, user, videos,draftIDs
 
 describe('Check authenticated API routes for all models', function () {
   before(function () {
@@ -44,48 +44,28 @@ describe('Check authenticated API routes for all models', function () {
 
   let body
 
-  it('should create a dataset for the current user (POST api/dataset)', async () => {
+  it('should create a dataset for the current user and reject if duplicated (POST api/dataset)', async () => {
     body = {
       name: 'testdatasetSM',
     }
-    /*return authenticatedSession
-
-       .get('/api/datasets')
-      .expect(200)
-      .then((err, response) => {
-       let dataset = response.body.find((dataset) => dataset.name == body.name)
-        if (dataset) {
-          console.log('Duplicate')
-          done(err)
-        } else {
-          return authenticatedSession
-            .post('/api/dataset')
-            .send(body)
-            .expect(400)
-            .then((response, err) => {
-              console.log(response.body)
-              body = response.body
-            })*/
           return authenticatedSession
             .post('/api/dataset')
             .send(body)
             .expect(400)
             .then((response) => {
-            console.log(JSON.stringify(response.body))
-            //console.log(response.body)
+              response.body.error?console.log(response.body.error) :console.log(response.body)
+            //console.log(JSON.stringify(response.body))
             body = response.body
             expect(response.body.error).to.equal('Name must be unique')
             })
         })
-    it('should respond with draft videos from  user accounts (GET/users/drafts)', async () => {
+  it('should respond with draft videos from  user accounts (GET/users/drafts)', async () => {
       return authenticatedSession
       .get('/api/users/drafts')
       .expect(200)
       .then((response) => {
-        //console.log(response)
-        //console.log(response.videos + 'bvhbfj')
-        let draftIDs = response.body
-        //expect(response.videos.draftIDs.length).to.equal(0)
+        let draftIDs = response.body[0].videos.draftIDs
+        expect(draftIDs.length).to.equal(1)
       })
     })
 
