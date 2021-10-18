@@ -537,7 +537,7 @@ export default defineComponent({
               loadingVideoNow.value = true
               deviceActions.loadCordovaMedia(fileEntry).then((tempEntry) => {
                 if (tempEntry) {
-                  const path = convertFilePath(tempEntry.toURL()) + '#t=0.1'
+                  const path = convertFilePath(tempEntry) + '#t=0.1'
                   //videoUrl.value = convertFilePath(tempEntry.toURL()) + '#t=0.1'
                   //videoUrl.value = tempEntry.toURL() + '#t=0.1'
                   player.setAttribute('src', path)

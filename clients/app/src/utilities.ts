@@ -29,8 +29,11 @@ const wrap = <T>(element: Ref<T> | T): Ref<T> => {
   return ref(element) as Ref<T>
 }
 
-const convertFilePath = (path: string): string => {
-  return window.WkWebView.convertFilePath(path)
+const convertFilePath = (entry: FileEntry): string => {
+  const u = entry.toURL() // e.g. file:///data/user/0/no.uio.mobileapps.viva2/files/users/60d21f5633b66d2b317f2987/3e70a17f-86c5-4bab-0367-027480af9b80.mp4
+  // const i = entry.toInternalURL() // e.g. cdvfile://localhost/files/users/60d21f5633b66d2b317f2987/3e70a17f-86c5-4bab-0367-027480af9b80.mp4
+  if (window.WkWebView) return window.WkWebView.convertFilePath(u)
+  return u
 }
 
 // Return a new array that is a shuffled version of the supplied array

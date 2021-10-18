@@ -181,12 +181,11 @@ router.post('/canvas/callback', function (request, response) {
           return completeCallback(request, response, u)
         })
       } else {
+        console.log(`User ${profile.fullName} not found in Names and Roles`)
+        console.dir(namesAndRoles)
+        console.dir(profile)
         if (profile.fullName && namesAndRoles.members.length > 0) {
           return response.status(404).send(`User ${profile.fullName} not enrolled in this course.`)
-        } else {
-          console.log(`User ${profile.fullName} not found in Names and Roles`)
-          console.dir(namesAndRoles)
-          console.dir(profile)
         }
       }
     })

@@ -84,6 +84,7 @@
     <platform name="android">
         <preference name="AndroidLaunchMode" value="singleTask" />
         <preference name="AndroidExtraFilesystems" value="files,files-external,documents,sdcard,cache,cache-external,assets,root" />
+        <!--preference name="AndroidInsecureFileModeEnabled" value="true" /-->
         <config-file parent="/manifest" target="AndroidManifest.xml">
             <uses-permission android:name="android.permission.CAMERA" />
             <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
