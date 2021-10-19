@@ -182,7 +182,8 @@ router.post('/canvas/callback', function (request, response) {
         })
       } else {
         console.log(`User ${profile.fullName} not found in Names and Roles`)
-        console.dir(namesAndRoles)
+        console.log(`NamesAndRoles: ${namesAndRoles.id} ${namesAndRoles.context.title} Members:`)
+        console.dir(namesAndRoles.members.map((n) => n.name))
         console.dir(profile)
         return response.status(404).send(`User ${profile.fullName} not enrolled in this course or does not match a course member`)
       }
