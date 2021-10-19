@@ -151,6 +151,7 @@ router.post('/canvas/callback', function (request, response) {
         'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice'
       ].context_memberships_url
     )
+    parsedUrl.search = 'limit=200';
     const options = {
       hostname: parsedUrl.host,
       path: parsedUrl.pathname,
