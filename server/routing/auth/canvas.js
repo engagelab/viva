@@ -160,6 +160,7 @@ router.post('/canvas/callback', function (request, response) {
         Authorization: `Bearer ${LTItokenSet.access_token}`,
       },
     }
+    console.log(parsedUrl.href)
     httpRequest(options).then((namesAndRoles) => {
       if (namesAndRoles) {
         request.session.canvasData.namesAndRoles = namesAndRoles.members.map(
@@ -182,7 +183,7 @@ router.post('/canvas/callback', function (request, response) {
           return completeCallback(request, response, u)
         })
       } else {
-        console.log(`User ${profile.fullName} not found in Names and Roles`)
+        console.log(`User ${profile.fullName} not found in Names and Roles. ${namesAndRoles.members.length} people in NaR list`)
         console.log(`NamesAndRoles: ${namesAndRoles.id} ${namesAndRoles.context.title} Members:`)
         console.dir(namesAndRoles.members.map((n) => n.name))
         console.dir(profile)
