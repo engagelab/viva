@@ -151,13 +151,13 @@ router.post('/canvas/callback', function (request, response) {
         const parsedUrl = new URL(links.next.url)
         const options2 = {
           hostname: parsedUrl.host,
-          path: parsedUrl.pathname,
+          path: parsedUrl.pathname + parsedUrl.search,
           method: 'GET',
           headers: {
             Authorization: `Bearer ${LTItokenSet.access_token}`,
           },
         }
-        return paginatedMemberRequest(options2, '', result)
+        return paginatedMemberRequest(options2, result)
       }
       return result
     }
@@ -173,9 +173,12 @@ router.post('/canvas/callback', function (request, response) {
       ].context_memberships_url
     )
 
+    // Use this to test pagination function by limiting members sent per page
+    // parsedUrl.search = 'per_page=5';
+
     const options = {
       hostname: parsedUrl.host,
-      path: parsedUrl.pathname,
+      path: parsedUrl.pathname + parsedUrl.search,
       method: 'GET',
       headers: {
         Authorization: `Bearer ${LTItokenSet.access_token}`,
