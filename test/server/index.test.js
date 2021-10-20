@@ -5,7 +5,7 @@ let server, authenticatedSession, user, videos
 
 describe('Check authenticated API routes for all models', function() {
   before(function() {
-    return manageServer.createHTTPServer().then((s) => {
+    return manageServer.createHTTPServer(8000).then((s) => {
       (server = s)
     })
   });
@@ -13,7 +13,7 @@ describe('Check authenticated API routes for all models', function() {
   it('should pass through the Dataporten redirect and create a session (GET auth/dataporten/login)', async function() {
     const testSession = session(server)
     return testSession
-      .get(`/auth/dataporten/login?organization=uio`)
+      .get(`/auth/dataporten/login? =uio`)
       .redirects(1)
       .expect(302)
       .then(function() { (authenticatedSession = testSession) })
@@ -26,6 +26,7 @@ describe('Check authenticated API routes for all models', function() {
       .expect(200).then((response) => {
         user = response.body
         expect(response.body.profile.username).to.equal("testuser1")
+        console.log(user)
       })
   })
   it('should get the metadata for all my Videos (GET api/videos)', async function() {
@@ -72,6 +73,7 @@ describe('Create, update and remove a Videos Sharing, Annotations, Comments, Sta
       .then((response) => {
         //console.log(response.body)
         annotation1 = response.body
+        expect(response.body.text).to.equal('1st test annotation')
         expect(response.body.creator).to.equal(user.profile.ltiID)
       })
   })
@@ -103,8 +105,24 @@ describe('Create, update and remove a Videos Sharing, Annotations, Comments, Sta
       .expect(200)
       .then((response) => {
         //console.log(response.body)
+        annotation2 = response.body
         expect(response.body.text).to.equal(newComment)
       })
+  })
+
+  it('should update a video details (PUT /api/video/details)', async () => {
+    // Body should be Video Detail
+    const copy = {...selectedVideo.details}
+    copy.name = 'test'
+    return authenticatedSession
+    .put(`/api/video/details`)
+    .query({ id: selectedVideo.details.id})
+    .send(copy)
+    .expect(200)
+    .then((response) => {
+      //console.log(response.body)
+      expect(response.body.name).to.equal('test')
+    })
   })
 
   after(function() {
