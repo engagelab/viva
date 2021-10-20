@@ -18,7 +18,7 @@
  You should have received a copy of the GNU Affero General Public License
  along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
  */
-const { httpRequest } = require('../utilities')
+const { singleItemJsonRequest } = require('../utilities')
 const host = process.env.CANVAS_ENDPOINT_DOMAIN
 const superToken = process.env.CANVAS_VIVA_ACCESS_TOKEN
 
@@ -37,7 +37,7 @@ const coursesForUser = (userId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  return singleItemJsonRequest(options, '')
 }
 
 // Get list of the current groups's Users from Canvas
@@ -53,7 +53,7 @@ const usersForCourse = (courseId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  return singleItemJsonRequest(options, '')
 }
 
 // Get list of active Courses in Account
@@ -69,7 +69,7 @@ const coursesInAccount = (accountId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  return singleItemJsonRequest(options, '')
 }
 
 // Get list of the current user's Groups from Canvas
@@ -85,7 +85,7 @@ const usersForGroup = (groupId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  return singleItemJsonRequest(options, '')
 }
 
 // Get list of user's CourseProgress (including enrolment roles) from Canvas
@@ -101,7 +101,7 @@ const courseProgress = (canvasUserId, canvasCourseId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  return singleItemJsonRequest(options, '')
 }
 
 // Get user's Profile
@@ -118,7 +118,7 @@ const userDetails = (canvasAccessToken, canvasUserId) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  return singleItemJsonRequest(options, '')
 }
 
 module.exports = { coursesForUser, userDetails, courseProgress, usersForGroup, coursesInAccount, usersForCourse }

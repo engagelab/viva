@@ -36,7 +36,7 @@ function tsdAuthoriseConsent(idtoken) {
       'Content-Length': data.length,
     },
   }
-  return utilities.httpRequest(options, data)
+  return utilities.singleItemJsonRequest(options, data)
 }
 
 const fetchConsents = ({ datasetId, formId, token }) => {
@@ -53,7 +53,7 @@ const fetchConsents = ({ datasetId, formId, token }) => {
       'Content-Length': data.length,
     },
   }
-  return utilities.httpRequest(options, data)
+  return utilities.singleItemJsonRequest(options, data)
 }
 
 function filterConsents(consents, utvalg) {

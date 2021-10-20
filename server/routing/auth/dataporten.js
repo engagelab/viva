@@ -119,34 +119,6 @@ router.get('/dataporten/callback', function (request, response) {
         params: { scope: 'groups-org groups-edu groups-other' },
       }) // => Promise
         .then((data) => {
-
-          // Dataporten calls for retrieving GROUPS and ORGS (orgs not working..)
-
-          /*           const options = {
-            host: 'groups-api.dataporten.no',
-            path: `/groups/me/groups`,
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${tokenSet.access_token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-          httpRequest(options, '').then((groups) => {
-            console.dir(groups)
-            const options2 = {
-              host: 'api.feide.no',
-              path: `/2/org/all`,
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${tokenSet.access_token}`,
-                'Content-Type': 'application/json',
-              },
-            }
-            httpRequest(options2, '').then((orgs) => {
-              console.dir(orgs)
-            }).catch(error => console.log(error.toString()))
-          }) */
-
           console.log(
             `\nGot DP user; logging in ${data.name} : ${data.email} ...`
           )

@@ -23,6 +23,7 @@ const router = require('express').Router()
 const { generators } = require('openid-client')
 const jwt = require('jsonwebtoken')
 const jwksClient = require('jwks-rsa')
+const linkparser = require('parse-link-header');
 const { createOrUpdateUser, completeCallback } = require('./helpers')
 
 const { httpRequest } = require('../../utilities')
@@ -124,7 +125,7 @@ router.post('/canvas/callback', function (request, response) {
   // STEP 4: Using the LTI access_token, get user details using "Names & roles" LTI service
   // Save the details to the User's profile including id_token
   // LTI must be configured with the "variable substitute" in 'Custom Fields' with:  `user_id=$Canvas.user.id`
-  const requestUserInformation = (LTItokenSet, verified_decoded_id_token) => {
+  const requestUserInformation = async (LTItokenSet, verified_decoded_id_token) => {
     // Configure data from 'variable substitutes'
     const custom_vars =
       verified_decoded_id_token[
@@ -141,6 +142,26 @@ router.post('/canvas/callback', function (request, response) {
       client,
     }
 
+    async function paginatedMemberRequest(options, result = []) {
+      const { data, headers } = await httpRequest(options, '', [])
+      const json = JSON.parse(data)
+      result = [...result, ...json.members]
+      const links = linkparser(headers.link)
+      if (links.next) {
+        const parsedUrl = new URL(links.next.url)
+        const options2 = {
+          hostname: parsedUrl.host,
+          path: parsedUrl.pathname,
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${LTItokenSet.access_token}`,
+          },
+        }
+        return paginatedMemberRequest(options2, '', result)
+      }
+      return result
+    }
+
     // Note the course we are launching from
     if (custom_vars.course_id)
       request.session.canvasData.courseId = custom_vars.course_id
@@ -151,7 +172,7 @@ router.post('/canvas/callback', function (request, response) {
         'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice'
       ].context_memberships_url
     )
-    parsedUrl.search = 'limit=200';
+
     const options = {
       hostname: parsedUrl.host,
       path: parsedUrl.pathname,
@@ -160,36 +181,37 @@ router.post('/canvas/callback', function (request, response) {
         Authorization: `Bearer ${LTItokenSet.access_token}`,
       },
     }
+
     console.log(parsedUrl.href)
-    httpRequest(options).then((namesAndRoles) => {
-      if (namesAndRoles) {
-        request.session.canvasData.namesAndRoles = namesAndRoles.members.map(
-          (m) => {
-            return {
-              name: m.name || 'unknown',
-              ltiID: m.user_id || 'unknown',
-              email: m.email || 'unknown',
-              roles: m.roles,
-            }
+    const namesAndRoles = await paginatedMemberRequest(options)
+    let user
+    if (namesAndRoles) {
+      request.session.canvasData.namesAndRoles = namesAndRoles.map(
+        (m) => {
+          return {
+            name: m.name || 'unknown',
+            ltiID: m.user_id || 'unknown',
+            email: m.email || 'unknown',
+            roles: m.roles,
           }
-        )
-      }
-      const user = namesAndRoles.members.find(
+        }
+      )
+      user = namesAndRoles.find(
         (u) => u.name === profile.fullName
       )
-      if (user) {
-        profile.ltiID = user.user_id
-        createOrUpdateUser({ id_token: idToken }, profile).then((u) => {
-          return completeCallback(request, response, u)
-        })
-      } else {
-        console.log(`User ${profile.fullName} not found in Names and Roles. ${namesAndRoles.members.length} people in NaR list`)
-        console.log(`NamesAndRoles: ${namesAndRoles.id} ${namesAndRoles.context.title} Members:`)
-        console.dir(namesAndRoles.members.map((n) => n.name))
-        console.dir(profile)
-        return response.status(404).send(`User ${profile.fullName} not enrolled in this course or does not match a course member`)
-      }
-    })
+    }
+    if (user) {
+      profile.ltiID = user.user_id
+      createOrUpdateUser({ id_token: idToken }, profile).then((u) => {
+        return completeCallback(request, response, u)
+      })
+    } else {
+      console.log(`User ${profile.fullName} not found in Names and Roles. ${namesAndRoles.length} people in NaR list`)
+      console.log(`NamesAndRoles members:`)
+      console.dir(namesAndRoles.map((n) => n.name))
+      console.dir(profile)
+      return response.status(404).send(`User ${profile.fullName} not enrolled in this course or does not match a course member`)
+    }
   }
 
   // Verify the token using a JWK specified by 'kid' in the decoded token's header

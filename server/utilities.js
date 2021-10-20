@@ -165,24 +165,29 @@ const hasMinimumUserRole = (user, requestedRole) => {
   }
 }
 
+async function singleItemJsonRequest(options, postData = '') {
+  const { data } = await httpRequest(options, postData, [])
+  return JSON.parse(data)
+}
+
 /**  https Request to TSD/ outside portal from  VIVA server */
-function httpRequest(options, postData) {
+function httpRequest(options, postData = '') {
   return new Promise(function (resolve, reject) {
-    const req = https.request(options, (res) => {
-      if (res.statusCode < 200 || res.statusCode >= 300) {
+    const req = https.request(options, (response) => {
+      if (response.statusCode < 200 || response.statusCode >= 300) {
         reject(
           new Error(
-            `Rejected HTTP Response. statusCode: ${res.statusCode} calling: ${
+            `Rejected HTTP Response. statusCode: ${response.statusCode} calling: ${
               options.host + options.path
             } `
           )
         )
       }
       let data = []
-      res.on('data', function (chunk) {
+      response.on('data', function (chunk) {
         data.push(chunk)
       })
-      res.on('end', function () {
+      response.on('end', function () {
         if (data.join('') === '') {
           // You are being throttled - handle it
           return reject(new Error('Remote server throttling'))
@@ -194,10 +199,7 @@ function httpRequest(options, postData) {
           // json = JSON.parse(Buffer.concat(data).toString())
           const d = data.join('')
           if (d === 'Invalid access token') reject(new Error('Access token not valid for this request'))
-          else {
-            const json = JSON.parse(d)
-            resolve(json)
-          }
+          else resolve({ data: d, headers: response.headers })
         }
       })
     })
@@ -223,8 +225,11 @@ module.exports = {
   hashCompare,
   authoriseUser,
   hasMinimumUserRole,
+  isValidObjectId,
   setTestMode,
   getTestMode,
+
+  // HTTPS Requests:
   httpRequest,
-  isValidObjectId,
+  singleItemJsonRequest,
 }

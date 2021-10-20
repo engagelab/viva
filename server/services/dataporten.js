@@ -18,7 +18,7 @@
  You should have received a copy of the GNU Affero General Public License
  along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
  */
-const { httpRequest } = require('../utilities')
+const { singleItemJsonRequest } = require('../utilities')
 
 // Get list of user's groups from Dataporten using the user's access_token
 // Returns a Promise
@@ -32,7 +32,7 @@ const groupsForUser = (user) => {
       Authorization: `Bearer ${user.tokens.access_token}`,
     },
   }
-  return httpRequest(options, '')
+  return singleItemJsonRequest(options, '')
 }
 
 module.exports = { groupsForUser }
