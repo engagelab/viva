@@ -94,7 +94,7 @@ if (process.env.NODE_ENV === 'development') {
     res.header('Access-Control-Allow-Credentials', true)
     return next()
   })
-  app.use(cors({ credentials: true, origin }))
+  // app.use(cors({ credentials: true, origin }))
 }
 else if (process.env.NODE_ENV === 'test') {
   sessionOptions.cookie = { httpOnly: false, maxAge: 86400000, sameSite: 'none', secure: false }
