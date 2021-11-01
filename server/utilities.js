@@ -115,7 +115,8 @@ function tokenAuth(req, res, next, googleMobileAppTransfer) {
         )
         return next()
       } else {
-        return next(err2)
+        const error = err2 ? err2 : new Error(`Active login token not found. Please log in again`)
+        return next(error)
       }
     })
   }
@@ -135,7 +136,8 @@ const authoriseUser = (req, res, next) => {
         req.session.user = user
         return next()
       } else {
-        return next(usererr)
+        const error = usererr ? usererr : new Error(`Active login not found. Please log in again`)
+        return next(error)
       }
     })
   } else if (req.headers.authorization || googleMobileAppTransfer) {
