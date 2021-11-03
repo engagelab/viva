@@ -65,7 +65,7 @@ function setUserAttributes(user, profile, tokenSet) {
   // Status update
   user.status.provider = profile.provider
   const tDiff = new Date().getTime() - new Date(user.status.lastLogin).getTime()
-  if (tDiff > 1000 * 60 * 60) user.status.lastLogin = new Date()
+  if (!tDiff || tDiff > 1000 * 60 * 60) user.status.lastLogin = new Date()
 }
 
 // Check the 'prerequisite' course has been completed
