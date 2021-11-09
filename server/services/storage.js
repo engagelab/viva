@@ -54,7 +54,7 @@ const s3Configuration = {
   },
 }
 
-const s3 = new S3Client(s3Configuration)
+const s3 = () => new S3Client(s3Configuration)
 
 // FOR TESTING ONLY
 /* async function listBucketItems() {
@@ -86,7 +86,7 @@ const uploadS3File = async ({ path, keyname, sseKey, sseMD5 }) => {
     SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
     SSECustomerKeyMD5: sseMD5,
   }
-  return s3.send(new PutObjectCommand(objectParams))
+  return s3().send(new PutObjectCommand(objectParams))
 }
 
 const deleteS3File = async ({ keyname, sseKey, sseMD5 }) => {
@@ -98,7 +98,7 @@ const deleteS3File = async ({ keyname, sseKey, sseMD5 }) => {
     SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
     SSECustomerKeyMD5: sseMD5,
   }
-  return s3.send(new DeleteObjectCommand(objectParams))
+  return s3().send(new DeleteObjectCommand(objectParams))
 }
 
 /**
@@ -117,7 +117,7 @@ const downloadS3File = async ({ keyname, sseKey, sseMD5 }) => {
     SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
     SSECustomerKeyMD5: sseMD5,
   }
-  return s3.send(new GetObjectCommand(objectParams))
+  return s3().send(new GetObjectCommand(objectParams))
 }
 
 /**
@@ -134,11 +134,11 @@ const getSignedUrlS3URL = async ({ keyname }) => {
     Key: keyname,
     // ServerSideEncryption: 'AES256', // must be "AES256",
     SSECustomerAlgorithm: 'AES256',
-    /* SSECustomerKey: Buffer.from(process.env.AWS_SSE_CUSTOMER_KEY), // 256-bit, base64-encoded encryption key, Base-64 encoded */
     // SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
     // SSECustomerKeyMD5: sseMD5,
   }
-  return getSignedUrl(s3, new GetObjectCommand(objectParams))
+  const client = s3()
+  return getSignedUrl(client, new GetObjectCommand(objectParams))
 }
 
 // RECOMMENDED (synchronous)

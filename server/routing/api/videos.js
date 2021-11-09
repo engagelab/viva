@@ -104,7 +104,7 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
       const sseKey = video.file.encryptionKey
       const sseMD5 = video.file.encryptionMD5
       downloadS3File({ keyname, sseKey, sseMD5 }).then((file) => {
-        console.log(`S3 Video success: ${keyname}`)
+        console.log(`S3 get Video success: ${keyname}`)
         // These headers are required to enable seeking `currentTime` in Chrome browser
         if (request.query.mode !== 'thumbnail') {
           // response.setHeader('Content-Type', headers['content-type']);
@@ -117,7 +117,7 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
         }
         file.Body.pipe(response)
       }).catch((error2) => {
-        console.log(`S3 Video error for key: ${keyname} error: ${error2.toString()}`)
+        console.log(`S3 get Video error for key: ${keyname} error: ${error2.toString()}`)
         response.status(404).send(error2)
       })
     }
@@ -155,14 +155,14 @@ router.delete('/video', utilities.authoriseUser, (request, response, next) => {
           })
         })
       }).catch((error2) => {
-        console.log(`S3 Video error for key: ${keyname} error: ${error2.toString()}`)
+        console.log(`S3 delete Video error for key: ${keyname} error: ${error2.toString()}`)
         response.status(404).send(error2)
       })
     }
   })
 })
 
-// Upload a single video metadata to be combined with an uploaded video file
+// Update a single video metadata to be combined with an uploaded video file
 router.post('/video', utilities.authoriseUser, async (request, response) => {
   const query = { 'details.id': request.body.details.id }
   Video.findOne(query, (error, v) => {
