@@ -138,12 +138,12 @@ const downloadS3File = async ({ keyname, sseKey, sseMD5 }) => {
   try {
     const client = s3()
     const data = await client.send(new GetObjectCommand(objectParams))
-    client.destroy()
+    // client.destroy()
     return data
   } catch (error) {
     const { requestId, cfId, extendedRequestId } = error.$metadata
     console.log({ keyname, requestId, cfId, extendedRequestId })
-    throw new Error(`S3 download Video error`)
+    throw new Error(`S3 download Video error: ${error}`)
   }
 }
 
