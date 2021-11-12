@@ -179,7 +179,6 @@ const beginProcessingVideo = (pStatus) => {
           .then((stores) => {
             const allPromises = []
             stores.forEach((store) => {
-              console.log(store)
               if (store.kind == videoStorageTypes.lagringshotell) {
                 const LHpromise = sendToLagringshotell({
                   video: nextVideo,
