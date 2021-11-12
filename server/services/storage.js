@@ -86,7 +86,16 @@ const uploadS3File = async ({ path, keyname, sseKey, sseMD5 }) => {
     SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
     SSECustomerKeyMD5: sseMD5,
   }
-  return s3().send(new PutObjectCommand(objectParams))
+  try {
+    const client = s3()
+    const data = await client.send(new PutObjectCommand(objectParams))
+    client.destroy()
+    return data
+  } catch (error) {
+    const { requestId, cfId, extendedRequestId } = error.$metadata
+    console.log({ keyname, requestId, cfId, extendedRequestId })
+    throw new Error(`S3 upload Video error`)
+  }
 }
 
 const deleteS3File = async ({ keyname, sseKey, sseMD5 }) => {
@@ -98,7 +107,16 @@ const deleteS3File = async ({ keyname, sseKey, sseMD5 }) => {
     SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
     SSECustomerKeyMD5: sseMD5,
   }
-  return s3().send(new DeleteObjectCommand(objectParams))
+  try {
+    const client = s3()
+    const data = await client.send(new DeleteObjectCommand(objectParams))
+    client.destroy()
+    return data
+  } catch (error) {
+    const { requestId, cfId, extendedRequestId } = error.$metadata
+    console.log({ keyname, requestId, cfId, extendedRequestId })
+    throw new Error(`S3 delete Video error`)
+  }
 }
 
 /**
@@ -117,7 +135,16 @@ const downloadS3File = async ({ keyname, sseKey, sseMD5 }) => {
     SSECustomerKey: sseKey, // 256-bit, base64-encoded encryption key, Base-64 encoded
     SSECustomerKeyMD5: sseMD5,
   }
-  return s3().send(new GetObjectCommand(objectParams))
+  try {
+    const client = s3()
+    const data = await client.send(new GetObjectCommand(objectParams))
+    client.destroy()
+    return data
+  } catch (error) {
+    const { requestId, cfId, extendedRequestId } = error.$metadata
+    console.log({ keyname, requestId, cfId, extendedRequestId })
+    throw new Error(`S3 download Video error`)
+  }
 }
 
 /**
@@ -207,7 +234,23 @@ const fetchStorage = (video) => {
 }
 
 // Using user(owner) ID as a containing folder
-function sendVideoToEducloud({ video, subDirSrc }) {
+// Returns a promise for use in Task Delegator
+async function sendVideoToEducloud({ video, subDirSrc }) {
+  async function upload({ path, keyname, sseKey, sseMD5 }) {
+    try {
+      await uploadS3File({ path, keyname, sseKey, sseMD5 })
+      console.log(`Video sent to Educloud at key: ${keyname}`)
+      video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
+      path = getPath(videoFolderNames.thumbnails, video.file.name, 'jpg')
+      keyname = `${video.users.owner.toString()}/${video.file.name}.jpg`
+      await uploadS3File({ path, keyname, sseKey, sseMD5 })
+      console.log(`Thumbnail sent to Educloud at key: ${keyname}`)
+    } catch (error) {
+      console.log(error)
+      return Promise.reject(error)
+    }
+  }
+
   let path = getPath(subDirSrc, video.file.name, video.file.extension)
   let keyname = `${video.users.owner.toString()}/${video.file.name}.${
     video.file.extension
@@ -219,20 +262,7 @@ function sendVideoToEducloud({ video, subDirSrc }) {
   const sseMD5 = crypto.createHash('md5').update(sseKey).digest('base64')
   video.file.encryptionKey = sseKey
   video.file.encryptionMD5 = sseMD5
-  return uploadS3File({ path, keyname, sseKey, sseMD5 })
-    .then(() => {
-      console.log(`Video sent to Educloud at key: ${keyname}`)
-      video.storages.push({ path: keyname, kind: videoStorageTypes.educloud })
-      path = getPath(videoFolderNames.thumbnails, video.file.name, 'jpg')
-      keyname = `${video.users.owner.toString()}/${video.file.name}.jpg`
-      return uploadS3File({ path, keyname, sseKey, sseMD5 }).then(() => {
-        console.log(`Thumbnail sent to Educloud at key: ${keyname}`)
-      })
-    })
-    .catch((error) => {
-      console.log(error)
-      return Promise.reject(error)
-    })
+  return upload({ path, keyname, sseKey, sseMD5 })
 }
 
 // Create a copy of the uploaded video to the lagringshotell

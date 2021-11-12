@@ -87,7 +87,7 @@ router.get('/video', utilities.authoriseUser, (request, response) => {
 // Get a video file from S3 (Educloud)
 // set request.query.mode to 'thumbnail' to get a thumbnail instead of the video file
 router.get('/video/file', utilities.authoriseUser, (request, response, next) => {
-  Video.findOne({ 'details.id': request.query.videoref }, (error, video) => {
+  Video.findOne({ 'details.id': request.query.videoref }, async (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) {
       console.log(`DB video not found. "details.id": "${request.query.videoref}"`)
@@ -103,23 +103,29 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
       const keyname = `${video.users.owner.toString()}/${video.file.name}.${extension}`
       const sseKey = video.file.encryptionKey
       const sseMD5 = video.file.encryptionMD5
-      downloadS3File({ keyname, sseKey, sseMD5 }).then((file) => {
-        console.log(`S3 get Video success: ${keyname}`)
-        // These headers are required to enable seeking `currentTime` in Chrome browser
-        if (request.query.mode !== 'thumbnail') {
-          // response.setHeader('Content-Type', headers['content-type']);
-          response.setHeader('content-type', 'video/mp4')
-          response.setHeader('Accept-Ranges', 'bytes')
-          response.setHeader('Content-Length', file.ContentLength)
-          response.setHeader('Content-Range', `0-${file.ContentLength}`)
+      try {
+        const file = await downloadS3File({ keyname, sseKey, sseMD5 })
+        if (file) {
+          // These headers are required to enable seeking `currentTime` in Chrome browser
+          if (request.query.mode !== 'thumbnail') {
+            // response.setHeader('Content-Type', headers['content-type']);
+            response.setHeader('content-type', 'video/mp4')
+            response.setHeader('Accept-Ranges', 'bytes')
+            response.setHeader('Content-Length', file.ContentLength)
+            response.setHeader('Content-Range', `0-${file.ContentLength}`)
+            console.log(`S3 get Video success: ${keyname}`)
+          } else {
+            response.setHeader('content-type', 'image/jpeg')
+            console.log(`S3 get Thumbnail success: ${keyname}`)
+          }
+          file.Body.pipe(response)
         } else {
-          response.setHeader('content-type', 'image/jpeg')
+          response.status(404).send(new Error('Error downloading video'))
         }
-        file.Body.pipe(response)
-      }).catch((error2) => {
-        console.log(`S3 get Video error for key: ${keyname} error: ${error2.toString()}`)
-        response.status(404).send(error2)
-      })
+      } catch (error) {
+        console.log(error)
+        response.status(404).send(error)
+      }
     }
   })
 })
@@ -128,7 +134,7 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
 // - delete the data file from S3 (Educloud)
 // - mark the video metadata as 'status.main: deleted'
 router.delete('/video', utilities.authoriseUser, (request, response, next) => {
-  Video.findOne({ 'details.id': request.query.id }, (error, video) => {
+  Video.findOne({ 'details.id': request.query.id }, async (error, video) => {
     if (error) return response.status(403).end()
     else if (!video) {
       console.log(`DB video not found. "details.id": "${request.query.id}"`)
@@ -143,21 +149,20 @@ router.delete('/video', utilities.authoriseUser, (request, response, next) => {
       let keyname = `${video.users.owner.toString()}/${video.file.name}.${video.file.extension}`
       const sseKey = video.file.encryptionKey
       const sseMD5 = video.file.encryptionMD5
-      deleteS3File({ keyname, sseKey, sseMD5 }).then(() => {
+      try {
+        await deleteS3File({ keyname, sseKey, sseMD5 })
         console.log(`S3 DELETE Video success: ${keyname}`)
         video.status.main = videoStatusTypes.deleted
-        video.save((saveError) => {
-          if (saveError) return next(saveError)
-          keyname = `${video.users.owner.toString()}/${video.file.name}.jpg`
-          return deleteS3File({ keyname, sseKey, sseMD5 }).then(() => {
-            console.log(`S3 DELETE Thumbnail success: ${keyname}`)
-            response.status(200).end()
-          })
-        })
-      }).catch((error2) => {
-        console.log(`S3 delete Video error for key: ${keyname} error: ${error2.toString()}`)
+        const saveError = await video.save()
+        if (saveError) return next(saveError)
+        keyname = `${video.users.owner.toString()}/${video.file.name}.jpg`
+        await deleteS3File({ keyname, sseKey, sseMD5 })
+        console.log(`S3 DELETE Thumbnail success: ${keyname}`)
+        response.status(200).end()
+      } catch(error2) {
+        console.log(`S3 delete Video error for key: ${keyname} error`)
         response.status(404).send(error2)
-      })
+      }
     }
   })
 })
