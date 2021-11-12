@@ -89,8 +89,8 @@ const uploadS3File = async ({ path, keyname, sseKey, sseMD5 }) => {
   try {
     const client = s3()
     const data = await client.send(new PutObjectCommand(objectParams))
+    console.log(data)
     client.destroy()
-    return data
   } catch (error) {
     const { requestId, cfId, extendedRequestId } = error.$metadata
     console.log({ keyname, requestId, cfId, extendedRequestId })
@@ -110,11 +110,10 @@ const deleteS3File = async ({ keyname, sseKey, sseMD5 }) => {
   try {
     const client = s3()
     const data = await client.send(new DeleteObjectCommand(objectParams))
+    console.log(data)
     client.destroy()
-    return data
   } catch (error) {
-    const { requestId, cfId, extendedRequestId } = error.$metadata
-    console.log({ keyname, requestId, cfId, extendedRequestId })
+    console.log(error)
     throw new Error(`S3 delete Video error`)
   }
 }
@@ -138,12 +137,11 @@ const downloadS3File = async ({ keyname, sseKey, sseMD5 }) => {
   try {
     const client = s3()
     const data = await client.send(new GetObjectCommand(objectParams))
-    data.Body.on('end', () => { client.destroy(); console.log('client destroyed') })
+    data.Body.on('end', () => client.destroy())
     return data
   } catch (error) {
-    const { requestId, cfId, extendedRequestId } = error.$metadata
-    console.log({ keyname, requestId, cfId, extendedRequestId })
-    throw new Error(`S3 download Video error: ${error}`)
+    console.log(error)
+    throw new Error(`S3 download Video error`)
   }
 }
 
