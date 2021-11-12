@@ -138,7 +138,7 @@ const downloadS3File = async ({ keyname, sseKey, sseMD5 }) => {
   try {
     const client = s3()
     const data = await client.send(new GetObjectCommand(objectParams))
-    // client.destroy()
+    data.Body.on('end', () => { client.destroy(); console.log('client destroyed') })
     return data
   } catch (error) {
     const { requestId, cfId, extendedRequestId } = error.$metadata
