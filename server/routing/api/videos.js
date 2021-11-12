@@ -110,15 +110,15 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
           if (request.query.mode !== 'thumbnail') {
             // response.setHeader('Content-Type', headers['content-type']);
             response.setHeader('content-type', 'video/mp4')
-            response.setHeader('Accept-Ranges', 'bytes')
-            response.setHeader('Content-Length', file.ContentLength)
-            response.setHeader('Content-Range', `0-${file.ContentLength}`)
+            //response.setHeader('Accept-Ranges', 'bytes')
+            //response.setHeader('Content-Length', file.ContentLength)
+            //response.setHeader('Content-Range', `0-${file.ContentLength}`)
             console.log(`S3 get Video success: ${keyname}`)
           } else {
             response.setHeader('content-type', 'image/jpeg')
             console.log(`S3 get Thumbnail success: ${keyname}`)
           }
-          file.Body.pipe(response)
+          file.pipe(response)
         } else {
           response.status(404).send(new Error('Error downloading video'))
         }
