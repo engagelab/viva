@@ -118,7 +118,7 @@ router.get('/video/file', utilities.authoriseUser, (request, response, next) => 
             response.setHeader('content-type', 'image/jpeg')
             console.log(`S3 get Thumbnail success: ${keyname}`)
           }
-          file.pipe(response)
+          file.Body.pipe(response)
         } else {
           response.status(404).send(new Error('Error downloading video'))
         }
