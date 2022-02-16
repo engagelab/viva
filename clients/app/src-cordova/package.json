@@ -51,7 +51,8 @@
       }
     },
     "platforms": [
-      "cordova"
+      "cordova",
+      "ios"
     ]
   }
 }

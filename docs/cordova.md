@@ -12,8 +12,14 @@ Then, back at the project root:
 
 You may need to install ios-deploy: `brew install ios-deploy`
 
+The build will fail the first time. Open it anyway with XCode (clients/app/src-cordova/platforms/ios) and assign the UiO signing certificate (automatically manage signing)
+The private key for UiO should be installed in keychain.
+
 Ensure that the APP_BUNDLE_ID matches Cordova's schema name, and is entered in XCode Project > Info > URL Types in both 'identifier' and 'URL Schemes'
 Callback to the app from OAuth will not work otherwise
+
+Running the server will create a sample Datasett called 'test'. Enter the ID of this Datasett into .env SAMPLE_DATASET_ID=
+This will allow Apple to see a dataset when logging in using FEIDE's 'eva_student' test user during App Review.
 
 ##### OAuth manual Setup
 

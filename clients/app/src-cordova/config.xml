@@ -12,8 +12,8 @@
     <access origin="*" />
     <access origin="cdvfile://*" />
     <access origin="android-webview-video-poster:*" />
-    <allow-navigation href="viva:*" launch-external="yes" />
     <allow-navigation href="mailto:*" launch-external="yes" />
+    <allow-navigation href="*" launch-external="yes" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
     <allow-intent href="tel:*" />

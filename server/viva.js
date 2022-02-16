@@ -87,8 +87,9 @@ const sslOptions = {
 db.connect('VIVA Server').then(() => {
   // Create directories if necessary
   setup.createVideoDirectories()
+
   // Create test documents if necessary
-  if (process.env.NODE_ENV !== 'production') setup.createTestDocuments()
+  setup.createTestDocuments()
 
   // Get async Dataporten information before starting app
   openidClient.discoverServices().then(() => {
