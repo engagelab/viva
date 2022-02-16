@@ -52,8 +52,14 @@ const createTestDocuments = () => {
             adminGroup: 'test',
             groups: ['23222', 'appleAppReview'],
           },
-          selectionPriority: [], // Order of appearance of the utvalg categories
-          selection: {}, //  'utvalg' selection
+          selectionPriority: ["skole"], // Order of appearance of the utvalg categories
+          selection: {
+            "skole" : [
+              {
+                  "title" : "Huseby"
+              }
+            ]
+          }, //  'utvalg' selection
           storages: [
             {
               name: videoStorageTypes.educloud,
