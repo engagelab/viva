@@ -10,6 +10,9 @@ Then, back at the project root:
 `yarn run prepare:app`  this installs plugins including custom plugin variables
 `yarn run build:ios`  this build can be opened with XCode in `/client/src-cordova/platforms/ios`
 
+You may need to install ios-deploy: `brew install ios-deploy`
+
+
 ##### OAuth manual Setup
 
 (This is only needed if you make changes to a plugin)

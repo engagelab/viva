@@ -180,17 +180,18 @@ function completeCallback(request, response, user) {
   let s = ''
   const { client, remember } = request.session
   const host = process.env.VUE_APP_SERVER_HOST
-  const isEngagelab = host.includes('engagelab') || host.includes('viva')
+  const isEngagelab = host.includes('engagelab')
+  const isVivaProduction = host.includes('viva')
 
   if (client === 'lti') {
     redirectUrl =
-      process.env.NODE_ENV === 'development' && !isEngagelab
+      process.env.NODE_ENV === 'development' && !isEngagelab && !isVivaProduction
         ? `${host}:8080`
         : `${host}/lti`
     s = `${new Date().toLocaleString()}: LTI Login: ${user.profile.username}`
   } else if (client === 'admin') {
     redirectUrl =
-      process.env.NODE_ENV === 'development' && !isEngagelab
+      process.env.NODE_ENV === 'development' && !isEngagelab && !isVivaProduction
         ? `${host}:8081`
         : `${host}`
     s = `${new Date().toLocaleString()}: Admin Login: ${user.profile.username}`
@@ -199,20 +200,23 @@ function completeCallback(request, response, user) {
   // which must then be passed back to the /token route obtain a Session
   else if (client === 'mobileApp' || client === 'webApp') {
     if (client === 'mobileApp') {
+      // This calls the app's custom scheme 'viva' that must be defined in Cordova's config.xml and XCode at Info > URL Types
       redirectUrl = `viva://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
       s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
     } else {
       redirectUrl =
-        process.env.NODE_ENV === 'development' && !isEngagelab
+        process.env.NODE_ENV === 'development' && !isEngagelab && !isVivaProduction
           ? `${host}:8082`
           : `${host}/app`
     }
   }
 
-  // Engagelab server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
-  if (isEngagelab) {
-    redirectUrl = redirectUrl + '/#/postlogin'
-  } else redirectUrl = redirectUrl + '/postlogin'
+  // Engagelab / VIVA Prod server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
+  if (client !== 'mobileApp') {
+    if (isEngagelab || isVivaProduction) {
+      redirectUrl = redirectUrl + '/#/postlogin'
+    } else redirectUrl = redirectUrl + '/postlogin'
+  }
 
   // Set the session here at last!
   // Web app receives a Session immediately, does not need to pass a token
