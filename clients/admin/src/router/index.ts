@@ -104,9 +104,10 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  history: baseUrl.includes('engagelab') // As engagelab server uses proxying for multiple apps, this is the easiest way..
-    ? createWebHashHistory()
-    : createWebHistory(process.env.BASE_URL),
+  history:
+    baseUrl.includes('engagelab') || baseUrl.includes('viva') // As engagelab server uses proxying for multiple apps, this is the easiest way..
+      ? createWebHashHistory()
+      : createWebHistory(process.env.BASE_URL),
   routes,
 })
 

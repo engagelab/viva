@@ -180,7 +180,7 @@ function completeCallback(request, response, user) {
   let s = ''
   const { client, remember } = request.session
   const host = process.env.VUE_APP_SERVER_HOST
-  const isEngagelab = host.includes('engagelab')
+  const isEngagelab = host.includes('engagelab') || host.includes('viva')
 
   if (client === 'lti') {
     redirectUrl =
