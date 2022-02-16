@@ -25,7 +25,8 @@ let baseUrl = `${theHost}`
 if (
   process.env.NODE_ENV === 'development' &&
   theHost &&
-  !theHost.includes('engagelab')
+  !theHost.includes('engagelab') &&
+  !theHost.includes('viva')
 ) {
   baseUrl = `${theHost}:${thePort}`
 }

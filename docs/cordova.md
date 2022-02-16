@@ -12,6 +12,8 @@ Then, back at the project root:
 
 You may need to install ios-deploy: `brew install ios-deploy`
 
+Ensure that the APP_BUNDLE_ID matches Cordova's schema name, and is entered in XCode Project > Info > URL Types in both 'identifier' and 'URL Schemes'
+Callback to the app from OAuth will not work otherwise
 
 ##### OAuth manual Setup
 

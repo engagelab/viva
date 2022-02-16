@@ -201,7 +201,7 @@ function completeCallback(request, response, user) {
   else if (client === 'mobileApp' || client === 'webApp') {
     if (client === 'mobileApp') {
       // This calls the app's custom scheme 'viva' that must be defined in Cordova's config.xml and XCode at Info > URL Types
-      redirectUrl = `viva://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
+      redirectUrl = `${process.env.APP_BUNDLE_ID}://oauth_callback?mode=login&code=${user.tokens.local_token}&remember=${remember}`
       s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
     } else {
       redirectUrl =
@@ -212,9 +212,11 @@ function completeCallback(request, response, user) {
   }
 
   // Engagelab / VIVA Prod server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
-  if (isEngagelab || isVivaProduction) {
-    redirectUrl = redirectUrl + '/#/postlogin'
-  } else redirectUrl = redirectUrl + '/postlogin'
+  if (client !== 'mobileApp') {
+    if (isEngagelab || isVivaProduction) {
+      redirectUrl = redirectUrl + '/#/postlogin'
+    } else redirectUrl = redirectUrl + '/postlogin'
+  }
 
   // Set the session here at last!
   // Web app receives a Session immediately, does not need to pass a token
