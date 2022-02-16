@@ -23,10 +23,10 @@ const router = require('express').Router()
 const { generators } = require('openid-client')
 const jwt = require('jsonwebtoken')
 const jwksClient = require('jwks-rsa')
-const linkparser = require('parse-link-header');
-const { createOrUpdateUser, completeCallback } = require('./helpers')
+// const linkparser = require('parse-link-header');
+const { createOrUpdateUser, completeCallback, } = require('./helpers')
 
-const { httpRequest } = require('../../utilities')
+const { paginatedMemberRequest } = require('../../utilities')
 const openidClient = require('../../services/openid')
 const { userDetails } = require('../../services/canvas')
 
@@ -142,7 +142,7 @@ router.post('/canvas/callback', function (request, response) {
       client,
     }
 
-    async function paginatedMemberRequest(options, result = []) {
+    /*async function paginatedMemberRequest(options, result = []) {
       const { data, headers } = await httpRequest(options, '', [])
       const json = JSON.parse(data)
       result = [...result, ...json.members]
@@ -160,7 +160,7 @@ router.post('/canvas/callback', function (request, response) {
         return paginatedMemberRequest(options2, result)
       }
       return result
-    }
+    }*/
 
     // Note the course we are launching from
     if (custom_vars.course_id)
@@ -186,7 +186,7 @@ router.post('/canvas/callback', function (request, response) {
     }
 
     console.log(parsedUrl.href)
-    const namesAndRoles = await paginatedMemberRequest(options)
+    const namesAndRoles = await paginatedMemberRequest(options,LTItokenSet.access_token)
     let user
     if (namesAndRoles) {
       request.session.canvasData.namesAndRoles = namesAndRoles.map(

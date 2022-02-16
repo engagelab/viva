@@ -93,7 +93,9 @@ function setPrerequisiteCourseProgress(user) {
       )
     })
     .catch((error) => {
-      console.log(`Error requesting prerequisite course progress from Canvas: ${error}. Check that at least one 'requirement' is added to a module`)
+      console.log(
+        `Error requesting prerequisite course progress from Canvas: ${error}. Check that at least one 'requirement' is added to a module`
+      )
       return Promise.resolve()
     })
 }
@@ -182,11 +184,15 @@ function completeCallback(request, response, user) {
 
   if (client === 'lti') {
     redirectUrl =
-      process.env.NODE_ENV === 'development' && !isEngagelab ? `${host}:8080` : `${host}/lti`
+      process.env.NODE_ENV === 'development' && !isEngagelab
+        ? `${host}:8080`
+        : `${host}/lti`
     s = `${new Date().toLocaleString()}: LTI Login: ${user.profile.username}`
   } else if (client === 'admin') {
     redirectUrl =
-      process.env.NODE_ENV === 'development' && !isEngagelab ? `${host}:8081` : `${host}`
+      process.env.NODE_ENV === 'development' && !isEngagelab
+        ? `${host}:8081`
+        : `${host}`
     s = `${new Date().toLocaleString()}: Admin Login: ${user.profile.username}`
   }
   // Mobile app will be passed a token via Apple's ASWebAuthenticationSession / Google Custom Tabs
@@ -197,7 +203,9 @@ function completeCallback(request, response, user) {
       s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
     } else {
       redirectUrl =
-        process.env.NODE_ENV === 'development' && !isEngagelab ? `${host}:8082` : `${host}/app`
+        process.env.NODE_ENV === 'development' && !isEngagelab
+          ? `${host}:8082`
+          : `${host}/app`
     }
   }
 
@@ -216,9 +224,7 @@ function completeCallback(request, response, user) {
   return response.redirect(redirectUrl)
 }
 
-
 module.exports = {
   createOrUpdateUser,
   completeCallback,
-
 }

@@ -25,7 +25,7 @@ const jwt = require('jsonwebtoken')
 const ObjectId = require('mongoose').Types.ObjectId
 const User = require('./models/User')
 const { userRoles } = require('./constants')
-
+const linkparser = require('parse-link-header')
 let TEST_MODE = false
 
 const addZero = (i) => {
@@ -115,7 +115,9 @@ function tokenAuth(req, res, next, googleMobileAppTransfer) {
         )
         return next()
       } else {
-        const error = err2 ? err2 : new Error(`Active login token not found. Please log in again`)
+        const error = err2
+          ? err2
+          : new Error(`Active login token not found. Please log in again`)
         return next(error)
       }
     })
@@ -136,7 +138,9 @@ const authoriseUser = (req, res, next) => {
         req.session.user = user
         return next()
       } else {
-        const error = usererr ? usererr : new Error(`Active login not found. Please log in again`)
+        const error = usererr
+          ? usererr
+          : new Error(`Active login not found. Please log in again`)
         return next(error)
       }
     })
@@ -172,6 +176,28 @@ async function singleItemJsonRequest(options, postData = '') {
   return JSON.parse(data)
 }
 
+// Pagination for canvas API
+async function paginatedMemberRequest(options, token, result = []) {
+  const { data, headers } = await httpRequest(options, '', [])
+  const json = JSON.parse(data)
+  json.members
+    ? (result = [...result, ...json.members])
+    : (result = [...result, ...json])
+  const links = linkparser(headers.link)
+  if (links.next) {
+    const parsedUrl = new URL(links.next.url)
+    const options2 = {
+      hostname: parsedUrl.host,
+      path: parsedUrl.pathname + parsedUrl.search,
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+    return paginatedMemberRequest(options2, token, result)
+  }
+  return result
+}
 /**  https Request to TSD/ outside portal from  VIVA server */
 function httpRequest(options, postData = '') {
   return new Promise(function (resolve, reject) {
@@ -179,9 +205,9 @@ function httpRequest(options, postData = '') {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         reject(
           new Error(
-            `Rejected HTTP Response. statusCode: ${response.statusCode} calling: ${
-              options.host + options.path
-            } `
+            `Rejected HTTP Response. statusCode: ${
+              response.statusCode
+            } calling: ${options.host + options.path} `
           )
         )
       }
@@ -200,7 +226,8 @@ function httpRequest(options, postData = '') {
           // Everything is OK
           // json = JSON.parse(Buffer.concat(data).toString())
           const d = data.join('')
-          if (d === 'Invalid access token') reject(new Error('Access token not valid for this request'))
+          if (d === 'Invalid access token')
+            reject(new Error('Access token not valid for this request'))
           else resolve({ data: d, headers: response.headers })
         }
       })
@@ -234,4 +261,5 @@ module.exports = {
   // HTTPS Requests:
   httpRequest,
   singleItemJsonRequest,
+  paginatedMemberRequest,
 }

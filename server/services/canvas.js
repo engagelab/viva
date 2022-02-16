@@ -18,7 +18,10 @@
  You should have received a copy of the GNU Affero General Public License
  along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
  */
-const { singleItemJsonRequest } = require('../utilities')
+const {
+  singleItemJsonRequest,
+  paginatedMemberRequest,
+} = require('../utilities')
 const host = process.env.CANVAS_ENDPOINT_DOMAIN
 const superToken = process.env.CANVAS_VIVA_ACCESS_TOKEN
 
@@ -37,7 +40,8 @@ const coursesForUser = (userId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return singleItemJsonRequest(options, '')
+  // return singleItemJsonRequest(options, '')
+  return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
 // Get list of the current groups's Users from Canvas
@@ -47,13 +51,14 @@ const usersForCourse = (courseId, canvasAccessToken) => {
   let options = {
     host,
     port: 443,
-    path: `/api/v1/courses/${courseId}/users?per_page=1000`,
+    path: `/api/v1/courses/${courseId}/users`,
     method: 'GET',
     headers: {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return singleItemJsonRequest(options, '')
+  // return singleItemJsonRequest(options, '')
+  return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
 // Get list of active Courses in Account
@@ -69,7 +74,8 @@ const coursesInAccount = (accountId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return singleItemJsonRequest(options, '')
+  // return singleItemJsonRequest(options, '')
+  return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
 // Get list of the current user's Groups from Canvas
@@ -85,7 +91,8 @@ const usersForGroup = (groupId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return singleItemJsonRequest(options, '')
+  // return singleItemJsonRequest(options, '')
+  return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
 // Get list of user's CourseProgress (including enrolment roles) from Canvas
@@ -101,7 +108,8 @@ const courseProgress = (canvasUserId, canvasCourseId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return singleItemJsonRequest(options, '')
+  // return singleItemJsonRequest(options, '')
+  return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
 // Get user's Profile
@@ -119,6 +127,14 @@ const userDetails = (canvasAccessToken, canvasUserId) => {
     },
   }
   return singleItemJsonRequest(options, '')
+  // return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
-module.exports = { coursesForUser, userDetails, courseProgress, usersForGroup, coursesInAccount, usersForCourse }
+module.exports = {
+  coursesForUser,
+  userDetails,
+  courseProgress,
+  usersForGroup,
+  coursesInAccount,
+  usersForCourse,
+}
