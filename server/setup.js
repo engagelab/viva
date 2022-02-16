@@ -50,7 +50,7 @@ const createTestDocuments = () => {
           },
           users: {
             adminGroup: 'test',
-            groups: ['23222'],
+            groups: ['23222', 'appleAppReview'],
           },
           selectionPriority: [], // Order of appearance of the utvalg categories
           selection: {}, //  'utvalg' selection

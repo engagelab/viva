@@ -62,7 +62,7 @@ router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
   const groupIds = u.profile.groups.map((g) => g.id)
 
   // Allow the Apple App Review test user to see a sample Dataset
-  if (u.profile.username === 'eva_student@spusers.feide.no') groupIds.push(process.env.SAMPLE_DATASET_ID)
+  if (u.profile.username === 'eva_student@spusers.feide.no') groupIds.push('appleAppReview')
 
   const isAdmin = utilities.hasMinimumUserRole(
     response.locals.user,

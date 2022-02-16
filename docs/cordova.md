@@ -18,7 +18,7 @@ The private key for UiO should be installed in keychain.
 Ensure that the APP_BUNDLE_ID matches Cordova's schema name, and is entered in XCode Project > Info > URL Types in both 'identifier' and 'URL Schemes'
 Callback to the app from OAuth will not work otherwise
 
-Running the server will create a sample Datasett called 'test'. Enter the ID of this Datasett into .env SAMPLE_DATASET_ID=
+Running the server will create a sample Datasett called 'test'. This includes a groupID called 'appleAppReview'.
 This will allow Apple to see a dataset when logging in using FEIDE's 'eva_student' test user during App Review.
 
 ##### OAuth manual Setup
