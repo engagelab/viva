@@ -212,11 +212,9 @@ function completeCallback(request, response, user) {
   }
 
   // Engagelab / VIVA Prod server Vue App uses the 'hash' based history system, as it must proxy to a subdirectory
-  if (client !== 'mobileApp') {
-    if (isEngagelab || isVivaProduction) {
-      redirectUrl = redirectUrl + '/#/postlogin'
-    } else redirectUrl = redirectUrl + '/postlogin'
-  }
+  if (isEngagelab || isVivaProduction) {
+    redirectUrl = redirectUrl + '/#/postlogin'
+  } else redirectUrl = redirectUrl + '/postlogin'
 
   // Set the session here at last!
   // Web app receives a Session immediately, does not need to pass a token
