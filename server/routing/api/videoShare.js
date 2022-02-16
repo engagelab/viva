@@ -201,7 +201,7 @@ router.put(
       ]},
       (error, updatedVideo) => {
         if (error) return next(error)
-        else if (process.env.NODE_ENV === 'test') {
+        else if (process.env.NODE_ENV === 'testing') {
           const updatedShare = updatedVideo.users.sharing.find((s) => {
             const id = s._id.toString()
             return id === request.query.shareID

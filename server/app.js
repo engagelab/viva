@@ -96,7 +96,7 @@ if (process.env.NODE_ENV === 'development') {
   })
   // app.use(cors({ credentials: true, origin }))
 }
-else if (process.env.NODE_ENV === 'test') {
+else if (process.env.NODE_ENV === 'testing') {
   sessionOptions.cookie = { httpOnly: false, maxAge: 86400000, sameSite: 'none', secure: false }
 } else {
   sessionOptions.store = new MemoryStore({

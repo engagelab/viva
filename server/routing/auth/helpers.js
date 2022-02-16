@@ -157,7 +157,7 @@ function createOrUpdateUser(tokenSet, profile) {
       if (err) return reject(`Error checking user ${err}`)
       user = usr || new User()
       setUserAttributes(user, profile, tokenSet)
-      if (process.env.NODE_ENV !== 'test') {
+      if (process.env.NODE_ENV !== 'testing') {
         if (profile.client === 'admin') {
           await setUserRole(user)
         }
@@ -217,7 +217,7 @@ function completeCallback(request, response, user) {
   // Set the session here at last!
   // Web app receives a Session immediately, does not need to pass a token
   request.session.ref = user.id
-  if (process.env.NODE_ENV !== 'test') {
+  if (process.env.NODE_ENV !== 'testing') {
     console.log(`Redirecting client to: ${redirectUrl}`)
     console.log(`${s} Session: ${request.session.ref}`)
   }
