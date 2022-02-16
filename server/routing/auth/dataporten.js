@@ -59,6 +59,7 @@ router.get('/dataporten/login', (req, res) => {
       code_challenge_method: 'S256',
     })
   }
+  console.log(`NODE_ENV: ${process.env.NODE_ENV} DP redirect: ${redirectUrl}`)
   res.redirect(redirectUrl)
 })
 

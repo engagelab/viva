@@ -39,7 +39,7 @@ function createClient(mode) {
     if (process.env.NODE_ENV !== 'development' || host.includes('engagelab')) {
       authCallback = `${host}/auth/dataporten/callback`
     }
-    console.log(`Server host: ${host} Auth callback: ${authCallback}`)
+    console.log(`Server host: ${host} Auth callback: ${authCallback} Issuer exists: ${!!dataportenIssuer}`)
     if (dataportenIssuer) {
       const theClient = new dataportenIssuer.Client({
         client_id: process.env.FEIDE_CLIENT_ID,
