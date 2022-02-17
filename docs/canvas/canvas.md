@@ -35,7 +35,27 @@ OpenID Connect Initiation URL: https://localhost:8000/auth/canvas/login?organiza
 Redirect URL: https://localhost:8000/auth/canvas/callback
 Public JWK URL:   https://engagelab.uio.no/.well-known/testing/jwks.json (must be accessible online!)
 
+For Engagelab server (in Norwegian):
+URIer for videresendelse: https://engagelab.uio.no/viva/auth/canvas/callback
+Uri for mål-lenke: https://engagelab.uio.no/viva
+OpenID Connect igangsettings-Url: https://engagelab.uio.no/viva/auth/canvas/login
+Offentlig JWK ULR: https://engagelab.uio.no/.well-known/testing/jwks.json
 
+For the production VIVA server:
+videresending - https://viva.uio.no/auth/canvas/callback
+uri mål: https://viva.uio.no
+OpenID connect: https://viva.uio.no/auth/canvas/login
+offentlig JWK url: samme som før, altså https://viva.uio.no/.well-known/jwks.json
+
+###### Generating the JWK
+Generate a public/private key pair here: https://mkjwk.org
+The VIVA server should host the JWK public key where it is available online.
+On a server running Apache it could be stored in the default location e.g: /virtualhosts/viva/443/htdocs/.well-known/jwks.json
+The private key should be kept hidden on the same server, somewhere where NodeJS can reach it.
+Place the private key path and filename in .env at JWK_PRIVATE_KEY_FILE=
+  e.g. JWK_PRIVATE_KEY_FILE=/etc/canvas/keys/canvas-jwk.pem
+Note the current key's identifier (in some cases there can be multiple keys in use) at JWK_CURRENT_KID=
+  e.g. JWK_CURRENT_KID='AZ2UEZ2iWh3DjtrN2c_M5eFyncbFObFFDxDdsvxsjV4'
 
 ##### LTI Variable Substitution
 Viva requires a custom variable to match a user login via API with a user login via LTI
