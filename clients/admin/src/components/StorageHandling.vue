@@ -178,7 +178,6 @@ export default defineComponent({
   setup(props, context) {
     const { t } = useI18n({ messages })
     const { storage } = toRefs(props)
-    const defaultFileKey = STORAGE_KEYS.name.length ? STORAGE_KEYS.name[0] : ''
     const localStorage: Ref<DatasetStorage> = ref({
       _id: '',
       kind: VIDEO_STORAGE_TYPES.lagringshotell,
@@ -212,6 +211,15 @@ export default defineComponent({
         itemName: i,
         item: i,
       }))
+      if (storageFilename.value.length === 0) {
+        const defaultFileKey = STORAGE_KEYS.name.length
+          ? STORAGE_KEYS.name[0]
+          : ''
+        storageFilename.value.push({
+          itemName: defaultFileKey,
+          item: defaultFileKey,
+        })
+      }
     }
 
     function storageWasUpdated() {
@@ -267,9 +275,7 @@ export default defineComponent({
     const storageFileOptions: Ref<StorageStringListItem[]> = ref(
       STORAGE_KEYS.name.map((i) => ({ itemName: i, item: i }))
     )
-    const storageFilename: Ref<StorageStringListItem[]> = ref([
-      { itemName: defaultFileKey, item: defaultFileKey },
-    ])
+    const storageFilename: Ref<StorageStringListItem[]> = ref([])
     const setStoragePathAndFile = () => {
       localStorage.value.file.name = storageFilename.value.map((i) => i.item)
       localStorage.value.file.path = storagePath.value.map((i) => i.item)
