@@ -132,17 +132,17 @@ import draggable from 'vuedraggable'
 import { useI18n } from 'vue-i18n'
 import AnswerInput from '@/components/base/AnswerInput.vue'
 import SelectionBox from '@/components/base/SelectionBox.vue'
-import { VIDEO_STORAGE_TYPES, storageKeys } from '@/constants'
+import { VIDEO_STORAGE_TYPES, STORAGE_KEYS } from '@/constants'
 import { DatasetStorage } from '@/types/main'
 const messages = {
   nb_NO: {
-    kind: '',
-    group: '',
-    categories: '',
-    path: '',
-    'available options': '',
-    'path structure': '',
-    fileName: '',
+    kind: 'Kind',
+    group: 'Group',
+    categories: 'Categories',
+    path: 'Path',
+    'available options': 'Available options',
+    'path structure': 'Path structure',
+    fileName: 'File name',
     'fileName structure': 'File name structure',
   },
   en: {
@@ -178,6 +178,7 @@ export default defineComponent({
   setup(props, context) {
     const { t } = useI18n({ messages })
     const { storage } = toRefs(props)
+    const defaultFileKey = STORAGE_KEYS.name.length ? STORAGE_KEYS.name[0] : ''
     const localStorage: Ref<DatasetStorage> = ref({
       _id: '',
       kind: VIDEO_STORAGE_TYPES.lagringshotell,
@@ -234,12 +235,11 @@ export default defineComponent({
       storageWasUpdated()
     }
 
-    const storageGroupOptions: StorageStringListItem[] = storageKeys.groups.map(
-      (sg) => ({
+    const storageGroupOptions: StorageStringListItem[] =
+      STORAGE_KEYS.groups.map((sg) => ({
         item: sg,
         itemName: sg,
-      })
-    )
+      }))
     const storageGroup: Ref<StorageStringListItem> = ref({
       item: '',
       itemName: '',
@@ -260,14 +260,16 @@ export default defineComponent({
     }
 
     const storagePathOptions: Ref<StorageStringListItem[]> = ref(
-      storageKeys.path.map((i) => ({ itemName: i, item: i }))
+      STORAGE_KEYS.path.map((i) => ({ itemName: i, item: i }))
     )
     const storagePath: Ref<StorageStringListItem[]> = ref([])
 
     const storageFileOptions: Ref<StorageStringListItem[]> = ref(
-      storageKeys.name.map((i) => ({ itemName: i, item: i }))
+      STORAGE_KEYS.name.map((i) => ({ itemName: i, item: i }))
     )
-    const storageFilename: Ref<StorageStringListItem[]> = ref([])
+    const storageFilename: Ref<StorageStringListItem[]> = ref([
+      { itemName: defaultFileKey, item: defaultFileKey },
+    ])
     const setStoragePathAndFile = () => {
       localStorage.value.file.name = storageFilename.value.map((i) => i.item)
       localStorage.value.file.path = storagePath.value.map((i) => i.item)

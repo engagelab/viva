@@ -25,7 +25,8 @@ let baseUrl = `${theHost}`
 if (
   process.env.NODE_ENV === 'development' &&
   theHost &&
-  !theHost.includes('engagelab')
+  !theHost.includes('engagelab') &&
+  !theHost.includes('viva')
 ) {
   baseUrl = `${theHost}:${thePort}`
 }
@@ -169,7 +170,7 @@ enum UTVALG_SELECTION {
   bedrift = 'bedrift',
 }
 
-const storageKeys = {
+const STORAGE_KEYS = {
   name: ['fileName', 'timeStamp'],
   path: ['datasettName', 'fileName', 'owner', 'userID', 'timeStamp'],
   groups: ['uv-ils-viva-diva1', 'uv-ils-viva-proto1'],
@@ -210,7 +211,7 @@ export {
   CONSENT_SELECTION,
   UTVALG_SELECTION,
   behandlings,
-  storageKeys,
+  STORAGE_KEYS,
   appVersion,
   taskColours,
   vivaServer,
