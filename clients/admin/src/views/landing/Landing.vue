@@ -17,10 +17,8 @@
  You should have received a copy of the GNU Affero General Public License
  along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
-  <div class="mt-4 bg-blue-400 h-screen">
-    <div
-      class="flex flex-col mt-36 text-xl grid grid-rows-1 justify-items-center"
-    >
+  <div class="bg-blue-400 h-screen">
+    <div class="flex flex-col mt-36 text-xl place-items-center">
       <h1>{{ t('heading') }}</h1>
       <div class="flex m-4 space-x-4 mt-48">
         <Button
