@@ -27,19 +27,27 @@ let dataportenIssuer
 function discoverServices() {
   return Issuer.discover(
     'https://auth.dataporten.no/.well-known/openid-configuration'
-  ).catch((error) => {
-    console.error(`Dataporten Issuer did not respond. Closing..: ${error}`)
-    process.exit()
-  }).then((issuer) => dataportenIssuer = issuer)
+  )
+    .catch((error) => {
+      console.error(`Dataporten Issuer did not respond. Closing..: ${error}`)
+      process.exit()
+    })
+    .then((issuer) => (dataportenIssuer = issuer))
 }
 
 function createClient(mode) {
   if (mode == 'dataporten') {
     let authCallback = `${host}:${port}/auth/dataporten/callback`
-    if (process.env.NODE_ENV !== 'development' || host.includes('engagelab')) {
+    if (
+      process.env.NODE_ENV === 'testing' ||
+      process.env.NODE_ENV !== 'development'
+    ) {
       authCallback = `${host}/auth/dataporten/callback`
     }
-    console.log(`Server host: ${host} Auth callback: ${authCallback} Issuer exists: ${!!dataportenIssuer}`)
+    console.log(
+      `Server host: ${host} Auth callback: ${authCallback} Issuer exists: ${!!dataportenIssuer}`
+    )
+    console.log(authCallback)
     if (dataportenIssuer) {
       const theClient = new dataportenIssuer.Client({
         client_id: process.env.FEIDE_CLIENT_ID,
@@ -74,7 +82,7 @@ function createClient(mode) {
       issuer: `https://${process.env.CANVAS_ISSUER_DOMAIN}`,
       authorization_endpoint: `https://${process.env.CANVAS_ENDPOINT_DOMAIN}/login/oauth2/auth`,
       token_endpoint: `https://${process.env.CANVAS_ENDPOINT_DOMAIN}/login/oauth2/token`,
-      userinfo_endpoint: `https://${process.env.CANVAS_ENDPOINT_DOMAIN}/api/v1/users/`
+      userinfo_endpoint: `https://${process.env.CANVAS_ENDPOINT_DOMAIN}/api/v1/users/`,
     })
     let authCallback = `${host}:${port}/auth/canvas/callback`
     if (process.env.NODE_ENV !== 'development' || host.includes('engagelab')) {
