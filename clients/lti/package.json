@@ -17,7 +17,7 @@
     "core-js": "^3.6.5",
     "dotenv": "^8.2.0",
     "moment": "^2.27.0",
-    "postcss": "^8.2.1",
+    "postcss": "^7",
     "postcss-loader": "^4.1.0",
     "purgecss": "^3.0.0",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.0.2",
