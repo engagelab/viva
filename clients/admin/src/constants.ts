@@ -23,14 +23,14 @@ const theHost = process.env.VUE_APP_SERVER_HOST
 const thePort = process.env.VUE_APP_SERVER_PORT
 let baseUrl = `${theHost}`
 if (
-  process.env.NODE_ENV === 'development' &&
+  process.env.NODE_ENV !== 'production' &&
   theHost &&
   !theHost.includes('engagelab') &&
   !theHost.includes('viva')
 ) {
   baseUrl = `${theHost}:${thePort}`
 }
-
+alert(baseUrl)
 const assetRoot: string = process.env.VUE_APP_CMS_HOST + '/api/assets' || ''
 const userRolesString = process.env.VUE_APP_USER_ROLES || ''
 const userRoles = userRolesString.split(',')
