@@ -47,7 +47,7 @@ router.get('/dataporten/login', (req, res) => {
   const code_challenge = generators.codeChallenge(code_verifier)
 
   let redirectUrl = ''
-  if (process.env.NODE_ENV === 'testing') {
+  if (process.env.NODE_ENV === 'development') {
     const split = process.env.VUE_APP_SERVER_HOST.split(':')
     redirectUrl = `http:${split[1]}:${process.env.VUE_APP_SERVER_PORT}/auth/dataporten/callback` // Jest tests function on HTTP protocol
   } else {
