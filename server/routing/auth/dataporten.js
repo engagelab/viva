@@ -47,7 +47,7 @@ router.get('/dataporten/login', (req, res) => {
   const code_challenge = generators.codeChallenge(code_verifier)
 
   let redirectUrl = ''
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'testing') {
     const split = process.env.VUE_APP_SERVER_HOST.split(':')
     redirectUrl = `http:${split[1]}:${process.env.VUE_APP_SERVER_PORT}/auth/dataporten/callback` // Jest tests function on HTTP protocol
   } else {
@@ -77,7 +77,7 @@ router.get('/dataporten/callback', function (request, response) {
   const { code_verifier, testing, organization, client } = request.session
 
   // FOR AUTOMATED TESTS ONLY. This section will return directly without contacting dataporten
-  if (process.env.NODE_ENV === 'autoTesting') {
+  if (process.env.NODE_ENV === 'testing') {
     const tokenSet = {
       access_token: '',
       id_token: '',
