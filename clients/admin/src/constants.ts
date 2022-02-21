@@ -30,7 +30,7 @@ if (
 ) {
   baseUrl = `${theHost}:${thePort}`
 }
-alert(baseUrl)
+
 const assetRoot: string = process.env.VUE_APP_CMS_HOST + '/api/assets' || ''
 const userRolesString = process.env.VUE_APP_USER_ROLES || ''
 const userRoles = userRolesString.split(',')
