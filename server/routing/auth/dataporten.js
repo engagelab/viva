@@ -77,7 +77,7 @@ router.get('/dataporten/callback', function (request, response) {
   const { code_verifier, testing, organization, client } = request.session
 
   // FOR AUTOMATED TESTS ONLY. This section will return directly without contacting dataporten
-  if (process.env.NODE_ENV === 'testing') {
+  if (process.env.NODE_ENV === 'autoTesting') {
     const tokenSet = {
       access_token: '',
       id_token: '',
