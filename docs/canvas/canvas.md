@@ -62,16 +62,17 @@ Viva requires a custom variable to match a user login via API with a user login 
 The LTI settings has a section called 'custom fields' enter the following:
 
     user_id=$Canvas.user.id
-    login_id=$Canvas.user.loginId      <--- username@uio.no
     user_email=$Person.email.primary
-    person_name=$Person.name.full
-    course_id=$Canvas.course.id
+    *login_id=$Canvas.user.loginId      <-- username@uio.no. This is essential - intended to match Dataporten user ID with Canvas API token user ID
+    *person_name=$Person.name.full      <-- To find user's profile in Names and Roles
+    *course_id=$Canvas.course.id        <-- To find Datasets connected with this course
+
+    * required
 
   Tested but currently unused:
     user_username=$User.username
     account_id=$Canvas.account.id
     api_domain=$Canvas.api.domain
-
 
 ## Administrator Role
 Viva for Canvas requires creating inside Canvas a special Group to recognise which User(s) in a Course are Administrators
