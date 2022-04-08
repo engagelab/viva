@@ -1,3 +1,23 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import { isRef, ref, Ref } from 'vue'
 import { User } from './types/main'
 import { USER_ROLE } from './constants'
@@ -9,8 +29,11 @@ const wrap = <T>(element: Ref<T> | T): Ref<T> => {
   return ref(element) as Ref<T>
 }
 
-const convertFilePath = (path: string): string => {
-  return window.WkWebView.convertFilePath(path)
+const convertFilePath = (entry: FileEntry): string => {
+  const u = entry.toURL() // e.g. file:///data/user/0/no.uio.mobileapps.viva2/files/users/60d21f5633b66d2b317f2987/3e70a17f-86c5-4bab-0367-027480af9b80.mp4
+  // const i = entry.toInternalURL() // e.g. cdvfile://localhost/files/users/60d21f5633b66d2b317f2987/3e70a17f-86c5-4bab-0367-027480af9b80.mp4
+  if (window.WkWebView) return window.WkWebView.convertFilePath(u)
+  return u
 }
 
 // Return a new array that is a shuffled version of the supplied array

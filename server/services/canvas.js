@@ -1,5 +1,27 @@
+/*
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
 
-const { httpRequest } = require('../utilities')
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
+const {
+  singleItemJsonRequest,
+  paginatedMemberRequest,
+} = require('../utilities')
 const host = process.env.CANVAS_ENDPOINT_DOMAIN
 const superToken = process.env.CANVAS_VIVA_ACCESS_TOKEN
 
@@ -18,7 +40,8 @@ const coursesForUser = (userId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  // return singleItemJsonRequest(options, '')
+  return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
 // Get list of the current groups's Users from Canvas
@@ -34,7 +57,8 @@ const usersForCourse = (courseId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  // return singleItemJsonRequest(options, '')
+  return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
 // Get list of active Courses in Account
@@ -50,7 +74,8 @@ const coursesInAccount = (accountId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  // return singleItemJsonRequest(options, '')
+  return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
 // Get list of the current user's Groups from Canvas
@@ -66,13 +91,14 @@ const usersForGroup = (groupId, canvasAccessToken) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  // return singleItemJsonRequest(options, '')
+  return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
 // Get list of user's CourseProgress (including enrolment roles) from Canvas
 // https://canvas.instructure.com/doc/api/courses.html#method.courses.user_progress
 // Returns a Promise
-const courseProgress = (canvasAccessToken, canvasUserId, canvasCourseId) => {
+const courseProgress = (canvasUserId, canvasCourseId, canvasAccessToken) => {
   let options = {
     host,
     port: 443,
@@ -82,10 +108,13 @@ const courseProgress = (canvasAccessToken, canvasUserId, canvasCourseId) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  // return singleItemJsonRequest(options, '')
+  return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
 // Get user's Profile
+// Required if using a USER-specific Canvas token
+// NOTE: Currently not functional for superToken (token requires further access rights)
 // https://canvas.instructure.com/doc/api/users.html#method.profile.settings
 const userDetails = (canvasAccessToken, canvasUserId) => {
   let options = {
@@ -97,7 +126,15 @@ const userDetails = (canvasAccessToken, canvasUserId) => {
       Authorization: `Bearer ${canvasAccessToken || superToken}`,
     },
   }
-  return httpRequest(options, '')
+  return singleItemJsonRequest(options, '')
+  // return paginatedMemberRequest(options, canvasAccessToken || superToken)
 }
 
-module.exports = { coursesForUser, userDetails, courseProgress, usersForGroup, coursesInAccount, usersForCourse }
+module.exports = {
+  coursesForUser,
+  userDetails,
+  courseProgress,
+  usersForGroup,
+  coursesInAccount,
+  usersForCourse,
+}

@@ -1,8 +1,29 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import {
   USER_ROLE,
   CONSENT_TYPES,
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
+  // behandlings,
 } from '../constants'
 import { uuid } from '../utilities'
 
@@ -266,6 +287,9 @@ interface VideoTableLayout {
   dataset: string
   shared: VideoUsers
   details: VideoDetails
+  selection: string
+  consenters: string[]
+  storages: VideoStorages[]
 }
 
 export class Video {
@@ -348,7 +372,7 @@ export class Video {
       name: data.dataset.name,
       selection: data.selection,
     })
-    this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
+    this.updateUsers({ owner: data.user.id, sharedWith: [], sharing: [] })
     this.storages = data.dataset.storages.map((storage) => ({
       kind: storage.kind,
       path: '',
@@ -444,9 +468,14 @@ export class Video {
       dataset: this.dataset.name,
       shared: this.users,
       details: this.details,
+      selection: this.dataset.selection.reduce(
+        (acc, item) => acc + `${item.title} > `,
+        ''
+      ),
+      consenters: this.consents,
+      storages: this.storages,
     }
   }
-
   // Convert this to a Plain Old Javascript Object
   get asPOJO(): unknown {
     return { ...this }
@@ -492,34 +521,13 @@ export class Video {
   }
 }
 
-// // Dataporten groups
-// export interface DataportenGroupsData {
-//   type: string
-//   displayName: string
-//   id: string
-//   membership: {
-//     basic: string
-//   }
-// }
-// export class DataportenGroups {
-//   type: string
-//   displayName: string
-//   id: string
-//   membership: {
-//     basic: string
-//   }
-//   constructor(data?: DataportenGroupsData) {
-//     this.type = data?.type
-//     this.displayName = data?.displayName
-//     this.id = data?.id
-//     this.membership = data?.membership.basic
-//   }
-// }
 export interface DataPath {
   path: string
   currentKey: string
+  nextKey: string
   currentValue: string
   title: string
+  mode: string
 }
 export interface DatasetSelection {
   title: string
@@ -528,18 +536,16 @@ export interface DatasetSelection {
 interface DatasetStatus {
   lastUpdated: Date
   lockedBy: string
+  active: boolean
 }
-interface DatasetConsent {
+export interface DatasetConsent {
   kind: CONSENT_TYPES
+  value: string
+  formId: number
 }
 interface DatasetUsers {
-  owner: {
-    profile: {
-      username: string
-    }
-  }
-  dataportenGroups: string[]
-  canvasGroups: string[]
+  owner: string // ID of User who created this Dataset
+  groups: string[]
 }
 export interface DatasetStorage {
   _id?: string
@@ -580,20 +586,18 @@ export class Dataset {
     this.created = new Date()
     this.formId = ''
     this.status = {
+      active: false,
       lastUpdated: new Date(),
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manuel,
+      kind: data?.consent.kind || CONSENT_TYPES.manual,
+      value: data?.consent.value || '',
+      formId: data?.consent.formId || 0,
     }
     this.users = {
-      owner: {
-        profile: {
-          username: '',
-        },
-      },
-      dataportenGroups: [],
-      canvasGroups: [],
+      owner: data?.users.owner || '(unknown)',
+      groups: data?.users.groups || [],
     }
     this.selection = {}
     this.selectionPriority = []
@@ -605,24 +609,21 @@ export class Dataset {
       this.created = new Date(data.created)
       this.formId = data.formId
       this.status = {
+        active: data.status?.active,
         lastUpdated: data.status?.lastUpdated
           ? new Date(data.status.lastUpdated)
           : new Date(),
         lockedBy: data.status?.lockedBy ? data.status.lockedBy : '',
       }
       this.consent = {
-        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manuel,
+        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manual,
+        // value: fetchValue(data.consent),
+        value: data.consent?.value ? data.consent.value : '',
+        formId: data.consent?.formId ? data.consent.formId : 0,
       }
 
-      this.users.owner.profile.username = data.users?.owner?.profile?.username
-      this.users.dataportenGroups = data.users?.dataportenGroups || []
-
-      this.users.canvasGroups = data.users?.canvasGroups
-        ? data.users?.canvasGroups
-        : []
-
       this.selection = data?.selection ? data.selection : {}
-      this.selectionPriority = data.selectionPriority
+      this.selectionPriority = data.selectionPriority || []
 
       this.storages =
         data?.storages?.map((s: DatasetStorage) => {
@@ -667,7 +668,7 @@ interface UserStatus {
 interface UserProfileGroup {
   id: string
   name: string
-  isAdmin: boolean
+  role: string
 }
 interface UserProfile {
   username: string
@@ -694,18 +695,18 @@ interface UserVideos {
 
 export interface UserRecordingInProcess {
   name: string
-  videos: Array<string>
+  videos: string[]
 }
 
 export class User {
-  _id: string
+  id: string
   status: UserStatus
   profile: UserProfile
   datasetConfig: UserDatasetConfig
   videos: UserVideos
 
   constructor(data?: User) {
-    this._id = ''
+    this.id = ''
     this.status = {
       role: USER_ROLE.user,
       created: new Date(),
@@ -735,7 +736,7 @@ export class User {
       removedDraftIDs: [],
     }
     if (data) {
-      this._id = data._id
+      this.id = data.id
       this.status = data.status
       this.profile = data.profile
       this.datasetConfig = {
@@ -749,15 +750,6 @@ export class User {
       }
     }
   }
-
-  /*
-  public static columnDefs(): ColumnDef[] {
-    return [
-      { headerName: 'Datainnsamler', field: 'Datainnsamler' },
-      { headerName: 'Antall opptakk', field: 'Antall opptakk' }
-    ]
-  }
-  */
 
   public static columnDefs(): string[] {
     return ['Datainnsamler', 'Antall opptakk']

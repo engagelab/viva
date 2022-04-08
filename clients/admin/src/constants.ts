@@ -1,11 +1,33 @@
 /*
- Copyright 2018 Richard Nesnass
-*/
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 const theHost = process.env.VUE_APP_SERVER_HOST
 const thePort = process.env.VUE_APP_SERVER_PORT
 let baseUrl = `${theHost}`
-if (process.env.NODE_ENV === 'development') {
+if (
+  process.env.NODE_ENV !== 'production' &&
+  theHost &&
+  !theHost.includes('engagelab') &&
+  !theHost.includes('viva')
+) {
   baseUrl = `${theHost}:${thePort}`
 }
 
@@ -34,23 +56,6 @@ const dbVersion = 1
 const device = 'mobile'
 const videoStorageTypes = ['none', 'google', 'onedrive', 'lagringshotell']
 const utvalger = ['Feltsted', 'Klasse', 'Fag', 'Lærer']
-
-const behandlings = {
-  samtykke: {
-    name: 'Digital Samtykke',
-    description:
-      'Opptak er basert på samtykker som er gitt digitalt i UiOs samtykkeportal.',
-  },
-  manual: {
-    name: 'Manuelt samtykke',
-    description: 'Opptak er basert på samtykker som er håndtert manuelt.',
-  },
-  article6: {
-    name: 'Ikke Samtykke',
-    description:
-      'Opptak er basert på GDPR §6(behandling som er nødvendig for å utføre en oppgave i allmennhetens interesse).',
-  },
-}
 
 const stores = {
   metadataStore: {
@@ -118,7 +123,7 @@ if (
 
 enum CONSENT_TYPES {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
 // Ensure enums match those defined in env file
@@ -135,8 +140,6 @@ enum VIDEO_STORAGE_TYPES {
   lagringshotell = 'lagringshotell',
 }
 
-const FILEGROUPS = ['uv-ils-viva-diva1', 'uv-ils-viva-proto1']
-
 enum VIDEO_STATUS_TYPES {
   draft = 'draft', // Before upload has been attempted
   premeta = 'premeta', // Pre-stage when awaiting linking of file upload to complete uploaded metadata in DB
@@ -150,11 +153,11 @@ enum VIDEO_STATUS_TYPES {
 
 enum CONSENT_SELECTION {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
 
-enum SELECTION {
+enum UTVALG_SELECTION {
   skole = 'skole',
   trinn = 'trinn',
   klasse = 'klasse',
@@ -167,11 +170,33 @@ enum SELECTION {
   bedrift = 'bedrift',
 }
 
-const FILE = {
-  name: ['fileId', 'timeStamp'],
-  path: ['DatasetName', 'fileId', 'ataManager', 'UserID', 'timeStamp'],
+const STORAGE_KEYS = {
+  name: ['fileName', 'timeStamp'],
+  path: ['datasettName', 'fileName', 'owner', 'userID', 'timeStamp'],
+  groups: ['uv-ils-viva-diva1', 'uv-ils-viva-proto1'],
 }
-const GROUPS = ['uv-ils-viva-diva1', 'uv-ils-viva-proto1']
+
+interface Behandling {
+  name: string
+  description: string
+}
+
+const behandlings: Record<CONSENT_TYPES, Behandling> = {
+  [CONSENT_TYPES.samtykke]: {
+    name: 'Digitalt samtykke',
+    description:
+      'Opptak er basert på samtykker som er gitt digitalt i UiOs samtykkeportal.',
+  },
+  [CONSENT_TYPES.manual]: {
+    name: 'Manuelt samtykke',
+    description: 'Opptak er basert på samtykker som er håndtert manuelt.',
+  },
+  [CONSENT_TYPES.article6]: {
+    name: 'Ikke samtykke',
+    description:
+      'Opptak er basert på GDPR §6 (behandling som er nødvendig for å utføre en oppgave i allmennhetens interesse).',
+  },
+}
 
 export {
   deviceType,
@@ -180,15 +205,13 @@ export {
   userRoles,
   USER_ROLE,
   consentTypes,
-  behandlings,
   CONSENT_TYPES,
-  FILE,
-  GROUPS,
   VIDEO_STORAGE_TYPES,
   VIDEO_STATUS_TYPES,
   CONSENT_SELECTION,
-  SELECTION,
-  FILEGROUPS,
+  UTVALG_SELECTION,
+  behandlings,
+  STORAGE_KEYS,
   appVersion,
   taskColours,
   vivaServer,

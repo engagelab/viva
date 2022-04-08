@@ -1,3 +1,21 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div class="flex flex-row flex-wrap select-none">
     <!-- Headers -->
@@ -10,7 +28,7 @@
     </div>
     <div
       class="w-full flex flex-wrap justify-center"
-      v-for="(user, userIndex) in users"
+      v-for="(user, userIndex) in usersDrafts"
       :key="userIndex"
     >
       <div class="w-full flex cursor-pointer" @click="toggleContent(userIndex)">
@@ -31,7 +49,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted } from 'vue'
+import { defineComponent, onMounted } from 'vue'
 import { useAppStore } from '@/store/useAppStore'
 import { User } from '@/types/main'
 
@@ -42,11 +60,11 @@ import { useI18n } from 'vue-i18n'
 const messages = {
   nb_NO: {
     Datainnsamler: 'Datainnsamler',
-    'Antall opptakk': 'Antall opptakk',
+    'Antall opptakk': 'Antall opptak',
   },
   en: {
-    Datainnsamler: 'Name',
-    'Antall opptakk': 'Total',
+    Datainnsamler: 'Data collector',
+    'Antall opptakk': 'Number of recordings',
   },
 }
 
@@ -57,10 +75,8 @@ export default defineComponent({
     const headers = User.columnDefs()
     const { t } = useI18n({ messages })
 
-    const users = computed(() => appGetters.users.value)
-
     onMounted(() => {
-      appActions.getUsers()
+      appActions.getUsersDrafts()
     })
 
     const toggleContent = (userIndex: number) => {
@@ -76,7 +92,7 @@ export default defineComponent({
      * Total - user.videos.draftIDs.length
      */
 
-    return { t, headers, users, toggleContent }
+    return { t, headers, usersDrafts: appGetters.usersDrafts, toggleContent }
   },
 })
 </script>

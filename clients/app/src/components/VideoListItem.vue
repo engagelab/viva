@@ -1,3 +1,21 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div
     class="flex flex-row items-center justify-between viva-item max-w-xs"
@@ -9,6 +27,15 @@
       <p>{{ video.details.description }}</p>
       <p :class="videoStatus.textClass">
         {{ videoStatus.text }} {{ videoProgress }}
+      </p>
+      <p
+        v-if="videoStatus.expiresIn > 0"
+        class="text-viva-korall text-xs font-bold"
+      >
+        <span
+          >{{ t('expiresAt') }} {{ videoStatus.expiresIn }}
+          {{ t('expiresEnd') }}</span
+        >
       </p>
       <Button
         v-if="
@@ -43,6 +70,7 @@ import {
   toRefs,
   PropType,
 } from 'vue'
+import moment from 'moment'
 import { useI18n } from 'vue-i18n'
 import { Video } from '@/types/main'
 import { useVideoStore } from '@/store/useVideoStore'
@@ -55,6 +83,7 @@ import {
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
   videoProgressCheckInterval,
+  videoExpiryTime,
 } from '@/constants'
 
 interface VideoStatus {
@@ -64,6 +93,7 @@ interface VideoStatus {
   symbol: string
   symbolClass: string
   google: boolean
+  expiresIn: number
 }
 
 export default defineComponent({
@@ -81,9 +111,13 @@ export default defineComponent({
     const messages = {
       nb_NO: {
         Overføre: 'Overføre til permanent lagring',
+        expiresAt: 'utløper i',
+        expiresEnd: 'timer',
       },
       en: {
         Overføre: 'Transfer to permanent storage',
+        expiresAt: 'expires in',
+        expiresEnd: 'hours',
       },
     }
     const { t } = useI18n({ messages })
@@ -106,6 +140,7 @@ export default defineComponent({
         return ''
       }
     })
+
     const videoStatus = computed(() => {
       const v = video.value
       const status: VideoStatus = {
@@ -113,8 +148,19 @@ export default defineComponent({
         textClass: 'text-viva-korall',
         status: 'draft',
         symbol: 'viva',
+        expiresIn: -1,
         symbolClass: 'text-viva-korall',
         google: false,
+      }
+      const today = moment()
+      const expiryDuration = moment.duration(videoExpiryTime)
+      const expiry = moment(v.details.created).add(expiryDuration)
+      const durationToExpiry = moment.duration(expiry.diff(today))
+      if (
+        v.status.main == VIDEO_STATUS_TYPES.draft &&
+        durationToExpiry.asHours() < 7200
+      ) {
+        status.expiresIn = Math.floor(durationToExpiry.asHours())
       }
       if (v.status.main == VIDEO_STATUS_TYPES.draft && !v.status.isConsented) {
         status.text = 'Sjekk samtykker'

@@ -1,8 +1,29 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import {
   USER_ROLE,
   CONSENT_TYPES,
   VIDEO_STATUS_TYPES,
   VIDEO_STORAGE_TYPES,
+  VIDEO_SHARING_STATUS,
 } from '../constants'
 import { uuid } from '../utilities'
 
@@ -132,12 +153,49 @@ export interface DeviceStatus {
   lastActive: number // ms from epoch
 }
 
-//------------------------- Video and Dataset models -----------------
-interface EditDecriptionList {
+//------------------------- Video Auxiliary Interfaces for LTI -----------------
+
+// FeedListItem is always associated with a ListItem
+export interface FeedListItem {
+  readonly mode: VIDEO_SHARING_STATUS
+  readonly user: NameAndRole // User who is subject of the status update
+  readonly created?: Date // Creation date of the status update
+  readonly item: ListItem
+}
+export interface ListItemShare {
+  readonly id: string // id of the share (video.users.sharing[share]._id)
+  readonly creator: string // LTI ID of the creator of the share
+  readonly creatorName: NameAndRole // Creator of the share
+  readonly users: NameAndRole[] // Users this item is shared with
+  readonly share: VideoSharing // Pointer to video.users.shares[this share]
+  readonly item: ListItem // Pointer to the parent of this share item
+}
+export interface ListItem {
+  readonly video: Video // Pointer to the actual video
+  readonly owner: NameAndRole // Owner of the video
+  readonly dataset: {
+    name: string
+    selection: string
+  }
+  readonly shares: ListItemShare[] // sub-interface describing sharing for this item
+}
+
+export interface DialogConfig {
+  title: string
+  text: string
+  visible: boolean
+  confirm: Callback
+  confirmText: string
+  cancel: Callback
+  cancelText: string
+}
+
+// --------------------------   Video data --------------------------
+export interface EditDecriptionList {
   trim: number[]
   blur: number[][]
 }
-interface VideoDetailsData {
+export interface VideoDetailsData {
   id?: string // Used instead of video._id front end, and for QR Code.
   name?: string // A human-readable string for naming this video
   category?: string // green, yellow, red
@@ -197,19 +255,123 @@ interface VideoStatus {
   hasUnsavedChanges: boolean
   hasNewDataAvailable: boolean
 }
-interface VideoSharing {
+export interface ShareComment {
+  created: Date
+  creator: string // LTI ID
+  text: string
+}
+interface ShareCommentData {
+  created: string
+  creator: string // LTI ID
+  text: string
+}
+export interface AnnotationComment {
+  created: Date
+  creator: string
+  text: string
+}
+export class Annotation {
+  _id?: string
+  created: Date
+  creator: string // LTI ID
+  text: string
+  time: number[] // e.g [2.35, 10.04] or just [2.35]
+  comments: AnnotationComment[]
+
+  // front end only
+  nowActive: boolean
+
+  constructor(a: Annotation | AnnotationData) {
+    this._id = a._id
+    this.created = new Date(a.created)
+    this.creator = a.creator
+    this.text = a.text
+    this.time = a.time
+    this.comments = a.comments.map((c) => {
+      return {
+        creator: c.creator,
+        created: new Date(c.created),
+        text: c.text,
+      }
+    })
+    this.nowActive = false
+  }
+}
+export interface AnnotationData {
+  _id: string
+  created: string
+  creator: string // LTI ID
+  text: string
+  time: number[] // e.g [2.35, 10.04] or just [2.35]
+  comments: [
+    {
+      created: string
+      creator: string
+      text: string
+    }
+  ]
+}
+export class VideoSharing {
+  _id = '' // DB ID of the share (not the video!)
+  creator = '' // LTI ID
+  created = new Date()
+  users: string[] = []
+  access = true
+  title = ''
+  description = ''
+  annotations: Annotation[] = []
+  comments: ShareComment[] = []
+  edl: EditDecriptionList = { trim: [], blur: [] }
+
+  constructor(vs: VideoSharing | VideoSharingData | void) {
+    if (vs) this.updateFromShare(vs)
+  }
+
+  updateFromShare(vs: VideoSharing | VideoSharingData): VideoSharing {
+    this._id = vs._id
+    this.access = vs.access
+    this.creator = vs.creator
+    this.created = vs.created ? new Date(vs.created) : new Date() // To ensure a date is available for older videos
+    this.title = vs.title
+    this.description = vs.description
+    this.edl = vs.edl
+    this.users = vs.users
+    if (vs.annotations) {
+      this.annotations = vs.annotations.map((a) => new Annotation(a))
+    }
+    if (vs.comments) {
+      this.comments = vs.comments.map((c: ShareComment | ShareCommentData) => {
+        return {
+          created: new Date(c.created),
+          creator: c.creator,
+          text: c.text,
+        }
+      })
+    }
+    return this
+  }
+}
+
+export interface VideoSharingData {
+  _id: string // DB ID of the share (not the video!)
+  creator: string // LTI ID
+  created: string
   users: string[]
   access: boolean
+  title: string
   description: string
+  annotations: AnnotationData[]
+  comments: ShareCommentData[]
   edl: EditDecriptionList
 }
 interface VideoUsersData {
   owner?: string
   sharedWith?: string[]
-  sharing?: VideoSharing[]
+  sharing?: VideoSharingData[]
 }
 interface VideoUsers {
   owner: string
+  ltiID: string
   sharedWith: string[] // Users who can see this video. Used for easier searching
   sharing: VideoSharing[] // Each entry is a share for a particular set of users, and particular EDL of this video
 }
@@ -235,6 +397,13 @@ export interface VideoSpec {
   deviceStatus: DeviceStatus
 }
 
+export interface NameAndRole {
+  name: string
+  ltiID: string
+  email: string
+  roles: string[]
+  abbreviation: string
+}
 export interface VideoData {
   file: {
     mimeType: string
@@ -303,6 +472,7 @@ export class Video {
     }
     this.users = {
       owner: '',
+      ltiID: '',
       sharedWith: [],
       sharing: [],
     }
@@ -319,6 +489,7 @@ export class Video {
       this.updateDetails(data.details)
       this.updateStatus(data.status)
       this.updateUsers(data.users)
+
       this.updateDataset(data.dataset)
       this.storages = data.storages
       this.consents = data.consents
@@ -364,8 +535,10 @@ export class Video {
     if (details.category) this.details.category = details.category
     if (details.created) this.details.created = new Date(details.created)
     if (details.description) this.details.description = details.description
-    if (details.duration) this.details.duration = details.duration
+    if (details.duration) this.details.duration = details.duration || 0
     if (details.edl) this.details.edl = details.edl
+    if (this.details.edl.trim.length === 0)
+      this.details.edl.trim = [0, this.details.duration]
     if (details.encryptionKey)
       this.details.encryptionKey = details.encryptionKey
     if (details.id) this.details.id = details.id
@@ -395,8 +568,41 @@ export class Video {
   updateUsers(users: VideoUsersData): void {
     if (users.owner) this.users.owner = users.owner
     if (users.sharedWith) this.users.sharedWith = users.sharedWith
-    if (users.sharing) this.users.sharing = users.sharing
+    if (users.sharing) this.updateSharing(users.sharing)
   }
+  updateSharing(updatedSharing: VideoSharing[] | VideoSharingData[]): void {
+    updatedSharing.forEach((newShare: VideoSharing | VideoSharingData) => {
+      const oldShare = this.users.sharing.find((os) => os._id === newShare._id)
+      if (oldShare) oldShare.updateFromShare(newShare)
+      else {
+        const createdShare = new VideoSharing()
+        createdShare.updateFromShare(newShare)
+        this.users.sharing.push(createdShare)
+      }
+    })
+  }
+  deleteSharing(deletedSharing: VideoSharing): void {
+    const sIndex = this.users.sharing.findIndex(
+      (share) => share._id === deletedSharing._id
+    )
+    if (sIndex > -1) this.users.sharing.splice(sIndex, 1)
+  }
+  updateAnnotation(share: VideoSharing, updatedAnnotation: Annotation): void {
+    const s = this.users.sharing.find((us) => us._id === share._id)
+    if (s) {
+      const annotation = s.annotations.find(
+        (ua) => ua._id === updatedAnnotation._id
+      )
+      if (annotation) {
+        annotation.text = updatedAnnotation.text
+        annotation.comments = updatedAnnotation.comments
+        annotation.created = updatedAnnotation.created
+        annotation.creator = updatedAnnotation.creator
+        annotation.time = updatedAnnotation.time
+      }
+    }
+  }
+
   updateDataset(dataset: VideoDatasetData): void {
     if (dataset.id) this.dataset.id = dataset.id
     if (dataset.name) this.dataset.name = dataset.name
@@ -509,7 +715,7 @@ export class Dataset {
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manuel,
+      kind: CONSENT_TYPES.manual,
     }
     this.users = { owner: '' }
     this.selection = {}
@@ -527,7 +733,7 @@ export class Dataset {
         lockedBy: data.status.lockedBy,
       }
       this.consent = {
-        kind: data.consent.kind || CONSENT_TYPES.manuel,
+        kind: data.consent.kind || CONSENT_TYPES.manual,
       }
       this.users = {
         owner: data.users.owner,
@@ -565,12 +771,13 @@ interface UserStatus {
 interface UserProfileGroup {
   id: string
   name: string
-  isAdmin: boolean
+  role: string
 }
 interface UserProfile {
   username: string
   password: string
   fullName: string
+  ltiID: string
   email: string
   oauthId: string
   reference: string // This should be sent to the client rather than _id
@@ -612,6 +819,7 @@ export class User {
       username: 'initial user',
       password: '',
       fullName: 'initial user',
+      ltiID: '',
       email: '',
       oauthId: '',
       reference: '', // This should be sent to the client rather than _id

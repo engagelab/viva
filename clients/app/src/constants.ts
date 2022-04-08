@@ -1,11 +1,33 @@
 /*
- Copyright 2018 Richard Nesnass
-*/
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 const theHost = process.env.VUE_APP_SERVER_HOST
 const thePort = process.env.VUE_APP_SERVER_PORT
 let baseUrl = `${theHost}`
-if (process.env.NODE_ENV === 'development') {
+if (
+  process.env.NODE_ENV === 'development' &&
+  theHost &&
+  !theHost.includes('engagelab') &&
+  !theHost.includes('viva')
+) {
   baseUrl = `${theHost}:${thePort}`
 }
 
@@ -23,11 +45,11 @@ if (appVersion === '%%VERSION%%' && process.env.VUE_APP_VERSION)
 
 const vivaServer = 'viva.uio.no'
 const engagelabServer = 'engagelab.uio.no'
-const idleTimeout = 3600 // seconds
+const idleTimeout = 12000 // 200 minutes (in seconds)
 const recordingDataInterval = 5 // seconds
 const recordingMaxDuration = 2700 // seconds (2700 = 45 mins)
 const recordingMaxDurationWeb = 600 // seconds (600 = 10 mins)
-const videoExpiryTime = 1209600000 // milliseconds (1209600000 = 2 weeks)
+const videoExpiryTime = 1209600000 // milliseconds (1209600000 = 2 weeks). ms units are required by moment.duration()
 const cryptoAlgorithm = 'AES-GCM'
 const videoProgressCheckInterval = 20 // seconds
 const dbVersion = 1
@@ -41,7 +63,7 @@ const behandlings = {
     description:
       'Opptak er basert på samtykker som er gitt digitalt i UiOs samtykkeportal.',
   },
-  manuel: {
+  manual: {
     name: 'Manuelt samtykke',
     description: 'Opptak er basert på samtykker som er håndtert manuelt.',
   },
@@ -94,8 +116,8 @@ const deviceType: string =
   window.location.protocol == 'file:' ? 'mobile' : 'web'
 
 const cordovaConstants = {
-  videoRecordingMaxDuration: 300000, // 5 minutes
-  audioRecordingMaxDuration: 300000, // 5 minutes
+  videoRecordingMaxDuration: 3600, // 60 minutes
+  audioRecordingMaxDuration: 3600, // 60 minutes
 }
 
 const taskColours = ['#A861A6', '#F84016', '#009F4B', '#A9BD50', '#FFDE01']
@@ -118,7 +140,7 @@ if (
 
 enum CONSENT_TYPES {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
 // Ensure enums match those defined in env file
@@ -150,7 +172,7 @@ enum VIDEO_STATUS_TYPES {
 
 enum CONSENT_SELECTION {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
 export {

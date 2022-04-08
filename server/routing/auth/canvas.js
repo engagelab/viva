@@ -1,23 +1,40 @@
+/*
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 const fs = require('fs')
 const router = require('express').Router()
 const { generators } = require('openid-client')
 const jwt = require('jsonwebtoken')
 const jwksClient = require('jwks-rsa')
-const { createOrUpdateUser, completeCallback } = require('./helpers')
+// const linkparser = require('parse-link-header');
+const { createOrUpdateUser, completeCallback, } = require('./helpers')
 
-const { httpRequest } = require('../../utilities')
+const { paginatedMemberRequest } = require('../../utilities')
 const openidClient = require('../../services/openid')
 const { userDetails } = require('../../services/canvas')
 
 // Activate the Dataporten Clients
-let CanvasLTIClient, CanvasLTIIssuer, CanvasAPIClient
-openidClient.createClient('canvasLTI').then((struct) => {
-  CanvasLTIClient = struct.client
-  CanvasLTIIssuer = struct.issuer
-})
-openidClient
-  .createClient('canvasAPI')
-  .then((struct) => (CanvasAPIClient = struct.client))
+const canvasLTIStructures = openidClient.createClient('canvasLTI')
+const CanvasLTIClient = canvasLTIStructures.client
+const CanvasLTIIssuer = canvasLTIStructures.issuer
+const CanvasAPIClient = openidClient.createClient('canvasAPI').client
 
 // --------------- For Canvas Login  -----------------
 
@@ -54,7 +71,7 @@ router.post('/canvas/callback', function (request, response) {
   const idToken = request.body.id_token
   const decodedToken = jwt.decode(idToken, { complete: true })
 
-  if (state != response.req.body.state) {
+  if (state != request.body.state) {
     console.error('/canvas/callback: Session state does not match')
     return response.status(401).end()
   }
@@ -108,7 +125,7 @@ router.post('/canvas/callback', function (request, response) {
   // STEP 4: Using the LTI access_token, get user details using "Names & roles" LTI service
   // Save the details to the User's profile including id_token
   // LTI must be configured with the "variable substitute" in 'Custom Fields' with:  `user_id=$Canvas.user.id`
-  const requestUserInformation = (LTItokenSet, verified_decoded_id_token) => {
+  const requestUserInformation = async (LTItokenSet, verified_decoded_id_token) => {
     // Configure data from 'variable substitutes'
     const custom_vars =
       verified_decoded_id_token[
@@ -121,8 +138,29 @@ router.post('/canvas/callback', function (request, response) {
       email: custom_vars.user_email || '',
       fullName: custom_vars.person_name || '',
       organization: organization || '',
+      ltiID: verified_decoded_id_token['sub'],
       client,
     }
+
+    /*async function paginatedMemberRequest(options, result = []) {
+      const { data, headers } = await httpRequest(options, '', [])
+      const json = JSON.parse(data)
+      result = [...result, ...json.members]
+      const links = linkparser(headers.link)
+      if (links.next) {
+        const parsedUrl = new URL(links.next.url)
+        const options2 = {
+          hostname: parsedUrl.host,
+          path: parsedUrl.pathname + parsedUrl.search,
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${LTItokenSet.access_token}`,
+          },
+        }
+        return paginatedMemberRequest(options2, result)
+      }
+      return result
+    }*/
 
     // Note the course we are launching from
     if (custom_vars.course_id)
@@ -134,29 +172,49 @@ router.post('/canvas/callback', function (request, response) {
         'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice'
       ].context_memberships_url
     )
+
+    // Use this to test pagination function by limiting members sent per page
+    // parsedUrl.search = 'per_page=5';
+
     const options = {
       hostname: parsedUrl.host,
-      path: parsedUrl.pathname,
+      path: parsedUrl.pathname + parsedUrl.search,
       method: 'GET',
       headers: {
         Authorization: `Bearer ${LTItokenSet.access_token}`,
       },
     }
-    httpRequest(options).then((namesAndRoles) => {
-      if (namesAndRoles) {
-        request.session.canvasData.namesAndRoles = namesAndRoles.members.map((m) => {
+
+    console.log(parsedUrl.href)
+    const namesAndRoles = await paginatedMemberRequest(options,LTItokenSet.access_token)
+    let user
+    if (namesAndRoles) {
+      request.session.canvasData.namesAndRoles = namesAndRoles.map(
+        (m) => {
           return {
             name: m.name || 'unknown',
-            ltiUserID: m.user_id || 'unknown',
+            ltiID: m.user_id || 'unknown',
             email: m.email || 'unknown',
             roles: m.roles,
           }
-        })
-      }
-      createOrUpdateUser({ id_token: idToken }, profile).then((user) => {
-        return completeCallback(request, response, user)
+        }
+      )
+      user = namesAndRoles.find(
+        (u) => u.name === profile.fullName
+      )
+    }
+    if (user) {
+      profile.ltiID = user.user_id
+      createOrUpdateUser({ id_token: idToken }, profile).then((u) => {
+        return completeCallback(request, response, u)
       })
-    })
+    } else {
+      console.log(`User ${profile.fullName} not found in Names and Roles. ${namesAndRoles.length} people in NaR list`)
+      console.log(`NamesAndRoles members:`)
+      console.dir(namesAndRoles.map((n) => n.name))
+      console.dir(profile)
+      return response.status(404).send(`User ${profile.fullName} not enrolled in this course or does not match a course member`)
+    }
   }
 
   // Verify the token using a JWK specified by 'kid' in the decoded token's header

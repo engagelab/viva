@@ -1,28 +1,37 @@
 /*
- Designed and developed by Richard Nesnass and Sharanya Manivasagam
-*/
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 require('dotenv').config({ silent: process.env.NODE_ENV !== 'development' })
 
 const express = require('express')
 const session = require('express-session')
 const MemoryStore = require('memorystore')(session)
-
 const cors = require('cors')
 const path = require('path')
 
 // Local includes
-const db = require('./database')
 const apiRoutes = require('./routing/api')
 const authenticationRoutes = require('./routing/auth')
-const setup = require('./setup')
-
-// Create directories if necessary
-setup.createVideoDirectories()
-
 const uploadRoutes = require('./routing/tusUpload')
 
-db.connect('VIVA Server')
 const app = express()
 app.locals.pretty = true
 
@@ -34,17 +43,27 @@ app.use(express.static(path.join(__dirname, '../server/public')))
 app.use(express.json({ limit: '25mb', extended: true }))
 app.use(express.urlencoded({ limit: '25mb', extended: true }))
 
+const sessionOptions = {
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  proxy: true,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, maxAge: 86400000, sameSite: 'none', secure: true },
+}
+
 // We encounter CORS issues if the server is serving the webpage locally
 // CORS (Cross-Origin Resource Sharing) headers to support Cross-site HTTP requests
 if (process.env.NODE_ENV === 'development') {
-  let origin = ''
+  let origin = 'https://localhost'
   app.use((req, res, next) => {
     const allowedOrigins = [
       `${process.env.VUE_APP_SERVER_HOST}:${process.env.VUE_APP_SERVER_PORT}`,
-      `${process.env.VUE_APP_SERVER_HOST}:8080`,
-      `${process.env.VUE_APP_SERVER_HOST}:8081`,
-      `${process.env.VUE_APP_SERVER_HOST}:8082`,
-      'https://auth.dataporten.no'
+      `${process.env.VUE_APP_SERVER_HOST}:8080`, // LTI dev
+      `${process.env.VUE_APP_SERVER_HOST}:8081`, // Admin dev
+      `${process.env.VUE_APP_SERVER_HOST}:8082`, // App dev
+      `${process.env.ANDROID_CLIENT}`, // Android app dev
+      `${process.env.IOS_CLIENT}`, // iOS app dev
+      'https://auth.dataporten.no',
     ]
     let referer = req.headers.referer || req.headers.Referer
     if (referer) {
@@ -54,6 +73,9 @@ if (process.env.NODE_ENV === 'development') {
         origin = referer
         res.header('Access-Control-Allow-Origin', origin)
       }
+    } else {
+      const ip = req.ip.split(':').pop()
+      res.header('Access-Control-Allow-Origin', `https://${ip}`)
     }
     // add details of what is allowed in HTTP request headers to the response headers
     res.header(
@@ -72,36 +94,20 @@ if (process.env.NODE_ENV === 'development') {
     res.header('Access-Control-Allow-Credentials', true)
     return next()
   })
-  app.use(cors({ credentials: true, origin }))
+  // app.use(cors({ credentials: true, origin }))
 }
-else {
-  app.use(cors({ credentials: true, origin: process.env.VUE_APP_SERVER_HOST }))
-}
-const sessionOptions = {
-  secret: process.env.SESSION_SECRET,
-  store: new MemoryStore({
+else if (process.env.NODE_ENV === 'testing') {
+  sessionOptions.cookie = { httpOnly: false, maxAge: 86400000, sameSite: 'none', secure: false }
+} else {
+  sessionOptions.store = new MemoryStore({
     checkPeriod: 86400000, // prune expired entries every 24h
-  }),
-  rolling: true,
-  resave: true,
-  saveUninitialized: true,
-  cookie: { httpOnly: true, maxAge: 86400000, sameSite: 'none' },
+  })
+  app.use(cors({ credentials: true, origin: [/\.engagelab\.uio\.no$/, /\.instructure\.com$/] }))
 }
 
-// Start a secure server
+// Setup secure session
 app.set('trust proxy', 1) // trust first proxy
-sessionOptions.proxy = true
-sessionOptions.cookie.secure = true // serve secure cookies
 app.use(session(sessionOptions))
-
-// Redirect http calls to https
-app.use((req, res, next) => {
-  if (!req.secure) {
-    const redirect = `https://${req.headers.host}${req.url}`
-    return res.redirect(redirect)
-  }
-  return next()
-})
 
 app.use('/upload', uploadRoutes)
 app.use('/auth', authenticationRoutes)
@@ -120,4 +126,4 @@ function errorHandler(req, res) {
 app.use(clientErrorHandler)
 app.use(errorHandler)
 
-module.exports = app
+module.exports = { app }

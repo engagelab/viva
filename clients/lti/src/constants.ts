@@ -1,11 +1,32 @@
 /*
- Copyright 2018 Richard Nesnass
-*/
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 const theHost = process.env.VUE_APP_SERVER_HOST
 const thePort = process.env.VUE_APP_SERVER_PORT
 let baseUrl = `${theHost}`
-if (process.env.NODE_ENV === 'development') {
+if (
+  process.env.NODE_ENV === 'development' &&
+  theHost &&
+  !theHost.includes('engagelab')
+) {
   baseUrl = `${theHost}:${thePort}`
 }
 
@@ -16,6 +37,7 @@ const consentTypesString = process.env.VUE_APP_CONSENT_STATES || ''
 const consentTypes = consentTypesString.split(',')
 let appVersion: string =
   document.documentElement.getAttribute('data-appversion') || ''
+const usernameColourMode = 'bright'
 
 // The web-based app will always be the latest version, set the version directly from .env
 // If not built with Cordova, 'data-appversion' will === '%%VERSION%%'
@@ -55,9 +77,16 @@ if (
 
 enum CONSENT_TYPES {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
 }
+
+enum SORT_BY {
+  date = 'date',
+  dataset = 'dataset',
+  selection = 'selection',
+}
+
 // Ensure enums match those defined in env file
 const ct = Object.values(CONSENT_TYPES)
 if (
@@ -87,8 +116,29 @@ enum VIDEO_STATUS_TYPES {
 
 enum CONSENT_SELECTION {
   samtykke = 'samtykke',
-  manuel = 'manuel',
+  manual = 'manual',
   article6 = 'article6',
+}
+
+enum VIDEO_SHARING_MODE {
+  feed = 'feed',
+  myVideos = 'myVideos',
+  sharedToMe = 'sharedToMe',
+}
+
+enum VIDEO_SHARING_STATUS {
+  annotated = 'annotated',
+  users = 'users',
+  edl = 'edl',
+  comment = 'comment',
+}
+
+enum VIDEO_DETAIL_MODE {
+  none = 'none',
+  annotate = 'annotate',
+  play = 'play',
+  share = 'share',
+  trim = 'trim',
 }
 
 export {
@@ -97,10 +147,15 @@ export {
   assetRoot,
   userRoles,
   USER_ROLE,
+  SORT_BY,
   CONSENT_TYPES,
   VIDEO_STORAGE_TYPES,
   CONSENT_SELECTION,
   VIDEO_STATUS_TYPES,
+  VIDEO_SHARING_MODE,
+  VIDEO_SHARING_STATUS,
+  VIDEO_DETAIL_MODE,
+  usernameColourMode,
   consentTypes,
   cordovaConstants,
   appVersion,

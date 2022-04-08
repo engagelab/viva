@@ -1,3 +1,21 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div>
     <div
@@ -14,7 +32,7 @@
       ></SVGSymbol>
       <span
         v-if="selectedDataset"
-        class="text-black"
+        class="text-black whitespace-pre"
         style="width: min-content"
         >{{ selectedDataset.name }}</span
       >
@@ -225,6 +243,7 @@ export default defineComponent({
     const selectionReady = computed(() => {
       return (
         selectedDataset.value &&
+        selectedDataset.value.selectionPriority.length > 0 &&
         currentSelection.value.length ==
           selectedDataset.value.selectionPriority.length
       )
@@ -235,7 +254,7 @@ export default defineComponent({
         ''
       )
       if (selectedDataset.value) {
-        return `https://nettskjema.no/a/${selectedDataset.value.formId}?CBdataset=${selectedDataset.value._id}?CBsubset=${subsetString}`
+        return `https://nettskjema.no/a/${selectedDataset.value.consent.formId}?LCKdataset=true&CBdataset=${selectedDataset.value._id}&LCKsubset=true&CBsubset=${subsetString}`
       } else return ''
     })
     const mailtoURI = computed(() => {
@@ -263,8 +282,14 @@ export default defineComponent({
         let depth = currentSelection.value.length
         const key = selectedDataset.value.selectionPriority[depth]
         let list: DatasetSelection[] = []
-        if (depth === 0) list = selectedDataset.value.selection[key]
-        else {
+        if (depth === 0) {
+          if (
+            selectedDataset.value.selection &&
+            selectedDataset.value.selection[key]
+          ) {
+            list = selectedDataset.value.selection[key]
+          }
+        } else {
           const s = currentSelection.value[depth - 1].data.selection
           if (s) list = s[key]
         }
@@ -360,21 +385,22 @@ export default defineComponent({
       const presetID = presetConfig.value?.id || ''
       const dataset = datasets.value.find((d) => d._id == presetID)
       if (dataset && presetConfig.value) {
+        const entries = presetConfig.value.currentSelection.entries()
         datasetActions.selectDataset(dataset)
         const tempSelection: ListData[] = []
-        presetConfig.value.currentSelection.forEach((u, depth) => {
+        for (const [depth, u] of entries) {
           let list: DatasetSelection[] = []
-          if (depth === 0) list = dataset.selection[u.keyName]
-          else {
-            const s = tempSelection[depth - 1].data.selection
-            if (s) list = s[u.keyName]
+          if (depth === 0 && dataset.selection[u.keyName]) {
+            list = dataset.selection[u.keyName]
+          } else if (tempSelection[depth - 1]) {
+            list = tempSelection[depth - 1].data.selection?.[u.keyName] || []
           }
           const data = list.find((item) => item.title == u.title)
           if (data) {
             const su: ListData = { data, keyName: u.keyName, title: u.title }
             tempSelection.push(su)
-          }
-        })
+          } else break
+        }
         currentSelection.value = tempSelection
       }
     }
@@ -428,7 +454,7 @@ export default defineComponent({
           callback: undefined,
         })
       }
-      if (appGetters.useCordova) {
+      if (appGetters.useCordova.value) {
         cordovaService.copyToClipboard(
           getConsentUrl.value,
           copySuccess,

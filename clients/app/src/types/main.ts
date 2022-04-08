@@ -1,3 +1,23 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import {
   USER_ROLE,
   CONSENT_TYPES,
@@ -217,11 +237,13 @@ interface VideoDatasetData {
   id?: string
   name?: string
   selection?: Selection[] // 'utvalg' setting
+  groups: string[]
 }
 interface VideoDataset {
   id: string
   name: string
   selection: Selection[] // 'utvalg' setting
+  groups: string[]
 }
 interface VideoStorages {
   kind: string
@@ -304,6 +326,7 @@ export class Video {
       id: '',
       name: '',
       selection: [],
+      groups: [],
     }
     this.consents = []
     this.storages = []
@@ -326,12 +349,9 @@ export class Video {
       id: data.dataset._id || '',
       name: data.dataset.name,
       selection: data.selection,
+      groups: data.dataset.users.groups,
     })
     this.updateUsers({ owner: data.user._id, sharedWith: [], sharing: [] })
-    this.storages = data.dataset.storages.map((storage) => ({
-      kind: storage.kind,
-      path: '',
-    }))
     this.file = {
       mimeType:
         data.deviceStatus.browser === 'Chrome' ? 'video/webm' : 'video/mp4',
@@ -395,6 +415,7 @@ export class Video {
     if (dataset.id) this.dataset.id = dataset.id
     if (dataset.name) this.dataset.name = dataset.name
     if (dataset.selection) this.dataset.selection = dataset.selection
+    this.dataset.groups = dataset.groups || []
   }
 
   // Convert this class to string representation
@@ -457,11 +478,14 @@ interface DatasetStatus {
   lastUpdated: Date
   lockedBy: string
 }
-interface DatasetConsent {
+export interface DatasetConsent {
   kind: CONSENT_TYPES
+  value: string
+  formId: number
 }
 interface DatasetUsers {
   owner: string
+  groups: string[]
 }
 interface DatasetStorage {
   kind: VIDEO_STORAGE_TYPES
@@ -484,7 +508,6 @@ export class Dataset {
   name: string
   description: string
   created: Date
-  formId: string
   status: DatasetStatus
   consent: DatasetConsent
   users: DatasetUsers
@@ -497,16 +520,18 @@ export class Dataset {
     this.name = ''
     this.description = ''
     this.created = new Date()
-    this.formId = ''
     this.status = {
       lastUpdated: new Date(),
       lockedBy: '',
     }
     this.consent = {
-      kind: CONSENT_TYPES.manuel,
+      kind: CONSENT_TYPES.manual,
+      value: data?.consent.value || '',
+      formId: data?.consent.formId || 0,
     }
     this.users = {
       owner: '',
+      groups: [],
     }
     this.selection = {}
     this.selectionPriority = []
@@ -517,19 +542,22 @@ export class Dataset {
       this.name = data.name
       this.description = data.description
       this.created = new Date(data.created)
-      this.formId = data.formId
       this.status = {
         lastUpdated: new Date(data.status.lastUpdated),
         lockedBy: data.status.lockedBy,
       }
       this.consent = {
-        kind: data.consent.kind || CONSENT_TYPES.manuel,
+        kind: (data.consent?.kind as CONSENT_TYPES) || CONSENT_TYPES.manual,
+        // value: fetchValue(data.consent),
+        value: data.consent?.value ? data.consent.value : '',
+        formId: data.consent?.formId ? data.consent.formId : 0,
       }
       this.users = {
         owner: data.users.owner,
+        groups: data.users.groups,
       }
-      this.selection = data.selection
-      this.selectionPriority = data.selectionPriority
+      this.selection = data.selection || {}
+      this.selectionPriority = data.selectionPriority || []
       this.storages =
         data.storages.map((s: DatasetStorage) => {
           return {
@@ -561,7 +589,7 @@ interface UserStatus {
 interface UserProfileGroup {
   id: string
   name: string
-  isAdmin: boolean
+  role: string
 }
 interface UserProfile {
   username: string

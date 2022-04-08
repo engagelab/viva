@@ -1,3 +1,21 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div class="flex flex-row">
     <!-- Table Content -->
@@ -11,7 +29,7 @@
           v-model="searchField"
           @input="onWardTableSearchTextChanged"
         />
-        <div>{{ t('MonitorRecordingLog') }}</div>
+        <div>{{ t('monitorRecordingLog') }}</div>
       </div>
 
       <AgGridVue
@@ -26,14 +44,62 @@
       </AgGridVue>
 
       <!-- Row details -->
-      <div v-if="selectedRow" class="mt-4 flex justify-items-start">
-        <div class="border-2 rounded-md bg-gray-300 p-4">
-          <div class="recording-title text-lg">Metadata about recording</div>
-          <div>Name: {{ selectedRow.details.name }}</div>
-          <div>Category: {{ selectedRow.details.category }}</div>
-          <div>Created: {{ selectedRow.details.created }}</div>
-          <div>Duration: {{ `${selectedRow.details.duration} Seconds` }}</div>
-          <div>EDL: {{ selectedRow.details.edl }}</div>
+      <div
+        v-if="selectedRow"
+        class="grid grid-rows-1 border-2 rounded-md bg-gray-300 p-4 mt-4"
+      >
+        <div class="recording-title text-lg">{{ t('metadata') }}</div>
+        <div class="">
+          <p class="text-red-500">video details</p>
+          <div>{{ t('name') }}: {{ selectedRow.details.name }}</div>
+          <div>{{ t('owner') }} : {{ selectedRow.shared.owner }}</div>
+          <div>{{ t('category') }}: {{ selectedRow.details.category }}</div>
+          <div>{{ t('created') }} : {{ selectedRow.details.created }}</div>
+          <div>
+            {{ t('duration') }} :
+            {{ `${selectedRow.details.duration} Seconds` }}
+          </div>
+          <div>{{ t('edl') }}: {{ selectedRow.details.edl }}</div>
+          <div>
+            {{ t('description') }} : {{ selectedRow.details.description }}
+          </div>
+          <div class="mt-2">
+            <p class="text-red-500">{{ t('datasetInfo') }}:</p>
+            <div>{{ t('datasetName') }}:{{ selectedRow.dataset }}</div>
+            <div>{{ t('consenters') }}: {{ selectedRow.selection }}</div>
+          </div>
+          <div class="mt-2">
+            <p class="text-red-500">{{ t('consenters') }}:</p>
+            <div
+              v-for="(consenter, index) in selectedRow.consenters"
+              :key="index"
+            >
+              {{ t('consenters') }} : {{ consenter }}
+            </div>
+          </div>
+          <div class="mt-2">
+            <p class="text-red-500">{{ t('storages') }}:</p>
+            <div v-for="(storage, index) in selectedRow.storages" :key="index">
+              {{ storage.kind }}-{{ storage.path }}
+            </div>
+          </div>
+        </div>
+        <div class="mx-2">
+          <p class="text-red-500">{{ t('shares') }}</p>
+          <div
+            class="mt-2"
+            v-for="(share, shareIndex) in selectedRow.shared.sharing"
+            :key="shareIndex"
+          >
+            <p>
+              <span class="text-red-500">></span> {{ t('description') }}:{{
+                share.description
+              }}
+            </p>
+            <p>{{ t('edl') }}:{{ share.edl.trim }}</p>
+            {{ t('users') }}:
+            <p v-for="(user, index) in share.users" :key="index">{{ user }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -56,18 +122,42 @@ const { actions: videoActions, getters: videoGetters } = useVideoStore()
 import { useI18n } from 'vue-i18n'
 const messages = {
   nb_NO: {
-    MonitorRecordingLog: 'Logger',
-    Opptak: 'Opptak',
-    Dato: 'Dato',
-    Datainnsamler: 'Datainnsamler',
-    Datasett: 'Datasett',
+    monitorRecordingLog: 'Opptakslogg',
+    opptak: 'Opptak',
+    datainnsamler: 'Datainnsamler',
+    name: 'Navn',
+    category: '',
+    created: '',
+    duration: '',
+    edl: '',
+    consenters: '',
+    selection: '',
+    datasetName: '',
+    datasetInfo: '',
+    storages: '',
+    shares: '',
+    description: '',
+    users: '',
+    metadata: '',
   },
   en: {
-    MonitorRecordingLog: 'Recording Log',
-    Opptak: 'Recording',
-    Dato: 'Date',
-    Datainnsamler: 'Person',
-    Datasett: 'Dataset',
+    nonitorRecordingLog: 'Recording Log',
+    opptak: 'Recording',
+    datainnsamler: 'Data collector',
+    name: 'Name',
+    category: 'Category',
+    created: 'Created',
+    duration: 'Duration',
+    edl: 'EDL',
+    consenters: 'Consenters',
+    selection: 'Selection',
+    datasetName: 'Dataset name',
+    datasetInfo: 'Dataset info',
+    storages: 'Storages',
+    shares: 'Shares',
+    description: 'Description',
+    users: 'Users',
+    metadata: 'Metadata about recording',
   },
 }
 

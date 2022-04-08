@@ -21,8 +21,8 @@
     "clients/**/src/**/*.tsx",
     "clients/**/src/**/*.vue",
     "clients/**/src/**/*.json",
-    "tests/**/*.ts",
-    "tests/**/*.tsx", "client/src/types/cordova-plugin-file/index.d.old"
+    "server/tests/**/*.ts",
+    "server/tests/**/*.tsx", "client/src/types/cordova-plugin-file/index.d.old"
   ],
   "exclude": [
     "clients/**/tailwind.config.js",

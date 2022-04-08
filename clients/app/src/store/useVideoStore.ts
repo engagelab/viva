@@ -1,5 +1,26 @@
-import { VIDEO_STATUS_TYPES, videoExpiryTime, baseUrl } from '../constants'
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import { ref, Ref, computed, ComputedRef } from 'vue'
+import i18n from '@/i18n'
+import moment from 'moment'
 import orderBy from 'lodash/orderBy'
 import {
   Video,
@@ -8,12 +29,15 @@ import {
   XHR_REQUEST_TYPE,
   VideoSpec,
 } from '../types/main'
+import { VIDEO_STATUS_TYPES, videoExpiryTime, baseUrl } from '../constants'
 import { useDeviceService, CordovaData } from './useDevice'
 import { Upload, HttpRequest } from 'tus-js-client'
 import { apiRequest } from '../api/apiRequest'
 import { useNotifyStore } from './useNotifyStore'
 const { actions: notifyActions } = useNotifyStore()
 const { actions: deviceActions } = useDeviceService()
+const { t } = i18n.global
+
 interface State {
   selectedVideo: Video | undefined
   videos: Map<string, Video>
@@ -308,7 +332,7 @@ const actions = {
               createTusUpload(fileObject)
             })
           } else {
-            notifyActions.errorMessage('Create upload: No video data file')
+            notifyActions.errorMessage(t('noVideoFile'))
             resolve()
           }
         })
@@ -386,8 +410,12 @@ const actions = {
       if (videoList && videoList.length) {
         videoList.forEach((video) => {
           const v = new Video(video)
+          const today = moment()
+          const expiryDuration = moment.duration(videoExpiryTime)
+          const expiry = moment(v.details.created).add(expiryDuration)
+          const durationToExpiry = moment.duration(expiry.diff(today))
           // If video has expired, remove it
-          if (v.details.created.getTime() + videoExpiryTime < Date.now()) {
+          if (durationToExpiry.asMinutes() < 0) {
             actions.removeVideo(v)
           } else {
             actions.addMetadata(v)
@@ -409,7 +437,7 @@ const actions = {
         videos.forEach((v) => actions.addMetadata(new Video(v)))
       })
       .catch((error) => {
-        notifyActions.errorMessage('Fetch server videos')
+        notifyActions.errorMessage(t('videoFetchFailed'))
         return Promise.reject(error)
       })
   },
@@ -421,7 +449,7 @@ const actions = {
     return deviceActions.removeVideoFile(video.details.id).then(() => {
       return actions
         .removeMetadata(video)
-        .catch(() => notifyActions.errorMessage('Remove video'))
+        .catch(() => notifyActions.errorMessage(t('removeVideoFailed')))
     })
   },
 
@@ -437,7 +465,7 @@ const actions = {
       }
       return actions
         .saveMetadata()
-        .catch(() => notifyActions.errorMessage('Replace draft video error'))
+        .catch(() => notifyActions.errorMessage('replaceDraftFailed'))
     })
   },
 }

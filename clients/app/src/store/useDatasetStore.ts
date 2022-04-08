@@ -1,3 +1,23 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 // Store to do dataset functions (Mostly in admin side)
 /* ---- Functionaltiy to be done  ----------------
 1. Display datasets
@@ -5,6 +25,7 @@
 3. Fetch consents either using feide token or canvas token  */
 
 import { ref, Ref, computed, ComputedRef } from 'vue'
+import i18n from '@/i18n'
 import {
   Dataset,
   Video,
@@ -18,6 +39,8 @@ import {
 import { apiRequest } from '../api/apiRequest'
 import { useNotifyStore } from './useNotifyStore'
 const { actions: notifyActions } = useNotifyStore()
+const { t } = i18n.global
+
 //State
 interface DatasetState {
   datasets: Dataset[]
@@ -106,17 +129,27 @@ const actions = {
         state.value.datasets = []
         if (datasets.length > 0) {
           datasets.forEach((s) => {
-            const newDataset = new Dataset(s)
-            state.value.datasets.push(newDataset)
+            const d = new Dataset(s)
+            state.value.datasets.push(d)
             if (
               state.value.presetDatasetConfig &&
-              state.value.presetDatasetConfig.id == newDataset._id
+              state.value.presetDatasetConfig.id == d._id
             ) {
-              state.value.selectedDataset = newDataset
+              // If a Dataset was previously selected, select it again
+              state.value.selectedDataset = d
+              // If the Dataset selection priority was changed since last time, clear the preset
+              if (
+                !state.value.presetDatasetConfig.currentSelection.every((c) =>
+                  d.selectionPriority.includes(c.keyName)
+                )
+              ) {
+                state.value.presetDatasetConfig.currentSelection = []
+                delete state.value.presetDatasetConfig.locks[d._id]
+              }
             }
           })
         } else {
-          notifyActions.errorMessage(new Error('No datasets found'))
+          notifyActions.errorMessage(t('noDataset'))
         }
       })
       .catch((error: Error) => {
@@ -124,9 +157,9 @@ const actions = {
       })
   },
   setPresetDatasetConfig(config: UserDatasetConfig): void {
-    state.value.presetDatasetConfig = config
     const d = state.value.datasets.find((ds) => ds._id === config.id)
     if (d) state.value.selectedDataset = d
+    state.value.presetDatasetConfig = config
   },
   addSelectionToDataset(data: SelectionOptions): void {
     const newDataset = new Dataset(data.dataset)
@@ -179,7 +212,7 @@ const actions = {
         query: {
           datasetId: video.dataset.id,
           utvalg,
-          formId: datasetForVideo.formId,
+          formId: datasetForVideo.consent.formId,
         },
         credentials: true,
         body: undefined,
@@ -192,7 +225,7 @@ const actions = {
               checked: false,
             }))
           } else {
-            notifyActions.errorMessage(new Error('No consents found'))
+            notifyActions.errorMessage(t('noConsents'))
           }
         })
         .catch((error: Error) => {

@@ -12,20 +12,26 @@
     "serve:app": "env-cmd yarn --cwd clients/app run serve",
     "build:app": "env-cmd yarn --cwd clients/app run build",
     "build:ios": "env-cmd yarn --cwd clients/app run cordova-build-ios",
+    "cordova:platform:version": "env-cmd yarn --cwd clients/app cordova-platform-version",
     "build:ios:production": "env-cmd yarn --cwd clients/app run cordova-build-ios-production",
     "build:android": "env-cmd yarn --cwd clients/app run cordova-build-android",
     "build:android:production": "env-cmd yarn --cwd clients/app run cordova-build-android-production",
     "server": "node server/viva.js",
-    "test": "yarn run jest"
+    "test": "yarn run mocha --recursive"
   },
   "displayName": "viva",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@vue/cli-plugin-unit-jest": "~4.5.8",
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "chai": "*",
     "env-cmd": "^10.1.0",
     "eslint": "^7.1.0",
     "eslint-config-prettier": "^6.11.0",
-    "supertest": "^5.0.0-0"
+    "mocha": "*",
+    "superagent": "*",
+    "supertest": "*",
+    "supertest-session": "*"
   },
   "dependencies": {
     "@types/node": "^14.0.11",

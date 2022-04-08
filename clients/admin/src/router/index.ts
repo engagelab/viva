@@ -1,3 +1,23 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   createRouter,
@@ -7,23 +27,18 @@ import {
 } from 'vue-router'
 
 import Landing from '@/views/landing/Landing.vue'
-import Dataset from '@/components/Dataset.vue'
 
-import Editor from '@/views/video/Editor.vue'
 import Privacy from '@/views/Privacy.vue'
-import ErrorDisplay from '@/views/video/ErrorDisplay.vue'
 import Monitor from '@/views/admin/Monitor.vue'
 import MonitorRecordingLog from '@/views/admin/MonitorRecordingLog.vue'
 import MonitorYourDatasets from '@/views/admin/MonitorYourDatasets.vue'
 import MonitorRecordingsInProcess from '@/views/admin/MonitorRecordingsInProcess.vue'
 
 import { useAppStore } from '../store/useAppStore'
-/* import { useDatasetStore } from '../store/useDatasetStore' */
 import { useVideoStore } from '../store/useVideoStore'
-/* const { actions: datasetActions } = useDatasetStore() */
 const { getters: appGetters, actions: appActions } = useAppStore()
 const { getters: videoGetters } = useVideoStore()
-import { idleTimeout } from '../constants'
+import { idleTimeout, baseUrl } from '../constants'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -44,29 +59,17 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/postlogin',
     name: 'afterlogin',
-    /*    component: MyRecordings, */
-    redirect: '/monitor',
-    /*  beforeEnter: () => {
+    component: Landing,
+    beforeEnter: () => {
       appActions
         .redirectedLogin()
         .then(() => {
-          if (appGetters.isLoggedIn.value) {
-            return datasetActions
-              .fetchDatasets()
-              .then(() => {
-                return { path: '/videos/list' }
-              })
-              .catch((error) => {
-                console.log(error)
-              })
-          } else {
-            return { path: '/login?page=0' }
-          }
+          router.push('/monitor')
         })
         .catch((error) => {
           console.log(error)
         })
-    }, */
+    },
   },
   // --------------------------------------------------------
   {
@@ -94,28 +97,6 @@ const routes: Array<RouteRecordRaw> = [
     ],
   },
   {
-    path: '/dataset',
-    name: 'datasett',
-    component: Dataset,
-    props: (route) => ({ page: route.query.page }),
-  },
-  {
-    path: '/videos/list',
-    name: 'video',
-    component: Monitor,
-  },
-  {
-    path: '/videos/editor',
-    name: 'editor',
-    component: Editor,
-    props: (route) => ({ page: route.query.page }),
-  },
-  {
-    path: '/videos/error',
-    name: 'videoError',
-    component: ErrorDisplay,
-  },
-  {
     path: '/privacy',
     name: 'privacy',
     component: Privacy,
@@ -124,7 +105,7 @@ const routes: Array<RouteRecordRaw> = [
 
 const router = createRouter({
   history:
-    process.env.NODE_ENV === 'testing' // As engagelab server uses proxying for multiple apps, this is the easiest way..
+    baseUrl.includes('engagelab') || baseUrl.includes('viva') // As engagelab server uses proxying for multiple apps, this is the easiest way..
       ? createWebHashHistory()
       : createWebHistory(process.env.BASE_URL),
   routes,
@@ -132,7 +113,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const idleTime = Math.floor(
-    new Date().getTime() - appGetters.lastActive.value / 1000
+    (new Date().getTime() - appGetters.lastActive.value) / 1000
   )
   const isLoggedIn = appGetters.isLoggedIn.value
   const uploadingData = videoGetters.uploadingData.value

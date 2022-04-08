@@ -1,6 +1,26 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import { isRef, ref, Ref } from 'vue'
 import { User } from './types/main'
-import { USER_ROLE } from './constants'
+import { USER_ROLE, usernameColourMode } from './constants'
 
 const wrap = <T>(element: Ref<T> | T): Ref<T> => {
   if (isRef(element)) {
@@ -33,6 +53,40 @@ const shuffleItems = <T>(itemsArray: Array<T>): Array<T> => {
   return indexArray.map((index) => itemsArray[index])
 }
 
+// Input time as a number - seconds as whole with milliseconds as the decimal e.g. 12.65 = 12 seconds 650 milliseconds
+const formatTime = (timeInSeconds: number, offsetTime = 0): string => {
+  // Adjust for offset
+  const adjustedTimeInSeconds = Math.floor(timeInSeconds - offsetTime)
+
+  let minutes = Math.floor(adjustedTimeInSeconds / 60)
+  const hours = Math.floor(minutes / 60)
+  // prettier-ignore
+  minutes = hours > 0 ? Math.floor(minutes % (60 * hours)) : minutes
+  const seconds =
+    minutes > 0
+      ? Math.floor(adjustedTimeInSeconds % (60 * minutes + 60 * 60 * hours))
+      : Math.floor(adjustedTimeInSeconds)
+  const minutesString = minutes > 9 ? minutes : '0' + minutes
+  const secondsString = seconds > 9 ? seconds : '0' + seconds
+  return `${hours > 0 ? hours + ':' : ''}${minutesString}:${secondsString}`
+}
+
+// Reverse function to 'formatTime'
+// Expects a string in the form '0:00:00' (single hour:mins:seconds)
+const formattedTimeToSeconds = (timeString: string): number => {
+  const timeArray = timeString.split(':')
+  if (timeArray.length === 2) {
+    return parseInt(timeArray[0]) * 60 + parseInt(timeArray[1])
+  } else if (timeArray.length === 3) {
+    return (
+      parseInt(timeArray[0]) * 3600 +
+      parseInt(timeArray[1]) * 60 +
+      parseInt(timeArray[2])
+    )
+  }
+  return -1
+}
+
 // https://stackoverflow.com/questions/3552461/how-to-format-a-javascript-date
 const formatDate = (date: Date): string => {
   const monthNames = [
@@ -63,6 +117,28 @@ const formatDate = (date: Date): string => {
   return (
     day + ' ' + monthNames[monthIndex] + ' ' + year + ' | ' + hours + ':' + mins
   )
+}
+
+function getBrightColour(hash: number): string {
+  return `hsla(${~~(360 * hash)},70%,70%,1)`
+}
+function getNormalColour(hash: number): string {
+  let colour = '#'
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xff
+    colour += ('00' + value.toString(16)).substr(-2)
+  }
+  return colour
+}
+
+const stringToColour = (str: string): string => {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return usernameColourMode === 'bright'
+    ? getBrightColour(hash)
+    : getNormalColour(hash)
 }
 
 // Random UUID. See https://gist.github.com/jed/982883
@@ -105,42 +181,16 @@ const wait = (ms: number): Promise<void> => {
   })
 }
 
-/*
-  Taken from: https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
-*/
-/* function ab2str(buf: ArrayBuffer): string {
-  return String.fromCharCode.apply(null, new Uint16Array(buf))
-}
-
-function str2ab(str: string): ArrayBuffer {
-  const buf = new ArrayBuffer(str.length * 2) // 2 bytes for each char
-  const bufView = new Uint16Array(buf)
-  for (let i = 0, strLen = str.length; i < strLen; i++) {
-    bufView[i] = str.charCodeAt(i)
-  }
-  return buf
-}
-
-function ui8arr2str(uint8array: Uint8Array): string {
-  return uint8array.toString()
-}
-
-function str2ui8arr(myString: string): Uint8Array {
-  const array = myString.split(',').map((s) => Number.parseInt(s))
-  return Uint8Array.from(array)
-} */
-
 export {
   uuid,
   formatDate,
+  formatTime,
+  formattedTimeToSeconds,
   wrap,
   convertFilePath,
   wait,
   hasMinimumRole,
   shuffleItems,
   emitError,
-  /* ab2str,
-  str2ab,
-  ui8arr2str,
-  str2ui8arr, */
+  stringToColour,
 }

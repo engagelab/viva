@@ -1,3 +1,23 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import { ref, computed, ComputedRef, Ref } from 'vue'
 import router from '../router'
 import { apiRequest } from '../api/apiRequest'
@@ -7,6 +27,8 @@ import {
   APIRequestPayload,
   XHR_REQUEST_TYPE,
   User,
+  NameAndRole,
+  DialogConfig,
 } from '../types/main'
 
 import { appVersion } from '../constants'
@@ -17,19 +39,23 @@ interface AppStatus {
   loading: boolean
   isMobileApp: boolean
 }
+interface CanvasData {
+  namesAndRoles: NameAndRole[]
+}
 export interface AppState {
   validToken: boolean
   errorMessage: string
   loading: boolean
   isLoggedIn: boolean
   selectedUser: User
-  canvasData: Record<string, string>
+  canvasData: CanvasData
   isAuthorised: boolean
   fade: boolean
   lastLogin: Date
   currentLocalUser: LocalUser | undefined
   appIsOld: boolean
   disableDelays: boolean
+  dialogConfig: DialogConfig
 }
 // ------------  State (internal) --------------
 const _appState: Ref<AppState> = ref({
@@ -38,13 +64,24 @@ const _appState: Ref<AppState> = ref({
   loading: false,
   isLoggedIn: false,
   selectedUser: new User(),
-  canvasData: {},
+  canvasData: {
+    namesAndRoles: [],
+  },
   isAuthorised: false,
   fade: false,
   lastLogin: new Date(),
   currentLocalUser: undefined,
   appIsOld: false,
   disableDelays: process.env.VUE_APP_DISABLE_DELAYS === 'true',
+  dialogConfig: {
+    title: '',
+    text: '',
+    visible: false,
+    cancel: () => ({}),
+    cancelText: 'Cancel',
+    confirm: () => ({}),
+    confirmText: 'Confirm',
+  },
 })
 
 // This will be saved to device storage
@@ -60,7 +97,8 @@ interface Getters {
   currentLocalUser: ComputedRef<LocalUser | undefined>
   persistedLocalUsers: ComputedRef<Record<string, LocalUser>>
   user: ComputedRef<User>
-  canvasData: ComputedRef<Record<string, string>>
+  canvasData: ComputedRef<CanvasData>
+  dialogConfig: ComputedRef<DialogConfig>
 }
 const getters = {
   get status(): ComputedRef<AppStatus> {
@@ -91,8 +129,11 @@ const getters = {
   get user(): ComputedRef<User> {
     return computed(() => _appState.value.selectedUser)
   },
-  get canvasData(): ComputedRef<Record<string, string>> {
+  get canvasData(): ComputedRef<CanvasData> {
     return computed(() => _appState.value.canvasData)
+  },
+  get dialogConfig(): ComputedRef<DialogConfig> {
+    return computed(() => _appState.value.dialogConfig)
   },
 }
 // ------------  Actions --------------
@@ -107,19 +148,51 @@ interface Actions {
   detectOldApp: () => Promise<void>
   fetchLTIData: () => Promise<void>
   redirectedLogin: () => Promise<void>
+  nameAndRole: (ltiID: string) => NameAndRole
+  setDialog: (visible: boolean, config?: DialogConfig) => void
 }
 const actions = {
+  setDialog(visible: boolean, config?: DialogConfig): void {
+    if (config) _appState.value.dialogConfig = config
+    _appState.value.dialogConfig.visible = visible
+  },
+  nameAndRole(ltiID: string): NameAndRole {
+    const namerole = _appState.value.canvasData.namesAndRoles.find(
+      (nr) => nr.ltiID === ltiID
+    )
+    return (
+      namerole || {
+        name: 'not found',
+        ltiID,
+        email: '',
+        roles: [],
+        abbreviation: 'NF',
+      }
+    )
+  },
   fetchLTIData(): Promise<void> {
+    const rgx = new RegExp(/(\p{L}{1})\p{L}+/, 'gu')
     const payload: APIRequestPayload = {
       method: XHR_REQUEST_TYPE.GET,
       route: '/api/users',
+      query: { mode: 'namesandroles' },
       credentials: true,
     }
-    return apiRequest<Record<string, string>>(payload)
-      .then((response: Record<string, string>) => {
-        if (response) {
-          _appState.value.canvasData = response
-          console.dir(response)
+    return apiRequest<NameAndRole[]>(payload)
+      .then((response: NameAndRole[]) => {
+        if (response && response.length) {
+          const n = response.map((nar) => {
+            const initials: RegExpMatchArray[] =
+              [...nar.name.matchAll(rgx)] || []
+            const abbreviation: string = (
+              (initials.shift()?.[1] || '') + (initials.pop()?.[1] || '')
+            ).toUpperCase()
+            return {
+              ...nar,
+              abbreviation,
+            }
+          })
+          _appState.value.canvasData.namesAndRoles = n
         }
       })
       .catch((error: Error) => {
@@ -128,7 +201,6 @@ const actions = {
   },
   // Called after successful login to retieve user and mark as 'logged in'
   redirectedLogin(): Promise<void> {
-    console.log('Hello')
     const completeLogin = () => {
       const payload: APIRequestPayload = {
         method: XHR_REQUEST_TYPE.GET,
@@ -238,4 +310,3 @@ export function useAppStore(): ServiceInterface {
 }
 
 export type AppStoreType = ReturnType<typeof useAppStore>
-//export const AppKey: InjectionKey<UseApp> = Symbol('UseApp')

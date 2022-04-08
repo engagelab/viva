@@ -1,12 +1,29 @@
 /*
- Designed and developed by Richard Nesnass & Sharanya Manivasagam
-*/
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 const router = require('express').Router()
 const utilities = require('../../utilities')
 const Dataset = require('../../models/Dataset')
-/* const Video = require('../../models/Video')
-const User = require('../../models/User') */
-const { userRoles, consentTypes } = require('../../constants')
+const videoStorageTypes = require('../../constants').videoStorageTypes
+
+const { userRoles /*, consentTypes */ } = require('../../constants')
 
 /* ---------------- Setting activities ---------------- */
 
@@ -38,93 +55,64 @@ const updateSelection = ({
   selection[currentUtvalgKey].push(newItem)
 }
 
-/* const fetchVideosForDatasets = (datasets) => {
-  const datasetIds = datasets.map((d) => d._id)
-  const query = { datasetId: { $in: datasetIds } }
-  const populateUser = [{ path: 'userId', select: ['profile.username'] }]
-  return new Promise((resolve, reject) => {
-    Video.find(query, (error, videos) => {
-      if (error) reject(error)
-      resolve(videos)
-    }).populate(populateUser)
-  })
-}
-
-const fetchUsersWithDraftVideos = () => {
-  return new Promise((resolve, reject) => {
-    const query = {
-      'videos.draftIDs': { $exists: true, $ne: [] },
-    }
-    User.find(query, 'profile.username videos.draftIDs', (error, users) => {
-      if (error) reject(error)
-      resolve(users)
-    })
-  })
-} */
-
 // Get datasets for the current user
 // If admin, also get Users with outstanding drafts, and video listing
 router.get('/datasets', utilities.authoriseUser, (request, response, next) => {
   const u = response.locals.user
   const groupIds = u.profile.groups.map((g) => g.id)
+
+  // Allow the Apple App Review test user to see a sample Dataset
+  if (u.profile.username === 'eva_student@spusers.feide.no') groupIds.push('appleAppReview')
+
   const isAdmin = utilities.hasMinimumUserRole(
     response.locals.user,
     userRoles.admin
   )
   let query = {}
   if (isAdmin) {
-    query = { 'users.owner': u._id }
+    query = {
+      $or: [{ 'users.groups': { $in: groupIds } }, { 'users.owner': u._id }],
+    }
   } else {
-    query.$and = [
-      {
-        $or: [
-          { 'users.dataportenGroups': { $in: groupIds } },
-          { 'users.canvasGroups': { $in: groupIds } },
-        ],
-      },
-      { 'status.active': true },
-    ]
-  }
-
-  function populateDatasets(datasets) {
-    const opts = [{ path: 'users.owner', select: 'profile.username' }]
-    return Dataset.populate(datasets, opts)
+    query = {
+      $and: [{ 'users.groups': { $in: groupIds } }, { 'status.active': true }],
+    }
   }
 
   Dataset.find(query, async (error, ds) => {
     if (error) return next(error)
     const datasets = ds.map((d) => d.redacted())
-    if (isAdmin) {
-      const populatedDatasets = await populateDatasets(ds)
-      const pdatasets = populatedDatasets.map((d) => d.redacted())
-      return response.send(pdatasets)
-    } else response.send(datasets)
+    response.send(datasets)
   })
 })
 
 // CREATE a dataset
 router.post('/dataset', utilities.authoriseUser, (request, response, next) => {
-  if (request.body.name && response.locals.user) {
-    let datasetName = request.body.name
-    const u = response.locals.user
+  if (!request.body.name) return next(new Error('Dataset name is required'))
 
-    Dataset.create({ name: datasetName, 'users.owner': u._id })
-      .then((newDataset) => {
-        newDataset
-          .populate('users.owner')
-          .execPopulate()
-          .then((newDataset) => {
-            newDataset = newDataset.redacted()
-            response.send(newDataset)
-          })
-      })
-      .catch((error) => next(error))
-  } else {
-    return next(new Error('Empty name '))
-  }
+  Dataset.findOne(
+    { name: request.body.name, 'users.owner': response.locals.user._id },
+    (error, foundDataset) => {
+      if (error) return next(error)
+      if (foundDataset) response.status(400).json({ error: 'Name must be unique' })
+      else {
+        Dataset.create(
+          {
+            name: request.body.name,
+            'users.owner': response.locals.user._id,
+            storages: [{ kind: videoStorageTypes.educloud }],
+          },
+          (error2, newDataset) => {
+            if (error2) next(error2)
+            else response.send(newDataset)
+          }
+        )
+      }
+    }
+  )
 })
 
-// UPDATE dataset selection (for all users)
+// UPDATE dataset selection (for all users - mobile app)
 router.put(
   '/dataset/selection',
   utilities.authoriseUser,
@@ -160,13 +148,12 @@ router.put('/dataset', utilities.authoriseUser, (request, response, next) => {
     response.locals.user,
     userRoles.admin
   )
-  isAdmin = true
   if (!isAdmin) return next(new Error('Unauthorised'))
   Dataset.findById(updatedDataset._id, async (error, d) => {
     if (error || !d)
       next(error || new Error({ status: 400, message: 'datasett not found' }))
     updatedDataset.storages.forEach((storage) => {
-      if (storage._id == '') delete storage._id
+      if (storage._id) delete storage._id
     })
     const updateIsNewer =
       Date(updatedDataset.status.lastUpdated) >= Date(d.status.lastUpdated)
@@ -176,13 +163,14 @@ router.put('/dataset', utilities.authoriseUser, (request, response, next) => {
       d.status.lastUpdated = Date.now()
       d.description = updatedDataset.description
       d.users.owner = user._id
+      d.users.groups = updatedDataset.users.groups
       d.storages = updatedDataset.storages
       d.consent = updatedDataset.consent
       d.status.active = updatedDataset.status.active
-      d.formId =
-        updatedDataset.consent == consentTypes.samtykke
-          ? updatedDataset.formId
-          : ''
+      // d.formId =
+      //   updatedDataset.consent == consentTypes.samtykke
+      //     ? updatedDataset.formId
+      //     : ''
       d.selectionPriority = updatedDataset.selectionPriority
       d.selection = updatedDataset.selection
       d.save((saveError, savedDataset) => {

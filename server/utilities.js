@@ -1,6 +1,23 @@
 /*
- Designed and developed by Richard Nesnass & Sharanya Manivasagam
-*/
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 const crypto = require('crypto')
 const bcrypt = require('bcrypt')
 const https = require('https')
@@ -8,7 +25,7 @@ const jwt = require('jsonwebtoken')
 const ObjectId = require('mongoose').Types.ObjectId
 const User = require('./models/User')
 const { userRoles } = require('./constants')
-
+const linkparser = require('parse-link-header')
 let TEST_MODE = false
 
 const addZero = (i) => {
@@ -98,7 +115,10 @@ function tokenAuth(req, res, next, googleMobileAppTransfer) {
         )
         return next()
       } else {
-        return next(err2)
+        const error = err2
+          ? err2
+          : new Error(`Active login token not found. Please log in again`)
+        return next(error)
       }
     })
   }
@@ -118,7 +138,10 @@ const authoriseUser = (req, res, next) => {
         req.session.user = user
         return next()
       } else {
-        return next(usererr)
+        const error = usererr
+          ? usererr
+          : new Error(`Active login not found. Please log in again`)
+        return next(error)
       }
     })
   } else if (req.headers.authorization || googleMobileAppTransfer) {
@@ -148,24 +171,51 @@ const hasMinimumUserRole = (user, requestedRole) => {
   }
 }
 
+async function singleItemJsonRequest(options, postData = '') {
+  const { data } = await httpRequest(options, postData, [])
+  return JSON.parse(data)
+}
+
+// Pagination for canvas API
+async function paginatedMemberRequest(options, token, result = []) {
+  const { data, headers } = await httpRequest(options, '', [])
+  const json = JSON.parse(data)
+  json.members
+    ? (result = [...result, ...json.members])
+    : (result = [...result, ...json])
+  const links = linkparser(headers.link)
+  if (links.next) {
+    const parsedUrl = new URL(links.next.url)
+    const options2 = {
+      hostname: parsedUrl.host,
+      path: parsedUrl.pathname + parsedUrl.search,
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+    return paginatedMemberRequest(options2, token, result)
+  }
+  return result
+}
 /**  https Request to TSD/ outside portal from  VIVA server */
-function httpRequest(options, postData) {
+function httpRequest(options, postData = '') {
   return new Promise(function (resolve, reject) {
-    const req = https.request(options, (res) => {
-      if (res.statusCode < 200 || res.statusCode >= 300) {
+    const req = https.request(options, (response) => {
+      if (response.statusCode < 200 || response.statusCode >= 300) {
         reject(
           new Error(
-            `Rejected HTTP Response. statusCode: ${res.statusCode} calling: ${
-              options.host + options.path
-            } `
+            `Rejected HTTP Response. statusCode: ${
+              response.statusCode
+            } calling: ${options.host + options.path} `
           )
         )
       }
       let data = []
-      res.on('data', function (chunk) {
+      response.on('data', function (chunk) {
         data.push(chunk)
       })
-      res.on('end', function () {
+      response.on('end', function () {
         if (data.join('') === '') {
           // You are being throttled - handle it
           return reject(new Error('Remote server throttling'))
@@ -176,11 +226,9 @@ function httpRequest(options, postData) {
           // Everything is OK
           // json = JSON.parse(Buffer.concat(data).toString())
           const d = data.join('')
-          if (d === 'Invalid access token') reject(new Error('Access token not valid for this request'))
-          else {
-            const json = JSON.parse(d)
-            resolve(json)
-          }
+          if (d === 'Invalid access token')
+            reject(new Error('Access token not valid for this request'))
+          else resolve({ data: d, headers: response.headers })
         }
       })
     })
@@ -206,8 +254,12 @@ module.exports = {
   hashCompare,
   authoriseUser,
   hasMinimumUserRole,
+  isValidObjectId,
   setTestMode,
   getTestMode,
+
+  // HTTPS Requests:
   httpRequest,
-  isValidObjectId,
+  singleItemJsonRequest,
+  paginatedMemberRequest,
 }

@@ -1,6 +1,23 @@
 /*
- Designed and developed by Richard Nesnass & Sharanya Manivasagam
-*/
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 const router = require('express').Router()
 const { authoriseUser, hasMinimumUserRole } = require('../../utilities')
@@ -62,15 +79,16 @@ router.get('/user', authoriseUser, async (request, response) => {
 // Get all users
 router.get('/users', authoriseUser, async (request, response, next) => {
   const u = response.locals.user
+  const mode = request.query.mode
   const isAdmin = hasMinimumUserRole(u, userRoles.admin)
-  if (isAdmin) {
+  if (isAdmin && mode !== 'namesandroles') {
     User.find({}, (error, users) => {
       if (error) next(error)
       else {
-        const usersRedacted = users.map((u) => {
+        const usersRedacted = users.map((u2) => {
           return {
-            name: u.profile.username,
-            videos: u.videos.draftIDs,
+            name: u2.profile.username,
+            videos: u2.videos.draftIDs,
           }
         })
         response.send(usersRedacted)
@@ -83,11 +101,15 @@ router.get('/users', authoriseUser, async (request, response, next) => {
   }
 })
 
-// Respond with data saved for the current LTI session
-router.get('/ltidata', authoriseUser, async (request, response) => {
-  let data = {}
-  if (request.session.canvasData) data = request.session.canvasData
-  response.send(data)
+// Respond with 'draft' videos from all user accounts
+router.get('/users/drafts', authoriseUser, async (request, response) => {
+  const isAdmin = hasMinimumUserRole(response.locals.user, userRoles.admin)
+  if (isAdmin) {
+    User.find({ 'videos.draftIDs': { $exists: true, $ne: [] } }, { 'profile.username': 1, 'videos.draftIDs': 1 }, (error, users) => {
+      if (error) return response.status(500).send(error)
+      return response.send(users)
+    })
+  } else response.send(403).end()
 })
 
 router.get('/groups', authoriseUser, async (request, response, next) => {

@@ -1,5 +1,22 @@
 /*
- Designed and developed by Richard Nesnass & Sharanya Manivasagam
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
  */
 const videoStorageTypes = require('../constants').videoStorageTypes
 const consentTypes = require('../constants').consentTypes
@@ -21,13 +38,12 @@ const storageSchema = {
 }
 
 const datasetSchema = new mongoose.Schema({
-  name: { type: String },
+  name: { type: String, required: true }, // name of dataset must be unique
   description: { type: String, default: '' },
   created: { type: Date, default: Date.now },
-  formId: { type: String }, // Nettskjema form ID
   status: {
     lastUpdated: { type: Date, default: Date.now }, // Last time this Dataset was changed
-    active: { type: Boolean }, // Only active datasetts who will be fetched
+    active: { type: Boolean, default: false }, // Only active datasetts who will be fetched
     lockedBy: { type: mongoose.Schema.ObjectId, ref: 'User' }, // Who has locked the datasett for editing
   },
   consent: {
@@ -36,13 +52,14 @@ const datasetSchema = new mongoose.Schema({
       enum: Object.values(consentTypes),
       default: consentTypes.manual,
     },
+    value: { type: String },
+    formId: { type: Number },  // Nettskjema form ID
   },
 
   users: {
-    owner: { type: mongoose.Schema.ObjectId, ref: 'User' },
+    owner: { type: mongoose.Schema.ObjectId, ref: 'User' }, // The 'creator' of this dataset
     adminGroup: { type: String },
-    dataportenGroups: { type: Array, of: String },
-    canvasGroups: { type: Array, of: String }, // Canvas course IDs
+    groups: { type: Array, of: String }, // Canvas or Dataporten Course/Group IDs (groups of users) who will receive this dataset
   },
   selectionPriority: { type: Array, default: [] }, // Order of appearance of the utvalg categories
   selection: { type: Object, default: {} }, //  'utvalg' selection
@@ -56,7 +73,7 @@ const datasetSchema = new mongoose.Schema({
 // ** These attributes should be matched in the front end model **
 datasetSchema.methods.redacted = function () {
   const data = this.toObject()
-  const d = {
+  return {
     _id: this._id.toString(),
     name: data.name,
     description: data.description,
@@ -67,14 +84,16 @@ datasetSchema.methods.redacted = function () {
     status: {
       lastUpdated: data.status.lastUpdated,
       lockedBy: data.status.lockedBy,
+      active: data.status.active,
     },
     consent: {
-      kind: data.consent.kind,
+      kind: data.consent ? data.consent.kind : undefined,
+      value: data.consent ? data.consent.value : undefined,
+      formId: data.consent ? data.consent.formId : undefined,
     },
     users: {
       owner: data.users.owner,
-      dataportenGroups: data.users.dataportenGroups,
-      canvasGroups: data.users.canvasGroups,
+      groups: data.users.groups,
     },
     storages: data.storages.map((store) => {
       const s = { ...store }
@@ -82,8 +101,6 @@ datasetSchema.methods.redacted = function () {
       return s
     }),
   }
-
-  return d
 }
 // Duplicate the ID field.
 // eslint-disable-next-line

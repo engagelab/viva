@@ -1,218 +1,201 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
   <div>
-    <h2>{{ t('dataset') }}</h2>
+    <p class="text-red-600 ml-2">{{ t('dataset') }}</p>
+    <div class="flex flex-col flex-grow">
+      <div class="w-4/5 flex flex-col">
+        <AnswerInput
+          class="m-2"
+          mode="text"
+          :border="false"
+          :label="t('name')"
+          :required="true"
+          v-model="dataset.name"
+          @change="unsavedData = true"
+        ></AnswerInput>
+        <!--AnswerInput
+          class="m-2"
+          mode="text"
+          :border="false"
+          :label="t('owner')"
+          :required="true"
+          v-model="dataset.users.owner.profile.username"
+        ></AnswerInput-->
+        <AnswerInput
+          class="m-2"
+          mode="text"
+          :border="false"
+          :label="t('description')"
+          :required="true"
+          v-model="dataset.description"
+          @change="unsavedData = true"
+        ></AnswerInput>
+        <AnswerInput
+          class="m-2"
+          mode="binary"
+          :border="false"
+          :label="t('active')"
+          :required="true"
+          v-model="dataset.status.active"
+          @change="unsavedData = true"
+        ></AnswerInput>
+      </div>
 
-    <div class="flex flex-col ...">
+      <!-- Display of groups -->
       <div>
-        <div class="w-4/5 flex justify-between ...">
-          <div>
-            <AnswerInput
-              class="m-2 w-32"
-              mode="text"
-              :border="false"
-              :label="t('name')"
-              :required="true"
-              v-model="theDataset.name"
-            ></AnswerInput>
-          </div>
-          <div>
-            <AnswerInput
-              class="m-2"
-              mode="text"
-              :border="false"
-              :label="t('owner')"
-              :required="true"
-              v-model="theDataset.users.owner.profile.username"
-            ></AnswerInput>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div class="w-4/5 flex justify-between ...">
-          <div>
-            <AnswerInput
-              class="m-2 w-32"
-              mode="text"
-              :border="false"
-              :label="t('description')"
-              :required="true"
-              v-model="theDataset.description"
-            ></AnswerInput>
-          </div>
-          <div>
-            <!-- TODO: should be canvas course Ids -->
-            <!-- <SelectionBox
-              id="select-kind"
-              :label="t('data controller group')"
-              :options="SelectionOptionList"
-              v-model="theDataset.users.adminGroup"
-            ></SelectionBox> -->
-          </div>
-        </div>
-      </div>
-      <div>
-        <select
-          span
-          ref="selects"
-          @change="addSelectionPriority"
-          class="select"
-          style="width: 150px"
-          placeholder
-          v-model="currentSelection"
-        >
-          <option :value="0">{{ $t('add-subject') }}</option>
-          <option
-            v-for="(selection, index) in SelectionOptionList"
-            :value="selection"
-            :key="index"
-          >
-            {{ selection.item }}
-          </option>
-        </select>
-        <SelectionBox
-          id="select-kind"
-          :label="t('selection')"
-          :options="SelectionOptionList"
-          v-model="currentSelection"
-          @change="addSelectionPriority"
-        ></SelectionBox>
-      </div>
-      <div class="flex justify-start ...">
-        <p>Selection Priority:</p>
-        <div
-          v-for="(selection, index) in theDataset?.selectionPriority"
-          :key="index"
-          class="flex"
-        >
-          <p class="ml-4">{{ selection }}</p>
-          <p>*</p>
-          <p
-            class="ml-2"
-            v-if="theDataset?.selectionPriority.length != index + 1"
-          >
+        <p class="text-red-600 mt-4 ml-2">{{ t('canvas courses') }}</p>
+        <div class="flex flex-col">
+          <div v-for="(g, index) in groups" :key="index" class="py-1 ml-2">
+            <input
+              class="mr-1 mb-1"
+              type="checkbox"
+              :id="g.id"
+              :value="g.id"
+              v-model="dataset.users.groups"
+              @change="unsavedData = true"
+            />
+            <label class="mr-2" :for="`group-option-${g.name}`"
+              >{{ g.id }}-{{ g.name }}</label
             >
-          </p>
+          </div>
         </div>
       </div>
-      <div><p class="text-red-600 mt-4 ml-2">Instances</p></div>
-      <SelectionItem></SelectionItem>
 
-      <ConsentHandling></ConsentHandling>
+      <SelectionHandling @updated="selectionUpdated"></SelectionHandling>
 
-      <div><p class="text-red-600 mt-4 ml-2">Storage options</p></div>
-      <!-- <Storage></Storage> -->
-      <div
-        class="m-2"
-        v-for="(storage, index) in theDataset.storages"
-        :key="index"
-      >
-        <Storage :selectedStorage="storage" v-if="storage._id != ''"></Storage>
+      <ConsentHandling
+        @updated="consentUpdated"
+        :consent="dataset.consent"
+      ></ConsentHandling>
+
+      <div>
+        <p class="text-red-600 mt-4 ml-2">
+          {{ t('storage') }}
+          <span class="mt-4 ml-6 text-xs text-black">*{{ t('warning1') }}</span>
+        </p>
+        <div
+          class="flex flex-col"
+          v-for="s in configurableStorages"
+          :key="s._id"
+        >
+          <StorageHandling :storage="s" @updated="storageUpdated" />
+          <Button
+            class="mt-2 p-0 rounded-lg self-end"
+            id="button-accept"
+            @click="removeStorage"
+            >{{ t('removeStorage') }}
+          </Button>
+        </div>
+        <Button
+          class="mt-2 p-0 rounded-lg"
+          id="button-accept"
+          @click="addStorage"
+          >{{ t('addStorage') }}
+        </Button>
       </div>
-      <SlButton
-        class="ml-2 p-0 self-center rounded-lg"
-        id="button-accept"
-        @click="addStorage"
-        >+ Add new storage
-      </SlButton>
 
-      <SlButton
-        class="ml-4 p-2 self-center capitalize bg-green-highlight rounded-lg"
-        id="button-accept"
-        @click="updateDataset"
-        >{{ t('save') }}
-      </SlButton>
+      <Button
+        class="mt-4 bg-green-highlight"
+        v-if="unsavedData"
+        @vclick="save()"
+        >{{ t('save') }}</Button
+      >
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, computed /*watch*/ } from 'vue'
+import { defineComponent, ref, Ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-
-import { SELECTION } from '@/constants'
-// import { useAppStore } from '@/store/useAppStore'
+import { uuid } from '@/utilities'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import { DatasetSelection, DatasetStorage } from '@/types/main'
-import SelectionItem from '@/components/SelectionItem.vue'
+import { Dataset, DatasetStorage, DatasetConsent } from '@/types/main'
+import SelectionHandling from '@/components/SelectionHandling.vue'
 import AnswerInput from '@/components/base/AnswerInput.vue'
-import SelectionBox from '@/components/base/SelectionBox.vue'
 import ConsentHandling from '@/components/ConsentHandling.vue'
-import Storage from '@/components/Storage.vue'
-import SlButton from '@/components/base/SlButton.vue'
+import Button from '@/components/base/Button.vue'
+import StorageHandling from '@/components/StorageHandling.vue'
 import { VIDEO_STORAGE_TYPES } from '@/constants'
 import { useAppStore } from '@/store/useAppStore'
 const messages = {
   nb_NO: {
     dataset: 'Registrering',
-    description: 'Til forsiden',
-    selection: 'Ko-hort',
-    'data controller group': 'Data controller group',
-    owner: 'Owner',
     name: 'Name',
+    owner: 'Owner',
+    description: 'Til forsiden',
+    active: 'Aktiv',
+    'canvas courses': 'Canvas courses',
+    storage: '',
+    warning1: '',
+    addStorage: 'add storage',
+    removeStorage: 'remove storage',
   },
   en: {
-    dataset: 'Registrering',
-    description: ' Description',
-    'choose one or more': 'Choose one or several kindergartens..',
-    selection: 'Cohort',
-    'data controller group': 'Data controller group',
-    owner: 'Owner',
+    dataset: 'Dataset',
     name: 'Name',
+    owner: 'Owner',
+    description: ' Description',
+    active: 'active',
+    'canvas courses': 'Canvas courses',
+    storage: 'Storage',
+    warning1: 'Note: EduCloud storage not configurable here',
+    addStorage: 'Add new storage',
+    removeStorage: 'Remove storage',
   },
-}
-
-interface SelectionOptionListItem {
-  itemName: string
-  item: string
 }
 
 // This component completes setup of the app after login
 export default defineComponent({
   name: 'DatasetItem',
   components: {
-    SlButton,
-    SelectionBox,
+    Button,
     AnswerInput,
-    SelectionItem,
+    SelectionHandling,
     ConsentHandling,
-    Storage,
+    StorageHandling,
   },
   setup() {
     const { t } = useI18n({ messages })
-
+    const unsavedData = ref(false)
     const showInput = ref(false)
     const { getters: datasetGetters, actions: datasetActions } =
       useDatasetStore()
 
     const { getters: appGetters } = useAppStore()
     const currentSubset = ref('')
+    let dataset: Ref<Dataset> = ref(new Dataset())
 
-    const d = datasetGetters.selectedDataset
-    const theDataset = ref(d)
-
-    const currentSelection: Ref<SelectionOptionListItem> = ref({
-      item: '',
-      itemName: '',
-    })
-    console.log(appGetters.user.value.profile.groups)
-    let SelectionOptionList: SelectionOptionListItem[] = computed(() => {
-      return Object.values(SELECTION)
-        .filter((r) => !theDataset.value.selectionPriority.includes(r))
-        .map((r) => ({
-          item: r,
-          itemName: r,
-        }))
-    })
-
-    //Methods
-    // Add selection priority
-    const addSelectionPriority = () => {
-      if (currentSelection.value)
-        datasetActions.addSelectionPriority(currentSelection.value.itemName)
+    const resetData = (d: Dataset) => {
+      dataset.value = new Dataset(d)
     }
+
+    watch(
+      () => datasetGetters.selectedDataset.value,
+      (d) => resetData(d)
+    )
+    resetData(datasetGetters.selectedDataset.value)
+
     const addStorage = () => {
       const newStorage: DatasetStorage = {
-        kind: VIDEO_STORAGE_TYPES.educloud,
+        _id: uuid(),
+        kind: VIDEO_STORAGE_TYPES.lagringshotell,
         groupId: '',
         file: {
           name: [],
@@ -220,33 +203,62 @@ export default defineComponent({
         },
         category: [],
       }
-      datasetActions.addStorageFields('', newStorage, 'new')
+      dataset.value.storages.push(newStorage)
     }
-    // Save updated dataset
-    const updateDataset = () => {
-      datasetActions.updateDataset()
-    }
-    const addSubset = () => {
-      let subset: DatasetSelection = {
-        title: currentSubset.value,
-      }
 
-      datasetActions.addSelection(theDataset.value.selectionPriority[0], subset)
+    const removeStorage = (id: string) => {
+      const index = dataset.value.storages.findIndex((s) => s._id === id)
+      if (index) {
+        dataset.value.storages.splice(index, 1)
+        unsavedData.value = true
+      }
     }
+
+    const selectionUpdated = (s: string[]) => {
+      dataset.value.selection = {}
+      dataset.value.selectionPriority = s
+      unsavedData.value = true
+    }
+    const consentUpdated = (c: DatasetConsent) => {
+      dataset.value.consent = c
+      unsavedData.value = true
+    }
+    const storageUpdated = (s: DatasetStorage) => {
+      const storage = dataset.value.storages.find((st) => st._id === s._id)
+      if (storage) {
+        storage.kind = s.kind
+        storage.groupId = s.groupId
+        storage.file = s.file
+        storage.category = s.category
+      }
+      unsavedData.value = true
+    }
+
+    // Save updated dataset
+    const save = () => {
+      datasetActions.updateDataset(dataset.value)
+      unsavedData.value = false
+    }
+
+    const configurableStorages = computed(() => {
+      return dataset.value.storages.filter(
+        (s) => s.kind !== VIDEO_STORAGE_TYPES.educloud
+      )
+    })
     return {
       t,
-      theDataset,
-      SelectionOptionList,
-      currentSelection,
+      dataset,
+      groups: appGetters.user.value.profile.groups,
       showInput,
       currentSubset,
-      groups: appGetters.user.value.profile.groups,
-      // Computed
-      // Methods
+      selectionUpdated,
+      consentUpdated,
+      storageUpdated,
+      unsavedData,
       addStorage,
-      addSubset,
-      addSelectionPriority,
-      updateDataset,
+      removeStorage,
+      save,
+      configurableStorages,
     }
   },
 })

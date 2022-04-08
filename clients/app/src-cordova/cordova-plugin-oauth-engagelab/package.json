@@ -24,9 +24,5 @@
       "android"
     ]
   },
-  "engines": {
-    "cordova-android": ">= 8.0.0",
-    "cordova-ios": ">= 6.1.0"
-  },
   "dependencies": {}
 }

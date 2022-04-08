@@ -1,5 +1,23 @@
+<!-- Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see http://www.gnu.org/licenses/. -->
 <template>
-  <div class="flex flex-col">
+  <div class="flex flex-col m-2">
     <label
       class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2"
       :class="{ 'pl-4': border }"
@@ -84,6 +102,17 @@
         />
       </div>
     </template>
+    <template v-if="mode === 'textarea'">
+      <textarea
+        class="w-full"
+        :id="elementId"
+        :rows="rows"
+        :placeholder="placeholder"
+        v-model="selectedValue"
+        @input="valueInput"
+        @keyup.enter="enterKey"
+      />
+    </template>
     <template v-if="mode == 'email'">
       <div
         class="w-full bg-white flex items-center p-4"
@@ -112,63 +141,73 @@
     </template>
     <template v-if="mode == 'multiChoice'">
       <div class="flex flex-col" :id="elementId">
-        <div v-for="o in options" :key="o.id" class="py-1">
+        <div
+          v-for="o in options"
+          :key="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+          class="py-1"
+        >
           <input
             class="mr-1 mb-1"
             type="checkbox"
-            :id="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            :value="o.title"
+            :id="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            :value="o.item"
             v-model="selectedMultiChoice"
             @change="valueInput"
           />
           <label
             class="mr-2"
-            :for="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            >{{ o.title }}</label
+            :for="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            >{{ o.itemName }}</label
           >
         </div>
       </div>
     </template>
     <template v-if="mode == 'singleChoice'">
       <div class="flex flex-col ml-2" :id="elementId">
-        <div v-for="o in options" :key="o.id">
+        <div
+          v-for="o in options"
+          :key="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+        >
           <input
             class="mr-1 mb-1"
             type="radio"
-            :id="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            :value="o.title"
+            :id="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            :value="o.item"
             v-model="selectedValue"
             @change="valueInput"
           />
           <label
             class="mr-2"
-            :for="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            >{{ o.title }}</label
+            :for="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            >{{ o.itemName }}</label
           >
         </div>
       </div>
     </template>
     <template v-if="mode == 'conditional'">
       <div class="flex flex-col py-1" :id="elementId">
-        <div v-for="(o, i) in options" :key="o.id">
+        <div
+          v-for="(o, i) in options"
+          :key="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+        >
           <input
             class="mr-1 mb-1"
             type="radio"
-            :id="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            :value="o.title"
+            :id="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            :value="o.item"
             v-model="selectedValue"
             @change="valueInput"
           />
           <label
             class="mr-2"
-            :for="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
-            >{{ o.title }}</label
+            :for="`${elementId}-option-${o.itemName.replace(/\s/g, '')}`"
+            >{{ o.itemName }}</label
           >
           <AnswerInput
-            v-if="selectedValue === o.title"
+            v-if="selectedValue === o.item"
             class="pl-4"
             mode="multiChoice"
-            :id="`${elementId}-option-${o.title.replace(/\s/g, '')}`"
+            :id="`${elementId}-cond-option-${o.itemName.replace(/\s/g, '')}`"
             v-model="selectedMultiChoice"
             @input="valueInput"
             :options="conditionals[i].options"
@@ -176,42 +215,17 @@
         </div>
       </div>
     </template>
-    <template v-if="mode == 'select'">
-      <div class="flex flex-col" :id="elementId">
-        <select
-          class="
-            block
-            appearance-none
-            w-full
-            cursor-pointer
-            bg-gray-200
-            border border-gray-200
-            text-gray-700
-            py-3
-            px-4
-            pr-8
-            rounded
-            leading-tight
-            focus:outline-none focus:bg-white focus:border-gray-500
-          "
-          id="grid-state"
-          v-model="selection"
-          @change="updateSelect($event)"
-        >
-          <option value="" disabled selected>Choose..</option>
-          <option v-for="(o, i) in options" :key="i" :value="o.item">
-            {{ o.itemName }}
-          </option>
-        </select>
-      </div>
-    </template>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRefs, Ref, watch } from 'vue'
+import { defineComponent, ref, toRefs, Ref, watch, PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+interface OptionItem {
+  itemName: string
+  item: unknown
+}
 const messages = {
   nb_NO: {
     invalidEntry: 'ugyldig verdi',
@@ -224,7 +238,9 @@ export default defineComponent({
   name: 'AnswerInput',
   props: {
     modelValue: {
-      type: [String, Boolean, Number],
+      type: [String, Boolean, Number, Array] as PropType<
+        string | boolean | number | string[]
+      >,
       required: true,
     },
     id: {
@@ -239,12 +255,16 @@ export default defineComponent({
       default: false,
     },
     options: {
-      type: Array,
+      type: Array as PropType<OptionItem[]>,
       default: () => [],
     },
     label: {
       type: String,
       default: '',
+    },
+    rows: {
+      type: Number,
+      default: 5,
     },
     description: {
       type: String,
@@ -279,7 +299,7 @@ export default defineComponent({
     const selectedValue: Ref<string> = modelValue
       ? ref(String(modelValue.value))
       : ref('')
-    const selectedMultiChoice = ref([])
+    const selectedMultiChoice: Ref<string[]> = ref([])
     const isValid = ref(true)
     const emailRegex = new RegExp(
       /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
@@ -293,10 +313,15 @@ export default defineComponent({
       context.emit('enterkey')
     }
 
-    watch(modelValue, (newValue) => {
+    function initialise(newValue: string | boolean | number | string[]) {
       selectedValue.value = String(newValue)
+      if (mode.value === 'multiChoice')
+        selectedMultiChoice.value = newValue as string[]
       if (!selectedValue.value) isValid.value = true
-    })
+    }
+
+    watch(modelValue, (newValue) => initialise(newValue))
+    initialise(modelValue.value)
 
     const valueInput = ($event: InputEvent): void => {
       const ie = $event.target as HTMLInputElement

@@ -1,28 +1,95 @@
 /*
- Designed and developed by Richard Nesnass & Sharanya Manivasagam
+ Designed and developed by Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 const mongoose = require('mongoose')
 const videoStatusTypes = require('../constants').videoStatusTypes
+const videoSharingStatusTypes = require('../constants').videoSharingStatusTypes
 
 const editDecriptionList = {
   trim: { type: Array, default: [] },
   blur: { type: Array, default: [] },
 }
 
+const annotationSchema = new mongoose.Schema({
+  created: { type: Date, default: Date.now },
+  creator: { type: String }, // LTI ID
+  text: { type: String },
+  time: { type: Array, default: [] }, // e.g [2.35, 10.04] or just [2.35]
+  comments: { type: Array, default: [] }, // e.g { created: Date, creator: string, text: string }
+})
+
+const shareSchema = new mongoose.Schema({
+  creator: { type: String }, // LTI ID of the creator
+  created: { type: Date, default: Date.now },
+  users: { type: Array },
+  access: { type: Boolean, default: false },
+  title: { type: String },
+  description: { type: String },
+  edl: editDecriptionList,
+  tags: [{ type: String }],
+  annotations: {
+    type: Array,
+    of: annotationSchema,
+    default: []
+  },
+  comments: {
+    type: [
+      {
+        created: { type: Date, default: Date.now },
+        creator: { type: String }, // LTI ID
+        text: { type: String },
+      }
+    ],
+    default: [],
+  },
+  status: {
+    type: [
+      {
+        created: { type: Date, default: Date.now },
+        user: { type: String }, // LTI ID
+        status: {
+          type: String,
+          enum: Object.values(videoSharingStatusTypes),
+          default: videoSharingStatusTypes.uploaded, // Status of this change to the share
+        },
+      }
+    ],
+    default: [],
+  }
+})
+
 const videoSchema = new mongoose.Schema({
-  file: { // For Back-End use only
+  file: {
+    // For Back-End use only
     extension: { type: String }, // File extension to use e.g. mp4  Assigned by FFMPEG, back end only.
     name: { type: String }, // The name of the file stored server-side by TUS
     mimeType: { type: String }, // mime type e.g. video/mp4  Assigned by recorder at front end.
     encryptionKey: { type: String },
-    encryptionMD5: { type: String }
+    encryptionMD5: { type: String },
   },
   details: {
     id: { type: String }, // Used instead of video._id front end, and for QR Code.
     name: { type: String }, // A human-readable string for naming this video
     category: { type: String }, // green, yellow, red
-    created: { type: Date },
+    created: { type: Date, default: Date.now },
     description: { type: String },
     duration: { type: Number }, // Seconds  created: { type: Date },
     edl: editDecriptionList,
@@ -47,21 +114,17 @@ const videoSchema = new mongoose.Schema({
   },
   users: {
     owner: { type: mongoose.Schema.ObjectId, ref: 'User' },
-    sharedWith: [{ type: mongoose.Schema.ObjectId, ref: 'User' }], // Users who can see this video. Used for easier searching
-    sharing: [
-      // Each entry is a share for a particular set of users, and particular EDL of this video
-      {
-        users: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
-        access: { type: Boolean, default: false },
-        description: { type: String },
-        edl: editDecriptionList,
-      },
-    ],
+    sharing: {
+      type: Array,
+      of: shareSchema,
+      default: []
+    },
   },
   dataset: {
     id: { type: mongoose.Schema.ObjectId, ref: 'Dataset' },
     name: { type: String },
     selection: { type: Array }, // 'utvalg' setting
+    groups: { type: Array }, // Canvas / Dataporten groups given access to this video by the Dataset
   },
   consents: { type: Array }, // These are the consents confirmed by the teacher in this recording
   storages: [
@@ -109,4 +172,6 @@ videoSchema.set('toObject', {
   virtuals: true,
 })
 
-module.exports = mongoose.model('Video', videoSchema)
+module.exports = {
+  Video: mongoose.model('Video', videoSchema)
+}

@@ -1,3 +1,23 @@
+/*
+ Copyright 2020, 2021 Richard Nesnass, Sharanya Manivasagam, and Ole Smørdal
+
+ This file is part of VIVA.
+
+ VIVA is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ GPL-3.0-only or GPL-3.0-or-later
+
+ VIVA is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with VIVA.  If not, see <http://www.gnu.org/licenses/>.
+ */
 import './tailwind.css'
 import { createApp } from 'vue'
 import { createI18n } from 'vue-i18n'
@@ -5,29 +25,7 @@ import { globalTranslations } from './translations'
 import router from './router'
 import App from './App.vue'
 
-import { useAppStore } from './store/useAppStore'
-
-const { actions: appActions } = useAppStore()
-
 const app = createApp(App)
-// Redirected OAuth login for mobile devices
-// Using cordova-plugin-oauth
-// Called from a callback URL like
-// com.example.foo://oauth_callback?code=b10a8db164e0754105b7a99be72e3fe5
-// it would be received in JavaScript like this:
-window.addEventListener('message', function (event) {
-  if (event.origin) console.log(`Login callback event origin: ${event.origin}`)
-  if (typeof event.data === 'string' && event.data.match(/^oauth::/)) {
-    const data = JSON.parse(event.data.substring(7))
-    if (data.mode == 'login' && data.code && data.code !== 'undefined') {
-      // The JWT will be sent with future requests to authenticate Mobile users in case the session has expired
-      localStorage.setItem('jwt', data.code)
-      appActions.tokenLogin()
-    } else {
-      router.push('/')
-    }
-  }
-})
 
 const i18n = createI18n({
   locale: navigator.language || 'nb_NO',
