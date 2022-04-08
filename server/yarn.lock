@@ -3304,9 +3304,9 @@ tus-metadata@^1.0.2:
   dependencies:
     to-object-reducer "^1.0.1"
 
-"tus-node-server@git+ssh://git@bitbucket.usit.uio.no:7999/engagelab/tus-node-server.git":
+"tus-node-server@git+https://github.com/engagelab/tus-node-server":
   version "0.3.3"
-  resolved "git+ssh://git@bitbucket.usit.uio.no:7999/engagelab/tus-node-server.git#96815c07f5e0f138f17d568b6e2219d44d9c8c31"
+  resolved "git+https://github.com/engagelab/tus-node-server#96815c07f5e0f138f17d568b6e2219d44d9c8c31"
   dependencies:
     "@google-cloud/storage" "^2.4.2"
     aws-sdk "^2.418.0"
