@@ -40,7 +40,10 @@ function createClient(mode) {
     let authCallback = `${host}:${port}/auth/dataporten/callback`
     if (
       process.env.NODE_ENV === 'testing' ||
-      process.env.NODE_ENV !== 'production'
+      process.env.NODE_ENV === 'production' ||
+      process.env.NODE_ENV === 'development' ||
+      host.includes('engagelab') ||
+      host.includes('viva')
     ) {
       authCallback = `${host}/auth/dataporten/callback`
     }
