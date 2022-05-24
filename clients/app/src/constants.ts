@@ -23,10 +23,10 @@ const theHost = process.env.VUE_APP_SERVER_HOST
 const thePort = process.env.VUE_APP_SERVER_PORT
 let baseUrl = `${theHost}`
 if (
-  (process.env.NODE_ENV !== 'development' ||
-  process.env.NODE_ENV !== 'production') &&
+  !(process.env.NODE_ENV === 'development') &&
+  !(process.env.NODE_ENV === 'production') &&
   theHost &&
-  !theHost.includes('engagelab') &&
+  // !theHost.includes('engagelab') &&
   !theHost.includes('viva')
 ) {
   baseUrl = `${theHost}:${thePort}`
