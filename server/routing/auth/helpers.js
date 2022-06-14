@@ -185,13 +185,17 @@ function completeCallback(request, response, user) {
 
   if (client === 'lti') {
     redirectUrl =
-      process.env.NODE_ENV === 'development' && !isEngagelab && !isVivaProduction
+      process.env.NODE_ENV === 'development' &&
+      !isEngagelab &&
+      !isVivaProduction
         ? `${host}:8080`
         : `${host}/lti`
     s = `${new Date().toLocaleString()}: LTI Login: ${user.profile.username}`
   } else if (client === 'admin') {
     redirectUrl =
-      process.env.NODE_ENV === 'development' && !isEngagelab && !isVivaProduction
+      process.env.NODE_ENV === 'development' &&
+      !isEngagelab &&
+      !isVivaProduction
         ? `${host}:8081`
         : `${host}`
     s = `${new Date().toLocaleString()}: Admin Login: ${user.profile.username}`
@@ -205,7 +209,9 @@ function completeCallback(request, response, user) {
       s = `${new Date().toLocaleString()}: Mobile App Login: ${user.fullName}`
     } else {
       redirectUrl =
-        process.env.NODE_ENV === 'development' && !isEngagelab && !isVivaProduction
+        process.env.NODE_ENV === 'development' &&
+        !isEngagelab &&
+        !isVivaProduction
           ? `${host}:8082`
           : `${host}/app`
     }

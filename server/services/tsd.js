@@ -53,6 +53,7 @@ const fetchConsents = ({ datasetId, formId, token }) => {
       'Content-Length': data.length,
     },
   }
+  console.log(options)
   return utilities.singleItemJsonRequest(options, data)
 }
 
@@ -72,6 +73,7 @@ function exportConsent(
 ) {
   tsdAuthoriseConsent(user.tokens.id_token)
     .then((token) => {
+      console.log(token.token)
       fetchConsents({ datasetId, utvalg, formId, token }).then((consents) => {
         const regexComma = /,/gi
         const regexColon = /:/gi
@@ -80,7 +82,8 @@ function exportConsent(
           .replace(regexComma, '.')
           .replace(regexColon, '-')
         if (utvalg.length > 0 && utvalg.slice(-1) != '.') utvalg += '.'
-        if (consents.length > 0) filteredConsents = filterConsents(consents, utvalg)
+        if (consents.length > 0)
+          filteredConsents = filterConsents(consents, utvalg)
         successCallback(filteredConsents ? filteredConsents : [])
       })
     })
