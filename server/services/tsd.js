@@ -43,17 +43,19 @@ const fetchConsents = ({ datasetId, formId, token }) => {
   const data = JSON.stringify({
     reference: { dataset: datasetId },
   })
+  const tokenKey = token.token ? token.token : token
+  console.log(tokenKey)
   const options = {
     hostname: 'api.tsd.usit.no',
     path: `/v1/p01/consent/external/${formId}/verify`,
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${tokenKey}`,
       'Content-Type': 'application/json',
       'Content-Length': data.length,
     },
   }
-  console.log(options)
+
   return utilities.singleItemJsonRequest(options, data)
 }
 
@@ -73,7 +75,6 @@ function exportConsent(
 ) {
   tsdAuthoriseConsent(user.tokens.id_token)
     .then((token) => {
-      console.log(token.token)
       fetchConsents({ datasetId, utvalg, formId, token }).then((consents) => {
         const regexComma = /,/gi
         const regexColon = /:/gi
