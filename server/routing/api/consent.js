@@ -32,13 +32,10 @@ const sampleConsents = JSON.parse(sampleConsentsRaw)
 
 router.get('/consents', utilities.authoriseUser, (request, response, next) => {
   const user = response.locals.user
-  if (
-    request.query.datasetId &&
-    request.query.formId &&
-    request.query.formId !== ''
-  ) {
+  if (request.query.datasetId && request.query.formId && request.query.formId !== '') {
     if (process.env.NODE_ENV === 'development') {
-      return response.send(sampleConsents)
+      const limitedConsents = sampleConsents.length ? sampleConsents[0] : {}
+      return request.query.formId === '0' ? response.send([limitedConsents]): response.send(sampleConsents)
     }
     tsdConsent.exportConsent(
       {
