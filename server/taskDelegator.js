@@ -77,6 +77,7 @@ const errorProcessingVideo = (error, pStatus) => {
     const errorMessage = pipelineErrorMessages[pStatus]
     const nextVideo = activelyProcessing[pStatus]
     nextVideo.status.inPipeline = false
+    nextVideo.status.error.date = new Date()
     nextVideo.status.error.errorDebug = error
     nextVideo.status.error.errorInfo = `${errorMessage}. Please contact support. Reference: ${nextVideo.filename}`
     nextVideo.status.main = videoStatusTypes.error
@@ -95,6 +96,7 @@ const advanceVideoStatus = (video, pStatus) => {
     video.status.main = pipelineStates[stateIndex + 1]
   }
   video.status.inPipeline = false
+  video.status.error.date = undefined
   video.status.error.errorDebug = ''
   video.status.error.errorInfo = ''
   video.save((error) => {

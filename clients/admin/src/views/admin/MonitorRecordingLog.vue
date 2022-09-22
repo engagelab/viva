@@ -49,56 +49,58 @@
         class="grid grid-rows-1 border-2 rounded-md bg-gray-300 p-4 mt-4"
       >
         <div class="recording-title text-lg">{{ t('metadata') }}</div>
-        <div class="">
-          <p class="text-red-500">video details</p>
-          <div>{{ t('name') }}: {{ selectedRow.details.name }}</div>
-          <div>{{ t('owner') }} : {{ selectedRow.shared.owner }}</div>
-          <div>{{ t('category') }}: {{ selectedRow.details.category }}</div>
-          <div>{{ t('created') }} : {{ selectedRow.details.created }}</div>
-          <div>
-            {{ t('duration') }} :
-            {{ `${selectedRow.details.duration} Seconds` }}
-          </div>
-          <div>{{ t('edl') }}: {{ selectedRow.details.edl }}</div>
-          <div>
-            {{ t('description') }} : {{ selectedRow.details.description }}
-          </div>
-          <div class="mt-2">
-            <p class="text-red-500">{{ t('datasetInfo') }}:</p>
-            <div>{{ t('datasetName') }}:{{ selectedRow.dataset }}</div>
-            <div>{{ t('consenters') }}: {{ selectedRow.selection }}</div>
-          </div>
-          <div class="mt-2">
-            <p class="text-red-500">{{ t('consenters') }}:</p>
-            <div
-              v-for="(consenter, index) in selectedRow.consenters"
-              :key="index"
-            >
-              {{ t('consenters') }} : {{ consenter }}
-            </div>
-          </div>
-          <div class="mt-2">
-            <p class="text-red-500">{{ t('storages') }}:</p>
-            <div v-for="(storage, index) in selectedRow.storages" :key="index">
-              {{ storage.kind }}-{{ storage.path }}
-            </div>
+
+        <p class="text-red-500">Details</p>
+        <div>{{ t('name') }}: {{ selectedRow.details.name }}</div>
+        <div>{{ t('owner') }} : {{ selectedRow.shared.owner }}</div>
+        <div>{{ t('category') }}: {{ selectedRow.details.category }}</div>
+        <div>{{ t('created') }} : {{ selectedRow.details.created }}</div>
+        <div>
+          {{ t('duration') }} :
+          {{ `${selectedRow.details.duration} Seconds` }}
+        </div>
+        <div>{{ t('edl') }}: {{ selectedRow.details.edl }}</div>
+        <div>
+          {{ t('description') }} : {{ selectedRow.details.description }}
+        </div>
+        <div class="mt-2">
+          <p class="text-red-500">{{ t('datasetInfo') }}</p>
+          <div>{{ t('datasetName') }}:{{ selectedRow.dataset }}</div>
+          <div>{{ t('consenters') }}: {{ selectedRow.selection }}</div>
+        </div>
+        <div class="mt-2">
+          <p class="text-red-500">{{ t('consenters') }}</p>
+          <div
+            v-for="(consenter, index) in selectedRow.consenters"
+            :key="index"
+          >
+            {{ t('consenters') }} : {{ consenter }}
           </div>
         </div>
-        <div class="mx-2">
+        <div class="mt-2">
+          <p class="text-red-500">{{ t('storages') }}</p>
+          <div v-for="(storage, index) in selectedRow.storages" :key="index">
+            {{ storage.kind }}-{{ storage.path }}
+          </div>
+        </div>
+        <div class="mt-2">
+          <p class="text-red-500">Errors</p>
+          <p>{{ selectedRow.errorDate }}</p>
+          <p>{{ selectedRow.errorInfo }}</p>
+        </div>
+        <div class="mt-2">
           <p class="text-red-500">{{ t('shares') }}</p>
           <div
             class="mt-2"
             v-for="(share, shareIndex) in selectedRow.shared.sharing"
             :key="shareIndex"
           >
-            <p>
-              <span class="text-red-500">></span> {{ t('description') }}:{{
-                share.description
-              }}
+            <p>{{ t('description') }}:&nbsp;{{ share.description }}</p>
+            <p>{{ t('edl') }}:&nbsp;{{ share.edl.trim }}</p>
+            {{ t('users') }}:&nbsp;
+            <p v-for="(user, index) in share.users" :key="index">
+              {{ user }}
             </p>
-            <p>{{ t('edl') }}:{{ share.edl.trim }}</p>
-            {{ t('users') }}:
-            <p v-for="(user, index) in share.users" :key="index">{{ user }}</p>
           </div>
         </div>
       </div>
@@ -112,7 +114,7 @@ import { AgGridVue } from 'ag-grid-vue3'
 import { GridOptions, CellEvent } from '@ag-grid-community/all-modules'
 
 // Class and Interface
-import { Video } from '@/types/main'
+import { Video, VideoTableLayout } from '@/types/main'
 
 // Stores
 import { useVideoStore } from '@/store/useVideoStore'
@@ -126,19 +128,19 @@ const messages = {
     opptak: 'Opptak',
     datainnsamler: 'Datainnsamler',
     name: 'Navn',
-    category: '',
-    created: '',
-    duration: '',
-    edl: '',
-    consenters: '',
-    selection: '',
-    datasetName: '',
-    datasetInfo: '',
-    storages: '',
-    shares: '',
-    description: '',
-    users: '',
-    metadata: '',
+    category: 'Category',
+    created: 'Created',
+    duration: 'Duration',
+    edl: 'EDL',
+    consenters: 'Consenters',
+    selection: 'Selection',
+    datasetName: 'Dataset name',
+    datasetInfo: 'Dataset info',
+    storages: 'Storages',
+    shares: 'Shares',
+    description: 'Description',
+    users: 'Users',
+    metadata: 'Metadata about selected recording',
   },
   en: {
     nonitorRecordingLog: 'Recording Log',
@@ -157,7 +159,7 @@ const messages = {
     shares: 'Shares',
     description: 'Description',
     users: 'Users',
-    metadata: 'Metadata about recording',
+    metadata: 'Metadata about selected recording',
   },
 }
 
@@ -179,7 +181,7 @@ export default defineComponent({
     })
 
     const searchField = ref('')
-    const selectedRow = ref()
+    const selectedRow = ref<VideoTableLayout>()
 
     // Convert video when fetched
 
@@ -196,7 +198,7 @@ export default defineComponent({
 
     // Handle Table Events
     const cellClicked = (event: CellEvent) => {
-      selectedRow.value = event.data
+      selectedRow.value = event.data as VideoTableLayout
       console.log(selectedRow.value)
     }
 

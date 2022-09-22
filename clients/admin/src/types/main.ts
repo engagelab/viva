@@ -180,7 +180,7 @@ interface VideoDetails {
 }
 interface VideoStatusData {
   main?: VIDEO_STATUS_TYPES
-  error?: { errorInfo?: string }
+  error?: { errorInfo?: string; date?: string }
   inPipeline?: boolean // true if a pipeline is currently working on this file
   isEncrypted?: boolean // true if this video is encrypted
   isEdited?: boolean // true if this video has edits to perform
@@ -200,6 +200,7 @@ interface VideoStatusData {
 interface VideoStatus {
   main: VIDEO_STATUS_TYPES
   error: {
+    date?: Date
     errorInfo: string
   }
   inPipeline: boolean // true if a pipeline is currently working on this file
@@ -280,7 +281,7 @@ export interface ColumnDef {
   editable?: boolean
 }
 
-interface VideoTableLayout {
+export interface VideoTableLayout {
   record: string
   date: Date
   owner: string
@@ -290,6 +291,8 @@ interface VideoTableLayout {
   selection: string
   consenters: string[]
   storages: VideoStorages[]
+  errorInfo: string
+  errorDate: string
 }
 
 export class Video {
@@ -323,6 +326,7 @@ export class Video {
       main: VIDEO_STATUS_TYPES.draft,
       error: {
         errorInfo: '',
+        date: undefined,
       },
       inPipeline: false,
       isEncrypted: false,
@@ -415,6 +419,8 @@ export class Video {
       this.status.decryptionInProgress = status.decryptionInProgress
     if (status.error && status.error.errorInfo)
       this.status.error.errorInfo = status.error.errorInfo
+    if (status.error && status.error.date)
+      this.status.error.date = new Date(status.error.date)
     if (status.encryptionInProgress)
       this.status.encryptionInProgress = status.encryptionInProgress
     if (status.hasNewDataAvailable)
@@ -474,6 +480,8 @@ export class Video {
       ),
       consenters: this.consents,
       storages: this.storages,
+      errorInfo: this.status.error.errorInfo || '',
+      errorDate: this.status.error.date?.toLocaleString() || '',
     }
   }
   // Convert this to a Plain Old Javascript Object

@@ -36,11 +36,11 @@ function discoverServices() {
 }
 
 function createClient(mode) {
-  if (mode == 'dataporten') {
+    if (mode == 'dataporten') {
     let authCallback = `${host}:${port}/auth/dataporten/callback`
     if (
       process.env.NODE_ENV === 'testing' ||
-      process.env.NODE_ENV !== 'production'
+      process.env.NODE_ENV === 'production'
     ) {
       authCallback = `${host}/auth/dataporten/callback`
     }

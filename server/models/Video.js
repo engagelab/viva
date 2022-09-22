@@ -103,6 +103,7 @@ const videoSchema = new mongoose.Schema({
       default: videoStatusTypes.uploaded, // Current status of this video
     },
     error: {
+      date: { type: Date, default: undefined },
       errorInfo: { type: String },
       errorDebug: { type: String }, // debug error report. Back end only.
     },

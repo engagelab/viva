@@ -48,7 +48,7 @@
         <ConsentItem
           class="flex flex-row pt-4"
           v-for="consent in consentList"
-          :key="consent.value.submission_id"
+          :key="consent.submission_id"
           :consent="consent"
           checkboxes="true"
           @change="dataChanged"
@@ -108,7 +108,7 @@ export default defineComponent({
     const selectedDataset = datasetGetters.selectedDataset
     let manualConsent = true
     const video = ref(new Video().updateFromVideo(selectedVideo.value))
-    const consentList: Ref<Ref<Consent>[]> = ref([])
+    const consentList: Ref<Consent[]> = ref([])
     const standardConsent: Ref<Consent> = ref({
       id: 'standardConsent-id',
       name: 'Bekreft',
@@ -121,9 +121,9 @@ export default defineComponent({
     })
 
     watch(
-      () => datasetGetters.consents,
+      () => datasetGetters.consents.value,
       (newValue) => {
-        consentList.value = newValue.value.map((c) => ref(c))
+        consentList.value = newValue.map((c) => c)
       }
     )
 
@@ -164,8 +164,8 @@ export default defineComponent({
         } */
       }
       consentList.value = manualConsent
-        ? [standardConsent]
-        : datasetGetters.consents.value.map((c) => ref(c))
+        ? [standardConsent.value]
+        : datasetGetters.consents.value.map((c) => c)
     })
 
     function back(): void {
@@ -173,28 +173,29 @@ export default defineComponent({
       router.push('/videos/editor?page=0')
     }
     function checkAll(): void {
-      consentList.value.forEach((c) => (c.value.checked = true))
+      consentList.value.forEach((c) => (c.checked = true))
+      video.value.status.isConsented = true
       dataChanged()
     }
     function dataChanged(newValue?: DataChangedEvent): void {
       if (newValue) {
         if (newValue.checked) video.value.status.isConsented = true
         const consent = consentList.value.find(
-          (c) => c.value.submission_id === newValue.id
+          (c) => c.submission_id === newValue.id
         )
-        if (consent) consent.value.checked = newValue.checked
+        if (consent) consent.checked = newValue.checked
       }
-      if (consentList.value.every((c) => !c.value.checked)) {
+      if (consentList.value.every((c) => !c.checked)) {
         video.value.status.isConsented = false
       }
       if (selectedVideo.value) {
         video.value.consents = consentList.value
-          .filter((c) => c.value.checked)
+          .filter((c) => c.checked)
           .map(
             (c) =>
-              c.value.reference.username ||
-              c.value.reference.user_fullname ||
-              c.value.submission_id
+              c.reference.username ||
+              c.reference.user_fullname ||
+              c.submission_id
           )
         videoActions.setUnsavedChanges(selectedVideo.value?.details.id)
         videoActions.updateMetadata(video.value)
