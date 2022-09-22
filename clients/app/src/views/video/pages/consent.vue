@@ -43,7 +43,8 @@
       <p class="pl-4" v-if="selectedVideo && consentList.length === 0">
         {{ `${t('noConsentsFound')} ${selectedVideo.dataset.name}` }}
       </p>
-      <p v-if="manualConsent">{{ t('ManualHandling') }}</p>
+      <p v-if="consentIsByTSD">{{ t('TSDHandling') }}</p>
+      <p v-else>{{ t('ManualHandling') }}</p>
       <div v-if="consentList.length > 0">
         <ConsentItem
           class="flex flex-row pt-4"
@@ -59,7 +60,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, onMounted, watch } from 'vue'
+import { defineComponent, ref, Ref, onMounted, watch, computed } from 'vue'
 import router from '@/router'
 import { CONSENT_TYPES } from '@/constants'
 import { useI18n } from 'vue-i18n'
@@ -89,6 +90,7 @@ export default defineComponent({
       nb_NO: {
         SjekkAlt: 'Velg alle',
         ManualHandling: 'Samtykker i dette datasettet håndteres manuelt',
+        TSDHandling: 'Samtykker håndteres i TSD',
         noConsentsFound: 'Ingen samtykker er gitt for ',
         understood: 'Forstått',
         consentDelayNote:
@@ -96,7 +98,8 @@ export default defineComponent({
       },
       en: {
         SjekkAlt: 'Choose everyone',
-        ManualHandling: 'Consents in this data set is handled manually',
+        ManualHandling: 'Consents in this data set are handled manually',
+        TSDHandling: 'Consents handled by TSD',
         noConsentsFound: 'No consents are given for ',
         understood: 'Understood',
         consentDelayNote:
@@ -106,7 +109,12 @@ export default defineComponent({
     const { t } = useI18n({ messages })
     const selectedVideo = videoGetters.selectedVideo
     const selectedDataset = datasetGetters.selectedDataset
-    let manualConsent = true
+    const consentIsByTSD = computed(() => {
+      return (
+        selectedDataset.value &&
+        selectedDataset.value.consent.kind == CONSENT_TYPES.samtykke
+      )
+    })
     const video = ref(new Video().updateFromVideo(selectedVideo.value))
     const consentList: Ref<Consent[]> = ref([])
     const standardConsent: Ref<Consent> = ref({
@@ -129,10 +137,6 @@ export default defineComponent({
 
     onMounted(() => {
       const v = selectedVideo.value
-      manualConsent = !(
-        !!selectedDataset.value &&
-        selectedDataset.value.consent.kind == CONSENT_TYPES.samtykke
-      )
       if (v) {
         video.value.updateStatus(v.status)
         standardConsent.value.checked = video.value.status.isConsented
@@ -163,9 +167,9 @@ export default defineComponent({
           appActions.updateUserAtServer()
         } */
       }
-      consentList.value = manualConsent
-        ? [standardConsent.value]
-        : datasetGetters.consents.value.map((c) => c)
+      consentList.value = consentIsByTSD.value
+        ? datasetGetters.consents.value.map((c) => c)
+        : [standardConsent.value]
     })
 
     function back(): void {
@@ -204,7 +208,7 @@ export default defineComponent({
 
     return {
       t,
-      manualConsent,
+      consentIsByTSD,
       consentList,
       standardConsent,
       video,
